@@ -1,0 +1,24 @@
+Speakify LMS — Fresh Public Links
+Base: https://henry-surface-fathers-paying.trycloudflare.com
+
+--- IELTS Student ---
+Register:   https://henry-surface-fathers-paying.trycloudflare.com/register/ielts-accelerator
+Placement:  https://henry-surface-fathers-paying.trycloudflare.com/placement-test
+Login:      https://henry-surface-fathers-paying.trycloudflare.com/login?callbackUrl=%2Fdashboard%2Fielts%2Fstudent
+Dashboard:  https://henry-surface-fathers-paying.trycloudflare.com/dashboard/ielts/student
+
+--- English Pathway ---
+Register:   https://henry-surface-fathers-paying.trycloudflare.com/register/pathway
+Login:      https://henry-surface-fathers-paying.trycloudflare.com/login?callbackUrl=%2Fdashboard%2Fpathway%2Fstudent
+Dashboard:  https://henry-surface-fathers-paying.trycloudflare.com/dashboard/pathway/student
+
+--- Teacher ---
+Login:      https://henry-surface-fathers-paying.trycloudflare.com/login?callbackUrl=%2Fdashboard%2Fteacher
+Dashboard:  https://henry-surface-fathers-paying.trycloudflare.com/dashboard/teacher
+
+--- Demo logins ---
+Student: ahmed@test.com / Speakify2026!
+Admin:   admin@speakify.com / Speakify2026!
+IELTS:   student@test.com / 123456
+
+Re-run: npm run share

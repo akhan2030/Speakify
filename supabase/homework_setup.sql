@@ -1,0 +1,1 @@
+-- Deprecated: use supabase/teacher_homework_tables.sql (PROMPT 5 schema)
