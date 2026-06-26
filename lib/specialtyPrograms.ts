@@ -1,12 +1,8 @@
 import { getCoursePageContent } from "@/lib/courses/pageContent";
-import type { ProgramType } from "@/lib/programType";
 
 export type SpecialtySlug = "business-english" | "legal-english" | "kids-english";
 
-export type SpecialtyProgramId = Extract<
-  ProgramType,
-  "business_english" | "legal_english" | "kids_english"
->;
+export type SpecialtyProgramId = "business_english" | "legal_english" | "kids_english";
 
 export type SpecialtySkill = {
   id: string;
