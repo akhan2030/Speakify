@@ -5,9 +5,12 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { dashboardPathForSessionUser } from "@/lib/auth";
-import { normalizeProgramType, studentDashboardPath } from "@/lib/programType";
 import { normalizeRole } from "@/lib/roles";
-import SpeakifyWay from "@/components/SpeakifyWay";
+import {
+  loginProgramContextFromCallback,
+  loginProgramLabel,
+} from "@/lib/courses/loginPaths";
+import LoginWelcomePanel from "@/components/login/LoginWelcomePanel";
 
 function Spinner() {
   return (
@@ -87,6 +90,9 @@ export default function LoginPage() {
 function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
+  const programSlug = searchParams.get("program");
+  const programContext = loginProgramContextFromCallback(callbackUrl, programSlug);
+  const programLabel = loginProgramLabel(programContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -157,19 +163,21 @@ function LoginForm() {
         return;
       }
 
+      const role = normalizeRole((session.user as { role?: string }).role);
+      const roleHome = dashboardPathForSessionUser(
+        session.user as { role?: string; programType?: string }
+      );
+      const callbackPath = safeCallbackPath(callbackUrl);
       const redirectPath =
-        safeCallbackPath(callbackUrl) ??
-        dashboardPathForSessionUser(
-          session.user as { role?: string; programType?: string }
-        );
+        role === "admin" || role === "teacher"
+          ? roleHome
+          : callbackPath ?? roleHome;
 
       window.location.href =
         redirectPath && redirectPath !== "/login"
           ? redirectPath
-          : studentDashboardPath(
-              normalizeProgramType(
-                (session.user as { programType?: string }).programType
-              )
+          : dashboardPathForSessionUser(
+              session.user as { role?: string; programType?: string }
             );
     } catch (err) {
       setError(
@@ -183,7 +191,7 @@ function LoginForm() {
   return (
     <div className="flex min-h-screen bg-[#0d1b35]">
       <div className="hidden w-1/2 flex-col justify-center px-12 py-16 lg:flex xl:px-20">
-        <SpeakifyWay variant="hero" />
+        <LoginWelcomePanel />
       </div>
 
       <div className="flex w-full flex-col items-center justify-center px-4 py-10 lg:w-1/2">
@@ -193,7 +201,11 @@ function LoginForm() {
           <div className="mt-4 text-2xl font-extrabold text-[#0d1b35]">Speakify</div>
           <div className="mt-1 text-sm text-slate-500">Global Language Center</div>
           <div className="mt-6 text-xl font-bold text-slate-900">Welcome back</div>
-          <div className="mt-1 text-sm text-slate-500">Sign in to your account</div>
+          <div className="mt-1 text-sm text-slate-500">
+            {programContext === "general"
+              ? "Sign in to your account"
+              : `Sign in to ${programLabel}`}
+          </div>
         </div>
 
         <form id="login-form" onSubmit={handleLogin} className="mt-8 space-y-4" noValidate>
@@ -282,7 +294,7 @@ function LoginForm() {
         </form>
       </div>
       <div className="mt-6 w-full max-w-md lg:hidden">
-        <SpeakifyWay variant="compact" />
+        <LoginWelcomePanel />
       </div>
       </div>
     </div>

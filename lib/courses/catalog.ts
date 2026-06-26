@@ -126,7 +126,7 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     category: "test-prep",
     accent: "#059669",
     ctaLabel: "View Course",
-    ctaHref: "/courses/step-preparation",
+    ctaHref: "/placement-test",
     duration: "6 weeks",
     highlights: [
       "STEP-format reading & grammar drills",
@@ -165,8 +165,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     levelBadge: "Intermediate",
     category: "specialty",
     accent: "#7c3aed",
-    ctaLabel: "View Course",
-    ctaHref: "/courses/business-english",
+    ctaLabel: "Start Learning",
+    ctaHref: "/register/business-english",
     duration: "8 weeks",
     highlights: [
       "Meeting & presentation language",
@@ -185,8 +185,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     levelBadge: "Advanced",
     category: "specialty",
     accent: "#1e40af",
-    ctaLabel: "View Course",
-    ctaHref: "/courses/legal-english",
+    ctaLabel: "Start Learning",
+    ctaHref: "/register/legal-english",
     duration: "10 weeks",
     highlights: [
       "Contract & clause analysis language",
@@ -205,8 +205,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     levelBadge: "Beginner",
     category: "specialty",
     accent: "#f59e0b",
-    ctaLabel: "View Course",
-    ctaHref: "/courses/kids-english",
+    ctaLabel: "Start Learning",
+    ctaHref: "/register/kids-english",
     duration: "Ongoing levels",
     highlights: [
       "Phonics & pronunciation foundations",

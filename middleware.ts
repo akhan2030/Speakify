@@ -1,12 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-
-function normalizeRole(role: unknown): string | null {
-  if (role == null) return null;
-  const value = String(role).trim().toLowerCase();
-  if (value === "teacher" || value === "student") return value;
-  return null;
-}
+import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
 
 export default withAuth(
   function middleware(req) {
@@ -18,8 +12,18 @@ export default withAuth(
       return NextResponse.redirect(new URL("/change-password", req.url));
     }
 
+    if (pathname.startsWith("/dashboard/admin") && role !== "admin") {
+      const fallback = dashboardPathForRole(role) ?? "/login";
+      return NextResponse.redirect(new URL(fallback, req.url));
+    }
+
     if (pathname.startsWith("/dashboard/teacher") && role !== "teacher") {
-      return NextResponse.redirect(new URL("/dashboard/student", req.url));
+      const fallback = dashboardPathForRole(role) ?? "/login";
+      return NextResponse.redirect(new URL(fallback, req.url));
+    }
+
+    if (pathname === "/dashboard/home" && role === "admin") {
+      return NextResponse.redirect(new URL("/dashboard/admin", req.url));
     }
 
     return NextResponse.next();

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SiteHeader from "@/components/marketing/SiteHeader";
+import ProgramSignInLink from "@/components/marketing/ProgramSignInLink";
 
 export default function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
@@ -18,9 +19,7 @@ export default function MarketingShell({ children }: { children: React.ReactNode
             <Link href="/placement-test" className="text-slate-500 hover:text-[#0d1b35]">
               Placement Test
             </Link>
-            <Link href="/login" className="text-slate-500 hover:text-[#0d1b35]">
-              Sign in
-            </Link>
+            <ProgramSignInLink className="text-slate-500 hover:text-[#0d1b35]" />
           </div>
         </div>
       </footer>

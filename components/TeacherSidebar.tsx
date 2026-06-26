@@ -11,6 +11,7 @@ export { PageSpinner };
 export type TeacherActivePage =
   | "dashboard"
   | "students"
+  | "homework"
   | "ai-practice"
   | "qa"
   | "reports"

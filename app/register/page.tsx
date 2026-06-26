@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { REGISTRATION_PROGRAMS } from "@/lib/registration";
+import { buildLoginPath, PROGRAM_LOGIN_PATHS } from "@/lib/courses/loginPaths";
 
 export default function RegisterIndexPage() {
   const programs = [
@@ -38,7 +39,10 @@ export default function RegisterIndexPage() {
 
         <p className="mt-10 text-sm text-slate-400">
           Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-[#c9972c] hover:underline">
+          <Link
+            href={buildLoginPath(PROGRAM_LOGIN_PATHS.home)}
+            className="font-semibold text-[#c9972c] hover:underline"
+          >
             Sign in
           </Link>
         </p>

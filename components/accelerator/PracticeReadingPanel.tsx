@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { NormalizedReadingPassage } from "@/lib/accelerator/normalizePracticeContent";
-import PracticeQuestionField, { QuestionPrompt } from "@/components/accelerator/PracticeQuestionField";
+import PracticeQuestionField, { McqQuestionPrompt } from "@/components/accelerator/PracticeQuestionField";
 
 const NAVY = "#0d1b35";
 
@@ -79,7 +79,7 @@ export default function PracticeReadingPanel({
           <div className="space-y-5">
             {passage.questions.map((q) => (
               <div key={q.key}>
-                <QuestionPrompt question={q} />
+                <McqQuestionPrompt question={q} />
                 <PracticeQuestionField
                   question={q}
                   value={answers[q.key] ?? ""}

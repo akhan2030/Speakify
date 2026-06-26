@@ -1,4 +1,10 @@
-export type ProgramKind = "ielts" | "pathway" | "toefl" | "business_english";
+export type ProgramKind =
+  | "ielts"
+  | "pathway"
+  | "toefl"
+  | "business_english"
+  | "legal_english"
+  | "kids_english";
 
 export type ProgramTerminology = {
   programName: string;
@@ -51,6 +57,26 @@ export const PROGRAM_TERMINOLOGY: Record<ProgramKind, ProgramTerminology> = {
     progressCheckLabel: "Skills Check",
     missionLabel: "Today's Mission",
     trackLabel: "My Programme",
+  },
+  legal_english: {
+    programName: "Legal English",
+    currentLevelLabel: "Current Module",
+    progressLabel: "Legal Skills",
+    readinessLabel: "Professional Readiness",
+    assessmentLabel: "Case Assessment",
+    progressCheckLabel: "Skills Check",
+    missionLabel: "Today's Mission",
+    trackLabel: "My Programme",
+  },
+  kids_english: {
+    programName: "Kids English",
+    currentLevelLabel: "Current Unit",
+    progressLabel: "Learning Fun",
+    readinessLabel: "Level Readiness",
+    assessmentLabel: "Show What You Know",
+    progressCheckLabel: "Fun Check",
+    missionLabel: "Today's Adventure",
+    trackLabel: "My Learning Path",
   },
 };
 

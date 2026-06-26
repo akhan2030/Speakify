@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { NAV_DROPDOWNS } from "@/lib/courses/catalog";
+import ProgramSignInLink from "@/components/marketing/ProgramSignInLink";
 
 type NavCourse = {
   name: string;
@@ -96,12 +97,7 @@ export default function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link
-            href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-200 hover:text-white"
-          >
-            Sign in
-          </Link>
+          <ProgramSignInLink className="rounded-lg px-4 py-2 text-sm font-medium text-slate-200 hover:text-white" />
           <Link
             href="/register"
             className="rounded-lg bg-[#c9972c] px-4 py-2 text-sm font-semibold text-[#0d1b35] hover:opacity-95"
@@ -155,13 +151,10 @@ export default function SiteHeader() {
             </div>
           ))}
           <div className="mt-4 flex gap-2 border-t border-white/10 pt-4">
-            <Link
-              href="/login"
+            <ProgramSignInLink
               onClick={() => setMobileOpen(false)}
               className="flex-1 rounded-lg border border-white/20 py-2 text-center text-sm text-white"
-            >
-              Sign in
-            </Link>
+            />
             <Link
               href="/register"
               onClick={() => setMobileOpen(false)}

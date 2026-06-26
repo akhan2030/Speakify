@@ -54,6 +54,30 @@ const TEST_USERS = [
     name: "Speakify Student",
     forcePassword: true,
   },
+  {
+    email: "business@test.com",
+    password: "123456",
+    role: "student",
+    name: "Business English Student",
+    programType: "business_english",
+    forcePassword: false,
+  },
+  {
+    email: "legal@test.com",
+    password: "123456",
+    role: "student",
+    name: "Legal English Student",
+    programType: "legal_english",
+    forcePassword: false,
+  },
+  {
+    email: "kids@test.com",
+    password: "123456",
+    role: "student",
+    name: "Kids English Student",
+    programType: "kids_english",
+    forcePassword: false,
+  },
 ];
 
 async function hashPassword(plain) {
@@ -142,6 +166,9 @@ async function main() {
   console.log(`  Login page: ${base}/login`);
   console.log("  student@test.com / 123456  -> IELTS student dashboard");
   console.log("  pathway@test.com / 123456  -> English Pathway student dashboard");
+  console.log("  business@test.com / 123456 -> Business English dashboard");
+  console.log("  legal@test.com / 123456    -> Legal English dashboard");
+  console.log("  kids@test.com / 123456     -> Kids English dashboard");
   console.log("  teacher@test.com / 123456  -> teacher dashboard");
   console.log("  admin@speakify.com / Speakify2026!  -> teacher dashboard (demo admin)");
   console.log("  student@speakify.com / Speakify2026!  -> student dashboard (demo student, no placement lock)");

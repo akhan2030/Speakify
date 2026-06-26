@@ -245,8 +245,6 @@ export const authOptions: NextAuthOptions = {
 
   secret: process.env.NEXTAUTH_SECRET,
 
-  trustHost: true,
-
   useSecureCookies,
 
   session: { strategy: "jwt" },

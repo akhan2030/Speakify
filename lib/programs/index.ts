@@ -21,6 +21,16 @@ const ENGINES: Record<ProgramKind, ProgramContentEngine> = {
     programType: "business_english",
     terminology: getProgramTerminology("business_english"),
   },
+  legal_english: {
+    ...pathwayEngine,
+    programType: "legal_english",
+    terminology: getProgramTerminology("legal_english"),
+  },
+  kids_english: {
+    ...pathwayEngine,
+    programType: "kids_english",
+    terminology: getProgramTerminology("kids_english"),
+  },
 };
 
 export function normalizeProgramKind(value: unknown): ProgramKind {
@@ -32,6 +42,8 @@ export function normalizeProgramKind(value: unknown): ProgramKind {
   if (raw === "ielts" || raw === "ielts_accelerator") return "ielts";
   if (raw === "toefl" || raw === "toefl_accelerator") return "toefl";
   if (raw === "business_english" || raw === "business") return "business_english";
+  if (raw === "legal_english" || raw === "legal") return "legal_english";
+  if (raw === "kids_english" || raw === "kids") return "kids_english";
   return "pathway";
 }
 

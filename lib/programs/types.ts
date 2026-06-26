@@ -1,7 +1,13 @@
 import type { ProgramTerminology } from "@/lib/programs/terminology";
 import type { PathwayLevelId, PathwaySkill } from "@/lib/programs/terminology";
 
-export type ProgramKind = "pathway" | "ielts" | "toefl" | "business_english";
+export type ProgramKind =
+  | "pathway"
+  | "ielts"
+  | "toefl"
+  | "business_english"
+  | "legal_english"
+  | "kids_english";
 
 export type SkillUnit = {
   id: string;

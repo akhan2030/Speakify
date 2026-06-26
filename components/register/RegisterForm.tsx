@@ -7,6 +7,7 @@ import {
   getRegistrationProgram,
   type RegistrationSlug,
 } from "@/lib/registration";
+import { buildLoginPath } from "@/lib/courses/loginPaths";
 
 function Spinner() {
   return (
@@ -85,7 +86,9 @@ export default function RegisterForm({ slug }: { slug: RegistrationSlug }) {
   const buttonClass =
     slug === "pathway"
       ? "bg-[#0d9488] text-white hover:opacity-95"
-      : "bg-[#c9972c] text-[#0d1b35] hover:opacity-95";
+      : slug === "business-english" || slug === "legal-english" || slug === "kids-english"
+        ? "text-white hover:opacity-95"
+        : "bg-[#c9972c] text-[#0d1b35] hover:opacity-95";
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-2">
@@ -248,6 +251,13 @@ export default function RegisterForm({ slug }: { slug: RegistrationSlug }) {
               type="submit"
               disabled={!canSubmit}
               className={`inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-base font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-60 ${buttonClass}`}
+              style={
+                slug === "business-english" ||
+                slug === "legal-english" ||
+                slug === "kids-english"
+                  ? { backgroundColor: program.accent }
+                  : undefined
+              }
             >
               {loading ? (
                 <>
@@ -262,7 +272,7 @@ export default function RegisterForm({ slug }: { slug: RegistrationSlug }) {
             <p className="text-center text-sm text-slate-600">
               Already have an account?{" "}
               <Link
-                href="/login"
+                href={buildLoginPath(program.dashboardPath, program.slug)}
                 className="font-semibold text-[#0d9488] hover:underline"
               >
                 Sign in →

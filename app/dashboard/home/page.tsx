@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { normalizeRole } from "@/lib/roles";
 
 type PathwayPreview = {
   levelName: string;
@@ -30,10 +32,17 @@ const DEFAULT_IELTS: IeltsPreview = {
 
 export default function ProgramHomePage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [pathway, setPathway] = useState<PathwayPreview>(DEFAULT_PATHWAY);
   const [ielts, setIelts] = useState<IeltsPreview>(DEFAULT_IELTS);
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
+
+  useEffect(() => {
+    if (normalizeRole(session?.user?.role) === "admin") {
+      router.replace("/dashboard/admin");
+    }
+  }, [session?.user?.role, router]);
 
   useEffect(() => {
     fetch("/api/pathway/dashboard")

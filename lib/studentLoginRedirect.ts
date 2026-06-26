@@ -1,31 +1,43 @@
-import { normalizeProgramType, type ProgramType } from "@/lib/programType";
-import { normalizeRole } from "@/lib/roles";
+import {
+  normalizeProgramType,
+  studentDashboardPath,
+  type ProgramType,
+} from "@/lib/programType";
+import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
+
+const KNOWN_PROGRAMS: ProgramType[] = [
+  "ielts",
+  "pathway",
+  "business_english",
+  "legal_english",
+  "kids_english",
+];
+
+function isKnownProgram(value: string): value is ProgramType {
+  return (KNOWN_PROGRAMS as string[]).includes(value);
+}
 
 export function normalizeEnrolledPrograms(
   value: unknown,
   programType?: ProgramType | null
-): string[] {
-  const programs = new Set<string>();
+): ProgramType[] {
+  const programs = new Set<ProgramType>();
+
+  const add = (raw: string) => {
+    const normalized = normalizeProgramType(raw);
+    if (isKnownProgram(normalized)) programs.add(normalized);
+  };
 
   if (Array.isArray(value)) {
-    for (const entry of value) {
-      const v = String(entry).trim().toLowerCase();
-      if (v === "ielts" || v === "pathway") programs.add(v);
-    }
+    for (const entry of value) add(String(entry));
   } else if (typeof value === "string" && value.trim()) {
     try {
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) {
-        for (const entry of parsed) {
-          const v = String(entry).trim().toLowerCase();
-          if (v === "ielts" || v === "pathway") programs.add(v);
-        }
+        for (const entry of parsed) add(String(entry));
       }
     } catch {
-      for (const part of value.split(",")) {
-        const v = part.trim().toLowerCase();
-        if (v === "ielts" || v === "pathway") programs.add(v);
-      }
+      for (const part of value.split(",")) add(part);
     }
   }
 
@@ -47,14 +59,8 @@ export function resolveStudentDashboardPath(input: {
   const programType = normalizeProgramType(input.programType);
   const programs = normalizeEnrolledPrograms(input.enrolledPrograms, programType);
 
-  const hasIELTS =
-    programs.includes("ielts") || programType === "ielts";
-  const hasPathway =
-    programs.includes("pathway") || programType === "pathway";
-
-  if (hasIELTS && hasPathway) return "/dashboard/home";
-  if (hasPathway && !hasIELTS) return "/dashboard/pathway/student";
-  return "/dashboard/ielts/student";
+  if (programs.length > 1) return "/dashboard/home";
+  return studentDashboardPath(programs[0] ?? programType);
 }
 
 export function dashboardPathForStudentUser(user: {
@@ -63,12 +69,5 @@ export function dashboardPathForStudentUser(user: {
   enrolledPrograms?: unknown;
 }): string {
   const role = normalizeRole(user.role);
-  if (role === "teacher") return "/dashboard/teacher";
-  if (role === "student") {
-    return resolveStudentDashboardPath({
-      programType: user.programType,
-      enrolledPrograms: user.enrolledPrograms,
-    });
-  }
-  return "/login";
+  return dashboardPathForRole(role) ?? "/login";
 }

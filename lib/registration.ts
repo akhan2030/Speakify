@@ -1,8 +1,21 @@
-export const PROGRAM_TYPES = ["pathway", "ielts"] as const;
+export const PROGRAM_TYPES = [
+  "pathway",
+  "ielts",
+  "business_english",
+  "legal_english",
+  "kids_english",
+] as const;
 export type RegistrationProgramType = (typeof PROGRAM_TYPES)[number];
 
 /** Public registration URLs — one dedicated link per program on the website */
-export const REGISTRATION_SLUGS = ["pathway", "ielts", "toefl"] as const;
+export const REGISTRATION_SLUGS = [
+  "pathway",
+  "ielts",
+  "toefl",
+  "business-english",
+  "legal-english",
+  "kids-english",
+] as const;
 export type RegistrationSlug = (typeof REGISTRATION_SLUGS)[number];
 
 export type RegistrationProgramConfig = {
@@ -15,6 +28,8 @@ export type RegistrationProgramConfig = {
   bullets: string[];
   accent: string;
   registerPath: string;
+  /** Where the student lands after signing in from this programme */
+  dashboardPath: string;
 };
 
 export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgramConfig> = {
@@ -32,6 +47,7 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     ],
     accent: "#0d9488",
     registerPath: "/register/pathway",
+    dashboardPath: "/dashboard/pathway/student",
   },
   ielts: {
     slug: "ielts",
@@ -47,6 +63,7 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     ],
     accent: "#c9972c",
     registerPath: "/register/ielts-accelerator",
+    dashboardPath: "/dashboard/ielts/student",
   },
   toefl: {
     slug: "toefl",
@@ -62,6 +79,55 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     ],
     accent: "#2563eb",
     registerPath: "/register/toefl-prep",
+    dashboardPath: "/dashboard/ielts/student",
+  },
+  "business-english": {
+    slug: "business-english",
+    programType: "business_english",
+    label: "Business English",
+    tagline: "Professional communication",
+    description:
+      "Workplace English for meetings, presentations, emails, and negotiations in global teams.",
+    bullets: [
+      "Meeting & presentation language",
+      "Professional email & report writing",
+      "Negotiation and networking practice",
+    ],
+    accent: "#7c3aed",
+    registerPath: "/register/business-english",
+    dashboardPath: "/dashboard/business-english/student",
+  },
+  "legal-english": {
+    slug: "legal-english",
+    programType: "legal_english",
+    label: "Legal English",
+    tagline: "Law & compliance contexts",
+    description:
+      "Specialised English for contracts, legal writing, and client communication.",
+    bullets: [
+      "Contract & clause analysis language",
+      "Legal writing and summarisation",
+      "Client consultation role-plays",
+    ],
+    accent: "#1e40af",
+    registerPath: "/register/legal-english",
+    dashboardPath: "/dashboard/legal-english/student",
+  },
+  "kids-english": {
+    slug: "kids-english",
+    programType: "kids_english",
+    label: "Kids English",
+    tagline: "Ages 6–12 · Fun learning",
+    description:
+      "Engaging English for young learners with phonics, stories, games, and speaking activities.",
+    bullets: [
+      "Phonics & pronunciation foundations",
+      "Story-based vocabulary building",
+      "Interactive speaking games",
+    ],
+    accent: "#ea580c",
+    registerPath: "/register/kids-english",
+    dashboardPath: "/dashboard/kids-english/student",
   },
 };
 
