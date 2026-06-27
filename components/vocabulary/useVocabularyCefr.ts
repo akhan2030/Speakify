@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { DEFAULT_CEFR_LEVEL, VOCAB_STORAGE_KEY } from "@/lib/vocabulary";
+import {
+  DEFAULT_CEFR_LEVEL,
+  normalizeSpeakifyCefrLevel,
+  VOCAB_STORAGE_KEY,
+} from "@/lib/vocabulary";
 
 export function useVocabularyCefr() {
   const [cefrLevel, setCefrLevelState] = useState(DEFAULT_CEFR_LEVEL);
@@ -9,13 +13,18 @@ export function useVocabularyCefr() {
 
   useEffect(() => {
     const stored = localStorage.getItem(VOCAB_STORAGE_KEY);
-    if (stored) setCefrLevelState(stored);
+    const normalized = normalizeSpeakifyCefrLevel(stored ?? DEFAULT_CEFR_LEVEL);
+    setCefrLevelState(normalized);
+    if (stored && stored !== normalized) {
+      localStorage.setItem(VOCAB_STORAGE_KEY, normalized);
+    }
     setReady(true);
   }, []);
 
   const setCefrLevel = useCallback((level: string) => {
-    setCefrLevelState(level);
-    localStorage.setItem(VOCAB_STORAGE_KEY, level);
+    const normalized = normalizeSpeakifyCefrLevel(level);
+    setCefrLevelState(normalized);
+    localStorage.setItem(VOCAB_STORAGE_KEY, normalized);
   }, []);
 
   return { cefrLevel, setCefrLevel, ready };

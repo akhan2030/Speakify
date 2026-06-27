@@ -1,19 +1,16 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { DEFAULT_CEFR_LEVEL, todayDateKey } from "@/lib/vocabulary";
-import { getSupabase, getSupabaseUrl, mapWordRow } from "@/lib/vocabularySupabase";
+import {
+  DEFAULT_CEFR_LEVEL,
+  normalizeSpeakifyCefrLevel,
+  todayDateKey,
+  VOCAB_SESSION_SIZE,
+} from "@/lib/vocabulary";
+import { getSupabase, getSupabaseUrl, fetchVocabularyWordsByIds, mapWordRow } from "@/lib/vocabularySupabase";
+import { buildStudyQueue } from "@/lib/vocabularyStudy";
 
 export const runtime = "nodejs";
-
-function shuffle(list) {
-  const arr = [...list];
-  for (let i = arr.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
 
 export async function GET(request) {
   try {
@@ -24,9 +21,14 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const cefrLevel = searchParams.get("cefrLevel") || DEFAULT_CEFR_LEVEL;
+    const cefrLevel = normalizeSpeakifyCefrLevel(
+      searchParams.get("cefrLevel") || DEFAULT_CEFR_LEVEL
+    );
     const mode = searchParams.get("mode") || "study";
-    const limit = Math.min(20, Math.max(1, Number(searchParams.get("limit") || 10)));
+    const limit = Math.min(
+      20,
+      Math.max(1, Number(searchParams.get("limit") || VOCAB_SESSION_SIZE))
+    );
 
     if (!getSupabaseUrl() || !process.env.SUPABASE_SERVICE_KEY) {
       return NextResponse.json({ words: [] });
@@ -66,37 +68,35 @@ export async function GET(request) {
         });
       }
 
-      const { data: words, error } = await supabase
-        .from("vocabulary_words")
-        .select(
-          "id, word, cefr_level, part_of_speech, definition, definition_arabic, pronunciation_ipa, example_sentence, ielts_example, memory_hook, topic_category, audio_url"
-        )
-        .in("id", wordIds);
-
-      if (error) throw error;
+      const words = await fetchVocabularyWordsByIds(supabase, wordIds);
 
       const order = new Map(wordIds.map((id, i) => [id, i]));
-      const sorted = (words ?? [])
+      const sorted = words
         .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
         .map(mapWordRow);
 
       return NextResponse.json({ words: sorted, reviewComplete: false });
     }
 
-    const { data: pool, error } = await supabase
-      .from("vocabulary_words")
-      .select(
-        "id, word, cefr_level, part_of_speech, definition, definition_arabic, pronunciation_ipa, example_sentence, ielts_example, memory_hook, topic_category, audio_url"
-      )
-      .eq("cefr_level", cefrLevel);
+    console.log("[vocabulary/words] study query", {
+      table: "vocabulary_words",
+      cefrLevel,
+      rawCefrParam: searchParams.get("cefrLevel"),
+      mode,
+      limit,
+      studentId,
+    });
 
-    if (error) throw error;
+    const { words, meta } = await buildStudyQueue(supabase, studentId, cefrLevel, limit);
 
-    const words = shuffle(pool ?? [])
-      .slice(0, limit)
-      .map(mapWordRow);
+    console.log("[vocabulary/words] study response", {
+      cefrLevel,
+      wordCount: words.length,
+      sampleWords: words.slice(0, 5).map((w) => w.word),
+      meta,
+    });
 
-    return NextResponse.json({ words });
+    return NextResponse.json({ words, meta });
   } catch (err) {
     console.error("[vocabulary/words]", err);
     return NextResponse.json(

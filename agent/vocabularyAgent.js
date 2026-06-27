@@ -19,18 +19,11 @@ const CRON_SCHEDULE = "0 3 * * *";
 const WORDS_PER_LEVEL = 10;
 const AGENT_NAME = "vocabulary_agent";
 
-const CEFR_LEVELS = [
-  "A1.1",
-  "A1.2",
-  "A2.1",
-  "A2.2",
-  "B1.1",
-  "B1.2",
-  "B2.1",
-  "B2.2",
-  "C1.1",
-  "C1.2",
-];
+const {
+  SPEAKIFY_CEFR_LEVELS: CEFR_LEVELS,
+  VOCAB_LEVEL_BANKS,
+  normalizeSpeakifyCefrLevel,
+} = require("../lib/vocabularyLevels");
 
 const TOPICS = [
   "education",
@@ -116,6 +109,8 @@ function getBandForLevel(level) {
     "B2.2": "6.5-7.0",
     "C1.1": "7.0-7.5",
     "C1.2": "7.5-8.0",
+    "C2.1": "8.0-8.5",
+    "C2.2": "8.5-9.0",
   };
   return map[level] ?? "5.0-5.5";
 }
@@ -124,10 +119,16 @@ function getDifficultyForLevel(level) {
   const band = level.charAt(0);
   if (band === "A") return level.endsWith(".1") ? "beginner" : "elementary";
   if (band === "B") return level.endsWith(".1") ? "intermediate" : "upper_intermediate";
+  if (band === "C") return level.endsWith(".1") ? "advanced" : "mastery";
   return "advanced";
 }
 
 function pickTopic(level, index) {
+  const bank = VOCAB_LEVEL_BANKS[level];
+  if (bank) {
+    const themes = bank.split(",").map((t) => t.trim());
+    return themes[index % themes.length];
+  }
   const levelNum = CEFR_LEVELS.indexOf(level);
   return TOPICS[(levelNum + index) % TOPICS.length];
 }
@@ -151,6 +152,7 @@ function buildWordsUserMessage(cefrLevel, topic, excludeWords) {
 
   return `Generate exactly ${WORDS_PER_LEVEL} vocabulary word cards for CEFR level ${cefrLevel}.
 Primary topic theme: ${topic}.
+Level vocabulary bank focus: ${VOCAB_LEVEL_BANKS[cefrLevel] ?? topic}.
 ${excludeList}
 
 Each word MUST use this exact JSON shape:

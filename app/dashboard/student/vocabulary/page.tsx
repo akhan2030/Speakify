@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { useVocabularyCefr } from "@/components/vocabulary/useVocabularyCefr";
-import { CEFR_LEVELS, type VocabularyWord } from "@/lib/vocabulary";
+import { SPEAKIFY_CEFR_LEVELS, VOCAB_LEVEL_BANKS, type VocabularyWord } from "@/lib/vocabulary";
 
 type HomeData = {
   cefrLevel: string;
@@ -44,7 +44,7 @@ export default function VocabularyPage() {
         streak: 0,
         dueCount: 0,
         todaysWords: [],
-        levelProgress: CEFR_LEVELS.map((level) => ({
+        levelProgress: SPEAKIFY_CEFR_LEVELS.map((level) => ({
           level,
           learned: 0,
           total: 0,
@@ -118,7 +118,7 @@ export default function VocabularyPage() {
                   onChange={(e) => setCefrLevel(e.target.value)}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-[#0d1b35] focus:border-[#c9972c] focus:outline-none focus:ring-1 focus:ring-[#c9972c]"
                 >
-                  {CEFR_LEVELS.map((level) => (
+                  {SPEAKIFY_CEFR_LEVELS.map((level) => (
                     <option key={level} value={level}>
                       {level}
                     </option>
@@ -258,8 +258,16 @@ export default function VocabularyPage() {
             <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">
               Progress by CEFR level
             </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Speakify official levels A1.1 → C2.2
+            </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {(data?.levelProgress ?? []).map((row) => (
+              {(data?.levelProgress ?? SPEAKIFY_CEFR_LEVELS.map((level) => ({
+                level,
+                learned: 0,
+                total: 0,
+                percent: 0,
+              }))).map((row) => (
                 <div
                   key={row.level}
                   className={`rounded-lg border px-3 py-2 ${
@@ -272,6 +280,9 @@ export default function VocabularyPage() {
                     <span className="font-semibold text-[#0d1b35]">{row.level}</span>
                     <span className="text-slate-500">{row.percent}%</span>
                   </div>
+                  <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">
+                    {VOCAB_LEVEL_BANKS[row.level as keyof typeof VOCAB_LEVEL_BANKS]}
+                  </p>
                   <div className="mt-1 h-1 overflow-hidden rounded-full bg-slate-100">
                     <div
                       className="h-full rounded-full bg-[#0d9488]"

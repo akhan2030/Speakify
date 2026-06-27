@@ -1,7 +1,21 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { speakWithBrowser, stopBrowserSpeech, type BrowserSpeechLang } from "@/lib/browserSpeech";
 import type { VocabRating, VocabularyWord } from "@/lib/vocabulary";
+
+type PronunciationAccent = "us" | "gb";
+
+const ACCENT_STORAGE_KEY = "vocabulary-pronunciation-accent";
+
+function accentToLang(accent: PronunciationAccent): BrowserSpeechLang {
+  return accent === "us" ? "en-US" : "en-GB";
+}
+
+function readStoredAccent(): PronunciationAccent {
+  if (typeof window === "undefined") return "us";
+  return localStorage.getItem(ACCENT_STORAGE_KEY) === "gb" ? "gb" : "us";
+}
 
 type Props = {
   word: VocabularyWord;
@@ -19,17 +33,61 @@ export default function VocabularyFlashcard({
   saving = false,
 }: Props) {
   const [flipped, setFlipped] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [listenError, setListenError] = useState<string | null>(null);
+  const [accent, setAccent] = useState<PronunciationAccent>("us");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const listenMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setAccent(readStoredAccent());
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    const synth = window.speechSynthesis;
+    const preloadVoices = () => {
+      synth.getVoices();
+    };
+    preloadVoices();
+    synth.addEventListener("voiceschanged", preloadVoices);
+    return () => synth.removeEventListener("voiceschanged", preloadVoices);
+  }, []);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (listenMenuRef.current && !listenMenuRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [dropdownOpen]);
 
   const speak = useCallback(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(word.word);
-    utterance.lang = "en-GB";
-    utterance.rate = 0.9;
-    window.speechSynthesis.speak(utterance);
-  }, [word.word]);
+    setListenError(null);
+    setListening(true);
+    stopBrowserSpeech();
+
+    void speakWithBrowser(word.word, accentToLang(accent))
+      .catch((err) => {
+        setListenError(err instanceof Error ? err.message : "Could not play audio.");
+      })
+      .finally(() => {
+        setListening(false);
+      });
+  }, [word.word, accent]);
+
+  const selectAccent = useCallback(
+    (next: PronunciationAccent) => {
+      setAccent(next);
+      localStorage.setItem(ACCENT_STORAGE_KEY, next);
+      setDropdownOpen(false);
+    },
+    []
+  );
 
   const progress = total > 0 ? Math.round(((index + 1) / total) * 100) : 0;
+  const synonyms = (word.synonyms ?? []).filter((item) => item.trim());
 
   return (
     <div className="mx-auto w-full max-w-xl">
@@ -48,16 +106,20 @@ export default function VocabularyFlashcard({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setFlipped((f) => !f)}
-        className="group relative mx-auto block h-[320px] w-full [perspective:1200px]"
-        aria-label={flipped ? "Show word front" : "Flip to see definition"}
-      >
+      <div className="group relative mx-auto h-[380px] w-full [perspective:1200px]">
         <div
-          className={`relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d] ${
-            flipped ? "[transform:rotateY(180deg)]" : ""
-          }`}
+          role="button"
+          tabIndex={0}
+          onClick={() => setFlipped((f) => !f)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setFlipped((f) => !f);
+            }
+          }}
+          className="relative h-full w-full cursor-pointer transition-transform duration-500 [transform-style:preserve-3d] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0d9488] rounded-2xl"
+          style={{ transform: flipped ? "rotateY(180deg)" : undefined }}
+          aria-label={flipped ? "Show word front" : "Flip to see definition"}
         >
           <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 shadow-lg [backface-visibility:hidden]">
             <p className="text-xs font-semibold uppercase tracking-wide text-[#c9972c]">
@@ -67,25 +129,98 @@ export default function VocabularyFlashcard({
             {word.pronunciation_ipa ? (
               <p className="mt-2 text-lg text-slate-500">{word.pronunciation_ipa}</p>
             ) : null}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                speak();
-              }}
-              className="mt-6 flex items-center gap-2 rounded-full bg-[#0d1b35] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#152a4d]"
+            {word.definition ? (
+              <div className="mt-4 max-w-md px-2 text-center">
+                <p className="text-sm leading-relaxed text-slate-700">{word.definition}</p>
+                {word.definition_arabic?.trim() ? (
+                  <p
+                    className="mt-2 text-xs leading-relaxed text-slate-400"
+                    dir="rtl"
+                    lang="ar"
+                  >
+                    {word.definition_arabic.trim()}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            <div
+              ref={listenMenuRef}
+              className="relative mt-6"
+              onClick={(e) => e.stopPropagation()}
             >
-              <span aria-hidden>🔊</span> Listen
-            </button>
+              <div className="inline-flex overflow-hidden rounded-full bg-[#0d1b35] text-sm font-semibold text-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => void speak()}
+                  disabled={listening}
+                  className="flex items-center gap-2 px-4 py-2.5 transition-colors hover:bg-[#152a4d] disabled:opacity-60"
+                >
+                  <span aria-hidden>{listening ? "⏳" : "🔊"}</span>
+                  <span>{listening ? "Playing…" : "Listen"}</span>
+                  <span className="text-xs font-bold text-[#c9972c]">
+                    {accent === "us" ? "🇺🇸 US" : "🇬🇧 GB"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Choose pronunciation accent"
+                  aria-expanded={dropdownOpen}
+                  disabled={listening}
+                  onClick={() => setDropdownOpen((open) => !open)}
+                  className="border-l border-white/20 px-2.5 py-2.5 transition-colors hover:bg-[#152a4d] disabled:opacity-60"
+                >
+                  <span aria-hidden className="text-xs">
+                    ▼
+                  </span>
+                </button>
+              </div>
+
+              {dropdownOpen ? (
+                <div className="absolute left-1/2 top-full z-20 mt-2 min-w-[160px] -translate-x-1/2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-left text-sm shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => selectAccent("us")}
+                    className={`flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 ${
+                      accent === "us" ? "bg-slate-50 font-semibold text-[#0d1b35]" : "text-slate-700"
+                    }`}
+                  >
+                    🇺🇸 American
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectAccent("gb")}
+                    className={`flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 ${
+                      accent === "gb" ? "bg-slate-50 font-semibold text-[#0d1b35]" : "text-slate-700"
+                    }`}
+                  >
+                    🇬🇧 British
+                  </button>
+                </div>
+              ) : null}
+
+              {listenError ? (
+                <p className="mt-3 max-w-xs text-center text-xs text-red-600">{listenError}</p>
+              ) : null}
+            </div>
             <p className="mt-8 text-xs text-slate-400">Tap card to flip</p>
           </div>
 
           <div className="absolute inset-0 flex flex-col justify-center rounded-2xl border border-[#0d9488]/30 bg-gradient-to-br from-white to-teal-50/80 p-8 shadow-lg [backface-visibility:hidden] [transform:rotateY(180deg)]">
             <p className="text-sm font-semibold text-[#0d1b35]">{word.definition}</p>
-            {word.definition_arabic ? (
-              <p className="mt-3 text-lg text-[#0d9488]" dir="rtl">
-                {word.definition_arabic}
-              </p>
+            {synonyms.length > 0 ? (
+              <div className="mt-3">
+                <p className="text-xs font-semibold text-slate-500">Synonyms:</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {synonyms.map((synonym) => (
+                    <span
+                      key={synonym}
+                      className="rounded-full border border-[#0d9488]/30 bg-white px-2.5 py-0.5 text-xs font-medium text-[#0d9488]"
+                    >
+                      {synonym}
+                    </span>
+                  ))}
+                </div>
+              </div>
             ) : null}
             <p className="mt-4 text-sm italic text-slate-600">
               &ldquo;{word.example_sentence}&rdquo;
@@ -98,7 +233,7 @@ export default function VocabularyFlashcard({
             ) : null}
           </div>
         </div>
-      </button>
+      </div>
 
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <button
