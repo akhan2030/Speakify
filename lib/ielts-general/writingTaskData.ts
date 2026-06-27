@@ -34,85 +34,85 @@ function buildLetterPrompt(q: Omit<GeneralLetterQuestion, "prompt">): string {
   return `${q.situation}\n\nIn your letter:\n${bullets}\n\nWrite at least 150 words. You do not need to include addresses. Use a ${LETTER_TYPE_LABELS[q.letterType].toLowerCase()} tone throughout.`;
 }
 
+function makeLetterQuestion(
+  id: string,
+  letterType: LetterType,
+  label: string,
+  situation: string,
+  bulletPoints: string[]
+): GeneralLetterQuestion {
+  const base = { id, letterType, label, situation, bulletPoints };
+  return { ...base, prompt: buildLetterPrompt(base) };
+}
+
 export const GENERAL_LETTER_QUESTIONS: GeneralLetterQuestion[] = [
-  {
-    id: "formal-hotel-complaint",
-    letterType: "formal",
-    label: "Hotel complaint",
-    situation:
-      "You recently stayed at a hotel for a business trip. The room was noisy and the Wi‑Fi did not work, which affected your work.",
-    bulletPoints: [
+  makeLetterQuestion(
+    "formal-hotel-complaint",
+    "formal",
+    "Hotel complaint",
+    "You recently stayed at a hotel for a business trip. The room was noisy and the Wi‑Fi did not work, which affected your work.",
+    [
       "explain why you stayed at the hotel",
       "describe the problems you experienced",
       "say what you would like the manager to do",
-    ],
-    prompt: "",
-  },
-  {
-    id: "formal-job-application",
-    letterType: "formal",
-    label: "Job application",
-    situation:
-      "You saw an advertisement for a part-time customer service position at a local company.",
-    bulletPoints: [
+    ]
+  ),
+  makeLetterQuestion(
+    "formal-job-application",
+    "formal",
+    "Job application",
+    "You saw an advertisement for a part-time customer service position at a local company.",
+    [
       "say which job you are applying for",
       "describe your relevant experience",
       "explain why you would be suitable for the role",
-    ],
-    prompt: "",
-  },
-  {
-    id: "semi-formal-landlord-repair",
-    letterType: "semi_formal",
-    label: "Request a repair",
-    situation:
-      "You rent a flat and the heating system has stopped working during winter.",
-    bulletPoints: [
+    ]
+  ),
+  makeLetterQuestion(
+    "semi-formal-landlord-repair",
+    "semi_formal",
+    "Request a repair",
+    "You rent a flat and the heating system has stopped working during winter.",
+    [
       "explain the problem",
       "say how it is affecting you",
       "request that the issue be fixed soon",
-    ],
-    prompt: "",
-  },
-  {
-    id: "semi-formal-colleague-event",
-    letterType: "semi_formal",
-    label: "Colleague leaving",
-    situation: "A colleague is leaving your workplace to move to another city.",
-    bulletPoints: [
+    ]
+  ),
+  makeLetterQuestion(
+    "semi-formal-colleague-event",
+    "semi_formal",
+    "Colleague leaving",
+    "A colleague is leaving your workplace to move to another city.",
+    [
       "say how you feel about their departure",
       "mention a positive memory from working together",
       "wish them well for the future",
-    ],
-    prompt: "",
-  },
-  {
-    id: "informal-friend-visit",
-    letterType: "informal",
-    label: "Invite a friend",
-    situation:
-      "You are planning a short trip to your hometown and would like your friend to join you.",
-    bulletPoints: [
+    ]
+  ),
+  makeLetterQuestion(
+    "informal-friend-visit",
+    "informal",
+    "Invite a friend",
+    "You are planning a short trip to your hometown and would like your friend to join you.",
+    [
       "invite your friend to come with you",
       "say when you plan to travel",
       "suggest some activities you could do together",
-    ],
-    prompt: "",
-  },
-  {
-    id: "informal-friend-advice",
-    letterType: "informal",
-    label: "Give advice",
-    situation:
-      "A friend has written to you because they are thinking of changing jobs.",
-    bulletPoints: [
+    ]
+  ),
+  makeLetterQuestion(
+    "informal-friend-advice",
+    "informal",
+    "Give advice",
+    "A friend has written to you because they are thinking of changing jobs.",
+    [
       "acknowledge their situation",
       "give your opinion about changing jobs",
       "offer practical suggestions",
-    ],
-    prompt: "",
-  },
-].map((q) => ({ ...q, prompt: buildLetterPrompt(q) })) as GeneralLetterQuestion[];
+    ]
+  ),
+];
 
 /** General Training Task 2 — everyday topics (not Academic graph/report Task 1). */
 export const GENERAL_TASK2_QUESTIONS: GeneralTask2Question[] = [
