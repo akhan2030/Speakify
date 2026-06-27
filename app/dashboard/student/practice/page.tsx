@@ -9,10 +9,14 @@ type PracticeTask = {
   id: string;
   skill?: string;
   title?: string;
+  topic?: string;
+  task_type?: string;
+  taskType?: string;
   cefr_level?: string;
   cefrLevel?: string;
   estimated_minutes?: number;
   estimatedMinutes?: number;
+  wordCount?: number;
 };
 
 const SKILL_HREF: Record<string, string> = {
@@ -71,8 +75,14 @@ export default function StudentPracticePage() {
 
   function handleStartPractice(task: PracticeTask) {
     setLoadingTaskId(task.id);
-    const href =
-      SKILL_HREF[(task.skill ?? "").toLowerCase()] ?? "/dashboard/student/practice";
+    const skill = (task.skill ?? "").toLowerCase();
+    if (skill === "vocabulary" && task.topic) {
+      const href = `/dashboard/student/vocabulary/study?topic=${encodeURIComponent(task.topic)}`;
+      console.log("Navigating to vocabulary topic practice:", task.topic, href);
+      router.push(href);
+      return;
+    }
+    const href = SKILL_HREF[skill] ?? "/dashboard/student/practice";
     console.log("Navigating to practice:", task.id, href);
     router.push(href);
   }
@@ -152,15 +162,22 @@ export default function StudentPracticePage() {
             {filtered.map((task) => {
               const level = task.cefr_level ?? task.cefrLevel ?? studentLevel;
               const minutes = task.estimated_minutes ?? task.estimatedMinutes;
+              const isVocabTopic =
+                (task.skill ?? "").toLowerCase() === "vocabulary" && Boolean(task.topic);
               return (
                 <div
                   key={task.id}
                   className="rounded-xl border bg-white p-5 shadow-sm transition hover:shadow-md"
                 >
                   <span className="text-xs font-bold uppercase text-[#c9972c]">
-                    {task.skill}
+                    {isVocabTopic ? "Vocabulary" : task.skill}
                   </span>
                   <h3 className="mb-2 mt-1 font-bold text-[#0d1b35]">{task.title}</h3>
+                  {isVocabTopic && task.wordCount ? (
+                    <p className="mb-3 text-sm text-slate-600">
+                      {task.wordCount} word{task.wordCount === 1 ? "" : "s"} in this topic
+                    </p>
+                  ) : null}
                   <div className="mb-4 flex flex-wrap gap-2">
                     <span className="rounded bg-slate-100 px-2 py-1 text-xs">{level}</span>
                     {minutes ? (

@@ -8,7 +8,7 @@ import {
   VOCAB_SESSION_SIZE,
 } from "@/lib/vocabulary";
 import { getSupabase, getSupabaseUrl, fetchVocabularyWordsByIds, mapWordRow } from "@/lib/vocabularySupabase";
-import { buildStudyQueue } from "@/lib/vocabularyStudy";
+import { buildStudyQueue, buildTopicStudyQueue } from "@/lib/vocabularyStudy";
 
 export const runtime = "nodejs";
 
@@ -25,6 +25,7 @@ export async function GET(request) {
       searchParams.get("cefrLevel") || DEFAULT_CEFR_LEVEL
     );
     const mode = searchParams.get("mode") || "study";
+    const topic = searchParams.get("topic")?.trim().toLowerCase() || null;
     const limit = Math.min(
       20,
       Math.max(1, Number(searchParams.get("limit") || VOCAB_SESSION_SIZE))
@@ -83,11 +84,14 @@ export async function GET(request) {
       cefrLevel,
       rawCefrParam: searchParams.get("cefrLevel"),
       mode,
+      topic,
       limit,
       studentId,
     });
 
-    const { words, meta } = await buildStudyQueue(supabase, studentId, cefrLevel, limit);
+    const { words, meta } = topic
+      ? await buildTopicStudyQueue(supabase, studentId, cefrLevel, topic, limit)
+      : await buildStudyQueue(supabase, studentId, cefrLevel, limit);
 
     console.log("[vocabulary/words] study response", {
       cefrLevel,

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
+import {
+  formatVocabTopicLabel,
+  normalizeVocabTopicKey,
+} from "@/lib/vocabularyTopics";
 
 export const runtime = "nodejs";
 
@@ -44,7 +48,52 @@ function normalizeTask(row) {
     estimatedMinutes: row.estimated_minutes,
     published_at: row.published_at,
     publishedAt: row.published_at,
+    wordCount: row.wordCount,
   };
+}
+
+/** Collapse per-word vocabulary daily tasks into one card per topic. */
+function groupVocabularyTasksByTopic(tasks) {
+  const other = [];
+  const groups = new Map();
+
+  for (const task of tasks) {
+    if ((task.skill ?? "").toLowerCase() !== "vocabulary") {
+      other.push(task);
+      continue;
+    }
+
+    const topicKey = normalizeVocabTopicKey(task.topic);
+    const existing = groups.get(topicKey);
+    if (existing) {
+      existing.wordCount += 1;
+      existing.estimated_minutes = Math.min(20, existing.wordCount * 2);
+      existing.estimatedMinutes = existing.estimated_minutes;
+    } else {
+      groups.set(topicKey, {
+        id: `vocabulary-topic-${topicKey}`,
+        skill: "vocabulary",
+        task_type: "vocabulary_topic",
+        taskType: "vocabulary_topic",
+        topic: topicKey,
+        title: formatVocabTopicLabel(topicKey),
+        cefr_level: task.cefr_level,
+        cefrLevel: task.cefrLevel ?? task.cefr_level,
+        estimated_minutes: Math.min(20, Math.max(5, 2)),
+        estimatedMinutes: Math.min(20, Math.max(5, 2)),
+        status: task.status,
+        published_at: task.published_at,
+        publishedAt: task.publishedAt ?? task.published_at,
+        wordCount: 1,
+      });
+    }
+  }
+
+  const vocabulary = Array.from(groups.values()).sort((a, b) =>
+    a.title.localeCompare(b.title)
+  );
+
+  return [...vocabulary, ...other];
 }
 
 export async function GET() {
@@ -109,8 +158,11 @@ export async function GET() {
       return NextResponse.json({ tasks: [], studentLevel: cefrLevel, error: error.message });
     }
 
+    const normalized = (data ?? []).map(normalizeTask);
+    const tasks = groupVocabularyTasksByTopic(normalized);
+
     return NextResponse.json({
-      tasks: (data ?? []).map(normalizeTask),
+      tasks,
       studentLevel: cefrLevel,
       cefrLevel,
       levelMatch,

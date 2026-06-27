@@ -1,17 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import VocabularyFlashcard from "@/components/vocabulary/VocabularyFlashcard";
 import { useVocabularyCefr } from "@/components/vocabulary/useVocabularyCefr";
+import { formatVocabTopicLabel } from "@/lib/vocabularyTopics";
 import type { VocabRating, VocabularyWord } from "@/lib/vocabulary";
 
-export default function VocabularyStudyPage() {
+function VocabularyStudyContent() {
   const { status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const topic = searchParams.get("topic");
   const { cefrLevel, ready } = useVocabularyCefr();
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [index, setIndex] = useState(0);
@@ -28,9 +31,13 @@ export default function VocabularyStudyPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/vocabulary/words?cefrLevel=${encodeURIComponent(cefrLevel)}&mode=study&limit=10`
-        );
+        const params = new URLSearchParams({
+          cefrLevel,
+          mode: "study",
+          limit: "10",
+        });
+        if (topic) params.set("topic", topic);
+        const res = await fetch(`/api/vocabulary/words?${params.toString()}`);
         const json = await res.json();
         setWords(json.words ?? []);
         setIndex(0);
@@ -39,7 +46,7 @@ export default function VocabularyStudyPage() {
         setLoading(false);
       }
     })();
-  }, [status, ready, cefrLevel]);
+  }, [status, ready, cefrLevel, topic]);
 
   const saveRating = useCallback(
     async (rating: VocabRating) => {
@@ -88,7 +95,10 @@ export default function VocabularyStudyPage() {
             ← Back to Vocabulary
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-[#0d1b35]">Study Words</h1>
-          <p className="mt-1 text-sm text-slate-600">Level {cefrLevel} · 10-word session</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Level {cefrLevel}
+            {topic ? ` · ${formatVocabTopicLabel(topic)}` : ""} · 10-word session
+          </p>
 
           {loading ? (
             <p className="mt-12 text-center text-slate-500">Loading flashcards…</p>
@@ -131,5 +141,13 @@ export default function VocabularyStudyPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function VocabularyStudyPage() {
+  return (
+    <Suspense fallback={<PageSpinner />}>
+      <VocabularyStudyContent />
+    </Suspense>
   );
 }

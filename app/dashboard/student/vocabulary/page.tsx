@@ -8,6 +8,7 @@ import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { useVocabularyCefr } from "@/components/vocabulary/useVocabularyCefr";
 import { SPEAKIFY_CEFR_LEVELS, VOCAB_LEVEL_BANKS, type VocabularyWord } from "@/lib/vocabulary";
+import type { VocabTopicSummary } from "@/lib/vocabularyTopics";
 
 type HomeData = {
   cefrLevel: string;
@@ -23,7 +24,9 @@ export default function VocabularyPage() {
   const { isPathway, base } = usePathwayStudentContext();
   const { cefrLevel, setCefrLevel, ready } = useVocabularyCefr();
   const [data, setData] = useState<HomeData | null>(null);
+  const [topics, setTopics] = useState<VocabTopicSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [topicsLoading, setTopicsLoading] = useState(true);
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -55,6 +58,24 @@ export default function VocabularyPage() {
       setLoading(false);
     }
   }, [cefrLevel]);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !ready) return;
+    (async () => {
+      setTopicsLoading(true);
+      try {
+        const res = await fetch(
+          `/api/vocabulary/topics?cefrLevel=${encodeURIComponent(cefrLevel)}`
+        );
+        const json = await res.json();
+        setTopics(json.topics ?? []);
+      } catch {
+        setTopics([]);
+      } finally {
+        setTopicsLoading(false);
+      }
+    })();
+  }, [status, ready, cefrLevel]);
 
   useEffect(() => {
     if (status !== "authenticated" || !ready) return;
@@ -183,6 +204,39 @@ export default function VocabularyPage() {
               {!loading && (data?.todaysWords.length ?? 0) === 0 ? (
                 <p className="col-span-full text-sm text-slate-500">
                   No words yet for this level. Start a study session below.
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-10">
+            <h2 className="text-lg font-bold text-[#0d1b35]">Browse by Topic</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              {topicsLoading
+                ? "Loading topics…"
+                : `IELTS vocabulary at ${currentLevel} grouped by theme`}
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {topics.map((topic) => (
+                <div
+                  key={topic.key}
+                  className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <h3 className="text-lg font-bold text-[#0d1b35]">{topic.label}</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {topic.wordCount} word{topic.wordCount === 1 ? "" : "s"} at {currentLevel}
+                  </p>
+                  <Link
+                    href={`/dashboard/student/vocabulary/study?topic=${encodeURIComponent(topic.key)}`}
+                    className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-[#0d1b35] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#152a4d]"
+                  >
+                    Study this topic
+                  </Link>
+                </div>
+              ))}
+              {!topicsLoading && topics.length === 0 ? (
+                <p className="col-span-full text-sm text-slate-500">
+                  No topic categories found for this level yet.
                 </p>
               ) : null}
             </div>
