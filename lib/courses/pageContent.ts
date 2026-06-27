@@ -1,6 +1,8 @@
 import { ACCELERATOR_TRACKS, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 import { COURSE_CATALOG, type CourseCatalogItem } from "./catalog";
 
+const plusTrack = ACCELERATOR_TRACKS.plus;
+
 export type CurriculumWeek = {
   week: string;
   title: string;
@@ -58,6 +60,38 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
   "ielts-foundation": ieltsContent("ielts-foundation"),
   "ielts-plus": ieltsContent("ielts-plus"),
   "ielts-elite": ieltsContent("ielts-elite"),
+  "ielts-general-accelerator": {
+    targetLabel: "Band 6.0–7.0 (General Training)",
+    entryLevel: "B1+",
+    price: plusTrack.price,
+    idealFor: [
+      "Migrating, working, or studying in English-speaking countries via General Training",
+      "Learners who need letter writing and everyday English — not Academic graph reports",
+      "Test takers targeting IELTS General Training band 6.0–7.0",
+    ],
+    outcomes: [
+      "Confident formal, semi-formal, and informal letter writing",
+      "Clear Task 2 essays on practical everyday topics",
+      "Stronger GT reading (Sections A, B & C) and listening skills",
+      "Mock exams with actionable AI feedback before test day",
+    ],
+    skills: [
+      "Letter writing",
+      "Essay writing",
+      "GT Reading",
+      "Listening",
+      "Speaking",
+      "Vocabulary",
+    ],
+    curriculum: [
+      { week: "Week 1", title: "Letter foundations", detail: "Formal tone, structure, and bullet-point coverage" },
+      { week: "Week 2", title: "Semi-formal & informal letters", detail: "Register, closings, and everyday situations" },
+      { week: "Week 3", title: "General Task 2 essays", detail: "Opinion, discussion, and problem-solution essays" },
+      { week: "Week 4", title: "GT Reading Sections A–C", detail: "Notices, workplace texts, and long passages" },
+      { week: "Week 5", title: "Listening & speaking", detail: "Everyday conversations and cue-card practice" },
+      { week: "Week 6", title: "Full GT mock & review", detail: "Timed mock, band review, and weak-area plan" },
+    ],
+  },
   "toefl-accelerator": {
     targetLabel: "TOEFL iBT 80+",
     entryLevel: "B1+",
@@ -204,8 +238,18 @@ export function isIeltsCourse(slug: string): boolean {
   return slug in IELTS_TRACK_BY_SLUG;
 }
 
+export function isIeltsGeneralCourse(slug: string): boolean {
+  return slug.includes("ielts-general");
+}
+
 export function getRelatedIeltsCourses(currentSlug: string): CourseCatalogItem[] {
   return COURSE_CATALOG.filter(
     (c) => isIeltsCourse(c.slug) && c.slug !== currentSlug
+  );
+}
+
+export function getRelatedIeltsGeneralCourses(currentSlug: string): CourseCatalogItem[] {
+  return COURSE_CATALOG.filter(
+    (c) => isIeltsGeneralCourse(c.slug) && c.slug !== currentSlug
   );
 }

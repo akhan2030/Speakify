@@ -11,7 +11,9 @@ export type RegistrationProgramType = (typeof PROGRAM_TYPES)[number];
 export const REGISTRATION_SLUGS = [
   "pathway",
   "ielts",
+  "ielts-general",
   "toefl",
+  "step-test",
   "business-english",
   "legal-english",
   "kids-english",
@@ -55,7 +57,7 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     label: "IELTS Accelerator",
     tagline: "IELTS Academic · Band scores",
     description:
-      "Full IELTS preparation with mock exams, band tracking, and AI-powered feedback.",
+      "Full IELTS Academic preparation with mock exams, band tracking, and AI-powered feedback.",
     bullets: [
       "Full Academic IELTS mock exams",
       "AI-powered speaking & writing feedback",
@@ -64,6 +66,23 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     accent: "#c9972c",
     registerPath: "/register/ielts-accelerator",
     dashboardPath: "/dashboard/ielts/student",
+  },
+  "ielts-general": {
+    slug: "ielts-general",
+    programType: "ielts",
+    label: "IELTS General Training",
+    tagline: "General Training · Letters & essays",
+    description:
+      "Full IELTS General Training preparation with letter writing, everyday essays, GT reading, and AI band feedback.",
+    bullets: [
+      "Task 1 letters — formal, semi-formal & informal",
+      "Task 2 essays on everyday topics",
+      "GT reading Sections A, B & C",
+      "Mock exams and letter type accuracy tracking",
+    ],
+    accent: "#0d9488",
+    registerPath: "/register/ielts-general",
+    dashboardPath: "/dashboard/ielts-general/student",
   },
   toefl: {
     slug: "toefl",
@@ -79,6 +98,22 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     ],
     accent: "#2563eb",
     registerPath: "/register/toefl-prep",
+    dashboardPath: "/dashboard/ielts/student",
+  },
+  "step-test": {
+    slug: "step-test",
+    programType: "ielts",
+    label: "STEP Test",
+    tagline: "STEP · Saudi university admissions",
+    description:
+      "Preparation for the Saudi Standardized Test of English Proficiency with reading, grammar, and academic vocabulary.",
+    bullets: [
+      "STEP-format reading & grammar drills",
+      "Academic vocabulary for university contexts",
+      "Timed practice sections with score tracking",
+    ],
+    accent: "#059669",
+    registerPath: "/register/step-test",
     dashboardPath: "/dashboard/ielts/student",
   },
   "business-english": {

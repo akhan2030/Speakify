@@ -13,6 +13,7 @@ export function buildLoginPath(callbackPath: string, programSlug?: string): stri
 
 export const PROGRAM_LOGIN_PATHS = {
   ielts: "/dashboard/ielts/student",
+  ieltsGeneral: "/dashboard/ielts-general/student",
   pathway: "/dashboard/pathway/student",
   home: "/dashboard/home",
   teacher: "/dashboard/teacher",
@@ -23,6 +24,7 @@ export const COURSE_POST_LOGIN_PATH: Record<string, string> = {
   "ielts-foundation": PROGRAM_LOGIN_PATHS.ielts,
   "ielts-plus": PROGRAM_LOGIN_PATHS.ielts,
   "ielts-elite": PROGRAM_LOGIN_PATHS.ielts,
+  "ielts-general-accelerator": PROGRAM_LOGIN_PATHS.ieltsGeneral,
   "toefl-accelerator": PROGRAM_LOGIN_PATHS.ielts,
   "step-preparation": PROGRAM_LOGIN_PATHS.ielts,
   "english-pathway": PROGRAM_LOGIN_PATHS.pathway,
@@ -41,7 +43,16 @@ export function loginPathForProgramType(programType: ProgramType): string {
 }
 
 export function loginPathFromPathname(pathname: string): string {
-  if (pathname === "/courses/ielts" || pathname.startsWith("/courses/ielts-")) {
+  if (
+    pathname === "/courses/ielts-general" ||
+    pathname.startsWith("/courses/ielts-general")
+  ) {
+    return buildLoginPath(PROGRAM_LOGIN_PATHS.ieltsGeneral, "ielts-general-accelerator");
+  }
+  if (
+    pathname === "/courses/ielts" ||
+    (pathname.startsWith("/courses/ielts-") && !pathname.includes("general"))
+  ) {
     return buildLoginPath(PROGRAM_LOGIN_PATHS.ielts, "ielts-plus");
   }
   if (pathname === "/courses/english-pathway") {
@@ -63,10 +74,17 @@ export function loginPathFromPathname(pathname: string): string {
   if (pathname.startsWith("/register/pathway")) {
     return loginPathForProgramType("pathway");
   }
+  if (pathname.startsWith("/register/ielts-general")) {
+    return buildLoginPath(PROGRAM_LOGIN_PATHS.ieltsGeneral, "ielts-general");
+  }
   if (
-    pathname.startsWith("/register/ielts") ||
+    pathname.startsWith("/register/ielts-accelerator") ||
+    pathname === "/register/ielts" ||
     pathname.startsWith("/register/toefl")
   ) {
+    return loginPathForProgramType("ielts");
+  }
+  if (pathname.startsWith("/register/ielts")) {
     return loginPathForProgramType("ielts");
   }
   if (pathname.startsWith("/register/business-english")) {
@@ -84,6 +102,7 @@ export function loginPathFromPathname(pathname: string): string {
 export type LoginProgramContext =
   | "pathway"
   | "ielts"
+  | "ielts_general"
   | "business_english"
   | "legal_english"
   | "kids_english"
@@ -94,6 +113,7 @@ const PROGRAM_SLUG_TO_CONTEXT: Record<string, LoginProgramContext> = {
   "ielts-foundation": "ielts",
   "ielts-plus": "ielts",
   "ielts-elite": "ielts",
+  "ielts-general-accelerator": "ielts_general",
   "toefl-accelerator": "ielts",
   "step-preparation": "ielts",
   "business-english": "business_english",
@@ -101,15 +121,27 @@ const PROGRAM_SLUG_TO_CONTEXT: Record<string, LoginProgramContext> = {
   "kids-english": "kids_english",
   pathway: "pathway",
   ielts: "ielts",
+  "ielts-general": "ielts_general",
   toefl: "ielts",
 };
 
-function isIeltsCallbackPath(path: string): boolean {
+function isIeltsGeneralCallbackPath(path: string): boolean {
+  return (
+    path.includes("/dashboard/ielts-general/") ||
+    path === "/courses/ielts-general" ||
+    path.startsWith("/courses/ielts-general") ||
+    path.includes("/register/ielts-general") ||
+    path.includes("ielts-general-accelerator")
+  );
+}
+
+function isIeltsAcademicCallbackPath(path: string): boolean {
   return (
     path.includes("/dashboard/ielts/") ||
     path === "/courses/ielts" ||
-    path.startsWith("/courses/ielts-") ||
-    path.includes("/register/ielts") ||
+    (path.startsWith("/courses/ielts-") && !path.includes("general")) ||
+    path.includes("/register/ielts-accelerator") ||
+    path === "/register/ielts" ||
     path.includes("/register/toefl") ||
     path.includes("toefl-accelerator") ||
     path.includes("step-preparation")
@@ -129,7 +161,8 @@ export function loginProgramContextFromPath(path: string | null): LoginProgramCo
     return "kids_english";
   }
   if (path.includes("/pathway") || path.includes("english-pathway")) return "pathway";
-  if (isIeltsCallbackPath(path)) return "ielts";
+  if (isIeltsGeneralCallbackPath(path)) return "ielts_general";
+  if (isIeltsAcademicCallbackPath(path)) return "ielts";
   return "general";
 }
 
@@ -173,6 +206,8 @@ export function loginProgramLabel(context: LoginProgramContext): string {
       return "English Pathway";
     case "ielts":
       return "IELTS";
+    case "ielts_general":
+      return "IELTS General Training";
     case "business_english":
       return "Business English";
     case "legal_english":

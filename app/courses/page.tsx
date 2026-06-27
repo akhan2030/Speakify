@@ -49,7 +49,7 @@ export default function CoursesHubPage() {
                   <div>
                     <h3 className="text-lg font-bold text-[#0d1b35]">IELTS Programmes</h3>
                     <p className="text-sm text-slate-500">
-                      Foundation, Plus, and Elite — each with a separate course page
+                      Academic (Foundation, Plus, Elite) and General Training — each with its own course page
                     </p>
                   </div>
                   <Link

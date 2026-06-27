@@ -96,6 +96,28 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     highlights: elite.bullets,
   },
   {
+    slug: "ielts-general-accelerator",
+    name: "IELTS General Training – Accelerator",
+    tagline: "Letters, essays & everyday English",
+    shortDescription: "Full General Training prep — letters, essays, and GT skills.",
+    description:
+      "Complete IELTS General Training accelerator with letter writing (Task 1), everyday essays (Task 2), GT reading sections, listening practice, mock exams, and AI band feedback — separate from Academic graph/report writing.",
+    levelBadge: "Intermediate",
+    category: "test-prep",
+    accent: "#0d9488",
+    ctaLabel: "Start Learning",
+    ctaHref: "/register/ielts-general",
+    duration: plus.duration,
+    highlights: [
+      "Task 1 letter writing — formal, semi-formal & informal",
+      "Task 2 essays on practical everyday topics",
+      "General Training reading Sections A, B & C",
+      "Listening practice and full GT mock exams",
+      "AI-powered letter and essay scoring",
+      "Letter type accuracy tracking on your dashboard",
+    ],
+  },
+  {
     slug: "toefl-accelerator",
     name: "TOEFL Accelerator",
     tagline: "TOEFL iBT preparation",
@@ -216,6 +238,18 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     ],
   },
 ];
+
+export function getIeltsAcademicCourses(): CourseCatalogItem[] {
+  return COURSE_CATALOG.filter(
+    (c) => c.category === "test-prep" && c.slug.startsWith("ielts-") && !c.slug.includes("general")
+  );
+}
+
+export function getIeltsGeneralCourses(): CourseCatalogItem[] {
+  return COURSE_CATALOG.filter(
+    (c) => c.category === "test-prep" && c.slug.includes("ielts-general")
+  );
+}
 
 export function getCourseBySlug(slug: string): CourseCatalogItem | undefined {
   return COURSE_CATALOG.find((c) => c.slug === slug);
