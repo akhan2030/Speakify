@@ -2,6 +2,7 @@ import type { LoginProgramContext } from "@/lib/courses/loginPaths";
 
 export type LoginHeroProgramme =
   | "ielts"
+  | "ielts_general"
   | "pathway"
   | "business_english"
   | "legal_english"
@@ -30,6 +31,18 @@ export const LOGIN_HERO_CONTENT: Record<LoginHeroProgramme, LoginHeroContent> = 
     ],
     footer: "When your English is ready —",
     footerBold: "your IELTS score will follow.",
+  },
+  ielts_general: {
+    eyebrow: "IELTS General Training",
+    headline: "You do not need Academic graph tricks.",
+    headlineHighlight: "You need everyday English that works.",
+    bullets: [
+      "We will train you on letters — formal, semi-formal, and informal.",
+      "We will build clear Task 2 essays on practical, real-life topics.",
+      "We will track your letter types and weak skills until test day.",
+    ],
+    footer: "When your everyday English is ready —",
+    footerBold: "your General Training band will follow.",
   },
   pathway: {
     eyebrow: "English Pathway",
