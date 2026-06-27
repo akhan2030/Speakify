@@ -55,6 +55,7 @@ export function isProgramStudentPath(pathname: string): boolean {
   return (
     pathname.startsWith("/dashboard/pathway/student") ||
     pathname.startsWith("/dashboard/ielts/student") ||
+    pathname.startsWith("/dashboard/ielts-general/student") ||
     pathname.startsWith("/dashboard/business-english/student") ||
     pathname.startsWith("/dashboard/legal-english/student") ||
     pathname.startsWith("/dashboard/kids-english/student")

@@ -6,15 +6,20 @@ import { isPathwayStudentPath } from "@/lib/programType";
 export function usePathwayStudentContext() {
   const pathname = usePathname();
   const isPathway = isPathwayStudentPath(pathname);
-  const isIeltsProgram = pathname.startsWith("/dashboard/ielts/student");
+  const isIeltsGeneralProgram = pathname.startsWith("/dashboard/ielts-general/student");
+  const isIeltsProgram =
+    pathname.startsWith("/dashboard/ielts/student") || isIeltsGeneralProgram;
   const base = isPathway
     ? "/dashboard/pathway/student"
-    : isIeltsProgram
-      ? "/dashboard/ielts/student"
-      : "/dashboard/student";
+    : isIeltsGeneralProgram
+      ? "/dashboard/ielts-general/student"
+      : isIeltsProgram
+        ? "/dashboard/ielts/student"
+        : "/dashboard/student";
   return {
     isPathway,
     isIeltsProgram,
+    isIeltsGeneralProgram,
     /** Parent layout already provides IELTS/Pathway sidebar — hide StudentSidebar */
     usesProgramShell: isPathway || isIeltsProgram,
     base,
