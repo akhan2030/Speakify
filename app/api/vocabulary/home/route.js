@@ -7,6 +7,7 @@ import {
   normalizeSpeakifyCefrLevel,
   todayDateKey,
 } from "@/lib/vocabulary";
+import { coreTargetForLevel } from "@/lib/vocabularyLevels.js";
 import {
   computeStreak,
   getSupabase,
@@ -38,7 +39,7 @@ export async function GET(request) {
         levelProgress: SPEAKIFY_CEFR_LEVELS.map((level) => ({
           level,
           learned: 0,
-          total: 0,
+          total: coreTargetForLevel(level),
           percent: 0,
         })),
       });

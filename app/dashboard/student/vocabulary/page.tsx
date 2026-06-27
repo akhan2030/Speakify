@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { useVocabularyCefr } from "@/components/vocabulary/useVocabularyCefr";
-import { SPEAKIFY_CEFR_LEVELS, VOCAB_LEVEL_BANKS, type VocabularyWord } from "@/lib/vocabulary";
+import {
+  SPEAKIFY_CEFR_LEVELS,
+  VOCAB_CORE_TARGETS,
+  VOCAB_LEVEL_BANKS,
+  type VocabularyWord,
+} from "@/lib/vocabulary";
 import type { VocabTopicSummary } from "@/lib/vocabularyTopics";
 
 type HomeData = {
@@ -25,7 +30,7 @@ export default function VocabularyPage() {
   const { cefrLevel, setCefrLevel, ready } = useVocabularyCefr();
   const [data, setData] = useState<HomeData | null>(null);
   const [topics, setTopics] = useState<VocabTopicSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [topicsLoading, setTopicsLoading] = useState(true);
 
   useEffect(() => {
@@ -50,7 +55,7 @@ export default function VocabularyPage() {
         levelProgress: SPEAKIFY_CEFR_LEVELS.map((level) => ({
           level,
           learned: 0,
-          total: 0,
+          total: VOCAB_CORE_TARGETS[level as keyof typeof VOCAB_CORE_TARGETS] ?? 400,
           percent: 0,
         })),
       });
