@@ -4,10 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
-
-function countWords(text: string) {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
+import WritingPracticeForm from "@/components/writing/WritingPracticeForm";
 
 function clampBand(n: number) {
   return Math.max(0, Math.min(9, n));
@@ -825,23 +822,18 @@ export default function StudentWritingPage() {
   const [error, setError] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<string | null>(null);
 
-  const words = useMemo(() => countWords(essay), [essay]);
-  const minWords = taskType === "task1" ? 150 : 250;
-  const belowMinimum = words > 0 && words < minWords;
-  const meetsMinimum = words >= minWords;
-
   const bands = useMemo(() => parseBands(evaluation ?? ""), [evaluation]);
   const parsedEvaluation = useMemo(
     () => (evaluation ? parseEvaluationSections(evaluation) : null),
     [evaluation]
   );
 
-  const wordCountClass =
-    words === 0
-      ? "text-slate-500"
-      : belowMinimum
-        ? "text-[#E24B4A]"
-        : "text-green-600";
+  function handleTaskTypeChange(next: "task1" | "task2") {
+    if (next !== taskType) {
+      setEssay("");
+    }
+    setTaskType(next);
+  }
 
   useEffect(() => {
     if (status === "loading") return;
@@ -858,8 +850,16 @@ export default function StudentWritingPage() {
     e.preventDefault();
     setError(null);
 
+    const words = essay.trim().split(/\s+/).filter(Boolean).length;
+    const minWords = taskType === "task1" ? 150 : 250;
+
     if (!essay.trim()) {
-      setError("Please paste or write your essay first.");
+      setError("Please write your response first.");
+      return;
+    }
+
+    if (words < minWords) {
+      setError(`Your response must be at least ${minWords} words.`);
       return;
     }
 
@@ -901,100 +901,24 @@ export default function StudentWritingPage() {
       <StudentSidebar activePage="writing" />
 
       <main className="ml-[200px] min-h-screen flex-1 bg-white p-6">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-4xl">
           <h1 className="text-xl font-bold text-[#0d1b35]">IELTS Writing Practice</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Submit your essay and get an instant band score
+            Academic Writing Tasks 1 & 2 — exam-style prompts with instant band scoring
           </p>
 
           {!evaluation ? (
-            <form onSubmit={onSubmit} className="mt-8 space-y-6">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setTaskType("task1")}
-                  disabled={loading}
-                  className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                    taskType === "task1"
-                      ? "bg-[#c9972c] text-[#0d1b35]"
-                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  Task 1
-                  <span className="mt-0.5 block text-xs font-normal opacity-80">
-                    graphs and charts
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTaskType("task2")}
-                  disabled={loading}
-                  className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                    taskType === "task2"
-                      ? "bg-[#c9972c] text-[#0d1b35]"
-                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  Task 2
-                  <span className="mt-0.5 block text-xs font-normal opacity-80">essay</span>
-                </button>
-              </div>
-
-              <div>
-                <textarea
-                  value={essay}
-                  onChange={(e) => setEssay(e.target.value)}
-                  placeholder="Paste or write your essay here..."
-                  rows={12}
-                  disabled={loading}
-                  className="min-h-[300px] w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 shadow-sm focus:border-[#c9972c] focus:outline-none focus:ring-2 focus:ring-[#c9972c]/30 disabled:bg-slate-50"
-                />
-                <p className={`mt-2 text-sm font-medium ${wordCountClass}`}>
-                  Word count: {words}
-                </p>
-
-                {belowMinimum ? (
-                  <div className="mt-3 rounded-xl border border-[#E24B4A]/40 bg-red-50 px-4 py-3 text-sm text-[#E24B4A]">
-                    {taskType === "task2" ? (
-                      <>
-                        ⚠ Your essay is below 250 words. Task 2 requires a minimum of
-                        250 words. Your score will be penalised.
-                      </>
-                    ) : (
-                      <>
-                        ⚠ Your essay is below 150 words. Task 1 requires a minimum of
-                        150 words. Your score will be penalised.
-                      </>
-                    )}
-                  </div>
-                ) : null}
-
-                {meetsMinimum && words > 0 ? (
-                  <p className="mt-2 text-xs text-green-600">
-                    Word count meets the minimum for {taskType === "task1" ? "Task 1" : "Task 2"}.
-                  </p>
-                ) : null}
-              </div>
-
-              {error ? (
-                <p className="text-sm text-[#E24B4A]">{error}</p>
-              ) : null}
-
-              <button
-                type="submit"
-                disabled={loading || !essay.trim()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#c9972c] py-3 font-semibold text-[#0d1b35] shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? (
-                  <>
-                    <span className="h-4 w-4 rounded-full border-2 border-[#0d1b35]/30 border-t-[#0d1b35] animate-spin" />
-                    Evaluating...
-                  </>
-                ) : (
-                  "Get Band Score"
-                )}
-              </button>
-            </form>
+            <WritingPracticeForm
+              key={taskType}
+              taskType={taskType}
+              onTaskTypeChange={handleTaskTypeChange}
+              essay={essay}
+              onEssayChange={setEssay}
+              loading={loading}
+              error={error}
+              onSubmit={onSubmit}
+              formClassName="mt-8 space-y-6"
+            />
           ) : (
             <div className="mt-8 space-y-8">
               <div className="text-center">

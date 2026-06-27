@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense } from "react";
-import Link from "next/link";
 import { PageSpinner } from "@/components/StudentSidebar";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
 import SkillTabs from "@/components/ielts/SkillTabs";
@@ -42,8 +41,8 @@ function WritingContent() {
   return (
     <SkillTabs tabs={TABS} defaultTab="task2">
       {(tab) => {
-        if (tab === "task1") return <WritingPracticePanel defaultTaskType="task1" />;
-        if (tab === "task2") return <WritingPracticePanel defaultTaskType="task2" />;
+        if (tab === "task1") return <WritingPracticePanel key="task1" defaultTaskType="task1" />;
+        if (tab === "task2") return <WritingPracticePanel key="task2" defaultTaskType="task2" />;
         if (tab === "submissions") return <SubmissionHistory skill="writing" />;
         return (
           <div className="grid gap-3 sm:grid-cols-2">
