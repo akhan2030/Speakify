@@ -112,7 +112,7 @@ export const GENERAL_LETTER_QUESTIONS: GeneralLetterQuestion[] = [
     ],
     prompt: "",
   },
-].map((q) => ({ ...q, prompt: buildLetterPrompt(q) }));
+].map((q) => ({ ...q, prompt: buildLetterPrompt(q) })) as GeneralLetterQuestion[];
 
 /** General Training Task 2 — everyday topics (not Academic graph/report Task 1). */
 export const GENERAL_TASK2_QUESTIONS: GeneralTask2Question[] = [
