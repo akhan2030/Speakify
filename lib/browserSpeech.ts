@@ -220,6 +220,155 @@ async function speakWithAttempts(
   throw lastError ?? new Error("Speech playback failed.");
 }
 
+export type DialogueTurn = {
+  speaker: string;
+  text: string;
+};
+
+/** Split STEP listening transcript into speaker turns (label not spoken aloud). */
+export function parseDialogueTranscript(transcript: string): DialogueTurn[] {
+  const lines = transcript
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const turns: DialogueTurn[] = [];
+
+  for (const line of lines) {
+    const match = line.match(/^([A-Za-z][A-Za-z\s.'-]{0,40}):\s*(.+)$/);
+    if (match) {
+      turns.push({ speaker: match[1].trim(), text: match[2].trim() });
+    } else if (turns.length > 0) {
+      turns[turns.length - 1].text += ` ${line}`;
+    } else {
+      turns.push({ speaker: "Narrator", text: line });
+    }
+  }
+
+  return turns;
+}
+
+function pickTwoDistinctVoices(
+  voices: SpeechSynthesisVoice[]
+): [SpeechSynthesisVoice | undefined, SpeechSynthesisVoice | undefined] {
+  const enPool = voices.filter((v) => normalizeLang(v.lang).startsWith("en"));
+  if (enPool.length === 0) return [undefined, undefined];
+
+  const preferLocal = (candidates: SpeechSynthesisVoice[]) =>
+    candidates.find((v) => v.localService) ?? candidates[0];
+
+  const females = enPool.filter(isFemaleVoice);
+  const males = enPool.filter(isMaleVoice);
+
+  let voiceA = preferLocal(females.length > 0 ? females : enPool);
+  let voiceB = preferLocal(
+    males.find((v) => v.name !== voiceA?.name) ??
+      enPool.find((v) => v.name !== voiceA?.name) ??
+      enPool[1] ??
+      enPool[0]
+  );
+
+  if (voiceA?.name === voiceB?.name && enPool.length > 1) {
+    voiceB = enPool.find((v) => v.name !== voiceA?.name) ?? voiceB;
+  }
+
+  return [voiceA, voiceB];
+}
+
+const SPEAKER_VOICE_HINT: Record<string, "a" | "b"> = {
+  student: "a",
+  customer: "a",
+  caller: "a",
+  patient: "a",
+  woman: "a",
+  female: "a",
+  mary: "a",
+  sara: "a",
+  administrator: "b",
+  admin: "b",
+  agent: "b",
+  professor: "b",
+  lecturer: "b",
+  manager: "b",
+  teacher: "b",
+  interviewer: "b",
+  man: "b",
+  male: "b",
+  david: "b",
+  john: "b",
+};
+
+function voiceForSpeaker(
+  speaker: string,
+  speakerIndex: number,
+  voiceA: SpeechSynthesisVoice | undefined,
+  voiceB: SpeechSynthesisVoice | undefined,
+  assigned: Map<string, SpeechSynthesisVoice | undefined>
+): SpeechSynthesisVoice | undefined {
+  const existing = assigned.get(speaker);
+  if (existing) return existing;
+
+  const normalized = speaker.toLowerCase().replace(/[^a-z\s]/g, "").trim();
+  const hint =
+    SPEAKER_VOICE_HINT[normalized] ??
+    (speakerIndex % 2 === 0 ? "a" : "b");
+
+  const voice = hint === "a" ? voiceA : voiceB;
+  assigned.set(speaker, voice);
+  return voice;
+}
+
+function pauseMs(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+/**
+ * Speak a multi-speaker dialogue with alternating voices.
+ * Speaker labels (e.g. "Student:") are not read aloud.
+ */
+export async function speakDialogueWithBrowser(transcript: string): Promise<void> {
+  if (!canUseBrowserSpeech()) {
+    return Promise.reject(new Error("Browser speech is not supported on this device."));
+  }
+
+  const trimmed = transcript.trim();
+  if (!trimmed) {
+    return Promise.reject(new Error("Nothing to read aloud."));
+  }
+
+  const turns = parseDialogueTranscript(trimmed);
+  const synth = window.speechSynthesis;
+  synth.cancel();
+
+  let voices = synth.getVoices();
+  if (voices.length === 0) {
+    voices = await waitForVoices();
+  }
+
+  if (turns.length <= 1) {
+    const text = turns[0]?.text ?? trimmed;
+    return speakWithAttempts(synth, text, "en-US", voices);
+  }
+
+  const [voiceA, voiceB] = pickTwoDistinctVoices(voices);
+  const assigned = new Map<string, SpeechSynthesisVoice | undefined>();
+  let prevSpeaker = "";
+
+  for (let i = 0; i < turns.length; i++) {
+    const turn = turns[i];
+    const voice = voiceForSpeaker(turn.speaker, i, voiceA, voiceB, assigned);
+    const utterance = buildUtterance(turn.text, "en-US", voice);
+    utterance.rate = turn.speaker.toLowerCase().includes("student") ? 0.95 : 0.9;
+
+    if (prevSpeaker && prevSpeaker !== turn.speaker) {
+      await pauseMs(350);
+    }
+    prevSpeaker = turn.speaker;
+
+    await speakUtterance(synth, utterance);
+  }
+}
+
 export function speakWithBrowser(text: string, lang: BrowserSpeechLang = "en-GB"): Promise<void> {
   if (!canUseBrowserSpeech()) {
     return Promise.reject(new Error("Browser speech is not supported on this device."));

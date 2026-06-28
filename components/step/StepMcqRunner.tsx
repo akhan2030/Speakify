@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { speakWithBrowser } from "@/lib/browserSpeech";
+import { speakDialogueWithBrowser } from "@/lib/browserSpeech";
 import type { StepMcqOption } from "@/lib/step/types";
 
 export type StepRunnerQuestion = {
@@ -94,7 +94,7 @@ export default function StepMcqRunner({
     if (!q?.transcript || listeningPlayed[key] || audioPlaying) return;
     setAudioPlaying(true);
     try {
-      await speakWithBrowser(q.transcript, "en-US");
+      await speakDialogueWithBrowser(q.transcript);
     } catch {
       // allow answering even if TTS fails
     } finally {
@@ -227,6 +227,9 @@ export default function StepMcqRunner({
           <div className="mt-4 space-y-3">
             <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               🎧 Listening plays <strong>once only</strong> — like the real STEP exam.
+              <span className="mt-1 block text-xs text-amber-800">
+                Each speaker uses a different voice (e.g. Student vs Administrator).
+              </span>
             </div>
             <div className="rounded-xl bg-[#0d1b35] p-4 text-center">
               {!listeningPlayed[recordingKey] ? (

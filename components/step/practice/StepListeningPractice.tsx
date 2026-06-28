@@ -10,7 +10,7 @@ import StepSectionTopBar, {
   STEP_TEAL,
 } from "./StepSectionTopBar";
 import type { StepMcqOption } from "@/lib/step/types";
-import { speakWithBrowser, stopBrowserSpeech, canUseBrowserSpeech } from "@/lib/browserSpeech";
+import { speakDialogueWithBrowser, stopBrowserSpeech, canUseBrowserSpeech } from "@/lib/browserSpeech";
 import { accuracyPercent } from "@/lib/step/practiceScoreUtils";
 import { STEP_STUDENT_BASE } from "@/lib/step/paths";
 
@@ -117,7 +117,7 @@ export default function StepListeningPractice() {
     }, 1000);
 
     try {
-      await speakWithBrowser(recording.transcript, "en-US");
+      await speakDialogueWithBrowser(recording.transcript);
     } catch {
       // still show questions after timer
     } finally {

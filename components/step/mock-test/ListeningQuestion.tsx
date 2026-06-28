@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { MockExamClientQuestion } from "@/lib/step/mockExam/types";
 import MockOptionButtons from "./MockOptionButtons";
-import { speakWithBrowser, stopBrowserSpeech } from "@/lib/browserSpeech";
+import { speakDialogueWithBrowser, stopBrowserSpeech } from "@/lib/browserSpeech";
 import type { StepMcqOption } from "@/lib/step/types";
 
 type Props = {
@@ -30,7 +30,7 @@ export default function ListeningQuestion({
     if (hasPlayed || isPlaying || !question.transcript) return;
     setIsPlaying(true);
     try {
-      await speakWithBrowser(question.transcript, "en-US");
+      await speakDialogueWithBrowser(question.transcript);
     } catch {
       // still allow answers after attempt
     } finally {
