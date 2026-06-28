@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
 import GeneralWritingPracticePanel from "@/components/ielts-general/writing/GeneralWritingPracticePanel";
+import { PageSpinner } from "@/components/StudentSidebar";
+import {
+  GT_WRITING_LESSONS,
+  readCompletedLessons,
+} from "@/lib/ielts-general/writingLessons";
 
 const TABS = [
   { id: "task1" as const, label: "Task 1 — Letter", hint: "150+ words · formal / semi-formal / informal" },
@@ -10,31 +17,26 @@ const TABS = [
   { id: "lessons" as const, label: "Lessons", hint: "Letter & essay skills" },
 ];
 
-const LESSONS = [
-  {
-    title: "Formal letter structure",
-    minutes: 12,
-    desc: "Opening, purpose, bullet points, and appropriate closing for formal letters.",
-  },
-  {
-    title: "Semi-formal & informal tone",
-    minutes: 10,
-    desc: "When to use Dear + first name, contractions, and friendly closings.",
-  },
-  {
-    title: "General Task 2 essay structure",
-    minutes: 15,
-    desc: "Clear position, balanced paragraphs, and practical examples.",
-  },
-  {
-    title: "Everyday vocabulary for GT Writing",
-    minutes: 10,
-    desc: "Useful phrases for letters about work, housing, travel, and friends.",
-  },
-];
+const LESSON_BASE = "/dashboard/ielts-general/student/writing/lessons";
 
-export default function IeltsGeneralWritingPage() {
-  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("task1");
+function WritingPageContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab =
+    tabParam === "lessons" || tabParam === "task2" || tabParam === "task1"
+      ? tabParam
+      : "task1";
+
+  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>(initialTab);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
+    setCompletedLessons(readCompletedLessons());
+  }, [tab]);
 
   return (
     <main className="min-h-screen flex-1 bg-slate-50 p-4 pb-24 md:p-6 md:pb-6">
@@ -77,19 +79,43 @@ export default function IeltsGeneralWritingPage() {
         {tab === "task2" ? <GeneralWritingPracticePanel lockTaskType="task2" /> : null}
         {tab === "lessons" ? (
           <div className="grid gap-3 sm:grid-cols-2">
-            {LESSONS.map((lesson) => (
-              <div
-                key={lesson.title}
-                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <h3 className="font-bold text-[#0d1b35]">{lesson.title}</h3>
-                <p className="mt-1 text-xs text-[#0d9488]">{lesson.minutes} min</p>
-                <p className="mt-2 text-sm text-slate-600">{lesson.desc}</p>
-              </div>
-            ))}
+            {GT_WRITING_LESSONS.map((lesson) => {
+              const done = completedLessons.includes(lesson.slug);
+              return (
+                <Link
+                  key={lesson.slug}
+                  href={`${LESSON_BASE}/${lesson.slug}`}
+                  className="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:border-[#0d9488]/40 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold text-[#0d1b35] group-hover:text-[#0d9488]">
+                      {lesson.title}
+                    </h3>
+                    {done ? (
+                      <span className="shrink-0 rounded-full bg-[#0d9488]/15 px-2 py-0.5 text-[10px] font-bold uppercase text-[#0d9488]">
+                        Done
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 text-xs text-[#0d9488]">{lesson.minutes} min</p>
+                  <p className="mt-2 text-sm text-slate-600">{lesson.desc}</p>
+                  <p className="mt-3 text-xs font-semibold text-[#c9972c]">
+                    Open lesson →
+                  </p>
+                </Link>
+              );
+            })}
           </div>
         ) : null}
       </div>
     </main>
+  );
+}
+
+export default function IeltsGeneralWritingPage() {
+  return (
+    <Suspense fallback={<PageSpinner />}>
+      <WritingPageContent />
+    </Suspense>
   );
 }
