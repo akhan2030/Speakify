@@ -4,6 +4,7 @@ import {
   type ProgramType,
 } from "@/lib/programType";
 import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
+import { STEP_ROUTES } from "@/lib/step/paths";
 
 const KNOWN_PROGRAMS: ProgramType[] = [
   "ielts",
@@ -15,6 +16,33 @@ const KNOWN_PROGRAMS: ProgramType[] = [
 
 function isKnownProgram(value: string): value is ProgramType {
   return (KNOWN_PROGRAMS as string[]).includes(value);
+}
+
+/** Parse enrolled_programs into lowercase slug list */
+export function parseRawEnrolledPrograms(value: unknown): string[] {
+  const out: string[] = [];
+
+  const add = (raw: string) => {
+    const v = raw.trim().toLowerCase().replace(/-/g, "_");
+    if (v) out.push(v);
+  };
+
+  if (Array.isArray(value)) {
+    for (const entry of value) add(String(entry));
+  } else if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        for (const entry of parsed) add(String(entry));
+      } else {
+        for (const part of value.split(",")) add(part);
+      }
+    } catch {
+      for (const part of value.split(",")) add(part);
+    }
+  }
+
+  return out;
 }
 
 export function normalizeEnrolledPrograms(
@@ -55,9 +83,27 @@ export function normalizeEnrolledPrograms(
 export function resolveStudentDashboardPath(input: {
   programType?: unknown;
   enrolledPrograms?: unknown;
+  stepEnrolled?: boolean;
 }): string {
   const programType = normalizeProgramType(input.programType);
   const programs = normalizeEnrolledPrograms(input.enrolledPrograms, programType);
+  const raw = parseRawEnrolledPrograms(input.enrolledPrograms);
+  const stepEnrolled = input.stepEnrolled === true;
+
+  if (stepEnrolled) {
+    const hasStepAndIelts = raw.includes("step") && raw.includes("ielts");
+    const hasPathway = programs.includes("pathway");
+    const hasOtherSpecialty =
+      programs.includes("business_english") ||
+      programs.includes("legal_english") ||
+      programs.includes("kids_english");
+
+    if (hasStepAndIelts || hasPathway || hasOtherSpecialty) {
+      return "/dashboard/home";
+    }
+
+    return STEP_ROUTES.home;
+  }
 
   if (programs.length > 1) return "/dashboard/home";
   return studentDashboardPath(programs[0] ?? programType);
@@ -67,7 +113,16 @@ export function dashboardPathForStudentUser(user: {
   role?: string | null;
   programType?: unknown;
   enrolledPrograms?: unknown;
+  stepEnrolled?: boolean;
 }): string {
   const role = normalizeRole(user.role);
-  return dashboardPathForRole(role) ?? "/login";
+  if (role === "teacher") return "/dashboard/teacher";
+  if (role === "admin") return "/dashboard/admin";
+  if (role !== "student") return "/login";
+
+  return resolveStudentDashboardPath({
+    programType: user.programType,
+    enrolledPrograms: user.enrolledPrograms,
+    stepEnrolled: user.stepEnrolled,
+  });
 }

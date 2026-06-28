@@ -106,15 +106,16 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     label: "STEP Test",
     tagline: "STEP · Saudi university admissions",
     description:
-      "Preparation for the Saudi Standardized Test of English Proficiency with reading, grammar, and academic vocabulary.",
+      "Preparation for the Saudi Standardized Test of English Proficiency (Qiyas) — 100 MCQs across reading, grammar, listening, and compositional analysis.",
     bullets: [
-      "STEP-format reading & grammar drills",
-      "Academic vocabulary for university contexts",
-      "Timed practice sections with score tracking",
+      "Reading (40%), Structure (30%), Listening (20%), Analysis (10%)",
+      "Timed MCQ practice aligned to Qiyas format",
+      "No speaking or essay — full focus on tested sections",
+      "Score tracking toward 65–80+ university targets",
     ],
     accent: "#059669",
     registerPath: "/register/step-test",
-    dashboardPath: "/dashboard/ielts/student",
+    dashboardPath: "/dashboard/step/student",
   },
   "business-english": {
     slug: "business-english",

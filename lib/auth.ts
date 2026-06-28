@@ -88,6 +88,8 @@ type DbUser = {
 
   enrolledPrograms: string[];
 
+  stepEnrolled: boolean;
+
 };
 
 
@@ -118,6 +120,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     enrolled_programs?: unknown;
 
+    step_enrolled?: boolean | null;
+
   } | null = null;
 
   let error: { message?: string } | null = null;
@@ -128,7 +132,7 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     .from("users")
 
-    .select("id, name, email, role, program_type, enrolled_programs")
+    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled")
 
     .eq("email", normalizedEmail)
 
@@ -197,6 +201,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
     programType
   );
 
+  const stepEnrolled = data.step_enrolled === true;
+
 
 
   return {
@@ -213,6 +219,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     enrolledPrograms,
 
+    stepEnrolled,
+
   };
 
 }
@@ -226,6 +234,8 @@ export function dashboardPathForSessionUser(user: {
   programType?: string | null;
 
   enrolledPrograms?: unknown;
+
+  stepEnrolled?: boolean;
 
 }): string {
 
@@ -437,6 +447,8 @@ export const authOptions: NextAuthOptions = {
 
           (token as any).enrolledPrograms = dbUser.enrolledPrograms;
 
+          (token as any).stepEnrolled = dbUser.stepEnrolled;
+
         } else {
 
           token.role = normalizeRole((user as any).role);
@@ -513,6 +525,8 @@ export const authOptions: NextAuthOptions = {
 
       );
 
+      (session.user as any).stepEnrolled = (token as any).stepEnrolled === true;
+
       if ((token as any).email) {
 
         session.user.email = (token as any).email as string;
@@ -560,6 +574,8 @@ export async function getDashboardPathForEmail(email: string) {
     programType: dbUser.programType,
 
     enrolledPrograms: dbUser.enrolledPrograms,
+
+    stepEnrolled: dbUser.stepEnrolled,
 
   });
 

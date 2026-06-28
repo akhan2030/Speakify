@@ -54,6 +54,7 @@ export async function POST(request) {
     }
 
     const body = await request.json().catch(() => ({}));
+    const registrationSlug = String(body.registrationSlug ?? "").trim();
     const validated = validateRegistration(body);
     if (!validated.ok) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
@@ -89,6 +90,8 @@ export async function POST(request) {
     const userId = randomUUID();
     const cefrLevel = englishLevel ? englishLevelToCefr(englishLevel) : null;
 
+    const isStepRegistration = registrationSlug === "step-test";
+
     const { data: newUser, error: userError } = await insertUser(supabase, {
       id: userId,
       name: fullName,
@@ -97,6 +100,9 @@ export async function POST(request) {
       role: "student",
       phone,
       program_type: programType,
+      ...(isStepRegistration
+        ? { step_enrolled: true, enrolled_programs: ["step"] }
+        : {}),
       ...(englishLevel ? { english_level: englishLevel } : {}),
       ...(targetBand ? { target_band: targetBand } : {}),
       ...(studyReason ? { study_reason: studyReason } : {}),
