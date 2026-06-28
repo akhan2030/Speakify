@@ -96,25 +96,69 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     highlights: elite.bullets,
   },
   {
-    slug: "ielts-general-accelerator",
-    name: "IELTS General Training – Accelerator",
-    tagline: "Letters, essays & everyday English",
-    shortDescription: "Full General Training prep — letters, essays, and GT skills.",
+    slug: "ielts-gt-foundation",
+    name: "IELTS General Training — Foundation",
+    tagline: "GT core skills",
+    shortDescription: "Six-week GT programme for Band 5.0–5.5 learners.",
     description:
-      "Complete IELTS General Training accelerator with letter writing (Task 1), everyday essays (Task 2), GT reading sections, listening practice, mock exams, and AI band feedback — separate from Academic graph/report writing.",
-    levelBadge: "Intermediate",
+      "Six-week programme for learners targeting Band 5.0–5.5. Master GT letter writing, everyday reading, and essential listening skills.",
+    levelBadge: "Beginner",
     category: "test-prep",
     accent: "#0d9488",
     ctaLabel: "Start Learning",
     ctaHref: "/register/ielts-general",
-    duration: plus.duration,
+    duration: "6 weeks",
     highlights: [
-      "Task 1 letter writing — formal, semi-formal & informal",
-      "Task 2 essays on practical everyday topics",
-      "General Training reading Sections A, B & C",
-      "Listening practice and full GT mock exams",
-      "AI-powered letter and essay scoring",
-      "Letter type accuracy tracking on your dashboard",
+      "GT format & letter types overview",
+      "Formal, semi-formal & informal letter foundations",
+      "GT reading strategies for everyday texts",
+      "General Task 2 essay basics",
+      "Listening skills for social contexts",
+      "Full skills integration by Week 6",
+    ],
+  },
+  {
+    slug: "ielts-gt-plus",
+    name: "IELTS General Training — Plus",
+    tagline: "Most popular GT track",
+    shortDescription: "Eight-week GT prep for Band 6.0–6.5 with AI scoring.",
+    description:
+      "Eight-week programme for Band 6.0–6.5. Master all letter types, GT reading sections, and AI-scored mock tests.",
+    levelBadge: "Intermediate",
+    category: "test-prep",
+    accent: "#c9972c",
+    ctaLabel: "Start Learning",
+    ctaHref: "/register/ielts-general",
+    duration: "8 weeks",
+    highlights: [
+      "Formal letter mastery (Weeks 1–2)",
+      "Semi-formal & informal letter precision",
+      "GT Reading Sections 1–3 practice",
+      "General Task 2 essay writing",
+      "AI band scoring on every writing submission",
+      "Full mock tests with AI feedback",
+    ],
+  },
+  {
+    slug: "ielts-gt-elite",
+    name: "IELTS General Training — Elite",
+    tagline: "Band 7+ GT intensive",
+    shortDescription: "Ten-week intensive for Band 7.0+ GT candidates.",
+    description:
+      "Ten-week intensive for Band 7.0+. Advanced letter writing, complex reading, timed mocks, and Speaking mastery.",
+    levelBadge: "Advanced",
+    category: "test-prep",
+    accent: "#0d1b35",
+    ctaLabel: "Start Learning",
+    ctaHref: "/register/ielts-general",
+    duration: "10 weeks",
+    highlights: [
+      "Band 7+ letter writing with sophistication",
+      "Advanced GT reading under timed conditions",
+      "Advanced General Task 2 essay types",
+      "Speaking Parts 1–3 at Band 7 level",
+      "Full timed mock tests with detailed AI feedback",
+      "Final exam-day preparation",
     ],
   },
   {
@@ -240,16 +284,42 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
 ];
 
 export function getIeltsAcademicCourses(): CourseCatalogItem[] {
-  return COURSE_CATALOG.filter(
-    (c) => c.category === "test-prep" && c.slug.startsWith("ielts-") && !c.slug.includes("general")
+  return COURSE_CATALOG.filter((c) =>
+    ["ielts-foundation", "ielts-plus", "ielts-elite"].includes(c.slug)
   );
 }
 
 export function getIeltsGeneralCourses(): CourseCatalogItem[] {
-  return COURSE_CATALOG.filter(
-    (c) => c.category === "test-prep" && c.slug.includes("ielts-general")
+  return COURSE_CATALOG.filter((c) =>
+    ["ielts-gt-foundation", "ielts-gt-plus", "ielts-gt-elite"].includes(c.slug)
   );
 }
+
+export function getOtherTestPrepCourses(): CourseCatalogItem[] {
+  return getCoursesByCategory("test-prep").filter(
+    (c) =>
+      !getIeltsAcademicCourses().some((a) => a.slug === c.slug) &&
+      !getIeltsGeneralCourses().some((g) => g.slug === c.slug)
+  );
+}
+
+export type NavCourseLink = {
+  name: string;
+  href: string;
+  levelBadge: string;
+};
+
+export type NavDropdownSection = {
+  sectionLabel: string;
+  courses: NavCourseLink[];
+};
+
+export type NavDropdownGroup = {
+  id: "test-prep" | "programs";
+  label: string;
+  sections?: NavDropdownSection[];
+  courses?: NavCourseLink[];
+};
 
 export function getCourseBySlug(slug: string): CourseCatalogItem | undefined {
   return COURSE_CATALOG.find((c) => c.slug === slug);
@@ -272,18 +342,39 @@ export function levelBadgeColor(level: CourseLevel): string {
 }
 
 /** Main nav: Test Prep + Programs (General English + Specialty) */
-export const NAV_DROPDOWNS = [
+export const NAV_DROPDOWNS: NavDropdownGroup[] = [
   {
-    id: "test-prep" as const,
+    id: "test-prep",
     label: "Test Prep",
-    courses: getCoursesByCategory("test-prep").map((c) => ({
-      name: c.name,
-      href: `/courses/${c.slug}`,
-      levelBadge: c.levelBadge,
-    })),
+    sections: [
+      {
+        sectionLabel: "IELTS Academic",
+        courses: getIeltsAcademicCourses().map((c) => ({
+          name: c.name,
+          href: `/courses/${c.slug}`,
+          levelBadge: c.levelBadge,
+        })),
+      },
+      {
+        sectionLabel: "IELTS General Training",
+        courses: getIeltsGeneralCourses().map((c) => ({
+          name: c.name.replace("IELTS General Training — ", "GT "),
+          href: `/courses/${c.slug}`,
+          levelBadge: c.levelBadge,
+        })),
+      },
+      {
+        sectionLabel: "Other test prep",
+        courses: getOtherTestPrepCourses().map((c) => ({
+          name: c.name,
+          href: `/courses/${c.slug}`,
+          levelBadge: c.levelBadge,
+        })),
+      },
+    ],
   },
   {
-    id: "programs" as const,
+    id: "programs",
     label: "Programs",
     courses: [
       ...getCoursesByCategory("general-english"),

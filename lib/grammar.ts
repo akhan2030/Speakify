@@ -95,6 +95,9 @@ export function percentComplete(completed: number, total: number) {
 }
 
 /** Lesson page path for a grammar category card. */
-export function grammarLessonHref(slug: GrammarCategorySlug) {
-  return `/dashboard/student/grammar/lessons/${slug}` as const;
+export function grammarLessonHref(
+  slug: GrammarCategorySlug,
+  base = "/dashboard/student"
+) {
+  return `${base}/grammar/lessons/${slug}` as const;
 }

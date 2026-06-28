@@ -2,7 +2,9 @@ import Link from "next/link";
 import {
   getCoursePageContent,
   getRelatedIeltsCourses,
+  getRelatedIeltsGeneralCourses,
   isIeltsCourse,
+  isIeltsGeneralCourse,
 } from "@/lib/courses/pageContent";
 import { levelBadgeColor, type CourseCatalogItem } from "@/lib/courses/catalog";
 import { loginPathForCourseSlug } from "@/lib/courses/loginPaths";
@@ -22,7 +24,9 @@ export default function CourseDetailView({ course }: Props) {
   const content = getCoursePageContent(course.slug);
   const relatedIelts = isIeltsCourse(course.slug)
     ? getRelatedIeltsCourses(course.slug)
-    : [];
+    : isIeltsGeneralCourse(course.slug)
+      ? getRelatedIeltsGeneralCourses(course.slug)
+      : [];
   const primaryHref =
     course.ctaLabel === "Start Learning" ? course.ctaHref : "/placement-test";
   const primaryLabel =
@@ -49,7 +53,18 @@ export default function CourseDetailView({ course }: Props) {
                   href="/courses/ielts"
                   className="font-medium text-[#c9972c] hover:underline"
                 >
-                  IELTS
+                  IELTS Academic
+                </Link>
+              </>
+            ) : null}
+            {isIeltsGeneralCourse(course.slug) ? (
+              <>
+                <span className="text-slate-500">/</span>
+                <Link
+                  href="/courses/ielts-gt"
+                  className="font-medium text-[#c9972c] hover:underline"
+                >
+                  IELTS General Training
                 </Link>
               </>
             ) : null}
@@ -198,7 +213,11 @@ export default function CourseDetailView({ course }: Props) {
       {relatedIelts.length > 0 ? (
         <section className="border-t border-slate-200 bg-white px-4 py-12 sm:px-6">
           <div className="mx-auto max-w-4xl">
-            <h2 className="text-xl font-bold text-[#0d1b35]">Other IELTS tracks</h2>
+            <h2 className="text-xl font-bold text-[#0d1b35]">
+              {isIeltsGeneralCourse(course.slug)
+                ? "Other General Training tracks"
+                : "Other IELTS tracks"}
+            </h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {relatedIelts.map((related) => (
                 <Link

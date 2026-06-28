@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 
 type Question = {
   id: string;
@@ -34,6 +35,7 @@ type SessionResult = {
 export default function GrammarPracticePage() {
   const router = useRouter();
   const { status } = useSession();
+  const { base, usesProgramShell } = usePathwayStudentContext();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -127,11 +129,13 @@ export default function GrammarPracticePage() {
 
   return (
     <div className="flex min-h-screen bg-white">
-      <StudentSidebar activePage="grammar" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 px-8 py-8">
+      {!usesProgramShell ? <StudentSidebar activePage="grammar" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mx-auto max-w-2xl">
           <Link
-            href="/dashboard/student/grammar"
+            href={`${base}/grammar`}
             className="text-sm font-medium text-[#0d9488] hover:underline"
           >
             ← Grammar home

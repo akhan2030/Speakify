@@ -1,7 +1,7 @@
 import MarketingShell from "@/components/marketing/MarketingShell";
 import CourseCard from "@/components/courses/CourseCard";
 import Link from "next/link";
-import { COURSE_CATEGORIES, getCoursesByCategory } from "@/lib/courses/catalog";
+import { COURSE_CATEGORIES, getCoursesByCategory, getIeltsAcademicCourses, getIeltsGeneralCourses, getOtherTestPrepCourses } from "@/lib/courses/catalog";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,12 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function CoursesHubPage() {
-  const ieltsCourses = getCoursesByCategory("test-prep").filter((c) =>
-    c.slug.startsWith("ielts-")
-  );
-  const otherTestPrep = getCoursesByCategory("test-prep").filter(
-    (c) => !c.slug.startsWith("ielts-")
-  );
+  const ieltsAcademic = getIeltsAcademicCourses();
+  const ieltsGeneral = getIeltsGeneralCourses();
+  const otherTestPrep = getOtherTestPrepCourses();
 
   return (
     <MarketingShell>
@@ -47,20 +44,40 @@ export default function CoursesHubPage() {
 
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-bold text-[#0d1b35]">IELTS Programmes</h3>
+                    <h3 className="text-lg font-bold text-[#0d1b35]">IELTS Academic</h3>
                     <p className="text-sm text-slate-500">
-                      Academic (Foundation, Plus, Elite) and General Training — each with its own course page
+                      Foundation, Plus, and Elite — graph/report writing and Academic skills
                     </p>
                   </div>
                   <Link
                     href="/courses/ielts"
                     className="text-sm font-semibold text-[#c9972c] hover:underline"
                   >
-                    View all IELTS →
+                    View all Academic →
                   </Link>
                 </div>
                 <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {ieltsCourses.map((course) => (
+                  {ieltsAcademic.map((course) => (
+                    <CourseCard key={course.slug} course={course} />
+                  ))}
+                </div>
+
+                <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#0d1b35]">IELTS General Training</h3>
+                    <p className="text-sm text-slate-500">
+                      Foundation, Plus, and Elite — letters, everyday reading, and GT skills
+                    </p>
+                  </div>
+                  <Link
+                    href="/courses/ielts-gt"
+                    className="text-sm font-semibold text-[#c9972c] hover:underline"
+                  >
+                    View all General Training →
+                  </Link>
+                </div>
+                <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {ieltsGeneral.map((course) => (
                     <CourseCard key={course.slug} course={course} />
                   ))}
                 </div>

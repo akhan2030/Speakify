@@ -1,8 +1,6 @@
 import { ACCELERATOR_TRACKS, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 import { COURSE_CATALOG, type CourseCatalogItem } from "./catalog";
 
-const plusTrack = ACCELERATOR_TRACKS.plus;
-
 export type CurriculumWeek = {
   week: string;
   title: string;
@@ -60,36 +58,95 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
   "ielts-foundation": ieltsContent("ielts-foundation"),
   "ielts-plus": ieltsContent("ielts-plus"),
   "ielts-elite": ieltsContent("ielts-elite"),
-  "ielts-general-accelerator": {
-    targetLabel: "Band 6.0–7.0 (General Training)",
-    entryLevel: "B1+",
-    price: plusTrack.price,
+  "ielts-gt-foundation": {
+    targetLabel: "Band 5.0–5.5",
+    entryLevel: "A2.2–B1.1",
+    price: ACCELERATOR_TRACKS.foundation.price,
     idealFor: [
-      "Migrating, working, or studying in English-speaking countries via General Training",
-      "Learners who need letter writing and everyday English — not Academic graph reports",
-      "Test takers targeting IELTS General Training band 6.0–7.0",
+      "Students applying for visas or secondary school abroad",
+      "First-time GT candidates",
+      "Learners at A2–B1 level",
     ],
     outcomes: [
-      "Confident formal, semi-formal, and informal letter writing",
-      "Clear Task 2 essays on practical everyday topics",
-      "Stronger GT reading (Sections A, B & C) and listening skills",
-      "Mock exams with actionable AI feedback before test day",
+      "Confident letter writing in all three styles",
+      "GT reading strategies for everyday texts",
+      "Band 5.0–5.5 performance across all skills",
     ],
     skills: [
       "Letter writing",
-      "Essay writing",
       "GT Reading",
       "Listening",
       "Speaking",
+      "Essay writing",
       "Vocabulary",
     ],
     curriculum: [
-      { week: "Week 1", title: "Letter foundations", detail: "Formal tone, structure, and bullet-point coverage" },
-      { week: "Week 2", title: "Semi-formal & informal letters", detail: "Register, closings, and everyday situations" },
-      { week: "Week 3", title: "General Task 2 essays", detail: "Opinion, discussion, and problem-solution essays" },
-      { week: "Week 4", title: "GT Reading Sections A–C", detail: "Notices, workplace texts, and long passages" },
-      { week: "Week 5", title: "Listening & speaking", detail: "Everyday conversations and cue-card practice" },
-      { week: "Week 6", title: "Full GT mock & review", detail: "Timed mock, band review, and weak-area plan" },
+      { week: "Week 1", title: "GT Format & Letter Types Overview", detail: "Understand General Training tasks, letter registers, and exam timing" },
+      { week: "Week 2", title: "Formal Letter Writing", detail: "Structure, tone, and bullet-point coverage for formal situations" },
+      { week: "Week 3", title: "Semi-formal & Informal Letters", detail: "Register, closings, and everyday letter scenarios" },
+      { week: "Week 4", title: "GT Reading Strategies", detail: "Sections A–C skills — notices, workplace texts, and scanning" },
+      { week: "Week 5", title: "GT Task 2 Essay Basics", detail: "Clear position, paragraph structure, and practical examples" },
+      { week: "Week 6", title: "Full Skills Integration", detail: "Combined letter, reading, listening, and essay practice" },
+    ],
+  },
+  "ielts-gt-plus": {
+    targetLabel: "Band 6.0–6.5",
+    entryLevel: "B1.2–B2.1",
+    price: ACCELERATOR_TRACKS.plus.price,
+    idealFor: [
+      "Skilled worker and healthcare visa applicants",
+      "Students who previously scored Band 5.5 and need 6.0+",
+      "Professionals emigrating to UK, Australia, or Canada",
+    ],
+    outcomes: [
+      "All letter types written with professional precision",
+      "Band 6.0+ GT Reading and Listening scores",
+      "AI band scoring on every writing submission",
+    ],
+    skills: [
+      "Letter writing",
+      "GT Reading",
+      "Listening",
+      "Essay writing",
+      "Speaking",
+      "Mock exams",
+    ],
+    curriculum: [
+      { week: "Weeks 1–2", title: "Formal Letter Mastery", detail: "Advanced formal tone, purpose clarity, and examiner criteria" },
+      { week: "Weeks 3–4", title: "Semi-formal & Informal Letters", detail: "Register control, natural phrasing, and common GT scenarios" },
+      { week: "Weeks 5–6", title: "GT Reading Sections 1–3", detail: "Timed practice across short texts, workplace passages, and long articles" },
+      { week: "Week 7", title: "GT Task 2 Essay", detail: "Opinion, discussion, and problem-solution essays on everyday topics" },
+      { week: "Week 8", title: "Mock Tests & AI Feedback", detail: "Full GT skills review with AI-scored writing and weak-area plan" },
+    ],
+  },
+  "ielts-gt-elite": {
+    targetLabel: "Band 7.0+",
+    entryLevel: "B2.2–C1.1",
+    price: ACCELERATOR_TRACKS.elite.price,
+    idealFor: [
+      "Permanent residency applicants needing Band 7+",
+      "Students in regulated professions (medicine, nursing, engineering)",
+      "Those who scored 6.5 and need to break into Band 7",
+    ],
+    outcomes: [
+      "Band 7+ letter writing with precision and sophistication",
+      "Full timed mock tests with detailed AI feedback",
+      "Speaking Parts 1–3 at Band 7 level",
+    ],
+    skills: [
+      "Advanced letters",
+      "GT Reading",
+      "Task 2 essays",
+      "Speaking",
+      "Listening",
+      "Timed mocks",
+    ],
+    curriculum: [
+      { week: "Weeks 1–2", title: "Band 7+ Letter Writing", detail: "Sophisticated tone, cohesion, and bullet-point precision at high band" },
+      { week: "Weeks 3–4", title: "Advanced GT Reading", detail: "Complex inference, paraphrase recognition, and time management" },
+      { week: "Weeks 5–6", title: "GT Task 2 Advanced Essay Types", detail: "Nuanced arguments, balanced essays, and high-band vocabulary" },
+      { week: "Weeks 7–8", title: "Speaking Band 7+", detail: "Fluency, lexical range, and Part 3 discussion at advanced level" },
+      { week: "Weeks 9–10", title: "Timed Mock Tests & Final Preparation", detail: "Exam-day simulation, AI feedback review, and personalised revision plan" },
     ],
   },
   "toefl-accelerator": {
@@ -239,7 +296,7 @@ export function isIeltsCourse(slug: string): boolean {
 }
 
 export function isIeltsGeneralCourse(slug: string): boolean {
-  return slug.includes("ielts-general");
+  return slug.startsWith("ielts-gt-");
 }
 
 export function getRelatedIeltsCourses(currentSlug: string): CourseCatalogItem[] {

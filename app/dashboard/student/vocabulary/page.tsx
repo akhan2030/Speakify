@@ -14,6 +14,7 @@ import {
   type VocabularyWord,
 } from "@/lib/vocabulary";
 import type { VocabTopicSummary } from "@/lib/vocabularyTopics";
+import { GENERAL_VOCAB_THEMES } from "@/lib/ielts-general/grammarTips";
 
 type HomeData = {
   cefrLevel: string;
@@ -26,7 +27,8 @@ type HomeData = {
 export default function VocabularyPage() {
   const { status } = useSession();
   const router = useRouter();
-  const { isPathway, base } = usePathwayStudentContext();
+  const { isPathway, isIeltsGeneralProgram, base, usesProgramShell } =
+    usePathwayStudentContext();
   const { cefrLevel, setCefrLevel, ready } = useVocabularyCefr();
   const [data, setData] = useState<HomeData | null>(null);
   const [topics, setTopics] = useState<VocabTopicSummary[]>([]);
@@ -101,8 +103,10 @@ export default function VocabularyPage() {
 
   return (
     <div className="flex min-h-screen">
-      <StudentSidebar activePage="vocabulary" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 px-8 py-8">
+      {!usesProgramShell ? <StudentSidebar activePage="vocabulary" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -110,7 +114,9 @@ export default function VocabularyPage() {
               <p className="mt-1 text-sm text-slate-600">
                 {isPathway
                   ? "Grow your English vocabulary at your CEFR level"
-                  : "Build your IELTS word bank with daily practice"}
+                  : isIeltsGeneralProgram
+                    ? "Everyday vocabulary for letters, essays, and GT reading & listening"
+                    : "Build your IELTS word bank with daily practice"}
               </p>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
@@ -173,7 +179,7 @@ export default function VocabularyPage() {
 
           {(data?.dueCount ?? 0) > 0 ? (
             <Link
-              href="/dashboard/student/vocabulary/review"
+              href={`${base}/vocabulary/review`}
               className="mt-4 flex items-center justify-between rounded-xl border border-[#0d9488]/40 bg-[#0d9488]/10 px-5 py-4 transition-colors hover:bg-[#0d9488]/15"
             >
               <span className="text-sm font-semibold text-[#0d1b35]">
@@ -183,6 +189,29 @@ export default function VocabularyPage() {
                 {data?.dueCount}
               </span>
             </Link>
+          ) : null}
+
+          {isIeltsGeneralProgram ? (
+            <div className="mt-6 rounded-xl border border-[#0d9488]/30 bg-[#0d9488]/5 p-5">
+              <h2 className="text-sm font-bold text-[#0d1b35]">
+                General Training word themes
+              </h2>
+              <p className="mt-1 text-xs text-slate-600">
+                Housing, work, travel, and everyday topics for letters & GT reading
+              </p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {GENERAL_VOCAB_THEMES.map((theme) => (
+                  <Link
+                    key={theme.key}
+                    href={`${base}/vocabulary/study?topic=${encodeURIComponent(theme.key)}`}
+                    className="flex items-center gap-2 rounded-lg border border-white bg-white px-3 py-2 text-sm font-medium text-[#0d1b35] shadow-sm hover:border-[#0d9488]/40"
+                  >
+                    <span>{theme.icon}</span>
+                    {theme.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           ) : null}
 
           <div className="mt-8">
@@ -196,7 +225,7 @@ export default function VocabularyPage() {
               {(data?.todaysWords ?? []).map((w) => (
                 <Link
                   key={w.id}
-                  href="/dashboard/student/vocabulary/study"
+                  href={`${base}/vocabulary/study`}
                   className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:border-[#c9972c]/50 hover:shadow-md"
                 >
                   <p className="text-lg font-bold text-[#0d1b35]">{w.word}</p>
@@ -232,7 +261,7 @@ export default function VocabularyPage() {
                     {topic.wordCount} word{topic.wordCount === 1 ? "" : "s"} at {currentLevel}
                   </p>
                   <Link
-                    href={`/dashboard/student/vocabulary/study?topic=${encodeURIComponent(topic.key)}`}
+                    href={`${base}/vocabulary/study?topic=${encodeURIComponent(topic.key)}`}
                     className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-[#0d1b35] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#152a4d]"
                   >
                     Study this topic
@@ -265,7 +294,7 @@ export default function VocabularyPage() {
             </Link>
             {!isPathway ? (
             <Link
-              href="/dashboard/student/vocabulary/phrases"
+              href={`${base}/vocabulary/phrases`}
               className="flex flex-col rounded-xl border-2 border-[#c9972c] bg-white p-6 shadow-sm transition-colors hover:bg-[#c9972c]/5"
             >
               <span className="text-2xl" aria-hidden>
@@ -300,13 +329,13 @@ export default function VocabularyPage() {
 
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
-              href="/dashboard/student/vocabulary/quiz"
+              href={`${base}/vocabulary/quiz`}
               className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0d1b35] shadow-sm hover:border-[#0d9488]"
             >
               Quiz mode
             </Link>
             <Link
-              href="/dashboard/student/vocabulary/review"
+              href={`${base}/vocabulary/review`}
               className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0d1b35] shadow-sm hover:border-[#0d9488]"
             >
               Review due words

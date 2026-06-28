@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import {
   getCategoryMeta,
   isGrammarCategorySlug,
@@ -117,6 +118,7 @@ export default function GrammarLessonPage() {
   const params = useParams();
   const router = useRouter();
   const { status } = useSession();
+  const { base, usesProgramShell } = usePathwayStudentContext();
   const category = String(params?.category ?? "");
 
   const meta = isGrammarCategorySlug(category) ? getCategoryMeta(category) : null;
@@ -179,10 +181,10 @@ export default function GrammarLessonPage() {
   if (!meta || !lesson) {
     return (
       <div className="flex min-h-screen">
-        <StudentSidebar activePage="grammar" />
-        <main className="ml-[200px] flex-1 p-8">
+        {!usesProgramShell ? <StudentSidebar activePage="grammar" /> : null}
+        <main className={`flex-1 p-8 ${usesProgramShell ? "" : "ml-[200px]"}`}>
           <p className="text-red-600">Category not found.</p>
-          <Link href="/dashboard/student/grammar" className="text-[#0d9488]">
+          <Link href={`${base}/grammar`} className="text-[#0d9488]">
             ← Back
           </Link>
         </main>
@@ -192,11 +194,13 @@ export default function GrammarLessonPage() {
 
   return (
     <div className="flex min-h-screen bg-white">
-      <StudentSidebar activePage="grammar" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 px-8 py-8">
+      {!usesProgramShell ? <StudentSidebar activePage="grammar" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mx-auto max-w-3xl">
           <Link
-            href="/dashboard/student/grammar"
+            href={`${base}/grammar`}
             className="text-sm font-medium text-[#0d9488] hover:underline"
           >
             ← Grammar home
@@ -283,7 +287,7 @@ export default function GrammarLessonPage() {
                 {saving ? "Saving progress…" : "Progress saved."}
               </p>
               <Link
-                href="/dashboard/student/grammar"
+                href={`${base}/grammar`}
                 className="mt-4 inline-block rounded-xl bg-[#0d1b35] px-6 py-2.5 text-sm font-bold text-white"
               >
                 Back to categories

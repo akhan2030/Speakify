@@ -1,17 +1,17 @@
 import Link from "next/link";
 import MarketingShell from "@/components/marketing/MarketingShell";
 import CourseCard from "@/components/courses/CourseCard";
-import { getIeltsAcademicCourses } from "@/lib/courses/catalog";
+import { getIeltsGeneralCourses } from "@/lib/courses/catalog";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "IELTS Academic Courses | Speakify LMS",
+  title: "IELTS General Training Courses | Speakify LMS",
   description:
-    "IELTS Academic Foundation, Plus, and Elite — structured preparation tracks inside Speakify LMS.",
+    "IELTS General Training Foundation, Plus, and Elite — letter writing, GT reading, and everyday English inside Speakify LMS.",
 };
 
-export default function IeltsCoursesPage() {
-  const ieltsCourses = getIeltsAcademicCourses();
+export default function IeltsGeneralCoursesPage() {
+  const ieltsCourses = getIeltsGeneralCourses();
 
   return (
     <MarketingShell>
@@ -21,11 +21,12 @@ export default function IeltsCoursesPage() {
             ← All courses
           </Link>
           <h1 className="mt-6 text-3xl font-extrabold text-white sm:text-4xl">
-            IELTS Academic
+            IELTS General Training
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-300">
-            Three dedicated Academic tracks — Foundation, Plus, and Elite — each with its own
-            curriculum, target band, and weekly study plan inside the LMS.
+            Three dedicated General Training tracks — Foundation, Plus, and Elite — for letter
+            writing, everyday reading, and GT skills. Separate from Academic graph/report
+            writing.
           </p>
         </div>
       </section>

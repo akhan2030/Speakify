@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { GRAMMAR_CATEGORIES, grammarLessonHref } from "@/lib/grammar";
+import { GENERAL_GRAMMAR_TIPS } from "@/lib/ielts-general/grammarTips";
 
 type ProgressRow = {
   category: string;
@@ -33,7 +34,8 @@ const IELTS_GRAMMAR_TIPS = [
 export default function GrammarHomePage() {
   const router = useRouter();
   const { status } = useSession();
-  const { isPathway } = usePathwayStudentContext();
+  const { isPathway, isIeltsGeneralProgram, base, usesProgramShell } =
+    usePathwayStudentContext();
   const [tab, setTab] = useState<"lessons" | "ielts">("lessons");
   const [progress, setProgress] = useState<Record<string, ProgressRow>>({});
   const [loading, setLoading] = useState(true);
@@ -70,17 +72,25 @@ export default function GrammarHomePage() {
 
   return (
     <div className="flex min-h-screen bg-white">
-      <StudentSidebar activePage="grammar" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 px-8 py-8">
+      {!usesProgramShell ? <StudentSidebar activePage="grammar" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mx-auto max-w-6xl">
           <header>
             <h1 className="text-2xl font-bold text-[#0d1b35] sm:text-3xl">
-              {isPathway ? "Grammar" : "Grammar for IELTS"}
+              {isPathway
+                ? "Grammar"
+                : isIeltsGeneralProgram
+                  ? "Grammar for General Training"
+                  : "Grammar for IELTS"}
             </h1>
             <p className="mt-2 text-sm text-slate-600 sm:text-base">
               {isPathway
                 ? "Build accurate English grammar step by step at your CEFR level"
-                : "Master the grammar structures that boost your band score"}
+                : isIeltsGeneralProgram
+                  ? "Grammar for letters, essays, and everyday English — not Academic graph reports"
+                  : "Master the grammar structures that boost your band score"}
             </p>
           </header>
 
@@ -113,14 +123,15 @@ export default function GrammarHomePage() {
                   : "text-slate-500 hover:text-[#0d1b35]"
               }`}
             >
-              Grammar in IELTS
+              Grammar in {isIeltsGeneralProgram ? "General Training" : "IELTS"}
             </button>
             ) : null}
           </div>
 
           {!isPathway && tab === "ielts" ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              {IELTS_GRAMMAR_TIPS.map((tip) => (
+              {(isIeltsGeneralProgram ? GENERAL_GRAMMAR_TIPS : IELTS_GRAMMAR_TIPS).map(
+                (tip) => (
                 <div
                   key={tip.title}
                   className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -128,13 +139,14 @@ export default function GrammarHomePage() {
                   <h3 className="font-bold text-[#0d9488]">{tip.title}</h3>
                   <p className="mt-2 text-sm text-slate-600">{tip.body}</p>
                 </div>
-              ))}
+              )
+              )}
               <div className="rounded-xl border border-[#c9972c]/30 bg-[#c9972c]/10 p-5 sm:col-span-3">
                 <p className="text-sm text-[#0d1b35]">
                   Band 7+ candidates use a variety of complex structures accurately.
                   Practise each category below, then test yourself in{" "}
                   <Link
-                    href="/dashboard/student/grammar/practice"
+                    href={`${base}/grammar/practice`}
                     className="font-semibold text-[#0d9488] hover:underline"
                   >
                     Grammar Practice
@@ -147,7 +159,7 @@ export default function GrammarHomePage() {
             <>
               <div className="mt-6 flex justify-end">
                 <Link
-                  href="/dashboard/student/grammar/practice"
+                  href={`${base}/grammar/practice`}
                   className="rounded-xl border-2 border-[#0d9488] px-5 py-2.5 text-sm font-bold text-[#0d9488] hover:bg-[#0d9488]/10"
                 >
                   Mixed Practice →
@@ -193,7 +205,7 @@ export default function GrammarHomePage() {
                           </div>
                         </div>
                         <Link
-                          href={grammarLessonHref(cat.slug)}
+                          href={grammarLessonHref(cat.slug, base)}
                           className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[#0d1b35] py-2.5 text-sm font-bold text-white hover:bg-[#152a4d]"
                         >
                           Start Learning

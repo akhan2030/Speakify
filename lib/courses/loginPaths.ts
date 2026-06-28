@@ -24,7 +24,9 @@ export const COURSE_POST_LOGIN_PATH: Record<string, string> = {
   "ielts-foundation": PROGRAM_LOGIN_PATHS.ielts,
   "ielts-plus": PROGRAM_LOGIN_PATHS.ielts,
   "ielts-elite": PROGRAM_LOGIN_PATHS.ielts,
-  "ielts-general-accelerator": PROGRAM_LOGIN_PATHS.ieltsGeneral,
+  "ielts-gt-foundation": PROGRAM_LOGIN_PATHS.ieltsGeneral,
+  "ielts-gt-plus": PROGRAM_LOGIN_PATHS.ieltsGeneral,
+  "ielts-gt-elite": PROGRAM_LOGIN_PATHS.ieltsGeneral,
   "toefl-accelerator": PROGRAM_LOGIN_PATHS.ielts,
   "step-preparation": PROGRAM_LOGIN_PATHS.ielts,
   "english-pathway": PROGRAM_LOGIN_PATHS.pathway,
@@ -44,14 +46,15 @@ export function loginPathForProgramType(programType: ProgramType): string {
 
 export function loginPathFromPathname(pathname: string): string {
   if (
-    pathname === "/courses/ielts-general" ||
-    pathname.startsWith("/courses/ielts-general")
+    pathname === "/courses/ielts-gt" ||
+    pathname.startsWith("/courses/ielts-gt-")
   ) {
-    return buildLoginPath(PROGRAM_LOGIN_PATHS.ieltsGeneral, "ielts-general-accelerator");
+    return buildLoginPath(PROGRAM_LOGIN_PATHS.ieltsGeneral, "ielts-gt-plus");
   }
   if (
     pathname === "/courses/ielts" ||
-    (pathname.startsWith("/courses/ielts-") && !pathname.includes("general"))
+    (pathname.startsWith("/courses/ielts-") &&
+      !pathname.startsWith("/courses/ielts-gt"))
   ) {
     return buildLoginPath(PROGRAM_LOGIN_PATHS.ielts, "ielts-plus");
   }
@@ -113,7 +116,9 @@ const PROGRAM_SLUG_TO_CONTEXT: Record<string, LoginProgramContext> = {
   "ielts-foundation": "ielts",
   "ielts-plus": "ielts",
   "ielts-elite": "ielts",
-  "ielts-general-accelerator": "ielts_general",
+  "ielts-gt-foundation": "ielts_general",
+  "ielts-gt-plus": "ielts_general",
+  "ielts-gt-elite": "ielts_general",
   "toefl-accelerator": "ielts",
   "step-preparation": "ielts",
   "business-english": "business_english",
@@ -128,10 +133,10 @@ const PROGRAM_SLUG_TO_CONTEXT: Record<string, LoginProgramContext> = {
 function isIeltsGeneralCallbackPath(path: string): boolean {
   return (
     path.includes("/dashboard/ielts-general/") ||
-    path === "/courses/ielts-general" ||
-    path.startsWith("/courses/ielts-general") ||
+    path === "/courses/ielts-gt" ||
+    path.startsWith("/courses/ielts-gt-") ||
     path.includes("/register/ielts-general") ||
-    path.includes("ielts-general-accelerator")
+    path.includes("ielts-gt-")
   );
 }
 
@@ -139,7 +144,7 @@ function isIeltsAcademicCallbackPath(path: string): boolean {
   return (
     path.includes("/dashboard/ielts/") ||
     path === "/courses/ielts" ||
-    (path.startsWith("/courses/ielts-") && !path.includes("general")) ||
+    (path.startsWith("/courses/ielts-") && !path.startsWith("/courses/ielts-gt")) ||
     path.includes("/register/ielts-accelerator") ||
     path === "/register/ielts" ||
     path.includes("/register/toefl") ||

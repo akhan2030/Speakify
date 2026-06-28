@@ -2,21 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { NAV_DROPDOWNS } from "@/lib/courses/catalog";
+import { NAV_DROPDOWNS, type NavCourseLink, type NavDropdownSection } from "@/lib/courses/catalog";
 import ProgramSignInLink from "@/components/marketing/ProgramSignInLink";
 
-type NavCourse = {
-  name: string;
-  href: string;
-  levelBadge: string;
-};
+type NavCourse = NavCourseLink;
 
 function NavDropdown({
   label,
   courses,
+  sections,
 }: {
   label: string;
-  courses: NavCourse[];
+  courses?: NavCourse[];
+  sections?: NavDropdownSection[];
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -53,17 +51,36 @@ function NavDropdown({
 
       {open ? (
         <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-xl border border-white/10 bg-[#0d1b35] py-2 shadow-xl">
-          {courses.map((course) => (
-            <Link
-              key={course.href}
-              href={course.href}
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5"
-            >
-              <span>{course.name}</span>
-              <span className="text-xs text-slate-400">{course.levelBadge}</span>
-            </Link>
-          ))}
+          {sections
+            ? sections.map((section) => (
+                <div key={section.sectionLabel} className="px-2 py-1">
+                  <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#c9972c]">
+                    {section.sectionLabel}
+                  </p>
+                  {section.courses.map((course) => (
+                    <Link
+                      key={course.href}
+                      href={course.href}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm text-slate-200 hover:bg-white/5"
+                    >
+                      <span>{course.name}</span>
+                      <span className="text-xs text-slate-400">{course.levelBadge}</span>
+                    </Link>
+                  ))}
+                </div>
+              ))
+            : (courses ?? []).map((course) => (
+                <Link
+                  key={course.href}
+                  href={course.href}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5"
+                >
+                  <span>{course.name}</span>
+                  <span className="text-xs text-slate-400">{course.levelBadge}</span>
+                </Link>
+              ))}
           <div className="mt-1 border-t border-white/10 px-2 pt-2">
             <Link
               href="/courses"
@@ -92,7 +109,12 @@ export default function SiteHeader() {
 
         <nav className="hidden items-center gap-1 lg:flex">
           {NAV_DROPDOWNS.map((group) => (
-            <NavDropdown key={group.id} label={group.label} courses={group.courses} />
+            <NavDropdown
+              key={group.id}
+              label={group.label}
+              courses={group.courses}
+              sections={group.sections}
+            />
           ))}
         </nav>
 
@@ -130,16 +152,34 @@ export default function SiteHeader() {
                 {group.label}
               </p>
               <div className="mt-2 space-y-1">
-                {group.courses.map((course) => (
-                  <Link
-                    key={course.href}
-                    href={course.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-white/5"
-                  >
-                    {course.name}
-                  </Link>
-                ))}
+                {group.sections
+                  ? group.sections.map((section) => (
+                      <div key={section.sectionLabel} className="mb-2">
+                        <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          {section.sectionLabel}
+                        </p>
+                        {section.courses.map((course) => (
+                          <Link
+                            key={course.href}
+                            href={course.href}
+                            onClick={() => setMobileOpen(false)}
+                            className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-white/5"
+                          >
+                            {course.name}
+                          </Link>
+                        ))}
+                      </div>
+                    ))
+                  : (group.courses ?? []).map((course) => (
+                      <Link
+                        key={course.href}
+                        href={course.href}
+                        onClick={() => setMobileOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-white/5"
+                      >
+                        {course.name}
+                      </Link>
+                    ))}
                 <Link
                   href="/courses"
                   onClick={() => setMobileOpen(false)}

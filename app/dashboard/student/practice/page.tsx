@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 
 type PracticeTask = {
   id: string;
@@ -19,18 +20,19 @@ type PracticeTask = {
   wordCount?: number;
 };
 
-const SKILL_HREF: Record<string, string> = {
-  vocabulary: "/dashboard/student/vocabulary/study",
-  reading: "/dashboard/student/reading",
-  listening: "/dashboard/student/listening",
-  speaking: "/dashboard/student/speaking",
-  writing: "/dashboard/student/writing",
-  grammar: "/dashboard/student/grammar/practice",
+const SKILL_SEGMENTS: Record<string, string> = {
+  vocabulary: "/vocabulary/study",
+  reading: "/reading",
+  listening: "/listening",
+  speaking: "/speaking",
+  writing: "/writing",
+  grammar: "/grammar/practice",
 };
 
 export default function StudentPracticePage() {
   const router = useRouter();
   const { status } = useSession();
+  const { base, usesProgramShell, isIeltsGeneralProgram } = usePathwayStudentContext();
   const [tasks, setTasks] = useState<PracticeTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
@@ -77,12 +79,12 @@ export default function StudentPracticePage() {
     setLoadingTaskId(task.id);
     const skill = (task.skill ?? "").toLowerCase();
     if (skill === "vocabulary" && task.topic) {
-      const href = `/dashboard/student/vocabulary/study?topic=${encodeURIComponent(task.topic)}`;
+      const href = `${base}/vocabulary/study?topic=${encodeURIComponent(task.topic)}`;
       console.log("Navigating to vocabulary topic practice:", task.topic, href);
       router.push(href);
       return;
     }
-    const href = SKILL_HREF[skill] ?? "/dashboard/student/practice";
+    const href = `${base}${SKILL_SEGMENTS[skill] ?? "/practice"}`;
     console.log("Navigating to practice:", task.id, href);
     router.push(href);
   }
@@ -94,21 +96,29 @@ export default function StudentPracticePage() {
   if (loading) {
     return (
       <div className="flex min-h-screen">
-        <StudentSidebar activePage="practice" />
-        <div className="ml-[200px] flex-1 p-8 text-slate-600">Loading...</div>
+        {!usesProgramShell ? <StudentSidebar activePage="practice" /> : null}
+        <div
+          className={`flex-1 p-8 text-slate-600 ${usesProgramShell ? "" : "ml-[200px]"}`}
+        >
+          Loading...
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-screen">
-      <StudentSidebar activePage="practice" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 p-8">
+      {!usesProgramShell ? <StudentSidebar activePage="practice" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 p-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-[#0d1b35]">Daily Practice</h1>
             <p className="text-gray-500">
-              Fresh content added every day — tailored to your level
+              {isIeltsGeneralProgram
+                ? "Fresh General Training tasks — letters, everyday English, and GT skills"
+                : "Fresh content added every day — tailored to your level"}
             </p>
           </div>
           <span className="rounded-full border border-[#c9972c]/40 bg-[#c9972c]/10 px-4 py-1.5 text-sm font-bold text-[#c9972c]">
