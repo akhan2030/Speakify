@@ -260,17 +260,16 @@ function pickTwoDistinctVoices(
   const females = enPool.filter(isFemaleVoice);
   const males = enPool.filter(isMaleVoice);
 
-  let voiceA = preferLocal(females.length > 0 ? females : enPool);
-  let voiceB = preferLocal(
-    males.find((v) => v.name !== voiceA?.name) ??
-      enPool.find((v) => v.name !== voiceA?.name) ??
-      enPool[1] ??
-      enPool[0]
+  const voiceA = preferLocal(females.length > 0 ? females : enPool);
+  const maleCandidates = males.filter((v) => v.name !== voiceA?.name);
+  const otherCandidates = enPool.filter((v) => v.name !== voiceA?.name);
+  const voiceB = preferLocal(
+    maleCandidates.length > 0
+      ? maleCandidates
+      : otherCandidates.length > 0
+        ? otherCandidates
+        : enPool
   );
-
-  if (voiceA?.name === voiceB?.name && enPool.length > 1) {
-    voiceB = enPool.find((v) => v.name !== voiceA?.name) ?? voiceB;
-  }
 
   return [voiceA, voiceB];
 }
