@@ -16,8 +16,11 @@ export type StepMcqQuestion = {
   explanation: string;
   /** Display order in timed sections */
   number?: number;
-  /** Reading / listening only */
+  /** Reading / listening only — full passage or recording transcript */
   passageRef?: string;
+  passageTitle?: string;
+  transcript?: string;
+  recordingId?: string;
   /** Listening only */
   recordingNumber?: number;
   difficulty?: "easy" | "medium" | "hard";

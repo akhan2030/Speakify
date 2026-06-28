@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { speakWithBrowser } from "@/lib/browserSpeech";
 import type { StepMcqOption } from "@/lib/step/types";
 
 export type StepRunnerQuestion = {
@@ -11,6 +12,13 @@ export type StepRunnerQuestion = {
   correct?: StepMcqOption;
   explanation?: string;
   section?: string;
+  /** Full reading passage text shown above the question */
+  passage?: string;
+  passageTitle?: string;
+  /** Listening — transcript shown with play-once audio */
+  transcript?: string;
+  recordingId?: string;
+  recordingNumber?: number;
 };
 
 type Props = {
@@ -62,6 +70,8 @@ export default function StepMcqRunner({
   const [secondsLeft, setSecondsLeft] = useState(
     timeLimitMinutes ? timeLimitMinutes * 60 : null
   );
+  const [listeningPlayed, setListeningPlayed] = useState<Record<string, boolean>>({});
+  const [audioPlaying, setAudioPlaying] = useState(false);
 
   useEffect(() => {
     if (secondsLeft == null) return;
@@ -71,6 +81,28 @@ export default function StepMcqRunner({
   }, [secondsLeft]);
 
   const current = questions[idx];
+
+  const recordingKey = current?.recordingId ?? current?.id ?? "";
+  const listeningUnlocked =
+    current?.section !== "listening" ||
+    Boolean(listeningPlayed[recordingKey]) ||
+    !current?.transcript;
+
+  const playListening = useCallback(async () => {
+    const q = questions[idx];
+    const key = q?.recordingId ?? q?.id ?? "";
+    if (!q?.transcript || listeningPlayed[key] || audioPlaying) return;
+    setAudioPlaying(true);
+    try {
+      await speakWithBrowser(q.transcript, "en-US");
+    } catch {
+      // allow answering even if TTS fails
+    } finally {
+      setAudioPlaying(false);
+      setListeningPlayed((prev) => ({ ...prev, [key]: true }));
+    }
+  }, [audioPlaying, idx, listeningPlayed, questions]);
+
   const answerKey = useMemo(() => {
     const key: Record<string, StepMcqOption> = {};
     for (const q of questions) {
@@ -175,11 +207,59 @@ export default function StepMcqRunner({
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
           Question {current.number ?? idx + 1} of {questions.length}
+          {current.section ? (
+            <span className="ml-2 normal-case text-slate-500">· {current.section.replace(/_/g, " ")}</span>
+          ) : null}
         </p>
-        <p className="mt-3 text-base font-medium leading-relaxed text-[#0d1b35]">
+
+        {current.passage ? (
+          <div className="mt-4 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-bold tracking-widest text-slate-500">
+              {current.passageTitle ?? "READING PASSAGE"}
+            </p>
+            <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-[#0d1b35]">
+              {current.passage}
+            </p>
+          </div>
+        ) : null}
+
+        {current.section === "listening" && current.transcript ? (
+          <div className="mt-4 space-y-3">
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              🎧 Listening plays <strong>once only</strong> — like the real STEP exam.
+            </div>
+            <div className="rounded-xl bg-[#0d1b35] p-4 text-center">
+              {!listeningPlayed[recordingKey] ? (
+                <>
+                  <p className="mb-2 text-sm text-white/70">
+                    Recording {current.recordingNumber ?? 1}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void playListening()}
+                    disabled={audioPlaying}
+                    className="mx-auto flex h-14 w-14 items-center justify-center rounded-full text-xl text-white disabled:opacity-60"
+                    style={{ background: "#c9972c" }}
+                  >
+                    {audioPlaying ? "⏸" : "▶"}
+                  </button>
+                  <p className="mt-2 text-xs text-white/50">
+                    {audioPlaying ? "Playing…" : "Press play, then answer below"}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm font-semibold text-[#c9972c]">
+                  ✓ Recording played — answer the question
+                </p>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        <p className="mt-4 text-base font-medium leading-relaxed text-[#0d1b35]">
           {current.stem}
         </p>
-        <div className="mt-5 space-y-3">
+        <div className={`mt-5 space-y-3 ${!listeningUnlocked ? "pointer-events-none opacity-40" : ""}`}>
           {opts.map((letter) => (
             <label
               key={letter}

@@ -30,8 +30,14 @@ export default function StepDiagnosticPage() {
       number: number;
       stem: string;
       options: Record<StepMcqOption, string>;
-      correct: StepMcqOption;
-      explanation: string;
+      section?: string;
+      passage?: string;
+      passageTitle?: string;
+      transcript?: string;
+      recordingId?: string;
+      recordingNumber?: number;
+      correct?: StepMcqOption;
+      explanation?: string;
     }>
   >([]);
   const [timeLimit, setTimeLimit] = useState(45);

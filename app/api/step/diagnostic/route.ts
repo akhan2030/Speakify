@@ -9,7 +9,7 @@ import {
 import {
   DIAGNOSTIC_QUESTION_COUNT,
   DIAGNOSTIC_TIME_MINUTES,
-  fetchDiagnosticQuestions,
+  loadOrCreateDiagnosticSnapshot,
 } from "@/lib/step/fetchDiagnosticQuestions";
 import { getPhaseDefinition } from "@/lib/step/phases";
 import { sectionScoreFromAccuracy } from "@/lib/step/scoring";
@@ -48,17 +48,35 @@ export async function GET() {
     });
   }
 
-  const questions = await fetchDiagnosticQuestions(supabase);
+  const questions = await loadOrCreateDiagnosticSnapshot(supabase, studentId);
 
   return NextResponse.json({
     completed: false,
-    questions: questions.map(({ id, number, stem, options, section }) => ({
-      id,
-      number,
-      stem,
-      options,
-      section,
-    })),
+    questions: questions.map(
+      ({
+        id,
+        number,
+        stem,
+        options,
+        section,
+        passageRef,
+        passageTitle,
+        transcript,
+        recordingId,
+        recordingNumber,
+      }) => ({
+        id,
+        number,
+        stem,
+        options,
+        section,
+        passage: passageRef,
+        passageTitle,
+        transcript,
+        recordingId,
+        recordingNumber,
+      })
+    ),
     timeLimitMinutes: DIAGNOSTIC_TIME_MINUTES,
     totalQuestions: DIAGNOSTIC_QUESTION_COUNT,
   });
@@ -86,7 +104,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Diagnostic already completed" }, { status: 400 });
   }
 
-  const questions = await fetchDiagnosticQuestions(supabase);
+  const questions = await loadOrCreateDiagnosticSnapshot(supabase, studentId);
   let correct = 0;
   const bySection: Record<string, { correct: number; total: number }> = {};
 
