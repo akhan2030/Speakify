@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   getSpecialtyProgram,
@@ -9,6 +10,10 @@ import {
   todayMissionForProgram,
   type SpecialtyProgramId,
 } from "@/lib/specialtyPrograms";
+import {
+  formatWeekRange,
+  type BusinessEnglishModule,
+} from "@/lib/businessEnglishLms";
 
 function ProgressBar({
   percent,
@@ -39,6 +44,20 @@ export default function SpecialtyStudentDashboard({
   const curriculum = specialtyCurriculum(programId);
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
   const base = program.dashboardBase;
+  const [businessModules, setBusinessModules] = useState<BusinessEnglishModule[]>([]);
+
+  useEffect(() => {
+    if (programId !== "business_english") return;
+    (async () => {
+      try {
+        const res = await fetch("/api/business-english/modules");
+        const json = await res.json();
+        if (res.ok) setBusinessModules(json.modules ?? []);
+      } catch {
+        setBusinessModules([]);
+      }
+    })();
+  }, [programId]);
 
   return (
     <div className="space-y-6 pb-24 md:pb-8">
@@ -126,17 +145,41 @@ export default function SpecialtyStudentDashboard({
           </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {program.skills.map((skill) => (
-            <Link
-              key={skill.id}
-              href={`${base}/modules#${skill.id}`}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <span className="text-2xl">{skill.icon}</span>
-              <p className="mt-3 font-bold text-[#0d1b35]">{skill.label}</p>
-              <p className="mt-1 text-sm text-slate-500">{skill.description}</p>
-            </Link>
-          ))}
+          {programId === "business_english" && businessModules.length > 0
+            ? businessModules.map((module) => {
+                const availableCount = module.lessons.filter(
+                  (l) => l.status === "available"
+                ).length;
+                return (
+                  <Link
+                    key={module.id}
+                    href={`${base}/modules`}
+                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                      Module {module.module_number}
+                    </p>
+                    <p className="mt-2 font-bold text-[#0d1b35]">{module.title}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {module.cefr_level} · {formatWeekRange(module.week_start, module.week_end)}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500">
+                      {module.lessons.length} lessons · {availableCount} available
+                    </p>
+                  </Link>
+                );
+              })
+            : program.skills.map((skill) => (
+                <Link
+                  key={skill.id}
+                  href={`${base}/modules#${skill.id}`}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <span className="text-2xl">{skill.icon}</span>
+                  <p className="mt-3 font-bold text-[#0d1b35]">{skill.label}</p>
+                  <p className="mt-1 text-sm text-slate-500">{skill.description}</p>
+                </Link>
+              ))}
         </div>
       </section>
 

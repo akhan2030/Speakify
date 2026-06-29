@@ -3,16 +3,20 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
   experimental: {
     serverComponentsExternalPackages: ["bcryptjs"],
   },
-  // Allow CSS/JS through Cloudflare tunnel & loca.lt when sharing dev server with clients
-  allowedDevOrigins: [
-    "*.trycloudflare.com",
-    "*.loca.lt",
-    "127.0.0.1",
-    "0.0.0.0",
-  ],
+  // Dev-only: allow CSS/JS when sharing local server via tunnel tools
+  allowedDevOrigins: ["*.loca.lt", "127.0.0.1", "0.0.0.0"],
   async redirects() {
     return [
       {

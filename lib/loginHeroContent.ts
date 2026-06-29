@@ -3,6 +3,7 @@ import type { LoginProgramContext } from "@/lib/courses/loginPaths";
 export type LoginHeroProgramme =
   | "ielts"
   | "ielts_general"
+  | "step"
   | "pathway"
   | "business_english"
   | "legal_english"
@@ -43,6 +44,18 @@ export const LOGIN_HERO_CONTENT: Record<LoginHeroProgramme, LoginHeroContent> = 
     ],
     footer: "When your everyday English is ready —",
     footerBold: "your General Training band will follow.",
+  },
+  step: {
+    eyebrow: "STEP Accelerator · Qiyas",
+    headline: "One adaptive course.",
+    headlineHighlight: "Four phases to 80+.",
+    bullets: [
+      "Diagnostic sets your starting phase — no separate tracks.",
+      "Reading, Structure, Listening & Analysis — all Qiyas-aligned.",
+      "Phase exit checks advance you automatically toward your target.",
+    ],
+    footer: "When your STEP score is ready —",
+    footerBold: "university doors open.",
   },
   pathway: {
     eyebrow: "English Pathway",

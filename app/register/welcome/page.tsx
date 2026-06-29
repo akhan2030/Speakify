@@ -49,10 +49,14 @@ function WelcomeContent() {
   const isPathway = programType === "pathway";
   const isToefl = registrationProgram.slug === "toefl";
   const programLabel = registrationProgram.label;
-  const dashboardPath = studentDashboardPath(programType);
+  const dashboardPath =
+    registrationProgram.dashboardPath ?? studentDashboardPath(programType);
+  const isStep = registrationProgram.slug === "step-test";
   const accentClass = isPathway
     ? "bg-[#0d9488]/20 text-[#0d9488]"
-    : isToefl
+    : isStep
+      ? "bg-emerald-500/20 text-emerald-400"
+      : isToefl
       ? "bg-blue-500/20 text-blue-400"
       : "bg-[#c9972c]/20 text-[#c9972c]";
 

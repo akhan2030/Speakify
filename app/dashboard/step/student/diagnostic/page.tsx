@@ -23,6 +23,7 @@ export default function StepDiagnosticPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [alreadyDone, setAlreadyDone] = useState(false);
+  const [instructionsAccepted, setInstructionsAccepted] = useState(false);
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [questions, setQuestions] = useState<
     Array<{
@@ -106,6 +107,40 @@ export default function StepDiagnosticPage() {
         <p className="mt-6 text-center text-xs text-slate-500">
           All questions scored automatically · MCQ only · No speaking or writing
         </p>
+      </div>
+    );
+  }
+
+  if (!instructionsAccepted) {
+    return (
+      <div className="mx-auto max-w-lg p-4 pb-24 md:p-10">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <h1 className="text-2xl font-bold" style={{ color: NAVY }}>
+            STEP Diagnostic Assessment
+          </h1>
+          <p className="mt-2 text-sm font-semibold text-slate-600">
+            Before you begin — read carefully
+          </p>
+          <ul className="mt-6 space-y-3 text-sm text-slate-700">
+            <li>✦ 40 questions: 10 Reading · 10 Structure · 10 Listening · 10 Compositional</li>
+            <li>✦ Time allowed: {timeLimit} minutes</li>
+            <li>✦ Choose one answer only: A, B, C, or D</li>
+            <li>✦ You can navigate between questions using the arrows</li>
+            <li>✦ Your result places you in the right starting phase</li>
+            <li>✦ There is no pass or fail — this measures your level only</li>
+          </ul>
+          <p className="mt-6 rounded-lg bg-slate-50 p-4 text-sm italic text-slate-600">
+            Answer honestly — the more accurate your result, the better your study plan.
+          </p>
+          <button
+            type="button"
+            onClick={() => setInstructionsAccepted(true)}
+            className="mt-8 w-full rounded-xl px-6 py-3 text-sm font-bold text-[#0d1b35] sm:w-auto"
+            style={{ backgroundColor: GOLD }}
+          >
+            I understand — Start the Diagnostic →
+          </button>
+        </div>
       </div>
     );
   }

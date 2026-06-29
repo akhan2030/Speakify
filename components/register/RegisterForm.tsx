@@ -53,6 +53,7 @@ export default function RegisterForm({ slug }: { slug: RegistrationSlug }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           programType: program.programType,
+          registrationSlug: slug,
           fullName: fullName.trim(),
           email: email.trim(),
           phone: phone.trim(),

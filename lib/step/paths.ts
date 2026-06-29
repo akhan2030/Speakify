@@ -15,4 +15,5 @@ export const STEP_ROUTES = {
   grammarDrills: `${STEP_STUDENT_BASE}/grammar-drills`,
   settings: `${STEP_STUDENT_BASE}/settings`,
   phaseExit: `${STEP_STUDENT_BASE}/phase-exit`,
+  exitTest: `${STEP_STUDENT_BASE}/exit-test`,
 } as const;

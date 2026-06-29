@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { getInitials } from "@/components/StudentSidebar";
+import { getPhaseDefinition } from "@/lib/step/phases";
 import { STEP_ROUTES } from "@/lib/step/paths";
 
 export type StepActivePage =
@@ -16,6 +17,7 @@ export type StepActivePage =
   | "listening"
   | "compositional"
   | "mini-mocks"
+  | "exit-test"
   | "mock-exam"
   | "progress"
   | "vocabulary"
@@ -32,6 +34,11 @@ type NavItem = {
 type NavGroup = {
   label: string;
   items: NavItem[];
+};
+
+type ExitTestBadge = {
+  text: string;
+  className: string;
 };
 
 const BASE = STEP_ROUTES.home;
@@ -93,8 +100,14 @@ const NAV_GROUPS: NavGroup[] = [
       {
         id: "mini-mocks",
         label: "Mini Mocks",
-        href: STEP_ROUTES.miniMocks,
+        href: "/dashboard/step/student/mini-mock",
         icon: "⚡",
+      },
+      {
+        id: "exit-test",
+        label: "Phase Exit Test",
+        href: STEP_ROUTES.exitTest,
+        icon: "📋",
       },
       {
         id: "mock-exam",
@@ -137,7 +150,7 @@ const MOBILE_NAV = [
     href: STEP_ROUTES.practice("reading"),
     icon: "📖",
   },
-  { id: "mini-mocks" as const, label: "Mini", href: STEP_ROUTES.miniMocks, icon: "⚡" },
+  { id: "mini-mocks" as const, label: "Mini", href: "/dashboard/step/student/mini-mock", icon: "⚡" },
   { id: "mock-exam" as const, label: "Mock", href: STEP_ROUTES.mockExam, icon: "📝" },
   { id: "progress" as const, label: "Progress", href: STEP_ROUTES.progress, icon: "📊" },
 ];
@@ -149,6 +162,8 @@ const ALL_ITEMS = [
 
 function activeFromPath(pathname: string): StepActivePage {
   if (pathname === BASE) return "dashboard";
+  if (pathname.startsWith(STEP_ROUTES.exitTest)) return "exit-test";
+  if (pathname.startsWith("/dashboard/step/student/mini-mock")) return "mini-mocks";
   const match = ALL_ITEMS.find(
     (item) => item.href !== BASE && pathname.startsWith(item.href)
   );
@@ -158,9 +173,11 @@ function activeFromPath(pathname: string): StepActivePage {
 function NavLink({
   item,
   isActive,
+  badge,
 }: {
   item: NavItem;
   isActive: boolean;
+  badge?: ExitTestBadge;
 }) {
   return (
     <Link
@@ -172,7 +189,14 @@ function NavLink({
       }`}
     >
       <span className="shrink-0">{item.icon}</span>
-      <span className="truncate">{item.label}</span>
+      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      {badge ? (
+        <span
+          className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${badge.className}`}
+        >
+          {badge.text}
+        </span>
+      ) : null}
     </Link>
   );
 }
@@ -184,23 +208,54 @@ export default function StepSidebar({ activePage }: { activePage?: StepActivePag
   const name = session?.user?.name ?? "Student";
   const initials = getInitials(name);
 
-  const [phaseLabel, setPhaseLabel] = useState("Phase 1");
+  const [phaseLabel, setPhaseLabel] = useState("Phase 1 · Foundation");
   const [estimatedScore, setEstimatedScore] = useState<number | null>(null);
+  const [exitTestBadge, setExitTestBadge] = useState<ExitTestBadge | null>(null);
 
   useEffect(() => {
     fetch("/api/step/dashboard")
       .then((r) => r.json())
       .then((json) => {
         if (json.error) return;
-        const phase = json.enrollment?.current_phase ?? 1;
-        const phaseTitle =
-          json.phases?.find((p: { phase: number }) => p.phase === phase)?.title ??
-          `Phase ${phase}`;
-        setPhaseLabel(`Phase ${phase}: ${phaseTitle}`);
+        const phase = json.phaseProgress?.currentPhase ?? json.enrollment?.current_phase ?? 1;
+        const title =
+          getPhaseDefinition(phase)?.title ??
+          json.phaseProgress?.phases?.find((p: { phase: number }) => p.phase === phase)
+            ?.title ??
+          "Foundation";
+        setPhaseLabel(`Phase ${phase} · ${title}`);
         setEstimatedScore(json.enrollment?.estimated_score ?? null);
       })
       .catch(() => {});
+
+    fetch("/api/step/exit-test/status")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.error) return;
+        if (json.ready) {
+          setExitTestBadge({
+            text: "Ready",
+            className: "bg-emerald-500/20 text-emerald-300",
+          });
+        } else if (json.cooldownDays > 0) {
+          setExitTestBadge({
+            text: `${json.cooldownDays}d`,
+            className: "bg-amber-500/20 text-amber-300",
+          });
+        } else {
+          setExitTestBadge({
+            text: `Wk ${json.week}/${json.weeksInPhase}`,
+            className: "bg-white/10 text-slate-400",
+          });
+        }
+      })
+      .catch(() => {});
   }, [pathname]);
+
+  const scoreDisplay =
+    estimatedScore == null || estimatedScore === 0
+      ? { text: "Est. —/100", className: "text-slate-500 bg-slate-500/10" }
+      : { text: `Est. ${estimatedScore}/100`, className: "text-[#c9972c] bg-[#c9972c]/20" };
 
   return (
     <>
@@ -217,8 +272,10 @@ export default function StepSidebar({ activePage }: { activePage?: StepActivePag
           </div>
           <div className="mt-2 line-clamp-2 text-sm font-medium text-white">{name}</div>
           <div className="mt-1 text-[10px] font-medium text-slate-400">{phaseLabel}</div>
-          <div className="mt-1 rounded-full bg-[#c9972c]/20 px-2 py-0.5 text-[10px] font-semibold text-[#c9972c]">
-            Est. {estimatedScore != null ? `${estimatedScore}/100` : "—"}
+          <div
+            className={`mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${scoreDisplay.className}`}
+          >
+            {scoreDisplay.text}
           </div>
         </div>
 
@@ -230,7 +287,12 @@ export default function StepSidebar({ activePage }: { activePage?: StepActivePag
               </p>
               <div className="space-y-0.5">
                 {group.items.map((item) => (
-                  <NavLink key={item.id} item={item} isActive={item.id === current} />
+                  <NavLink
+                    key={item.id}
+                    item={item}
+                    isActive={item.id === current}
+                    badge={item.id === "exit-test" ? exitTestBadge ?? undefined : undefined}
+                  />
                 ))}
               </div>
             </div>

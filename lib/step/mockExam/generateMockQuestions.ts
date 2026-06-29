@@ -144,15 +144,38 @@ export async function buildFullMockExam(
   mockNumber: number,
   excludeQuestionIds: string[] = []
 ): Promise<{ questions: MockExamQuestion[]; payload: MockExamPayload }> {
-  const used = new Set(excludeQuestionIds);
-  const allQuestions: MockExamQuestion[] = [];
-
-  const counts = {
+  return buildExamWithCounts(mockNumber, excludeQuestionIds, {
     reading: MOCK_SECTION_COUNTS[0],
     structure: MOCK_SECTION_COUNTS[1],
     listening: MOCK_SECTION_COUNTS[2],
     compositional_analysis: MOCK_SECTION_COUNTS[3],
-  };
+  });
+}
+
+export async function buildExitTestExam(
+  phase: number,
+  excludeQuestionIds: string[] = []
+): Promise<{ questions: MockExamQuestion[]; payload: MockExamPayload }> {
+  return buildExamWithCounts(phase, excludeQuestionIds, {
+    reading: 10,
+    structure: 10,
+    listening: 10,
+    compositional_analysis: 10,
+  });
+}
+
+async function buildExamWithCounts(
+  examSeed: number,
+  excludeQuestionIds: string[],
+  counts: {
+    reading: number;
+    structure: number;
+    listening: number;
+    compositional_analysis: number;
+  }
+): Promise<{ questions: MockExamQuestion[]; payload: MockExamPayload }> {
+  const used = new Set(excludeQuestionIds);
+  const allQuestions: MockExamQuestion[] = [];
 
   // Reading
   const bankReading = await loadBankPool("reading");
@@ -170,7 +193,7 @@ export async function buildFullMockExam(
   );
   const readingPicked = cyclePool(readingPool, counts.reading);
   readingPicked.forEach((q, i) => {
-    allQuestions.push(toMockQuestion(q, "reading", mockNumber, i));
+    allQuestions.push(toMockQuestion(q, "reading", examSeed, i));
   });
 
   // Structure
@@ -178,7 +201,7 @@ export async function buildFullMockExam(
   const structurePool = excludeUsed([...bankStructure, ...FALLBACK_STRUCTURE_ITEMS], used);
   const structurePicked = cyclePool(structurePool, counts.structure);
   structurePicked.forEach((q, i) => {
-    allQuestions.push(toMockQuestion(q, "structure", mockNumber, 40 + i));
+    allQuestions.push(toMockQuestion(q, "structure", examSeed, counts.reading + i));
   });
 
   // Listening
@@ -204,7 +227,12 @@ export async function buildFullMockExam(
   const recordingIds = [...new Set(listeningPicked.map((q) => q.recordingId ?? "rec-1"))];
   const totalRecordings = recordingIds.length;
   listeningPicked.forEach((q, i) => {
-    const mq = toMockQuestion(q, "listening", mockNumber, 70 + i);
+    const mq = toMockQuestion(
+      q,
+      "listening",
+      examSeed,
+      counts.reading + counts.structure + i
+    );
     mq.totalRecordings = totalRecordings;
     mq.recordingNumber =
       recordingIds.indexOf(mq.recordingId ?? "rec-1") + 1 || 1;
@@ -216,7 +244,14 @@ export async function buildFullMockExam(
   const compPool = excludeUsed([...bankComp, ...FALLBACK_COMPOSITIONAL_ITEMS], used);
   const compPicked = cyclePool(compPool, counts.compositional_analysis);
   compPicked.forEach((q, i) => {
-    allQuestions.push(toMockQuestion(q, "compositional_analysis", mockNumber, 90 + i));
+    allQuestions.push(
+      toMockQuestion(
+        q,
+        "compositional_analysis",
+        examSeed,
+        counts.reading + counts.structure + counts.listening + i
+      )
+    );
   });
 
   const payload: MockExamPayload = {

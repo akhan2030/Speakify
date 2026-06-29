@@ -165,7 +165,12 @@ function LoginForm() {
 
       const role = normalizeRole((session.user as { role?: string }).role);
       const roleHome = dashboardPathForSessionUser(
-        session.user as { role?: string; programType?: string }
+        session.user as {
+          role?: string;
+          programType?: string;
+          enrolledPrograms?: unknown;
+          stepEnrolled?: boolean;
+        }
       );
       const callbackPath = safeCallbackPath(callbackUrl);
       const redirectPath =
@@ -177,7 +182,12 @@ function LoginForm() {
         redirectPath && redirectPath !== "/login"
           ? redirectPath
           : dashboardPathForSessionUser(
-              session.user as { role?: string; programType?: string }
+              session.user as {
+                role?: string;
+                programType?: string;
+                enrolledPrograms?: unknown;
+                stepEnrolled?: boolean;
+              }
             );
     } catch (err) {
       setError(

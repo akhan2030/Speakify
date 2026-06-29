@@ -99,11 +99,15 @@ function getSupabaseUrl() {
 }
 
 function getAppBaseUrl() {
-  return (
-    process.env.NEXTAUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
+  const fromEnv =
+    process.env.NEXTAUTH_URL?.trim() ||
+    process.env.AUTH_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) return `https://${vercel.replace(/\/$/, "")}`;
+  if (process.env.NODE_ENV === "production") return "";
+  return "http://localhost:3000";
 }
 
 function assertEnv() {

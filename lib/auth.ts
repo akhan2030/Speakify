@@ -22,6 +22,8 @@ import { dashboardPathForStudentUser } from "@/lib/studentLoginRedirect";
 
 import { normalizeRole } from "@/lib/roles";
 
+import { getAppBaseUrl } from "@/lib/appUrl";
+
 import {
 
   normalizeEnrolledPrograms,
@@ -544,13 +546,17 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
+      const root = getAppBaseUrl() || baseUrl;
 
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.startsWith("/")) return `${root}${url}`;
 
-      if (new URL(url).origin === baseUrl) return url;
+      try {
+        if (new URL(url).origin === new URL(root).origin) return url;
+      } catch {
+        /* ignore malformed url */
+      }
 
-      return baseUrl;
-
+      return root;
     },
 
   },

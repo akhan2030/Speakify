@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getAppBaseUrl } from "@/lib/appUrl";
 
 export function getSupabaseUrl(): string {
   return (process.env.SUPABASE_URL || "")
@@ -18,9 +19,6 @@ export function getSupabaseAdmin(): SupabaseClient {
 }
 
 export function getLoginUrl(): string {
-  const base = (process.env.NEXTAUTH_URL || "http://localhost:3000").replace(
-    /\/$/,
-    ""
-  );
-  return `${base}/login`;
+  const base = getAppBaseUrl();
+  return base ? `${base}/login` : "/login";
 }

@@ -1,5 +1,5 @@
-import SpecialtyModulesPage from "@/components/specialty/SpecialtyPages";
+import BusinessEnglishModulesView from "@/components/specialty/BusinessEnglishModulesView";
 
 export default function BusinessEnglishModulesPage() {
-  return <SpecialtyModulesPage programId="business_english" />;
+  return <BusinessEnglishModulesView />;
 }

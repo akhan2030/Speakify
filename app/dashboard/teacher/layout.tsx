@@ -25,7 +25,7 @@ export default function TeacherDashboardLayout({
       return;
     }
     if (role && role !== "teacher") {
-      router.replace("/dashboard/student");
+      router.replace(role === "admin" ? "/dashboard/admin" : "/dashboard/student");
     }
   }, [status, role, router]);
 

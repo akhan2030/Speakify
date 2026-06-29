@@ -32,6 +32,12 @@ export async function GET(request) {
     );
 
     if (!getSupabaseUrl() || !process.env.SUPABASE_SERVICE_KEY) {
+      console.log("[vocabulary/words] missing Supabase env", {
+        cefrLevel,
+        rawCefrParam: searchParams.get("cefrLevel"),
+        hasUrl: Boolean(getSupabaseUrl()),
+        hasServiceKey: Boolean(process.env.SUPABASE_SERVICE_KEY),
+      });
       return NextResponse.json({ words: [] });
     }
 
@@ -80,13 +86,29 @@ export async function GET(request) {
     }
 
     console.log("[vocabulary/words] study query", {
-      table: "vocabulary_words",
       cefrLevel,
       rawCefrParam: searchParams.get("cefrLevel"),
       mode,
       topic,
       limit,
       studentId,
+    });
+
+    const supabaseProbe = await supabase
+      .from("vocabulary_words")
+      .select("id, word, cefr_level", { count: "exact" })
+      .eq("cefr_level", cefrLevel)
+      .limit(5);
+
+    console.log("[vocabulary/words] supabase vocabulary_words probe", {
+      cefrLevel,
+      count: supabaseProbe.count,
+      error: supabaseProbe.error?.message ?? null,
+      sample: (supabaseProbe.data ?? []).map((row) => ({
+        id: row.id,
+        word: row.word,
+        cefr_level: row.cefr_level,
+      })),
     });
 
     const { words, meta } = topic

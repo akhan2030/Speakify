@@ -3,7 +3,7 @@
 create table if not exists public.student_vocab_progress (
   id uuid primary key default gen_random_uuid(),
   student_id text not null,
-  word_id uuid not null references public.vocabulary_words (id) on delete cascade,
+  word_id bigint not null references public.vocabulary_words (id) on delete cascade,
   cefr_level text not null,
   next_review date not null default current_date,
   interval_days int not null default 0,

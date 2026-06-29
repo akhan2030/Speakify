@@ -1,10 +1,5 @@
-import AdminPlaceholderPage from "@/components/admin/AdminPlaceholderPage";
+import TeacherAccessPanel from "@/components/admin/TeacherAccessPanel";
 
 export default function AdminTeachersPage() {
-  return (
-    <AdminPlaceholderPage
-      title="Teachers"
-      description="Manage teacher accounts, classes, and student access."
-    />
-  );
+  return <TeacherAccessPanel />;
 }
