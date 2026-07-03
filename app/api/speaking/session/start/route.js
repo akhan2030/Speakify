@@ -15,6 +15,17 @@ function getSupabase() {
   });
 }
 
+function isMissingColumnError(error) {
+  const message = String(error?.message || error?.details || "").toLowerCase();
+  return (
+    message.includes("part2_cue_card") ||
+    message.includes("part2_transcript") ||
+    message.includes("part3_questions") ||
+    message.includes("schema cache") ||
+    message.includes("could not find")
+  );
+}
+
 export async function POST(req) {
   try {
     const { studentId, sessionType, programme } = await req.json();
@@ -52,25 +63,43 @@ export async function POST(req) {
       availableCards[Math.floor(Math.random() * availableCards.length)] ||
       PART2_CUE_CARDS[0];
 
-    const { data: session, error } = await supabase
+    const baseRow = {
+      student_id: studentId,
+      session_number: (count || 0) + 1,
+      session_type: sessionType || "practice",
+      programme: programme || "ielts",
+      cue_card_id: selectedCard.id,
+      transcript: [],
+    };
+
+    const part2CueCard = {
+      id: selectedCard.id,
+      title: selectedCard.topic,
+      prompt: selectedCard.prompt,
+      bullets: selectedCard.bullets,
+      closing: selectedCard.closing,
+    };
+
+    let { data: session, error } = await supabase
       .from("speaking_sessions")
       .insert({
-        student_id: studentId,
-        session_number: (count || 0) + 1,
-        session_type: sessionType || "practice",
-        programme: programme || "ielts",
-        cue_card_id: selectedCard.id,
-        part2_cue_card: {
-          id: selectedCard.id,
-          title: selectedCard.topic,
-          prompt: selectedCard.prompt,
-          bullets: selectedCard.bullets,
-          closing: selectedCard.closing,
-        },
-        transcript: [],
+        ...baseRow,
+        part2_cue_card: part2CueCard,
       })
       .select()
       .single();
+
+    // Production may not have run speaking_part3_columns.sql yet.
+    if (error && isMissingColumnError(error)) {
+      console.warn(
+        "[speaking/session/start] part2 columns missing — insert without them. Run supabase/speaking_part3_columns.sql"
+      );
+      ({ data: session, error } = await supabase
+        .from("speaking_sessions")
+        .insert(baseRow)
+        .select()
+        .single());
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

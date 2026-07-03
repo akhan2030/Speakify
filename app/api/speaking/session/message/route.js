@@ -41,16 +41,71 @@ function cueCardFromSession(session) {
   return card ? normalizeExaminerCueCard(card) : null;
 }
 
+function isMissingColumnError(error) {
+  const message = String(error?.message || error?.details || "").toLowerCase();
+  return (
+    message.includes("part2_cue_card") ||
+    message.includes("part2_transcript") ||
+    message.includes("part3_questions") ||
+    message.includes("schema cache") ||
+    message.includes("could not find")
+  );
+}
+
 async function persistPart3Fields(supabase, sessionId, fields) {
   const { error } = await supabase
     .from("speaking_sessions")
     .update(fields)
     .eq("id", sessionId);
 
-  if (error) {
-    // Columns may not exist yet if speaking_part3_columns.sql was not run.
-    console.warn("[speaking/session/message] persist Part 3 fields:", error.message);
+  if (!error) return;
+
+  if (!isMissingColumnError(error)) {
+    console.warn("[speaking/session/message] persist fields:", error.message);
+    return;
   }
+
+  // Fallback: only write columns that exist on older schemas.
+  const safeFields = { ...fields };
+  delete safeFields.part2_cue_card;
+  delete safeFields.part2_transcript;
+  delete safeFields.part3_questions;
+
+  if (Object.keys(safeFields).length === 0) return;
+
+  const { error: safeError } = await supabase
+    .from("speaking_sessions")
+    .update(safeFields)
+    .eq("id", sessionId);
+
+  if (safeError) {
+    console.warn("[speaking/session/message] persist safe fields:", safeError.message);
+  }
+}
+
+async function loadSpeakingSession(supabase, sessionId) {
+  const fullSelect =
+    "id, programme, cue_card_id, part2_cue_card, part2_transcript, part3_questions, transcript";
+  const { data, error } = await supabase
+    .from("speaking_sessions")
+    .select(fullSelect)
+    .eq("id", sessionId)
+    .single();
+
+  if (!error) return data;
+
+  if (!isMissingColumnError(error)) {
+    throw error;
+  }
+
+  const { data: fallback, error: fallbackError } = await supabase
+    .from("speaking_sessions")
+    .select("id, programme, cue_card_id, transcript")
+    .eq("id", sessionId)
+    .single();
+
+  if (fallbackError) throw fallbackError;
+  return fallback;
 }
 
 /**
@@ -128,13 +183,7 @@ export async function POST(req) {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const supabase = getSupabase();
 
-    const { data: session } = await supabase
-      .from("speaking_sessions")
-      .select(
-        "id, programme, cue_card_id, part2_cue_card, part2_transcript, part3_questions, transcript"
-      )
-      .eq("id", sessionId)
-      .single();
+    const session = await loadSpeakingSession(supabase, sessionId);
 
     let cueCard = cueCardFromSession(session);
     let part2Transcript =

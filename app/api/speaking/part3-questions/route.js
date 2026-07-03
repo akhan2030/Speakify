@@ -54,11 +54,23 @@ export async function POST(req) {
 
     if (sessionId && process.env.SUPABASE_SERVICE_KEY && getSupabaseUrl()) {
       const supabase = getSupabase();
-      const { data: speakingSession } = await supabase
+      let speakingSession = null;
+      const full = await supabase
         .from("speaking_sessions")
         .select("student_id, part2_cue_card, part2_transcript, part3_questions, transcript")
         .eq("id", sessionId)
         .maybeSingle();
+
+      if (full.error && /part2_cue_card|schema cache|could not find/i.test(full.error.message)) {
+        const fallback = await supabase
+          .from("speaking_sessions")
+          .select("student_id, transcript")
+          .eq("id", sessionId)
+          .maybeSingle();
+        speakingSession = fallback.data;
+      } else {
+        speakingSession = full.data;
+      }
 
       if (!speakingSession) {
         return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -110,7 +122,7 @@ export async function POST(req) {
 
     if (sessionId && process.env.SUPABASE_SERVICE_KEY && getSupabaseUrl()) {
       const supabase = getSupabase();
-      await supabase
+      const { error: updateError } = await supabase
         .from("speaking_sessions")
         .update({
           part2_cue_card: cueCard,
@@ -118,6 +130,13 @@ export async function POST(req) {
           part3_questions: questions,
         })
         .eq("id", sessionId);
+
+      if (updateError) {
+        console.warn(
+          "[speaking/part3-questions] could not persist Part 3 columns:",
+          updateError.message
+        );
+      }
     }
 
     return NextResponse.json({ questions });
