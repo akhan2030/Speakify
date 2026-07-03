@@ -150,33 +150,90 @@ function SpeakingPartnerContent() {
     setMode("feedback");
   };
 
+  const latestBand =
+    feedback && typeof feedback.overallBand === "number"
+      ? feedback.overallBand
+      : null;
+
+  const header = (
+    <SkillBandHeader
+      skill="speaking"
+      title="Speaking"
+      subtitle="AI examiner Sarah — live conversation across Parts 1, 2 & 3"
+      refreshKey={progressRefreshKey}
+      latestBand={latestBand}
+    />
+  );
+
   if (mode === "no_speech") {
     return (
-      <NoSpeechDetected
-        message={noSpeechMessage ?? undefined}
-        onTryAgain={() => {
-          setNoSpeechMessage(null);
-          resetSessionState();
-          setMode("home");
-        }}
-      />
+      <>
+        {header}
+        <NoSpeechDetected
+          message={noSpeechMessage ?? undefined}
+          onTryAgain={() => {
+            setNoSpeechMessage(null);
+            resetSessionState();
+            setMode("home");
+          }}
+        />
+      </>
     );
   }
 
   if (mode === "feedback" && feedback && !("insufficientSpeech" in feedback)) {
+    const historyForChart = [...bandHistory];
+    if (
+      typeof feedback.overallBand === "number" &&
+      !historyForChart.some(
+        (h) =>
+          Number(h.sessionNumber) === Number(sessionNumber) &&
+          Number(h.band) === Number(feedback.overallBand)
+      )
+    ) {
+      historyForChart.push({
+        sessionNumber: sessionNumber || historyForChart.length + 1,
+        band: feedback.overallBand,
+        date: new Date().toISOString(),
+      });
+    }
+
     if (feedbackSessionType === "mock") {
       return (
-        <MockSpeakingFeedbackReport
-          feedback={
-            feedback as Parameters<typeof MockSpeakingFeedbackReport>[0]["feedback"]
-          }
-          mockJourney={mockJourney}
+        <>
+          {header}
+          <MockSpeakingFeedbackReport
+            feedback={
+              feedback as Parameters<typeof MockSpeakingFeedbackReport>[0]["feedback"]
+            }
+            mockJourney={mockJourney}
+            onStartNext={() => {
+              setFeedback(null);
+              resetSessionState();
+              startSession("mock");
+            }}
+            onStartPractice={() => {
+              setFeedback(null);
+              resetSessionState();
+              startSession("practice");
+            }}
+            onReturnHome={() => {
+              setFeedback(null);
+              resetSessionState();
+              setMode("home");
+            }}
+          />
+        </>
+      );
+    }
+
+    return (
+      <>
+        {header}
+        <FeedbackReport
+          feedback={feedback as Parameters<typeof FeedbackReport>[0]["feedback"]}
+          bandHistory={historyForChart}
           onStartNext={() => {
-            setFeedback(null);
-            resetSessionState();
-            startSession("mock");
-          }}
-          onStartPractice={() => {
             setFeedback(null);
             resetSessionState();
             startSession("practice");
@@ -184,62 +241,50 @@ function SpeakingPartnerContent() {
           onReturnHome={() => {
             setFeedback(null);
             resetSessionState();
-            setMode("home");
+            router.push("/dashboard/ielts/student");
           }}
         />
-      );
-    }
-
-    return (
-      <FeedbackReport
-        feedback={feedback as Parameters<typeof FeedbackReport>[0]["feedback"]}
-        bandHistory={bandHistory}
-        onStartNext={() => {
-          setFeedback(null);
-          resetSessionState();
-          startSession("practice");
-        }}
-        onReturnHome={() => {
-          setFeedback(null);
-          resetSessionState();
-          router.push("/dashboard/ielts/student");
-        }}
-      />
+      </>
     );
   }
 
   if (mode === "practice" || mode === "mock") {
     return (
-      <ActiveSession
-        sessionId={sessionId}
-        sessionNumber={sessionNumber}
-        currentPart={currentPart}
-        setCurrentPart={setCurrentPart}
-        conversationHistory={conversationHistory}
-        setConversationHistory={setConversationHistory}
-        examinerSpeech={examinerSpeech}
-        setExaminerSpeech={setExaminerSpeech}
-        isListening={isListening}
-        setIsListening={setIsListening}
-        isExaminerSpeaking={isExaminerSpeaking}
-        setIsExaminerSpeaking={setIsExaminerSpeaking}
-        transcript={transcript}
-        setTranscript={setTranscript}
-        cueCard={cueCard}
-        part2Timer={part2Timer}
-        setPart2Timer={setPart2Timer}
-        part2Phase={part2Phase}
-        setPart2Phase={setPart2Phase}
-        sessionStatus={sessionStatus}
-        setSessionStatus={setSessionStatus}
-        sessionType={mode}
-        studentId={studentId}
-        onComplete={handleComplete}
-      />
+      <>
+        {header}
+        <ActiveSession
+          sessionId={sessionId}
+          sessionNumber={sessionNumber}
+          currentPart={currentPart}
+          setCurrentPart={setCurrentPart}
+          conversationHistory={conversationHistory}
+          setConversationHistory={setConversationHistory}
+          examinerSpeech={examinerSpeech}
+          setExaminerSpeech={setExaminerSpeech}
+          isListening={isListening}
+          setIsListening={setIsListening}
+          isExaminerSpeaking={isExaminerSpeaking}
+          setIsExaminerSpeaking={setIsExaminerSpeaking}
+          transcript={transcript}
+          setTranscript={setTranscript}
+          cueCard={cueCard}
+          part2Timer={part2Timer}
+          setPart2Timer={setPart2Timer}
+          part2Phase={part2Phase}
+          setPart2Phase={setPart2Phase}
+          sessionStatus={sessionStatus}
+          setSessionStatus={setSessionStatus}
+          sessionType={mode}
+          studentId={studentId}
+          onComplete={handleComplete}
+        />
+      </>
     );
   }
 
   return (
+    <>
+    {header}
     <div style={{ maxWidth: "800px" }}>
       <h1
         style={{
@@ -459,17 +504,13 @@ function SpeakingPartnerContent() {
         ← Back to dashboard
       </button>
     </div>
+    </>
   );
 }
 
 export default function IeltsSpeakingPage() {
   return (
     <main className="min-h-screen flex-1 bg-slate-50 p-4 pb-24 md:p-6 md:pb-6">
-      <SkillBandHeader
-        skill="speaking"
-        title="Speaking"
-        subtitle="AI examiner Sarah — live conversation across Parts 1, 2 & 3"
-      />
       <Suspense fallback={<PageSpinner />}>
         <SpeakingPartnerContent />
       </Suspense>

@@ -20,10 +20,16 @@ export default function SkillBandHeader({
   skill,
   title,
   subtitle,
+  refreshKey = 0,
+  latestBand = null,
 }: {
   skill: keyof typeof SKILL_KEYS;
   title: string;
   subtitle?: string;
+  /** Bump after a session completes so the header refetches. */
+  refreshKey?: number;
+  /** Immediate override while dashboard API catches up. */
+  latestBand?: number | null;
 }) {
   const [band, setBand] = useState<BandData | null>(null);
 
@@ -52,7 +58,21 @@ export default function SkillBandHeader({
         }
       })
       .catch(() => {});
-  }, [skill]);
+  }, [skill, refreshKey]);
+
+  useEffect(() => {
+    if (latestBand == null || !Number.isFinite(latestBand)) return;
+    setBand((prev) => {
+      const target = prev?.target ?? 6.5;
+      const gap = Math.max(0, Math.round((target - latestBand) * 2) / 2);
+      return {
+        current: latestBand,
+        target,
+        gap,
+        onTarget: gap <= 0,
+      };
+    });
+  }, [latestBand]);
 
   const current = band?.current;
   const target = band?.target ?? 6.5;

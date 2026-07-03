@@ -11,6 +11,10 @@ import {
   structuredScoreToLegacyFeedback,
 } from "@/lib/speaking/scoringSchema";
 import {
+  deriveVocabularyChallenge,
+  repairStructuredScoreEvidence,
+} from "@/lib/speaking/scoreEvidence";
+import {
   runStructuredScoring,
   structuredToCoachingFields,
 } from "@/lib/speaking/structuredScoring";
@@ -39,23 +43,27 @@ function numberOrNull(value) {
   return Number.isFinite(n) ? n : null;
 }
 
-function fallbackEvidence(studentTranscript) {
-  const firstLine = String(studentTranscript || "")
+function pickEvidence(preferred, studentTranscript) {
+  const quote = String(preferred || "").trim();
+  if (quote && !/^(my name is|i am|i'm)\b/i.test(quote)) {
+    return quote.slice(0, 160);
+  }
+  const lines = String(studentTranscript || "")
     .split("\n")
     .map((line) => line.replace(/^\[Part \d+\]\s*/, "").trim())
-    .find(Boolean);
-  return firstLine ? firstLine.slice(0, 140) : "";
+    .filter(Boolean)
+    .filter((line) => !/^(my name is|i am|i'm)\b/i.test(line) || line.split(/\s+/).length > 6);
+  return (lines[0] || quote || "").slice(0, 160);
 }
 
 function buildCriterionFeedback(feedback, studentTranscript) {
   const criteria = feedback.criteria || {};
   const existing = feedback.criterionFeedback || {};
-  const evidence = fallbackEvidence(studentTranscript);
 
   const item = (key, band, fallbackNote) => ({
     band: numberOrNull(existing[key]?.band) ?? numberOrNull(band) ?? 0,
     note: String(existing[key]?.note || fallbackNote),
-    evidence: String(existing[key]?.evidence || evidence),
+    evidence: pickEvidence(existing[key]?.evidence, studentTranscript),
     ...(existing[key]?.flaggedWords
       ? { flaggedWords: existing[key].flaggedWords }
       : {}),
@@ -295,6 +303,11 @@ export async function POST(req) {
       console.timeEnd("[speaking/session/score] structured grading");
     }
 
+    structuredScore = repairStructuredScoreEvidence(
+      structuredScore,
+      studentTranscript
+    );
+
     const legacyFromStructured = structuredScoreToLegacyFeedback(structuredScore);
     const coaching = structuredToCoachingFields(structuredScore);
     const criterionFeedback = buildCriterionFeedback(
@@ -304,6 +317,17 @@ export async function POST(req) {
       },
       studentTranscript
     );
+
+    const vocabularyChallenge = [
+      ...(Array.isArray(structuredScore.vocabulary_challenge)
+        ? structuredScore.vocabulary_challenge
+        : []),
+      ...coaching.vocabularyChallenge,
+      ...deriveVocabularyChallenge(studentTranscript, structuredScore),
+    ]
+      .map((w) => String(w || "").toLowerCase().trim())
+      .filter((w, i, arr) => w.length > 3 && arr.indexOf(w) === i)
+      .slice(0, 5);
 
     const feedback = {
       overallBand: structuredScore.overall_band,
@@ -315,10 +339,7 @@ export async function POST(req) {
       topImprovements: coaching.topImprovements,
       strengths: coaching.strengths,
       saudiSpecificErrors: coaching.saudiSpecificErrors,
-      vocabularyChallenge:
-        coaching.vocabularyChallenge.length > 0
-          ? coaching.vocabularyChallenge
-          : ["precise", "significant", "beneficial", "contribute", "develop"],
+      vocabularyChallenge,
       sessionScore: {
         overall_band: structuredScore.overall_band,
         fluency: criterionFeedback.fluency,

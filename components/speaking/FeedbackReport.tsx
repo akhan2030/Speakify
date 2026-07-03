@@ -130,10 +130,20 @@ export default function FeedbackReport({
   onReturnHome: () => void;
 }) {
   const overallColor = bandColor(feedback.overallBand);
-  const chartData = bandHistory.slice(-5).map((h) => ({
-    name: `#${h.sessionNumber}`,
-    band: h.band,
-  }));
+  const chartData = bandHistory
+    .slice(-5)
+    .map((h, index) => {
+      const sessionNo = Number(h.sessionNumber);
+      const band = Number(h.band);
+      return {
+        name:
+          Number.isFinite(sessionNo) && sessionNo > 0 && sessionNo < 10000
+            ? `S${sessionNo}`
+            : `S${index + 1}`,
+        band: Number.isFinite(band) ? band : 0,
+      };
+    })
+    .filter((row) => row.band > 0);
 
   const improvements = (feedback.topImprovements || []).slice(0, 3);
   const vocab = (feedback.vocabularyChallenge || []).slice(0, 5);

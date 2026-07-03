@@ -74,14 +74,20 @@ export function normalizeCriteriaHistory(
 }
 
 export function buildCriteriaChartData(history: CriteriaHistoryPoint[]) {
-  return history.slice(-5).map((point) => ({
-    name: `#${point.sessionNumber}`,
-    overall: point.band,
-    fluencyCoherence: point.criteria?.fluencyCoherence ?? null,
-    lexicalResource: point.criteria?.lexicalResource ?? null,
-    grammaticalRange: point.criteria?.grammaticalRange ?? null,
-    pronunciation: point.criteria?.pronunciation ?? null,
-  }));
+  return history.slice(-5).map((point, index) => {
+    const sessionNo = Number(point.sessionNumber);
+    return {
+      name:
+        Number.isFinite(sessionNo) && sessionNo > 0 && sessionNo < 10000
+          ? `S${sessionNo}`
+          : `S${index + 1}`,
+      overall: point.band,
+      fluencyCoherence: point.criteria?.fluencyCoherence ?? null,
+      lexicalResource: point.criteria?.lexicalResource ?? null,
+      grammaticalRange: point.criteria?.grammaticalRange ?? null,
+      pronunciation: point.criteria?.pronunciation ?? null,
+    };
+  });
 }
 
 export function generateProgressChartInsight(history: CriteriaHistoryPoint[]): string | null {

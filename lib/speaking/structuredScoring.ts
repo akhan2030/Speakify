@@ -66,11 +66,17 @@ Return ONLY valid JSON matching this schema exactly:
     "grammatical_range_accuracy": { "band": 6.5, "weight": 0.25, "deductions": [], "strengths": [] },
     "pronunciation": { "band": 6.5, "weight": 0.25, "deductions": [], "strengths": [] }
   },
-  "transcript_with_annotations": "optional brief annotated notes"
+  "transcript_with_annotations": "optional brief annotated notes",
+  "vocabulary_challenge": ["worthwhile", "flavourful", "appreciate"]
 }
 
 Rules:
 - Every deduction MUST include reason, evidence (real quote from transcript OR a provided metric), and band_impact.
+- Evidence MUST be copied from the transcript turn that contains the error. Scan ALL turns, not only Turn 1.
+- NEVER use the student's name introduction (e.g. "My name is …") as evidence for grammar, lexical, fluency, or pronunciation deductions unless that line itself contains the error.
+- Each criterion should use DIFFERENT evidence when multiple issues exist.
+- Flag real issues such as: "from last three years" (grammar), "very delicious" (lexical), repeated "like/love/nightlife" phrasing (lexical/fluency).
+- Also return "vocabulary_challenge": an array of 3–5 upgrade words tied to what the student actually said (stronger synonyms for basic/overused words they used). Do NOT invent a generic academic word list.
 - overall_band must equal the mean of the four criterion bands, rounded to nearest 0.5.
 - Pronunciation: if metrics.estimated is true, label pronunciation notes as estimated and do not invent phoneme-level claims.
 - Prefer 0–3 deductions per criterion; strengths optional.
@@ -82,16 +88,22 @@ export async function runStructuredScoring(input: {
   studentTranscript: string;
   fluencyMetrics: FluencyMetrics;
   pronunciationMetrics: PronunciationMetrics;
-}): Promise<StructuredSpeakingScore> {
+}): Promise<StructuredSpeakingScore & { vocabulary_challenge?: string[] }> {
   const pronunciationHint = pronunciationMetricsToBandHint(input.pronunciationMetrics);
 
+  const turns = String(input.studentTranscript || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   const userPayload = {
-    transcript: input.studentTranscript,
+    turns,
+    full_transcript: input.studentTranscript,
     fluency_metrics: input.fluencyMetrics,
     pronunciation_metrics: input.pronunciationMetrics,
     pronunciation_band_hint: pronunciationHint,
     instructions:
-      "Score this IELTS Speaking performance. Anchor fluency judgments to fluency_metrics (WPM, pauses, fillers). Anchor pronunciation to pronunciation_metrics and the band hint (adjust only with transcript evidence).",
+      "Score this IELTS Speaking performance. Review EVERY turn in `turns`. Anchor fluency to fluency_metrics. For each deduction, evidence must be a quote from the specific turn that shows the issue — never default all criteria to turn 1. Also return vocabulary_challenge upgrades based on words the student actually used.",
   };
 
   const response = await input.openai.chat.completions.create({
@@ -113,12 +125,19 @@ export async function runStructuredScoring(input: {
     parsed = {};
   }
 
-  return normalizeStructuredScore(
+  const score = normalizeStructuredScore(
     parsed,
     input.sessionId,
     input.fluencyMetrics,
     input.pronunciationMetrics
   );
+
+  const row = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+  const vocabulary_challenge = Array.isArray(row.vocabulary_challenge)
+    ? row.vocabulary_challenge.map((w) => String(w || "").trim().toLowerCase()).filter((w) => w.length > 3)
+    : [];
+
+  return { ...score, vocabulary_challenge };
 }
 
 /** Build legacy-compatible coaching fields from structured score. */
