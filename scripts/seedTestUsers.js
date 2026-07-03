@@ -16,6 +16,15 @@ function getSupabaseUrl() {
     .replace(/\/$/, "");
 }
 
+const IELTS_DEMO_PROFILE = {
+  program_type: "ielts",
+  enrolled_programs: ["ielts"],
+  step_enrolled: false,
+  onboarding_completed: true,
+  program_selected: "ielts",
+  placement_test_completed: true,
+};
+
 const TEST_USERS = [
   {
     email: "student@test.com",
@@ -52,7 +61,18 @@ const TEST_USERS = [
     password: "Speakify2026!",
     role: "student",
     name: "Speakify Student",
+    programType: "ielts",
+    ieltsDemo: true,
     forcePassword: true,
+  },
+  {
+    email: "ismail.ammar.hamido@speakify.test",
+    password: "Speakify@2026",
+    role: "student",
+    name: "Ismail Ammar Hamido",
+    programType: "ielts",
+    ieltsDemo: true,
+    forcePassword: false,
   },
   {
     email: "business@test.com",
@@ -122,23 +142,20 @@ async function main() {
       if (existing.role !== user.role) updates.role = user.role;
       if ((existing.name ?? "") !== user.name) updates.name = user.name;
       if (user.programType) updates.program_type = user.programType;
+      if (user.ieltsDemo) Object.assign(updates, IELTS_DEMO_PROFILE);
       if (user.forcePassword || !isBcryptHash(existing.password)) {
         updates.password = passwordHash;
       }
 
-      if (Object.keys(updates).length) {
-        const { error } = await supabase
-          .from("users")
-          .update(updates)
-          .eq("id", existing.id);
-        if (error) {
-          console.error(`Update failed for ${user.email}:`, error.message);
-          process.exit(1);
-        }
-        console.log(`Updated ${user.email} (${user.role})`);
-      } else {
-        console.log(`OK ${user.email} (${user.role})`);
+      const { error } = await supabase
+        .from("users")
+        .update(updates)
+        .eq("id", existing.id);
+      if (error) {
+        console.error(`Update failed for ${user.email}:`, error.message);
+        process.exit(1);
       }
+      console.log(`Updated ${user.email} (${user.role})`);
       continue;
     }
 
@@ -149,6 +166,7 @@ async function main() {
       role: user.role,
       name: user.name,
       ...(user.programType ? { program_type: user.programType } : {}),
+      ...(user.ieltsDemo ? IELTS_DEMO_PROFILE : {}),
     });
 
     if (insertError) {
@@ -171,7 +189,8 @@ async function main() {
   console.log("  kids@test.com / 123456     -> Kids English dashboard");
   console.log("  teacher@test.com / 123456  -> teacher dashboard");
   console.log("  admin@speakify.com / Speakify2026!  -> teacher dashboard (demo admin)");
-  console.log("  student@speakify.com / Speakify2026!  -> student dashboard (demo student, no placement lock)");
+  console.log("  student@speakify.com / Speakify2026!  -> IELTS student dashboard (demo)");
+  console.log("  ismail.ammar.hamido@speakify.test / Speakify@2026 -> IELTS student dashboard");
   console.log(`  Placement test: ${base}/placement-test`);
 }
 

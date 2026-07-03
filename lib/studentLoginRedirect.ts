@@ -90,6 +90,15 @@ export function resolveStudentDashboardPath(input: {
   const raw = parseRawEnrolledPrograms(input.enrolledPrograms);
   const stepEnrolled = input.stepEnrolled === true;
 
+  // Stale step_enrolled flag with IELTS-only enrollment → IELTS dashboard (not STEP diagnostic)
+  if (
+    stepEnrolled &&
+    programs.includes("ielts") &&
+    !raw.includes("step")
+  ) {
+    return studentDashboardPath("ielts");
+  }
+
   if (stepEnrolled) {
     const hasStepAndIelts = raw.includes("step") && raw.includes("ielts");
     const hasPathway = programs.includes("pathway");

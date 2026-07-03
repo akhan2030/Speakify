@@ -180,6 +180,12 @@ function LoginForm() {
         onboardingCompleted?: boolean;
       };
 
+      const callbackPath = safeCallbackPath(callbackUrl);
+      if (callbackPath?.startsWith("/dashboard/ielts")) {
+        window.location.href = callbackPath;
+        return;
+      }
+
       const redirectPath = resolvePostLoginPath({
         role,
         mustChangePassword: false,
@@ -291,11 +297,15 @@ function LoginForm() {
                 type="button"
                 disabled={loading}
                 onClick={() =>
-                  handleLogin(undefined, "ahmed@test.com", "Speakify2026!")
+                  handleLogin(
+                    undefined,
+                    "student@speakify.com",
+                    "Speakify2026!"
+                  )
                 }
                 className="rounded-lg border border-[#0d9488]/50 bg-white px-3 py-2.5 text-left text-xs font-semibold text-[#0d1b35] hover:bg-[#0d9488]/10 disabled:opacity-50"
               >
-                Sign in as Student →
+                Sign in as IELTS Student (demo) →
               </button>
             </div>
             <p className="mt-2 text-[0.65rem] text-slate-400">
