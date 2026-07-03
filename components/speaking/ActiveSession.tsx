@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { speakSarahExaminer, stopBrowserSpeech } from "@/lib/browserSpeech";
 import { checkMicrophoneAccess } from "@/lib/speaking/checkMicrophone";
-import { PART3_QUESTIONS } from "@/lib/speaking/examinerPrompt";
+import { fetchPart3Questions } from "@/lib/speaking/fetchPart3Questions";
+import { buildPart3TransitionSpeech } from "@/lib/speaking/part3Generation";
 import {
   MIN_SPEAKING_SECONDS,
-  MIN_STUDENT_CHARS,
   hasValidSpeechInput,
-  studentTranscriptFromHistory,
+  isLikelyRealStudentSpeech,
 } from "@/lib/speaking/validateSpeechInput";
 
 type Part = 1 | 2 | 3;
@@ -29,13 +29,14 @@ const PART_LABELS: Record<Part, string> = {
   3: "Discussion",
 };
 
-function part3KeyFromTopic(topic: string) {
-  const t = topic.toLowerCase();
-  if (t.includes("place") || t.includes("visit")) return "place";
-  if (t.includes("person") || t.includes("influence")) return "person";
-  if (t.includes("skill")) return "skill";
-  if (t.includes("journey") || t.includes("travel")) return "journey";
-  return "default";
+function cueCardPayload(card: CueCard) {
+  return {
+    id: card.id,
+    title: card.topic,
+    prompt: card.prompt,
+    bullets: card.bullets,
+    closing: card.closing,
+  };
 }
 
 function buildPart2PracticeIntro(card: CueCard) {
@@ -152,6 +153,8 @@ export default function ActiveSession({
   const [micGateError, setMicGateError] = useState<string | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
   const [sarahThinking, setSarahThinking] = useState(false);
+  const [part3Questions, setPart3Questions] = useState<string[]>([]);
+  const [part3Generating, setPart3Generating] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -230,7 +233,21 @@ export default function ActiveSession({
         setTranscript(text);
 
         if (!text) {
-          setMicError("Couldn't hear anything. Speak clearly and try again.");
+          setMicError("Couldn't hear anything. Speak clearly into your microphone and try again.");
+          return;
+        }
+
+        const authenticity = isLikelyRealStudentSpeech(text);
+        if (!authenticity.ok) {
+          setMicError(
+            authenticity.reason ||
+              "That recording was not a valid spoken answer. Use headphones and speak your own response."
+          );
+          setTranscript("");
+          transcriptRef.current = "";
+          if (mode === "part2") {
+            part2TranscriptRef.current = "";
+          }
           return;
         }
 
@@ -401,7 +418,6 @@ export default function ActiveSession({
   const finishSession = useCallback(async () => {
     if (!sessionId || !studentId || processingRef.current) return;
 
-    const studentText = studentTranscriptFromHistory(conversationHistory);
     const clientValidation = hasValidSpeechInput({
       transcript: conversationHistory
         .filter((e) => e.role === "student")
@@ -410,15 +426,10 @@ export default function ActiveSession({
       practiceMode: sessionType === "practice",
     });
 
-    if (
-      !microphoneGranted ||
-      totalSpeakingSecondsRef.current < MIN_SPEAKING_SECONDS ||
-      studentText.length < MIN_STUDENT_CHARS ||
-      !clientValidation.valid
-    ) {
+    if (!microphoneGranted || !clientValidation.valid) {
       setMicError(
         clientValidation.reason ||
-          "No speech detected. Please complete the speaking session before requesting a score."
+          "No valid student speech detected. Please speak your own answers before requesting a score."
       );
       return;
     }
@@ -468,6 +479,31 @@ export default function ActiveSession({
     onComplete,
   ]);
 
+  const ensurePart3Questions = useCallback(
+    async (part2Transcript: string) => {
+      if (!sessionId || !cueCard) return part3Questions;
+      if (part3Questions.length >= 3) return part3Questions;
+
+      setPart3Generating(true);
+      try {
+        const questions = await fetchPart3Questions({
+          sessionId,
+          cueCard: cueCardPayload(cueCard),
+          part2Transcript,
+          testType: "ielts_academic",
+        });
+        setPart3Questions(questions);
+        return questions;
+      } catch (err) {
+        console.error("[ActiveSession] Part 3 generation failed:", err);
+        return part3Questions;
+      } finally {
+        setPart3Generating(false);
+      }
+    },
+    [sessionId, cueCard, part3Questions]
+  );
+
   const switchToPracticePart = useCallback(
     async (part: Part) => {
       if (sessionType !== "practice" || processingRef.current) return;
@@ -510,12 +546,20 @@ export default function ActiveSession({
         return;
       }
 
-      if (part === 3) {
+      if (part === 3 && cueCard && sessionId) {
         setPart2Phase("done");
         setPart2Timer(null);
-        const key = part3KeyFromTopic(cueCard?.topic ?? "");
-        const questions = PART3_QUESTIONS[key] ?? PART3_QUESTIONS.default;
-        const speech = `Let's practice Part 3. ${questions[0]}`;
+        const part2Text = conversationHistory
+          .filter((entry) => entry.role === "student" && entry.part === 2)
+          .map((entry) => entry.text)
+          .join(" ")
+          .trim();
+        const questions = await ensurePart3Questions(part2Text);
+        const card = cueCardPayload(cueCard);
+        const speech =
+          questions[0] != null
+            ? buildPart3TransitionSpeech(card, questions[0])
+            : `Let's practice Part 3. We've been talking about ${cueCard.topic}.`;
         setExaminerSpeech(speech);
         setConversationHistory((history) => [
           ...history,
@@ -526,7 +570,10 @@ export default function ActiveSession({
     },
     [
       sessionType,
+      sessionId,
       cueCard,
+      conversationHistory,
+      ensurePart3Questions,
       setCurrentPart,
       setPart2Phase,
       setPart2Timer,
@@ -583,7 +630,12 @@ export default function ActiveSession({
         setSarahThinking(true);
         console.time("[speaking] LLM call");
         let res: Response | null = null;
-        let data: { speech?: string; action?: string; error?: string } = {};
+        let data: {
+          speech?: string;
+          action?: string;
+          error?: string;
+          part3Questions?: string[];
+        } = {};
         try {
           res = await fetch("/api/speaking/session/message", {
             method: "POST",
@@ -593,14 +645,21 @@ export default function ActiveSession({
               studentMessage: text.trim(),
               currentPart,
               conversationHistory: historyForApi,
-              cueCardTopic: cueCard?.topic || "",
             }),
           });
           data = await res.json();
         } finally {
           console.timeEnd("[speaking] LLM call");
         }
-        if (!res.ok) throw new Error(data.error || "Message failed");
+        if (!res.ok) {
+          setSarahThinking(false);
+          setMicError(data.error || "Could not send your response. Please try again.");
+          return;
+        }
+
+        if (Array.isArray(data.part3Questions) && data.part3Questions.length >= 3) {
+          setPart3Questions(data.part3Questions);
+        }
 
         const examinerEntry: HistoryEntry = { role: "examiner", text: data.speech ?? "" };
         setConversationHistory([...historyForApi, examinerEntry]);
@@ -609,7 +668,9 @@ export default function ActiveSession({
       } catch (err) {
         setSarahThinking(false);
         console.error(err);
-        alert("Could not send your response. Please try again.");
+        setMicError(
+          err instanceof Error ? err.message : "Could not send your response. Please try again."
+        );
       } finally {
         setIsProcessing(false);
       }
@@ -618,7 +679,6 @@ export default function ActiveSession({
       sessionId,
       currentPart,
       conversationHistory,
-      cueCard,
       setConversationHistory,
       setTranscript,
       handleExaminerAction,
@@ -673,6 +733,44 @@ export default function ActiveSession({
     return () => clearInterval(id);
   }, [sessionStatus]);
 
+  const finishPart2Speaking = useCallback(async () => {
+    if (part2PhaseRef.current !== "speaking") return;
+    part2PhaseRef.current = "done";
+    setPart2Phase("done");
+    setPart2Timer(null);
+
+    await stopRecording();
+
+    const part2Text = part2TranscriptRef.current.trim();
+    const authenticity = part2Text ? isLikelyRealStudentSpeech(part2Text) : { ok: false };
+
+    if (part2Text && authenticity.ok) {
+      const thankYou = "Thank you.";
+      speakExaminer(thankYou, () => {
+        void (async () => {
+          await sendStudentMessage(part2Text);
+          await ensurePart3Questions(part2Text);
+        })();
+      });
+      return;
+    }
+
+    setMicError(
+      authenticity && "reason" in authenticity && authenticity.reason
+        ? authenticity.reason
+        : "No clear Part 2 answer was heard. Use headphones, mute other media, and try Part 2 again."
+    );
+    part2TranscriptRef.current = "";
+    await ensurePart3Questions("");
+  }, [
+    stopRecording,
+    speakExaminer,
+    sendStudentMessage,
+    ensurePart3Questions,
+    setPart2Phase,
+    setPart2Timer,
+  ]);
+
   // Part 2 prep / speaking countdown
   useEffect(() => {
     if (currentPart !== 2 || part2Timer == null || part2Phase === "done") return;
@@ -688,18 +786,7 @@ export default function ActiveSession({
           void startRecording("part2");
         });
       } else if (part2Phase === "speaking") {
-        void (async () => {
-          await stopRecording();
-          const thankYou = "Thank you.";
-          speakExaminer(thankYou, () => {
-            const part2Text = part2TranscriptRef.current.trim();
-            if (part2Text) {
-              sendStudentMessage(part2Text);
-            }
-            setPart2Phase("done");
-            setPart2Timer(null);
-          });
-        })();
+        void finishPart2Speaking();
       }
       return;
     }
@@ -714,8 +801,7 @@ export default function ActiveSession({
     setPart2Phase,
     setPart2Timer,
     startRecording,
-    stopRecording,
-    sendStudentMessage,
+    finishPart2Speaking,
   ]);
 
   // Pulse progress bar at 30s remaining in Part 2 speaking
@@ -734,20 +820,21 @@ export default function ActiveSession({
       ? ((120 - part2Timer) / 120) * 100
       : 0;
 
-  const studentText = useMemo(
-    () => studentTranscriptFromHistory(conversationHistory),
-    [conversationHistory]
+  const speechValidation = useMemo(
+    () =>
+      hasValidSpeechInput({
+        transcript: conversationHistory
+          .filter((e) => e.role === "student")
+          .map((e) => ({ role: "student", text: e.text, part: e.part ?? 1 })),
+        speakingTimeSeconds: totalSpeakingSeconds,
+        practiceMode: sessionType === "practice",
+      }),
+    [conversationHistory, totalSpeakingSeconds, sessionType]
   );
 
   const canSubmit = useMemo(
-    () =>
-      microphoneGranted &&
-      totalSpeakingSeconds >= MIN_SPEAKING_SECONDS &&
-      studentText.length >= MIN_STUDENT_CHARS &&
-      (sessionType === "practice"
-        ? conversationHistory.some((e) => e.role === "student")
-        : conversationHistory.some((e) => e.role === "student" && e.part === 1)),
-    [microphoneGranted, totalSpeakingSeconds, studentText, conversationHistory, sessionType]
+    () => microphoneGranted && speechValidation.valid,
+    [microphoneGranted, speechValidation.valid]
   );
 
   if (micGateError) {
@@ -1033,6 +1120,28 @@ export default function ActiveSession({
                   {transcript}
                 </p>
               )}
+              <button
+                type="button"
+                onClick={() => void finishPart2Speaking()}
+                disabled={isProcessing}
+                style={{
+                  marginTop: "12px",
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "#0d1b35",
+                  color: "white",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  cursor: isProcessing ? "wait" : "pointer",
+                }}
+              >
+                I&apos;m finished speaking
+              </button>
+              <p style={{ fontSize: "11px", color: "#94a3b8", margin: "8px 0 0", textAlign: "center" }}>
+                Use headphones and mute other media so only your voice is recorded.
+              </p>
             </>
           )}
         </div>
@@ -1163,13 +1272,14 @@ export default function ActiveSession({
             ? "Get My Band Score →"
             : testEnded
               ? "Complete speaking to get your score"
-              : `Record at least ${MIN_SPEAKING_SECONDS}s of speech to unlock scoring`}
+              : `Record at least ${MIN_SPEAKING_SECONDS}s of your own speech to unlock scoring`}
         </button>
-        {totalSpeakingSeconds > 0 && totalSpeakingSeconds < MIN_SPEAKING_SECONDS && (
-          <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>
-            Speaking time: {totalSpeakingSeconds}s / {MIN_SPEAKING_SECONDS}s minimum
+        {!canSubmit ? (
+          <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px", maxWidth: "420px", marginLeft: "auto", marginRight: "auto", lineHeight: 1.45 }}>
+            {speechValidation.reason ||
+              `Valid speaking time: ${totalSpeakingSeconds}s / ${MIN_SPEAKING_SECONDS}s minimum. Background audio and examiner echo do not count.`}
           </p>
-        )}
+        ) : null}
       </div>
 
       {/* Conversation history */}

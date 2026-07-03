@@ -6,6 +6,7 @@ import { buildTranscriptReview } from "@/lib/speaking/transcriptReview";
 import {
   extractStudentSpeech,
   hasValidSpeechInput,
+  isLikelyRealStudentSpeech,
 } from "@/lib/speaking/validateSpeechInput";
 
 export const runtime = "nodejs";
@@ -230,19 +231,16 @@ export async function POST(req) {
     const extracted = extractStudentSpeech(transcript);
     const studentTranscript = transcript
       .filter((t) => t.role === "student")
-      .filter(
-        (t) =>
-          !["i have finished speaking about the topic on the cue card."].includes(
-            String(t.text || "").trim().toLowerCase()
-          )
-      )
+      .filter((t) => isLikelyRealStudentSpeech(String(t.text || "")).ok)
       .map((t) => `[Part ${t.part}] ${t.text}`)
       .join("\n");
 
-    if (!studentTranscript || extracted.wordCount < 30) {
+    if (!studentTranscript || extracted.wordCount < 30 || extracted.substantiveAnswers < 2) {
       return NextResponse.json(
         {
-          error: "Not enough speech detected. Minimum 30 words required for scoring.",
+          error:
+            validation.reason ||
+            "Not enough valid student speech detected. Background media and examiner echo do not count toward your score.",
           insufficientSpeech: true,
         },
         { status: 400 }
