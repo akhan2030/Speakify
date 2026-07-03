@@ -60,6 +60,13 @@ export async function POST(req) {
         session_type: sessionType || "practice",
         programme: programme || "ielts",
         cue_card_id: selectedCard.id,
+        part2_cue_card: {
+          id: selectedCard.id,
+          title: selectedCard.topic,
+          prompt: selectedCard.prompt,
+          bullets: selectedCard.bullets,
+          closing: selectedCard.closing,
+        },
         transcript: [],
       })
       .select()

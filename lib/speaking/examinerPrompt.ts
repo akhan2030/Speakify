@@ -285,6 +285,7 @@ export const PART2_CUE_CARDS = [
   },
 ];
 
+/** @deprecated Use generatePart3Questions() — coarse keyword buckets caused topic mismatches. */
 export const PART3_QUESTIONS: Record<string, string[]> = {
   place: [
     "Do you think tourism has a positive or negative impact on local communities?",

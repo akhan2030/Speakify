@@ -12,11 +12,12 @@ import {
   generateSpeakingMockFeedback,
   saveSpeakingMockFeedback,
 } from "@/lib/speaking/speakingMockFeedback";
+import { fetchPart3Questions } from "@/lib/speaking/fetchPart3Questions";
+import { normalizeLegacyCueCard } from "@/lib/speaking/part3Generation";
 import {
   getRandomPart1Topic,
   getRandomPart1Questions,
   getRandomCueCard,
-  getPart3Questions,
 } from "@/lib/speakingQuestions";
 
 type CueCard = {
@@ -44,6 +45,7 @@ type MockPhase =
   | "part2-prep"
   | "part2-speak"
   | "part2-transition"
+  | "part3-generating"
   | "part3"
   | "evaluating"
   | "complete";
@@ -171,7 +173,7 @@ export default function SpeakingMockPage() {
     setPart1Topic(topic.topic);
     setPart1Questions(getRandomPart1Questions(topic.id, PART1_COUNT));
     setCueCard(card);
-    setPart3Questions(getPart3Questions(card.id).slice(0, PART3_COUNT));
+    setPart3Questions([]);
     setPart1Index(0);
     setPart3Index(0);
     setResults([]);
@@ -350,7 +352,28 @@ export default function SpeakingMockPage() {
           },
         ]);
         setLastBand(data.bandOverall);
-        setPhase("part2-transition");
+
+        setPhase("part3-generating");
+
+        try {
+          const normalized = normalizeLegacyCueCard(cueCard);
+          if (!normalized) throw new Error("Cue card data missing");
+          const generated = await fetchPart3Questions({
+            cueCard: normalized,
+            part2Transcript: transcript,
+            testType: "mock",
+          });
+          setPart3Questions(generated.slice(0, PART3_COUNT));
+          setPhase("part2-transition");
+        } catch (genErr) {
+          console.error(genErr);
+          setEvalError(
+            genErr instanceof Error
+              ? genErr.message
+              : "Could not prepare Part 3 questions for this cue card"
+          );
+          setPhase("part2-transition");
+        }
       } catch (err) {
         setEvalError(err instanceof Error ? err.message : "Evaluation failed");
         setPhase("part2-speak");
@@ -684,6 +707,15 @@ export default function SpeakingMockPage() {
             </>
           )}
 
+          {phase === "part3-generating" && (
+            <div className="mt-12 text-center">
+              <p className="text-sm font-semibold text-[#7c3aed]">Part 2 Complete</p>
+              <p className="mt-4 text-sm text-slate-600">
+                Preparing Part 3 discussion questions linked to your cue card…
+              </p>
+            </div>
+          )}
+
           {phase === "part2-transition" && (
             <div className="mt-12 text-center">
               <p className="text-sm font-semibold text-[#0d9488]">Part 2 Complete</p>
@@ -691,17 +723,25 @@ export default function SpeakingMockPage() {
                 {formatBand(part2Avg?.overall ?? lastBand)}
               </p>
               <p className="mt-1 text-sm text-slate-500">Part 2 band score</p>
+              {cueCard ? (
+                <p className="mt-4 text-sm text-slate-500">
+                  Part 3 will discuss themes from: <strong>{cueCard.topic}</strong>
+                </p>
+              ) : null}
               <button
                 type="button"
+                disabled={part3Questions.length === 0}
                 onClick={() => {
                   setPart3Index(0);
                   transcriptRef.current = "";
                   recorderKeyRef.current += 1;
                   setPhase("part3");
                 }}
-                className="mt-8 w-full rounded-xl bg-[#7c3aed] py-3 text-sm font-bold text-white hover:bg-[#6d28d9]"
+                className="mt-8 w-full rounded-xl bg-[#7c3aed] py-3 text-sm font-bold text-white hover:bg-[#6d28d9] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue to Part 3 — Discussion →
+                {part3Questions.length > 0
+                  ? "Continue to Part 3 — Discussion →"
+                  : "Part 3 questions unavailable"}
               </button>
             </div>
           )}

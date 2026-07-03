@@ -9,7 +9,9 @@ import { type SpeakingEvaluationData } from "@/components/SpeakingEvaluationCard
 import DailyLimitReached from "@/components/DailyLimitReached";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
-import { getRandomCueCard, getPart3Questions } from "@/lib/speakingQuestions";
+import { fetchPart3Questions } from "@/lib/speaking/fetchPart3Questions";
+import { normalizeLegacyCueCard } from "@/lib/speaking/part3Generation";
+import { getRandomCueCard } from "@/lib/speakingQuestions";
 
 type PageState =
   | "intro"
@@ -275,20 +277,40 @@ export default function SpeakingPart3Page() {
   const [limitBlocked, setLimitBlocked] = useState(false);
   const [limitLoading, setLimitLoading] = useState(true);
   const [evalError, setEvalError] = useState<string | null>(null);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
 
   const transcriptRef = useRef("");
   const recorderKeyRef = useRef(0);
 
-  const loadSession = useCallback(() => {
+  const loadSession = useCallback(async () => {
     const card = getRandomCueCard() as CueCard;
-    const qs = getPart3Questions(card.id).slice(0, 4);
     setCueCard(card);
-    setQuestions(qs);
-    return { card, qs };
-  }, []);
+    setQuestions([]);
+    setQuestionsLoading(true);
+
+    try {
+      const normalized = normalizeLegacyCueCard(card);
+      if (!normalized) throw new Error("Cue card data missing");
+      const qs = await fetchPart3Questions({
+        cueCard: normalized,
+        part2Transcript: "",
+        testType: isPathway ? "pathways" : "ielts_academic",
+      });
+      setQuestions(qs.slice(0, 4));
+      return { card, qs };
+    } catch (err) {
+      console.error(err);
+      setEvalError(
+        err instanceof Error ? err.message : "Could not prepare Part 3 questions"
+      );
+      return { card, qs: [] as string[] };
+    } finally {
+      setQuestionsLoading(false);
+    }
+  }, [isPathway]);
 
   useEffect(() => {
-    loadSession();
+    void loadSession();
   }, [loadSession]);
 
   useEffect(() => {
@@ -511,9 +533,10 @@ export default function SpeakingPart3Page() {
               <button
                 type="button"
                 onClick={() => setState("question-active")}
-                className="mt-8 w-full rounded-xl bg-[#c9972c] py-3.5 text-sm font-bold text-[#0d1b35] transition-colors hover:bg-[#b8862b]"
+                disabled={questionsLoading || questions.length === 0}
+                className="mt-8 w-full rounded-xl bg-[#c9972c] py-3.5 text-sm font-bold text-[#0d1b35] transition-colors hover:bg-[#b8862b] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Begin Discussion
+                {questionsLoading ? "Preparing linked Part 3 questions…" : "Begin Discussion"}
               </button>
             </>
           )}

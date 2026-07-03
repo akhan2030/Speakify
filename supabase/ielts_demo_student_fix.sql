@@ -12,7 +12,8 @@ SET
 WHERE lower(email) IN (
   'student@speakify.com',
   'ahmed@test.com',
-  'ismail.ammar.hamido@speakify.test'
+  'ismail.ammar.hamido@speakify.test',
+  'abdurehman.khan@speakify.test'
 );
 
 NOTIFY pgrst, 'reload schema';

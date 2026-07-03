@@ -75,6 +75,15 @@ const TEST_USERS = [
     forcePassword: false,
   },
   {
+    email: "abdurehman.khan@speakify.test",
+    password: "Speakify@2026",
+    role: "student",
+    name: "Abdurehman Khan",
+    programType: "ielts",
+    ieltsDemo: true,
+    forcePassword: true,
+  },
+  {
     email: "business@test.com",
     password: "123456",
     role: "student",
@@ -191,6 +200,7 @@ async function main() {
   console.log("  admin@speakify.com / Speakify2026!  -> teacher dashboard (demo admin)");
   console.log("  student@speakify.com / Speakify2026!  -> IELTS student dashboard (demo)");
   console.log("  ismail.ammar.hamido@speakify.test / Speakify@2026 -> IELTS student dashboard");
+  console.log("  abdurehman.khan@speakify.test / Speakify@2026 -> IELTS student dashboard");
   console.log(`  Placement test: ${base}/placement-test`);
 }
 
