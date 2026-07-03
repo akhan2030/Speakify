@@ -455,6 +455,8 @@ export default function ActiveSession({
     ]
   );
 
+  const pendingArmRef = useRef(false);
+
   const shouldAutoArmTurn = useCallback(() => {
     if (sessionStatus !== "active") return false;
     if (processingRef.current || testEndedRef.current) return false;
@@ -464,10 +466,28 @@ export default function ActiveSession({
     return true;
   }, [sessionStatus]);
 
+  const requestArmAfterExaminer = useCallback(() => {
+    if (!shouldAutoArmTurn()) {
+      console.info("[turnTaking] skip arm — not eligible");
+      return;
+    }
+    const controller = turnControllerRef.current;
+    if (!controller) {
+      console.info("[turnTaking] controller not ready — queue arm");
+      pendingArmRef.current = true;
+      return;
+    }
+    pendingArmRef.current = false;
+    controller.armAfterExaminer();
+  }, [shouldAutoArmTurn]);
+
   const speakExaminer = useCallback(
     (text: string, onEnd?: () => void) => {
+      // Cancel any previous arm while Sarah speaks — do not leave a stale timer.
       turnControllerRef.current?.cancelArm();
+      pendingArmRef.current = false;
       clearAnswerTimer();
+      setMicError(null);
       setDisplayedSpeech("");
       setExaminerSpeech(text);
       console.time("[speaking] TTS call");
@@ -486,13 +506,12 @@ export default function ActiveSession({
           isExaminerSpeakingRef.current = false;
           console.timeEnd("[speaking] TTS call");
           onEnd?.();
-          if (shouldAutoArmTurn()) {
-            turnControllerRef.current?.armAfterExaminer();
-          }
+          // Arm AFTER cancelArm from this speak cycle — fresh timer for this turn.
+          requestArmAfterExaminer();
         },
       });
     },
-    [setExaminerSpeech, setIsExaminerSpeaking, shouldAutoArmTurn, clearAnswerTimer]
+    [setExaminerSpeech, setIsExaminerSpeaking, requestArmAfterExaminer, clearAnswerTimer]
   );
 
   useEffect(() => {
@@ -502,11 +521,9 @@ export default function ActiveSession({
   useEffect(() => {
     if (!sessionReady) return;
 
-    let cancelled = false;
-
-    void createTurnTakingController({
+    const controller = createTurnTakingController({
       onStateChange: (state) => {
-        if (!cancelled) setTurnState(state);
+        setTurnState(state);
         setIsListening(state === "listening" || state === "speaking");
         if (state === "processing" || state === "idle" || state === "thinking") {
           clearAnswerTimer();
@@ -527,21 +544,23 @@ export default function ActiveSession({
         clearAnswerTimer();
         setMicError(message);
       },
-    }).then((controller) => {
-      if (cancelled) {
-        void controller.destroy();
-        return;
-      }
-      turnControllerRef.current = controller;
     });
 
+    turnControllerRef.current = controller;
+    console.info("[turnTaking] controller ready");
+
+    if (pendingArmRef.current && shouldAutoArmTurn()) {
+      pendingArmRef.current = false;
+      controller.armAfterExaminer();
+    }
+
     return () => {
-      cancelled = true;
       clearAnswerTimer();
+      pendingArmRef.current = false;
       void turnControllerRef.current?.destroy();
       turnControllerRef.current = null;
     };
-  }, [sessionReady, clearAnswerTimer, setIsListening]);
+  }, [sessionReady, clearAnswerTimer, setIsListening, shouldAutoArmTurn]);
   const finishSession = useCallback(async () => {
     if (!sessionId || !studentId || processingRef.current) return;
 
@@ -1341,12 +1360,14 @@ export default function ActiveSession({
               : isExaminerSpeaking
                 ? "Sarah is speaking…"
                 : turnState === "thinking"
-                  ? "Your turn in a moment…"
+                  ? "Get ready — your mic arms in a few seconds…"
                   : turnState === "listening"
                     ? "Listening — start speaking when ready"
                     : turnState === "speaking"
                       ? `Speaking… ${answerSeconds}s`
-                      : "Waiting for Sarah"}
+                      : micError
+                        ? "Mic not ready — see the message below"
+                        : "Waiting for your turn…"}
           </p>
 
           {(turnState === "listening" || turnState === "speaking") && (
@@ -1369,6 +1390,31 @@ export default function ActiveSession({
               I&apos;m done
             </button>
           )}
+
+          {(turnState === "idle" || turnState === "thinking") &&
+            !isExaminerSpeaking &&
+            !isProcessing && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMicError(null);
+                  turnControllerRef.current?.forceListenNow();
+                }}
+                style={{
+                  marginTop: "12px",
+                  padding: "12px 20px",
+                  borderRadius: "10px",
+                  border: "1px solid #0d1b35",
+                  background: "white",
+                  color: "#0d1b35",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {turnState === "thinking" ? "Skip wait — start listening" : "Start listening now"}
+              </button>
+            )}
 
           {transcript && (
             <p
