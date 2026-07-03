@@ -408,12 +408,18 @@ export function buildTodayVocabularyFromSessions(
       : [];
 
     if (detailed.length > 0) {
-      for (const item of detailed) {
-        const word = String(item?.word || "")
+      for (const raw of detailed) {
+        const item = (raw && typeof raw === "object" ? raw : {}) as {
+          word?: string;
+          from?: string;
+          context?: string;
+          personalized?: boolean;
+        };
+        const word = String(item.word || "")
           .toLowerCase()
           .replace(/[^a-z]/g, "");
         if (word.length < 4 || seen.has(word)) continue;
-        if (item?.personalized === false) continue;
+        if (item.personalized === false) continue;
         seen.add(word);
         personalized.push({
           id: `personal-${session.id || "x"}-${word}`,
@@ -425,15 +431,25 @@ export function buildTodayVocabularyFromSessions(
         });
       }
     } else {
+      const sessionScore =
+        feedback.sessionScore && typeof feedback.sessionScore === "object"
+          ? (feedback.sessionScore as { transcript?: string })
+          : null;
+      const sessionTranscript = Array.isArray(feedback.sessionTranscript)
+        ? (feedback.sessionTranscript as Array<{
+            role?: string;
+            text?: string;
+            part?: number;
+          }>)
+        : [];
+
       const transcriptText =
-        typeof feedback.sessionScore?.transcript === "string"
-          ? feedback.sessionScore.transcript
-          : Array.isArray(feedback.sessionTranscript)
-            ? feedback.sessionTranscript
-                .filter((t: { role?: string }) => t?.role === "student")
-                .map((t: { text?: string; part?: number }) =>
-                  `[Part ${t.part ?? "?"}] ${t.text || ""}`
-                )
+        typeof sessionScore?.transcript === "string"
+          ? sessionScore.transcript
+          : sessionTranscript.length > 0
+            ? sessionTranscript
+                .filter((t) => t?.role === "student")
+                .map((t) => `[Part ${t.part ?? "?"}] ${t.text || ""}`)
                 .join("\n")
             : "";
 
