@@ -107,7 +107,13 @@ function SpeakingHistoryContent() {
         const fb = json.session?.feedback;
         if (!fb) throw new Error("No feedback saved for this session");
         setViewSessionType(json.session?.session_type ?? "practice");
-        setFeedback(fb as Record<string, unknown>);
+        setFeedback({
+          ...(fb as Record<string, unknown>),
+          sessionTranscript:
+            (fb as { sessionTranscript?: unknown }).sessionTranscript ??
+            json.session?.transcript ??
+            [],
+        });
         if (json.session?.session_type === "mock") {
           fetch("/api/speaking/session/history?mockOnly=true")
             .then((r) => r.json())

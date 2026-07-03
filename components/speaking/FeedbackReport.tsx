@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import SessionTranscriptReview from "@/components/speaking/SessionTranscriptReview";
+import type { TranscriptEntry, TranscriptReview } from "@/lib/speaking/transcriptReview";
 import {
   LineChart,
   Line,
@@ -19,6 +21,12 @@ type FeedbackData = {
     grammaticalRange: number;
     pronunciation: number;
   };
+  criterionFeedback?: {
+    fluency?: { band: number; note: string; evidence?: string };
+    lexical?: { band: number; note: string; evidence?: string; flaggedWords?: string[] };
+    grammar?: { band: number; note: string; evidence?: string; exampleError?: string };
+    pronunciation?: { band: number; note: string; evidence?: string };
+  };
   topImprovements?: {
     category: string;
     issue: string;
@@ -35,6 +43,8 @@ type FeedbackData = {
     count?: number;
   }[];
   vocabularyChallenge?: string[];
+  sessionTranscript?: TranscriptEntry[];
+  transcriptReview?: TranscriptReview | null;
 };
 
 function bandColor(band: number) {
@@ -51,29 +61,54 @@ const WORD_HINTS: Record<string, string> = {
   significantly: "In a way that is large or important enough to be noticed.",
 };
 
-function CriteriaBar({ label, value }: { label: string; value: number }) {
+function MiniProgressBar({ value }: { value: number }) {
   const pct = Math.min(100, (value / 9) * 100);
   const color = bandColor(value);
   return (
-    <div style={{ marginBottom: "12px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-        <span style={{ fontSize: "13px", color: "#0d1b35", fontWeight: 500 }}>{label}</span>
-        <span style={{ fontSize: "13px", fontWeight: 700, color }}>{value.toFixed(1)}</span>
-      </div>
-      <div style={{ height: "8px", background: "#f1f5f9", borderRadius: "4px", overflow: "hidden" }}>
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: color,
-            borderRadius: "4px",
-            transition: "width 0.6s ease",
-          }}
-        />
-      </div>
+    <div style={{ height: "8px", background: "#f1f5f9", borderRadius: "4px", overflow: "hidden" }}>
+      <div
+        style={{
+          height: "100%",
+          width: `${pct}%`,
+          background: color,
+          borderRadius: "4px",
+          transition: "width 0.6s ease",
+        }}
+      />
     </div>
   );
 }
+
+const CRITERION_CARDS = [
+  {
+    key: "fluency" as const,
+    label: "Fluency & Coherence",
+    scoreKey: "fluencyCoherence" as const,
+    fallback:
+      "Build longer answers with clear linking phrases and fewer restarts.",
+  },
+  {
+    key: "lexical" as const,
+    label: "Lexical Resource",
+    scoreKey: "lexicalResource" as const,
+    fallback:
+      "Upgrade repeated basic words with more precise topic vocabulary.",
+  },
+  {
+    key: "grammar" as const,
+    label: "Grammatical Range & Accuracy",
+    scoreKey: "grammaticalRange" as const,
+    fallback:
+      "Control tense and sentence structure before adding more complex grammar.",
+  },
+  {
+    key: "pronunciation" as const,
+    label: "Pronunciation",
+    scoreKey: "pronunciation" as const,
+    fallback:
+      "Pronunciation is estimated here. Practise word stress and sentence rhythm.",
+  },
+];
 
 export default function FeedbackReport({
   feedback,
@@ -132,12 +167,53 @@ export default function FeedbackReport({
         }}
       >
         <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#0d1b35", margin: "0 0 1rem" }}>
-          Criteria Breakdown
+          IELTS Criteria Breakdown
         </h2>
-        <CriteriaBar label="Fluency & Coherence" value={feedback.criteria.fluencyCoherence} />
-        <CriteriaBar label="Lexical Resource" value={feedback.criteria.lexicalResource} />
-        <CriteriaBar label="Grammatical Range" value={feedback.criteria.grammaticalRange} />
-        <CriteriaBar label="Pronunciation" value={feedback.criteria.pronunciation} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
+          {CRITERION_CARDS.map((criterion) => {
+            const detail = feedback.criterionFeedback?.[criterion.key];
+            const value = detail?.band ?? feedback.criteria[criterion.scoreKey];
+            return (
+              <div
+                key={criterion.key}
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "12px",
+                  padding: "14px",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
+                  <p style={{ fontSize: "13px", color: "#0d1b35", fontWeight: 700, margin: 0 }}>
+                    {criterion.label}
+                  </p>
+                  <p style={{ fontSize: "13px", color: bandColor(value), fontWeight: 800, margin: 0 }}>
+                    {value.toFixed(1)}
+                  </p>
+                </div>
+                <MiniProgressBar value={value} />
+                <p style={{ fontSize: "13px", color: "#475569", margin: "10px 0 0", lineHeight: 1.55 }}>
+                  {detail?.note || criterion.fallback}
+                </p>
+                {detail?.evidence ? (
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "#64748b",
+                      fontStyle: "italic",
+                      margin: "8px 0 0",
+                      background: "#f8fafc",
+                      borderRadius: "8px",
+                      padding: "7px 8px",
+                    }}
+                  >
+                    Evidence: &ldquo;{detail.evidence}&rdquo;
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Trend chart */}
@@ -171,6 +247,13 @@ export default function FeedbackReport({
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* Session transcript */}
+      <SessionTranscriptReview
+        transcript={feedback.sessionTranscript}
+        feedback={feedback as Record<string, unknown>}
+        transcriptReview={feedback.transcriptReview}
+      />
 
       {/* Top improvements */}
       {improvements.length > 0 && (

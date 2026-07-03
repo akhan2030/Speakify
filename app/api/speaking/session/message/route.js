@@ -78,13 +78,19 @@ export async function POST(req) {
       { role: "user", content: studentMessage },
     ];
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages,
-      response_format: { type: "json_object" },
-      max_tokens: 300,
-      temperature: 0.7,
-    });
+    console.time("[speaking/session/message] LLM examiner");
+    let response;
+    try {
+      response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages,
+        response_format: { type: "json_object" },
+        max_tokens: 300,
+        temperature: 0.7,
+      });
+    } finally {
+      console.timeEnd("[speaking/session/message] LLM examiner");
+    }
 
     const raw = response.choices[0]?.message?.content || "{}";
     let examinerResponse;

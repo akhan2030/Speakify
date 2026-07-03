@@ -38,8 +38,9 @@ export function extractStudentSpeech(transcript: unknown) {
 export function hasValidSpeechInput(input: {
   transcript: unknown;
   speakingTimeSeconds: number;
+  practiceMode?: boolean;
 }): { valid: boolean; reason?: string } {
-  const { text, charCount, wordCount, part1Responses } = extractStudentSpeech(
+  const { text, charCount, wordCount, part1Responses, responseCount } = extractStudentSpeech(
     input.transcript
   );
 
@@ -50,10 +51,17 @@ export function hasValidSpeechInput(input: {
     };
   }
 
-  if (part1Responses === 0) {
+  if (!input.practiceMode && part1Responses === 0) {
     return {
       valid: false,
       reason: "Please answer at least one Part 1 question before requesting a score.",
+    };
+  }
+
+  if (input.practiceMode && responseCount === 0) {
+    return {
+      valid: false,
+      reason: "Please answer at least one question in your chosen part before requesting a score.",
     };
   }
 

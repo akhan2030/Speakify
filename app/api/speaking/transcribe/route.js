@@ -32,11 +32,17 @@ export async function POST(request) {
         ? audio
         : new File([audio], "recording.webm", { type: "audio/webm" });
 
-    const transcription = await openai.audio.transcriptions.create({
-      file,
-      model: "whisper-1",
-      language: "en",
-    });
+    console.time("[speaking/transcribe] STT whisper");
+    let transcription;
+    try {
+      transcription = await openai.audio.transcriptions.create({
+        file,
+        model: "whisper-1",
+        language: "en",
+      });
+    } finally {
+      console.timeEnd("[speaking/transcribe] STT whisper");
+    }
 
     return NextResponse.json({
       success: true,

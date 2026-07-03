@@ -8,8 +8,13 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
-
+import {
+  buildCriteriaChartData,
+  CRITERION_CHART_LINES,
+  type CriteriaHistoryPoint,
+} from "@/lib/speaking/progressChartInsight";
 function bandColor(band: number | null) {
   if (band == null) return "#94a3b8";
   if (band >= 7) return "#0d9488";
@@ -17,18 +22,23 @@ function bandColor(band: number | null) {
   return "#dc2626";
 }
 
-type VocabWord = { id: string; word: string };
+type VocabWord = {
+  id: string;
+  word: string;
+  reviewCount?: number;
+  nextReviewDate?: string;
+};
 
 type ProgressData = {
   totalSessions: number;
   currentBand: number | null;
   bestBand: number | null;
   totalMinutes: number;
-  bandHistory: { sessionNumber: number; band: number; date: string }[];
+  bandHistory: CriteriaHistoryPoint[];
+  chartInsight: string | null;
   todayVocabulary: VocabWord[];
   lastImprovementTip: string | null;
 };
-
 function StatCard({
   label,
   value,
@@ -63,7 +73,11 @@ export default function ProgressSummary({
 }) {
   const [data, setData] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [markingId, setMarkingId] = useState<string | null>(null);
+  const [checkingId, setCheckingId] = useState<string | null>(null);
+  const [sentences, setSentences] = useState<Record<string, string>>({});
+  const [vocabFeedback, setVocabFeedback] = useState<
+    Record<string, { correct: boolean; message: string }>
+  >({});
 
   const loadProgress = useCallback(() => {
     if (!studentId) {
@@ -80,8 +94,8 @@ export default function ProgressSummary({
           bestBand: json.bestBand ?? null,
           totalMinutes: json.totalMinutes ?? 0,
           bandHistory: json.bandHistory ?? [],
-          todayVocabulary: json.todayVocabulary ?? [],
-          lastImprovementTip: json.lastImprovementTip ?? null,
+          chartInsight: json.chartInsight ?? null,
+          todayVocabulary: json.todayVocabulary ?? [],          lastImprovementTip: json.lastImprovementTip ?? null,
         });
       })
       .catch(() => setData(null))
@@ -92,26 +106,50 @@ export default function ProgressSummary({
     loadProgress();
   }, [loadProgress, refreshKey]);
 
-  const markPracticed = async (id: string) => {
-    setMarkingId(id);
+  const checkVocabulary = async (item: VocabWord) => {
+    const sentence = sentences[item.id]?.trim();
+    if (!sentence) return;
+
+    setCheckingId(item.id);
     try {
-      const res = await fetch("/api/speaking/session/vocabulary", {
+      const res = await fetch("/api/speaking/session/vocabulary-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: item.id, word: item.word, sentence }),
       });
-      if (res.ok) {
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Could not check your sentence");
+      }
+
+      setVocabFeedback((prev) => ({
+        ...prev,
+        [item.id]: {
+          correct: json.correct === true,
+          message: String(json.message ?? ""),
+        },
+      }));
+
+      if (json.correct === true) {
         setData((prev) =>
           prev
             ? {
                 ...prev,
-                todayVocabulary: prev.todayVocabulary.filter((w) => w.id !== id),
+                todayVocabulary: prev.todayVocabulary.filter((w) => w.id !== item.id),
               }
             : prev
         );
       }
+    } catch (err) {
+      setVocabFeedback((prev) => ({
+        ...prev,
+        [item.id]: {
+          correct: false,
+          message: err instanceof Error ? err.message : "Could not check your sentence",
+        },
+      }));
     } finally {
-      setMarkingId(null);
+      setCheckingId(null);
     }
   };
 
@@ -130,13 +168,12 @@ export default function ProgressSummary({
     );
   }
 
-  const chartData = (data?.bandHistory ?? []).slice(-5).map((h) => ({
-    name: `#${h.sessionNumber}`,
-    band: h.band,
-  }));
+  const chartData = buildCriteriaChartData(data?.bandHistory ?? []);
+  const hasCriteriaTrend = chartData.some((point) =>
+    CRITERION_CHART_LINES.some((line) => point[line.key] != null)
+  );
 
-  return (
-    <div
+  return (    <div
       style={{
         background: "white",
         border: "1px solid #e5e7eb",
@@ -164,33 +201,67 @@ export default function ProgressSummary({
         <StatCard label="Total minutes" value={String(data?.totalMinutes ?? 0)} />
       </div>
 
-      {/* Row 2 — band trend */}
+      {/* Row 2 — criteria trends */}
       <div style={{ marginBottom: "1.5rem" }}>
         <p style={{ fontSize: "13px", fontWeight: 600, color: "#0d1b35", margin: "0 0 8px" }}>
-          Your band over last 5 sessions
+          Criteria trends over last 5 sessions
         </p>
-        {chartData.length >= 2 ? (
-          <ResponsiveContainer width="100%" height={140}>
-            <LineChart data={chartData}>
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis domain={[4, 9]} tick={{ fontSize: 11 }} width={28} />
-              <Tooltip formatter={(v) => (typeof v === "number" ? v.toFixed(1) : String(v ?? ""))} />
-              <Line
-                type="monotone"
-                dataKey="band"
-                stroke="#c9972c"
-                strokeWidth={2}
-                dot={{ fill: "#c9972c", r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        {chartData.length >= 2 && hasCriteriaTrend ? (
+          <>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={chartData}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis domain={[4, 9]} tick={{ fontSize: 11 }} width={28} />
+                <Tooltip
+                  formatter={(value, name) => {
+                    if (typeof value !== "number") return ["—", String(name ?? "")];
+                    const label =
+                      CRITERION_CHART_LINES.find((line) => line.key === name)?.label ??
+                      String(name ?? "");
+                    return [value.toFixed(1), label];
+                  }}
+                />
+                <Legend
+                  iconType="line"
+                  wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }}
+                />
+                {CRITERION_CHART_LINES.map((line) => (
+                  <Line
+                    key={line.key}
+                    type="monotone"
+                    dataKey={line.key}
+                    name={line.label}
+                    stroke={line.color}
+                    strokeWidth={2}
+                    dot={{ fill: line.color, r: 3 }}
+                    connectNulls
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+            {data?.chartInsight ? (
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#475569",
+                  margin: "10px 0 0",
+                  lineHeight: 1.5,
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  padding: "10px 12px",
+                }}
+              >
+                {data.chartInsight}
+              </p>
+            ) : null}
+          </>
         ) : (
           <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0 }}>
-            Complete at least 2 sessions to see your band trend.
+            Complete at least 2 sessions to see how each criterion is moving.
           </p>
         )}
       </div>
-
       {/* Row 3 — vocabulary challenge */}
       <div
         style={{
@@ -203,42 +274,90 @@ export default function ProgressSummary({
           Today&apos;s vocabulary challenge
         </p>
         {(data?.todayVocabulary?.length ?? 0) > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {data!.todayVocabulary.map((item) => (
               <div
                 key={item.id}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "12px",
                   background: "#fffbeb",
                   border: "1px solid #fde68a",
-                  borderRadius: "8px",
-                  padding: "8px 12px",
+                  borderRadius: "10px",
+                  padding: "12px",
                 }}
               >
-                <span style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35" }}>
-                  {item.word}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => markPracticed(item.id)}
-                  disabled={markingId === item.id}
+                <div
                   style={{
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    background: "#0d9488",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "6px 10px",
-                    cursor: markingId === item.id ? "wait" : "pointer",
-                    whiteSpace: "nowrap",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "10px",
+                    alignItems: "baseline",
+                    marginBottom: "8px",
                   }}
                 >
-                  {markingId === item.id ? "Saving…" : "Mark as practiced"}
-                </button>
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "#0d1b35" }}>
+                    {item.word}
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#92400e", fontWeight: 600 }}>
+                    Review {Number(item.reviewCount ?? 0) + 1}
+                  </span>
+                </div>
+
+                <label
+                  htmlFor={`vocab-${item.id}`}
+                  style={{ fontSize: "12px", fontWeight: 600, color: "#64748b" }}
+                >
+                  Use this word in a sentence.
+                </label>
+                <div style={{ display: "flex", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>
+                  <input
+                    id={`vocab-${item.id}`}
+                    type="text"
+                    value={sentences[item.id] ?? ""}
+                    onChange={(e) =>
+                      setSentences((prev) => ({ ...prev, [item.id]: e.target.value }))
+                    }
+                    placeholder={`Write a sentence with "${item.word}"…`}
+                    style={{
+                      flex: "1 1 220px",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      padding: "9px 10px",
+                      fontSize: "13px",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => checkVocabulary(item)}
+                    disabled={checkingId === item.id || !sentences[item.id]?.trim()}
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      background: "#0d9488",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "9px 12px",
+                      cursor: checkingId === item.id ? "wait" : "pointer",
+                      opacity:
+                        checkingId === item.id || !sentences[item.id]?.trim() ? 0.6 : 1,
+                    }}
+                  >
+                    {checkingId === item.id ? "Checking…" : "Check ✓"}
+                  </button>
+                </div>
+                {vocabFeedback[item.id] ? (
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: vocabFeedback[item.id].correct ? "#0d9488" : "#b45309",
+                      margin: "8px 0 0",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {vocabFeedback[item.id].correct ? "✅" : "❌"}{" "}
+                    {vocabFeedback[item.id].message}
+                  </p>
+                ) : null}
               </div>
             ))}
           </div>

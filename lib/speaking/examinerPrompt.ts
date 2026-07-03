@@ -131,6 +131,29 @@ Return ONLY valid JSON in this exact format:
     "grammaticalRange": 6.0,
     "pronunciation": 6.5
   },
+  "criterionFeedback": {
+    "fluency": {
+      "band": 6.0,
+      "note": "You developed your answer clearly, but the phrase 'and uh I think it is good' shows hesitation and repetition. Practice linking ideas with 'as a result' and 'for example'.",
+      "evidence": "and uh I think it is good"
+    },
+    "lexical": {
+      "band": 5.5,
+      "note": "You repeated basic words like 'good' and 'nice'. Replace them with more precise words such as 'beneficial', 'convenient', or 'memorable'.",
+      "evidence": "it was very good and nice"
+    },
+    "grammar": {
+      "band": 6.0,
+      "note": "Your meaning was clear, but 'I live in Riyadh for 9 months' needs present perfect: 'I have lived in Riyadh for 9 months'.",
+      "evidence": "I live in Riyadh for 9 months",
+      "exampleError": "I live in Riyadh for 9 months"
+    },
+    "pronunciation": {
+      "band": 6.5,
+      "note": "Pronunciation is estimated from the transcript and recording duration. Your phrasing suggests mostly clear speech, but practise sentence stress on key opinion words.",
+      "evidence": "I think this place is important"
+    }
+  },
   "topImprovements": [
     {
       "category": "Lexical Resource",
@@ -162,6 +185,13 @@ Return ONLY valid JSON in this exact format:
     "part3": { "band": 6.5, "notes": "Strong opinions on abstract topics" }
   }
 }
+
+Rules for criterionFeedback:
+- Every note must cite or paraphrase an actual phrase from the student's transcript.
+- Keep each note to 1-2 practical coaching sentences.
+- lexical.flaggedWords may be included if repeated/basic words appear.
+- grammar.exampleError should be an actual grammar issue from the transcript when available.
+- Pronunciation must be labelled as estimated unless audio-level pronunciation analysis is available.
 `;
 
 export const PART2_CUE_CARDS = [

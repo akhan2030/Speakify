@@ -12,6 +12,8 @@ import {
   type SpeakingCriteria,
 } from "@/lib/speaking/mockFeedbackCoaching";
 import MockVocabularyChallenge from "@/components/speaking/MockVocabularyChallenge";
+import SessionTranscriptReview from "@/components/speaking/SessionTranscriptReview";
+import type { TranscriptEntry, TranscriptReview } from "@/lib/speaking/transcriptReview";
 
 export type MockFeedbackData = {
   overallBand: number;
@@ -32,6 +34,8 @@ export type MockFeedbackData = {
     count?: number;
   }[];
   vocabularyChallenge?: string[];
+  sessionTranscript?: TranscriptEntry[];
+  transcriptReview?: TranscriptReview | null;
 };
 
 type MockJourneyPoint = {
@@ -39,7 +43,7 @@ type MockJourneyPoint = {
   overallBand: number | null;
 };
 
-type TabId = "breakdown" | "fix" | "vocab" | "strengths";
+type TabId = "breakdown" | "fix" | "vocab" | "strengths" | "transcript";
 
 function bandColor(band: number) {
   if (band >= 7) return "#0d9488";
@@ -285,6 +289,7 @@ export default function MockSpeakingFeedbackReport({
   const tabs: { id: TabId; label: string }[] = [
     { id: "breakdown", label: "Score Breakdown" },
     { id: "fix", label: "What to Fix" },
+    { id: "transcript", label: "Transcript" },
     { id: "vocab", label: "Vocabulary Coach" },
     { id: "strengths", label: "Strengths" },
   ];
@@ -602,6 +607,15 @@ export default function MockSpeakingFeedbackReport({
             ) : null}
 
             {activeTab === "vocab" ? <MockVocabularyChallenge words={vocab} /> : null}
+
+            {activeTab === "transcript" ? (
+              <SessionTranscriptReview
+                embedded
+                transcript={feedback.sessionTranscript}
+                feedback={feedback as Record<string, unknown>}
+                transcriptReview={feedback.transcriptReview}
+              />
+            ) : null}
 
             {activeTab === "strengths" ? (
               <div>

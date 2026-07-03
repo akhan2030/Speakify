@@ -12,6 +12,13 @@ function getSupabaseUrl() {
     .replace(/\/$/, "");
 }
 
+function nextReviewDate(reviewCount, correct) {
+  const days = correct ? [1, 3, 7, 14, 30][Math.min(reviewCount, 4)] : 1;
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split("T")[0];
+}
+
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,7 +27,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { word, sentence } = await req.json();
+    const { id, word, sentence } = await req.json();
     const targetWord = String(word ?? "").trim();
     const studentSentence = String(sentence ?? "").trim();
 
@@ -63,19 +70,54 @@ export async function POST(req) {
         ? `Great! Natural usage of "${targetWord}".`
         : `Almost — try using "${targetWord}" in a clearer context.`);
 
-    if (correct && process.env.SUPABASE_SERVICE_KEY && getSupabaseUrl()) {
+    if (process.env.SUPABASE_SERVICE_KEY && getSupabaseUrl()) {
       const supabase = createClient(
         getSupabaseUrl(),
         process.env.SUPABASE_SERVICE_KEY,
         { auth: { persistSession: false, autoRefreshToken: false } }
       );
       const today = new Date().toISOString().split("T")[0];
-      await supabase
-        .from("speaking_vocabulary_progress")
-        .update({ practiced: true })
-        .eq("student_id", studentId)
-        .eq("word", targetWord)
-        .eq("assigned_date", today);
+      const lookup = id
+        ? supabase
+            .from("vocabulary_bank")
+            .select("id, review_count, correct_count, incorrect_count")
+            .eq("id", id)
+            .eq("student_id", studentId)
+            .maybeSingle()
+        : supabase
+            .from("vocabulary_bank")
+            .select("id, review_count, correct_count, incorrect_count")
+            .eq("student_id", studentId)
+            .eq("word", targetWord.toLowerCase())
+            .maybeSingle();
+
+      const { data: bankRow, error: lookupError } = await lookup;
+      if (!lookupError && bankRow?.id) {
+        const currentReviewCount = Number(bankRow.review_count ?? 0);
+        const updatedReviewCount = correct ? currentReviewCount + 1 : currentReviewCount;
+        await supabase
+          .from("vocabulary_bank")
+          .update({
+            review_count: updatedReviewCount,
+            correct_count: Number(bankRow.correct_count ?? 0) + (correct ? 1 : 0),
+            incorrect_count: Number(bankRow.incorrect_count ?? 0) + (correct ? 0 : 1),
+            next_review_date: nextReviewDate(updatedReviewCount, correct),
+            last_practiced_at: new Date().toISOString(),
+            last_sentence: studentSentence,
+            last_feedback: message,
+            status: correct && updatedReviewCount >= 4 ? "mastered" : "due",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", bankRow.id)
+          .eq("student_id", studentId);
+      } else if (correct) {
+        await supabase
+          .from("speaking_vocabulary_progress")
+          .update({ practiced: true })
+          .eq("student_id", studentId)
+          .eq("word", targetWord)
+          .eq("assigned_date", today);
+      }
     }
 
     return NextResponse.json({ correct, message });

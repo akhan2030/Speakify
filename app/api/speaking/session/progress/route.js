@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
-
+import {
+  generateProgressChartInsight,
+  normalizeCriteriaHistory,
+} from "@/lib/speaking/progressChartInsight";
 export const runtime = "nodejs";
 
 function getSupabaseUrl() {
@@ -29,6 +32,7 @@ export async function GET() {
       bestBand: null,
       totalMinutes: 0,
       bandHistory: [],
+      chartInsight: null,
       lastSessionAt: null,
       todayVocabulary: [],
       lastImprovementTip: null,
@@ -67,13 +71,28 @@ export async function GET() {
     }
 
     const today = todayDateString();
-    const { data: vocabRows } = await supabase
-      .from("speaking_vocabulary_progress")
-      .select("id, word, practiced")
+    let vocabRows = [];
+    const { data: bankRows, error: bankError } = await supabase
+      .from("vocabulary_bank")
+      .select("id, word, review_count, next_review_date, status")
       .eq("student_id", studentId)
-      .eq("assigned_date", today)
-      .eq("practiced", false)
+      .lte("next_review_date", today)
+      .neq("status", "mastered")
+      .order("next_review_date", { ascending: true })
       .limit(5);
+
+    if (!bankError) {
+      vocabRows = bankRows ?? [];
+    } else {
+      const { data: legacyRows } = await supabase
+        .from("speaking_vocabulary_progress")
+        .select("id, word, practiced")
+        .eq("student_id", studentId)
+        .eq("assigned_date", today)
+        .eq("practiced", false)
+        .limit(5);
+      vocabRows = legacyRows ?? [];
+    }
 
     const { data: lastSession } = await supabase
       .from("speaking_sessions")
@@ -96,14 +115,36 @@ export async function GET() {
           : null);
     }
 
+    const { data: scoredSessions } = await supabase
+      .from("speaking_sessions")
+      .select(
+        "session_number, overall_band, fluency_band, lexical_band, grammar_band, pronunciation_band, completed_at"
+      )
+      .eq("student_id", studentId)
+      .not("completed_at", "is", null)
+      .not("overall_band", "is", null)
+      .order("session_number", { ascending: true });
+
+    const criteriaBandHistory = normalizeCriteriaHistory(
+      progress?.band_history ?? [],
+      scoredSessions ?? []
+    );
+    const chartInsight = generateProgressChartInsight(criteriaBandHistory);
+
     return NextResponse.json({
       totalSessions: progress?.total_sessions ?? 0,
       currentBand: progress?.current_band ?? null,
       bestBand: progress?.best_band ?? null,
       totalMinutes,
-      bandHistory: progress?.band_history ?? [],
+      bandHistory: criteriaBandHistory,
+      chartInsight,
       lastSessionAt: progress?.last_session_at ?? null,
-      todayVocabulary: (vocabRows ?? []).map((r) => ({ id: r.id, word: r.word })),
+      todayVocabulary: (vocabRows ?? []).map((r) => ({
+        id: r.id,
+        word: r.word,
+        reviewCount: r.review_count ?? 0,
+        nextReviewDate: r.next_review_date ?? today,
+      })),
       lastImprovementTip,
     });
   } catch (err) {
@@ -114,6 +155,7 @@ export async function GET() {
       bestBand: null,
       totalMinutes: 0,
       bandHistory: [],
+      chartInsight: null,
       todayVocabulary: [],
       lastImprovementTip: null,
     });

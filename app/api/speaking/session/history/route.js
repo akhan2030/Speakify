@@ -35,7 +35,7 @@ export async function GET(request) {
       const { data, error } = await supabase
         .from("speaking_sessions")
         .select(
-          "id, session_number, session_type, overall_band, duration_minutes, speaking_time_seconds, started_at, completed_at, feedback, fluency_band, lexical_band, grammar_band, pronunciation_band"
+          "id, session_number, session_type, overall_band, duration_minutes, speaking_time_seconds, started_at, completed_at, feedback, transcript, fluency_band, lexical_band, grammar_band, pronunciation_band"
         )
         .eq("id", sessionId)
         .eq("student_id", studentId)
