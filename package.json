@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.11.2",
+    "@ricky0123/vad-web": "^0.0.30",
     "@supabase/supabase-js": "^2.106.2",
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
@@ -54,6 +55,7 @@
     "next": "14.2.35",
     "next-auth": "^4.24.14",
     "node-cron": "^4.2.1",
+    "onnxruntime-web": "^1.27.0",
     "openai": "^6.39.1",
     "react": "^18",
     "react-dom": "^18",

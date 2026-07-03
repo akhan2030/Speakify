@@ -10,6 +10,12 @@ import {
   hasValidSpeechInput,
   isLikelyRealStudentSpeech,
 } from "@/lib/speaking/validateSpeechInput";
+import {
+  AUDIO_CONSTRAINTS,
+  createTurnTakingController,
+  type TurnState,
+  type TurnTakingController,
+} from "@/lib/speaking/turnTakingRecorder";
 
 type Part = 1 | 2 | 3;
 
@@ -55,8 +61,8 @@ const PART_GUIDES: Record<
       "Sarah asks short questions about familiar topics: your home, work or studies, hobbies, food, and daily life. She will ask follow-up questions based on your answers.",
     tips: [
       "Give 2–4 sentence answers — not one word, not a long speech",
-      "Tap the microphone, speak your answer, then tap again to send",
-      "Wait until Sarah finishes speaking before you tap the mic",
+      "After Sarah finishes, wait a moment — the mic arms automatically",
+      "Speak naturally, then tap I'm done (or pause and it will submit)",
     ],
   },
   2: {
@@ -78,7 +84,7 @@ const PART_GUIDES: Record<
     tips: [
       "Explain your opinion and give reasons or examples",
       "It is fine to say \"That's an interesting question\" while you think",
-      "Tap the mic for each answer, same as Part 1",
+      "Mic arms automatically — tap I'm done when you finish each answer",
     ],
   },
 };
@@ -155,8 +161,16 @@ export default function ActiveSession({
   const [sarahThinking, setSarahThinking] = useState(false);
   const [part3Questions, setPart3Questions] = useState<string[]>([]);
   const [part3Generating, setPart3Generating] = useState(false);
+  const [turnState, setTurnState] = useState<TurnState>("idle");
+  const [answerSeconds, setAnswerSeconds] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const turnControllerRef = useRef<TurnTakingController | null>(null);
+  const processRecordedAudioRef = useRef<
+    (blob: Blob, durationMs: number, mode: "manual" | "part2") => Promise<void>
+  >(async () => {});
+  const answerTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const testEndedRef = useRef(false);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordStartRef = useRef(0);
@@ -247,6 +261,12 @@ export default function ActiveSession({
           transcriptRef.current = "";
           if (mode === "part2") {
             part2TranscriptRef.current = "";
+          } else if (
+            sessionStatus === "active" &&
+            !(currentPartRef.current === 2 && part2PhaseRef.current !== "done")
+          ) {
+            // Let the student try the same turn again.
+            turnControllerRef.current?.armAfterExaminer();
           }
           return;
         }
@@ -272,8 +292,18 @@ export default function ActiveSession({
         setIsProcessing(false);
       }
     },
-    [transcribeBlob, setTranscript]
+    [transcribeBlob, setTranscript, sessionStatus]
   );
+
+  processRecordedAudioRef.current = processRecordedAudio;
+
+  const clearAnswerTimer = useCallback(() => {
+    if (answerTimerRef.current) {
+      clearInterval(answerTimerRef.current);
+      answerTimerRef.current = null;
+    }
+    setAnswerSeconds(0);
+  }, []);
 
   const stopRecording = useCallback((): Promise<void> => {
     clearRecordTimer();
@@ -332,7 +362,9 @@ export default function ActiveSession({
       audioChunksRef.current = [];
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: AUDIO_CONSTRAINTS,
+        });
         micStreamRef.current = stream;
         setMicrophoneGranted(true);
 
@@ -385,22 +417,28 @@ export default function ActiveSession({
     ]
   );
 
-  const toggleMic = async () => {
-    if (isListening) {
-      await stopRecording();
-      return;
+  const shouldAutoArmTurn = useCallback(() => {
+    if (sessionStatus !== "active") return false;
+    if (processingRef.current || testEndedRef.current) return false;
+    if (currentPartRef.current === 2 && part2PhaseRef.current !== "done") {
+      return false;
     }
-    await startRecording("manual");
-  };
+    return true;
+  }, [sessionStatus]);
 
   const speakExaminer = useCallback(
     (text: string, onEnd?: () => void) => {
+      turnControllerRef.current?.cancelArm();
+      clearAnswerTimer();
       setDisplayedSpeech("");
       setExaminerSpeech(text);
       console.time("[speaking] TTS call");
 
       void speakSarahExaminer(text, {
-        onStart: () => setIsExaminerSpeaking(true),
+        onStart: () => {
+          isExaminerSpeakingRef.current = true;
+          setIsExaminerSpeaking(true);
+        },
         onBoundary: (charIndex, charLength) => {
           setDisplayedSpeech(text.slice(0, charIndex + charLength));
         },
@@ -410,11 +448,67 @@ export default function ActiveSession({
           isExaminerSpeakingRef.current = false;
           console.timeEnd("[speaking] TTS call");
           onEnd?.();
+          if (shouldAutoArmTurn()) {
+            turnControllerRef.current?.armAfterExaminer();
+          }
         },
       });
     },
-    [setExaminerSpeech, setIsExaminerSpeaking]
+    [setExaminerSpeech, setIsExaminerSpeaking, shouldAutoArmTurn, clearAnswerTimer]
   );
+
+  useEffect(() => {
+    testEndedRef.current = testEnded;
+  }, [testEnded]);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+
+    let cancelled = false;
+
+    void createTurnTakingController({
+      onStateChange: (state) => {
+        if (!cancelled) setTurnState(state);
+        if (state === "listening" || state === "idle" || state === "thinking") {
+          setIsListening(state === "listening" || state === "speaking");
+        }
+        if (state === "speaking") {
+          setIsListening(true);
+        }
+        if (state === "processing" || state === "idle") {
+          clearAnswerTimer();
+        }
+      },
+      onSpeechStart: () => {
+        clearAnswerTimer();
+        const started = Date.now();
+        answerTimerRef.current = setInterval(() => {
+          setAnswerSeconds(Math.floor((Date.now() - started) / 1000));
+        }, 400);
+      },
+      onAnswerReady: (blob, durationMs) => {
+        clearAnswerTimer();
+        void processRecordedAudioRef.current(blob, durationMs, "manual");
+      },
+      onError: (message) => {
+        clearAnswerTimer();
+        setMicError(message);
+      },
+    }).then((controller) => {
+      if (cancelled) {
+        void controller.destroy();
+        return;
+      }
+      turnControllerRef.current = controller;
+    });
+
+    return () => {
+      cancelled = true;
+      clearAnswerTimer();
+      void turnControllerRef.current?.destroy();
+      turnControllerRef.current = null;
+    };
+  }, [sessionReady, clearAnswerTimer, setIsListening]);
   const finishSession = useCallback(async () => {
     if (!sessionId || !studentId || processingRef.current) return;
 
@@ -615,6 +709,7 @@ export default function ActiveSession({
     async (text: string) => {
       if (!sessionId || !text.trim() || processingRef.current) return;
 
+      turnControllerRef.current?.cancelArm();
       setIsProcessing(true);
       setTranscript("");
       transcriptRef.current = "";
@@ -654,6 +749,7 @@ export default function ActiveSession({
         if (!res.ok) {
           setSarahThinking(false);
           setMicError(data.error || "Could not send your response. Please try again.");
+          turnControllerRef.current?.armAfterExaminer();
           return;
         }
 
@@ -738,6 +834,7 @@ export default function ActiveSession({
     part2PhaseRef.current = "done";
     setPart2Phase("done");
     setPart2Timer(null);
+    turnControllerRef.current?.cancelArm();
 
     await stopRecording();
 
@@ -780,6 +877,7 @@ export default function ActiveSession({
         const begin =
           "Right, please begin speaking now.";
         speakExaminer(begin, () => {
+          turnControllerRef.current?.cancelArm();
           setPart2Phase("speaking");
           setPart2Timer(120);
           part2TranscriptRef.current = "";
@@ -1147,34 +1245,39 @@ export default function ActiveSession({
         </div>
       )}
 
-      {/* Mic area — hidden during Part 2 prep/speaking auto modes */}
+      {/* Conversational turn-taking (Parts 1 & 3) — hidden during Part 2 prep/speaking */}
       {!(currentPart === 2 && (part2Phase === "prep" || part2Phase === "speaking")) && (
         <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-          <button
-            type="button"
-            onClick={toggleMic}
-            disabled={isProcessing || isExaminerSpeaking || sessionStatus === "scoring"}
+          <div
             style={{
               width: "88px",
               height: "88px",
               borderRadius: "50%",
               background: "#0d1b35",
-              border: isListening ? "4px solid #c9972c" : "4px solid transparent",
-              cursor: isProcessing ? "wait" : "pointer",
+              border:
+                turnState === "listening" || turnState === "speaking"
+                  ? "4px solid #c9972c"
+                  : "4px solid transparent",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto",
               position: "relative",
-              opacity: isExaminerSpeaking ? 0.5 : 1,
+              opacity: isExaminerSpeaking || turnState === "thinking" ? 0.7 : 1,
+              animation:
+                turnState === "listening"
+                  ? "pulse 1.2s infinite"
+                  : turnState === "speaking"
+                    ? "pulse 0.8s infinite"
+                    : undefined,
             }}
           >
-            {isProcessing ? (
+            {isProcessing || turnState === "processing" ? (
               <span style={{ color: "white", fontSize: "12px" }}>⏳</span>
             ) : (
               <span style={{ fontSize: "32px" }}>🎤</span>
             )}
-            {isListening && (
+            {(turnState === "listening" || turnState === "speaking") && (
               <span
                 style={{
                   position: "absolute",
@@ -1183,18 +1286,47 @@ export default function ActiveSession({
                   width: "10px",
                   height: "10px",
                   borderRadius: "50%",
-                  background: "#ef4444",
+                  background: turnState === "speaking" ? "#22c55e" : "#ef4444",
                 }}
               />
             )}
-          </button>
+          </div>
+
           <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", marginTop: "12px" }}>
-            {isProcessing
-              ? "Processing…"
-              : isListening
-                ? `Recording… ${recordSeconds}s — tap again when finished`
-                : "Tap to speak"}
+            {isProcessing || turnState === "processing"
+              ? "Processing your answer…"
+              : isExaminerSpeaking
+                ? "Sarah is speaking…"
+                : turnState === "thinking"
+                  ? "Your turn in a moment…"
+                  : turnState === "listening"
+                    ? "Listening — start speaking when ready"
+                    : turnState === "speaking"
+                      ? `Speaking… ${answerSeconds}s`
+                      : "Waiting for Sarah"}
           </p>
+
+          {(turnState === "listening" || turnState === "speaking") && (
+            <button
+              type="button"
+              onClick={() => void turnControllerRef.current?.stopManual()}
+              disabled={isProcessing}
+              style={{
+                marginTop: "12px",
+                padding: "12px 20px",
+                borderRadius: "10px",
+                border: "none",
+                background: "#0d1b35",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: 700,
+                cursor: isProcessing ? "wait" : "pointer",
+              }}
+            >
+              I&apos;m done
+            </button>
+          )}
+
           {transcript && (
             <p
               style={{
@@ -1209,12 +1341,12 @@ export default function ActiveSession({
               {transcript}
             </p>
           )}
-          <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>
+          <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px", maxWidth: "420px", marginLeft: "auto", marginRight: "auto", lineHeight: 1.45 }}>
             {isExaminerSpeaking
-              ? "Wait for Sarah to finish speaking, then tap the mic"
-              : isListening
-                ? "Speak clearly, then tap the mic again to send your answer"
-                : "Uses AI transcription — works best in Chrome with microphone allowed"}
+              ? "Wait for Sarah to finish — the mic arms automatically"
+              : turnState === "listening" || turnState === "speaking"
+                ? "Speak naturally. Tap I'm done, or pause ~3 seconds to send automatically. Use headphones."
+                : "Natural conversation mode — no need to tap the mic to start"}
           </p>
           {micError && (
             <p
@@ -1229,7 +1361,8 @@ export default function ActiveSession({
             >
               {micError}
             </p>
-          )}        </div>
+          )}
+        </div>
       )}
 
       {sessionStatus === "scoring" && (
