@@ -3,6 +3,7 @@ import { buildListeningQuestions } from "./bank/listening";
 import { buildReadingQuestions } from "./bank/reading";
 import { buildVocabularyQuestions } from "./bank/vocabulary";
 import { buildWritingQuestions } from "./bank/writing";
+import { isValidQuestion } from "./isValidQuestion";
 import type { Band, Question, Section } from "./types";
 
 export type {
@@ -29,7 +30,7 @@ export const QUESTION_BANK: Question[] = [
   ...READING,
   ...WRITING,
   ...LISTENING,
-];
+].filter((q) => q.type !== "mcq" || isValidQuestion(q));
 
 const BY_ID = new Map(QUESTION_BANK.map((q) => [q.id, q]));
 

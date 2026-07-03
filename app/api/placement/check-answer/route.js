@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getQuestionById } from "@/lib/placement/questionBank";
 import { gradeObjectiveAnswer } from "@/lib/placement/adaptiveEngine";
+import { isValidQuestion } from "@/lib/placement/isValidQuestion";
 import { isOpenAiQuotaError } from "@/lib/openaiErrors.js";
 
 export const runtime = "nodejs";
@@ -22,6 +23,13 @@ export async function POST(request) {
     const question = getQuestionById(questionId);
     if (!question) {
       return NextResponse.json({ error: "Question not found" }, { status: 404 });
+    }
+
+    if (question.type === "mcq" && !isValidQuestion(question)) {
+      return NextResponse.json(
+        { error: "invalid_question", skip: true },
+        { status: 422 }
+      );
     }
 
     const quick = gradeObjectiveAnswer(question, studentAnswer);

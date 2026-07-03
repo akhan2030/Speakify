@@ -92,6 +92,8 @@ type DbUser = {
 
   stepEnrolled: boolean;
 
+  onboardingCompleted: boolean;
+
 };
 
 
@@ -124,6 +126,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     step_enrolled?: boolean | null;
 
+    onboarding_completed?: boolean | null;
+
   } | null = null;
 
   let error: { message?: string } | null = null;
@@ -134,7 +138,7 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     .from("users")
 
-    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled")
+    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed")
 
     .eq("email", normalizedEmail)
 
@@ -205,6 +209,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
   const stepEnrolled = data.step_enrolled === true;
 
+  const onboardingCompleted = data.onboarding_completed === true;
+
 
 
   return {
@@ -222,6 +228,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
     enrolledPrograms,
 
     stepEnrolled,
+
+    onboardingCompleted,
 
   };
 
@@ -251,7 +259,10 @@ const authBaseUrl = (process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? "").rep
   /\/$/,
   ""
 );
-const useSecureCookies = authBaseUrl.startsWith("https://");
+const useSecureCookies =
+  authBaseUrl.startsWith("https://") ||
+  process.env.VERCEL === "1" ||
+  process.env.NODE_ENV === "production";
 
 export const authOptions: NextAuthOptions = {
 
@@ -419,7 +430,24 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
 
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+
+      if (trigger === "update" && session) {
+        if ((session as { onboardingCompleted?: boolean }).onboardingCompleted === true) {
+          (token as any).onboardingCompleted = true;
+        }
+        if ((session as { programType?: string }).programType) {
+          (token as any).programType = (session as { programType?: string }).programType;
+        }
+        if ((session as { enrolledPrograms?: unknown }).enrolledPrograms) {
+          (token as any).enrolledPrograms = (
+            session as { enrolledPrograms?: unknown }
+          ).enrolledPrograms;
+        }
+        if ((session as { stepEnrolled?: boolean }).stepEnrolled === true) {
+          (token as any).stepEnrolled = true;
+        }
+      }
 
       if (user) {
 
@@ -450,6 +478,8 @@ export const authOptions: NextAuthOptions = {
           (token as any).enrolledPrograms = dbUser.enrolledPrograms;
 
           (token as any).stepEnrolled = dbUser.stepEnrolled;
+
+          (token as any).onboardingCompleted = dbUser.onboardingCompleted;
 
         } else {
 
@@ -528,6 +558,9 @@ export const authOptions: NextAuthOptions = {
       );
 
       (session.user as any).stepEnrolled = (token as any).stepEnrolled === true;
+
+      (session.user as any).onboardingCompleted =
+        (token as any).onboardingCompleted === true;
 
       if ((token as any).email) {
 

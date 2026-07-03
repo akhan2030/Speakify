@@ -9,10 +9,12 @@ import {
   gradeObjectiveAnswer,
   initTestState,
   processAnswer,
-  selectNextQuestion,
+  selectNextValidQuestion,
   shouldEndTest,
   shouldShowSpeaking,
+  skipInvalidQuestion,
 } from "@/lib/placement/adaptiveEngine";
+import { isValidQuestion, mcqOptionsRecord } from "@/lib/placement/isValidQuestion";
 import { countWords, formatFillBlankAnswer, formatMmSs, sectionLabel } from "@/lib/placement/format";
 import { generateStudyPlan, roundToHalfBand } from "@/lib/placement/scoring";
 import type { PlacementOnboarding } from "@/lib/placement/onboarding";
@@ -378,7 +380,7 @@ export default function PlacementTestPage() {
         finishTest(nextState);
         return;
       }
-      const nextQ = selectNextQuestion(nextState);
+      const nextQ = selectNextValidQuestion(nextState);
       if (!nextQ) {
         finishTest(nextState);
         return;
@@ -389,6 +391,14 @@ export default function PlacementTestPage() {
     },
     [finishTest]
   );
+
+  useEffect(() => {
+    if (phase !== "test" || !testState || !currentQuestion) return;
+    if (currentQuestion.type === "mcq" && !isValidQuestion(currentQuestion)) {
+      const skipped = skipInvalidQuestion(testState, currentQuestion.id);
+      continueAfterState(skipped);
+    }
+  }, [phase, testState, currentQuestion, continueAfterState]);
 
   const goToNextQuestion = useCallback(() => {
     if (!pendingNextState || !canGoNext) return;
@@ -562,7 +572,7 @@ export default function PlacementTestPage() {
     setAttemptId(json.attemptId);
 
     const state = initTestState(35);
-    const first = selectNextQuestion(state);
+    const first = selectNextValidQuestion(state);
     if (!first) return;
 
     setTestState(state);
@@ -576,19 +586,27 @@ export default function PlacementTestPage() {
     if (!currentQuestion) return null;
     const q = currentQuestion;
 
-    if (q.options && q.options.length > 0) {
+    if (q.type === "mcq") {
+      if (!isValidQuestion(q)) {
+        return (
+          <p className="mt-6 text-center text-sm text-slate-500">Loading next question…</p>
+        );
+      }
+      const opts = mcqOptionsRecord(q.options);
+      const letters = ["A", "B", "C", "D"] as const;
       return (
         <div className="mt-6 grid gap-3">
-          {q.options.map((opt, idx) => {
-            const selected = selectedOption === opt;
+          {letters.map((letter) => {
+            const optionText = opts[letter];
+            if (!optionText || optionText.trim().length === 0) return null;
+            const selected = selectedOption === optionText;
             const showResult = feedback && selected;
-            const letter = String.fromCharCode(65 + idx);
             return (
               <button
-                key={opt}
+                key={`${q.id}-${letter}`}
                 type="button"
                 disabled={Boolean(feedback) || checking}
-                onClick={() => handleMcq(opt)}
+                onClick={() => handleMcq(optionText)}
                 className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
                   showResult
                     ? feedback?.correct
@@ -602,7 +620,7 @@ export default function PlacementTestPage() {
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c9972c] text-sm font-bold text-[#0d1b35]">
                   {letter}
                 </span>
-                <span className="pt-0.5">{opt}</span>
+                <span className="pt-0.5">{optionText}</span>
               </button>
             );
           })}

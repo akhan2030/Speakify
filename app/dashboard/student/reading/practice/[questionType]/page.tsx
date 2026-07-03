@@ -69,7 +69,7 @@ function QuestionInputs({
               {question.options.map((option) => (
                 <label
                   key={option.key}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 >
                   <input
                     type="radio"
@@ -79,8 +79,9 @@ function QuestionInputs({
                     onChange={() => onChange(question.id, option.key)}
                     className="text-[#0d1b35]"
                   />
-                  <span>
-                    <strong>{option.key}.</strong> {option.label}
+                  <span className="text-slate-700">
+                    <strong className="text-[#0d1b35]">{option.key}.</strong>{" "}
+                    {option.label}
                   </span>
                 </label>
               ))}
@@ -92,7 +93,7 @@ function QuestionInputs({
               {TFNG_OPTIONS.map((option) => (
                 <label
                   key={option}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 >
                   <input
                     type="radio"

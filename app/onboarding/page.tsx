@@ -1,0 +1,479 @@
+"use client";
+
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  GATEWAY_QUESTION_COUNT,
+  gatewayEstimatedBand,
+  initGatewayState,
+  selectGatewayQuestion,
+  submitGatewayAnswer,
+} from "@/lib/onboarding/gatewayEngine";
+import { skipInvalidQuestion } from "@/lib/placement/adaptiveEngine";
+import { isValidQuestion, mcqOptionsRecord } from "@/lib/placement/isValidQuestion";
+import {
+  bandToPathwaySubLevel,
+  dashboardPathForProgramme,
+  programmeGoalLabel,
+  recommendGatewayTrack,
+  targetBandFromRecommendation,
+} from "@/lib/onboarding/recommendTrack";
+import type { GatewayProgramme, GatewayRecommendation } from "@/lib/onboarding/types";
+import { bandToCefr } from "@/lib/placement/scoring";
+import type { Question } from "@/lib/placement/types";
+import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
+import { dashboardPathForStudentUser } from "@/lib/studentLoginRedirect";
+import { normalizeRole } from "@/lib/roles";
+
+const GOLD = "#c9972c";
+const NAVY = "#0d1b35";
+
+const PROGRAMMES: {
+  id: GatewayProgramme;
+  icon: string;
+  title: string;
+  subtitle: string;
+}[] = [
+  { id: "ielts", icon: "🎯", title: "Prepare for IELTS", subtitle: "Academic band preparation" },
+  { id: "pathway", icon: "📚", title: "Build my English", subtitle: "CEFR pathway levels" },
+  { id: "step", icon: "🏛", title: "Prepare for STEP", subtitle: "Qiyas university test" },
+  {
+    id: "business_english",
+    icon: "💼",
+    title: "Business English",
+    subtitle: "Professional communication",
+  },
+];
+
+const CEFR_MARKERS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+function firstName(fullName: string | null | undefined): string {
+  const trimmed = fullName?.trim();
+  if (!trimmed) return "there";
+  return trimmed.split(/\s+/)[0] ?? trimmed;
+}
+
+function levelBarIndex(level: string): number {
+  const base = level.split(".")[0]?.toUpperCase() ?? "B1";
+  const idx = CEFR_MARKERS.indexOf(base);
+  return idx >= 0 ? idx : 2;
+}
+
+function ProgressBar({ step }: { step: number }) {
+  const pct = (step / 4) * 100;
+  return (
+    <div className="mb-6">
+      <div className="mb-2 flex justify-between text-xs font-medium text-slate-400">
+        <span>Step {step} of 4</span>
+        <span>{Math.round(pct)}%</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, backgroundColor: GOLD }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function Shell({ step, children }: { step: number; children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: NAVY }}>
+      <header className="px-6 pt-6 sm:px-8">
+        <p className="text-xl font-extrabold tracking-tight" style={{ color: GOLD }}>
+          Speakify
+        </p>
+      </header>
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8">
+        <div className="w-full max-w-[560px] rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
+          <ProgressBar step={step} />
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const { data: session, status, update } = useSession();
+
+  const [step, setStep] = useState(1);
+  const [programme, setProgramme] = useState<GatewayProgramme | null>(null);
+  const [testState, setTestState] = useState(() => initGatewayState());
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
+  const [assessmentDone, setAssessmentDone] = useState(false);
+  const [placementBand, setPlacementBand] = useState<number | null>(null);
+  const [recommendation, setRecommendation] = useState<GatewayRecommendation | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const role = normalizeRole((session?.user as { role?: string })?.role);
+  const onboardingCompleted =
+    (session?.user as { onboardingCompleted?: boolean })?.onboardingCompleted === true;
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      router.replace("/login");
+      return;
+    }
+    if (shouldSkipGateway(role)) {
+      router.replace(dashboardPathForStudentUser(session?.user ?? {}));
+      return;
+    }
+    if (onboardingCompleted) {
+      router.replace(dashboardPathForStudentUser(session?.user ?? {}));
+    }
+  }, [status, role, onboardingCompleted, router, session?.user]);
+
+  useEffect(() => {
+    if (step !== 2 || !currentQuestion || assessmentDone) return;
+    if (!isValidQuestion(currentQuestion)) {
+      const next = selectGatewayQuestion(skipInvalidQuestion(testState, currentQuestion.id));
+      if (next) setCurrentQuestion(next);
+    }
+  }, [step, currentQuestion, assessmentDone, testState]);
+
+  const startAssessment = useCallback((selected: GatewayProgramme) => {
+    setProgramme(selected);
+    const state = initGatewayState();
+    setTestState(state);
+    setCurrentQuestion(selectGatewayQuestion(state));
+    setStep(2);
+  }, []);
+
+  const handleAnswer = useCallback(
+    (selected: string) => {
+      if (!currentQuestion || feedback || !selected.trim()) return;
+      const { state: nextState, correct } = submitGatewayAnswer(
+        testState,
+        currentQuestion,
+        selected
+      );
+      setFeedback(correct ? "correct" : "incorrect");
+      setTestState(nextState);
+
+      window.setTimeout(() => {
+        setFeedback(null);
+        if (nextState.questionsAsked >= GATEWAY_QUESTION_COUNT) {
+          const band = gatewayEstimatedBand(nextState);
+          setPlacementBand(band);
+          if (programme) {
+            setRecommendation(recommendGatewayTrack(programme, band));
+          }
+          setAssessmentDone(true);
+          setStep(3);
+          return;
+        }
+        setCurrentQuestion(selectGatewayQuestion(nextState));
+      }, 800);
+    },
+    [currentQuestion, feedback, programme, testState]
+  );
+
+  const cefrLevel = useMemo(
+    () => (placementBand != null ? bandToPathwaySubLevel(placementBand) : "B1.2"),
+    [placementBand]
+  );
+
+  const cefrLabel = useMemo(() => {
+    if (placementBand == null) return "Intermediate";
+    return bandToCefr(placementBand).label;
+  }, [placementBand]);
+
+  const finishOnboarding = async () => {
+    if (!programme || placementBand == null || !recommendation) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ programme, placementBand }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error ?? "Could not save your results");
+      }
+      await update({
+        onboardingCompleted: true,
+        programType:
+          programme === "pathway"
+            ? "pathway"
+            : programme === "business_english"
+              ? "business_english"
+              : "ielts",
+        enrolledPrograms:
+          programme === "step"
+            ? ["step"]
+            : programme === "pathway"
+              ? ["pathway"]
+              : programme === "business_english"
+                ? ["business_english"]
+                : ["ielts"],
+        stepEnrolled: programme === "step",
+      });
+      setStep(4);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const enterDashboard = () => {
+    const path = programme ? dashboardPathForProgramme(programme) : "/dashboard/ielts/student";
+    window.location.href = path;
+  };
+
+  if (status === "loading" || onboardingCompleted || shouldSkipGateway(role)) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center text-white"
+        style={{ backgroundColor: NAVY }}
+      >
+        <span
+          className="h-10 w-10 animate-spin rounded-full border-4 border-t-transparent"
+          style={{ borderColor: `${GOLD}40`, borderTopColor: GOLD }}
+        />
+      </div>
+    );
+  }
+
+  if (step === 1) {
+    return (
+      <Shell step={1}>
+        <h1 className="text-2xl font-bold text-[#0d1b35]">Welcome to Speakify</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Tell us your goal and we will place you at exactly the right level.
+        </p>
+        <p className="mt-6 text-sm font-semibold text-[#0d1b35]">What are you here for?</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {PROGRAMMES.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => startAssessment(p.id)}
+              className="rounded-xl border-2 border-slate-200 p-4 text-left transition hover:border-[#c9972c] hover:bg-[#c9972c]/5"
+            >
+              <span className="text-2xl">{p.icon}</span>
+              <p className="mt-2 font-bold text-[#0d1b35]">{p.title}</p>
+              <p className="mt-1 text-xs text-slate-500">{p.subtitle}</p>
+            </button>
+          ))}
+        </div>
+      </Shell>
+    );
+  }
+
+  if (step === 2 && currentQuestion && !assessmentDone) {
+    const qNum = testState.questionsAsked + 1;
+    const opts = mcqOptionsRecord(currentQuestion.options);
+    const letters = ["A", "B", "C", "D"] as const;
+
+    if (!isValidQuestion(currentQuestion)) {
+      return (
+        <Shell step={2}>
+          <p className="text-sm text-slate-500">Loading next question…</p>
+        </Shell>
+      );
+    }
+
+    return (
+      <Shell step={2}>
+        <h1 className="text-xl font-bold text-[#0d1b35]">Quick Level Check — 15 questions</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          This takes about 8 minutes and places you at exactly the right level.
+        </p>
+        <p className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          There is no pass or fail. Answer honestly — the more accurate your answers, the better
+          your personalised plan.
+        </p>
+        <div className="mt-6">
+          <div className="mb-2 flex justify-between text-xs font-medium text-slate-500">
+            <span>Question {qNum} of {GATEWAY_QUESTION_COUNT}</span>
+          </div>
+          <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${(qNum / GATEWAY_QUESTION_COUNT) * 100}%`,
+                backgroundColor: GOLD,
+              }}
+            />
+          </div>
+          <p className="text-base font-medium leading-relaxed text-[#0d1b35]">
+            {currentQuestion.question}
+          </p>
+          <div className="mt-5 grid gap-2">
+            {letters.map((letter) => {
+              const opt = opts[letter];
+              if (!opt || opt.trim().length === 0) return null;
+              const isCorrect =
+                feedback &&
+                opt.toLowerCase() === String(currentQuestion.correct).toLowerCase();
+              return (
+                <button
+                  key={letter}
+                  type="button"
+                  disabled={Boolean(feedback)}
+                  onClick={() => handleAnswer(opt)}
+                  className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
+                    feedback === "correct" && isCorrect
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-900"
+                      : feedback === "incorrect" && !isCorrect
+                        ? "border-slate-200 opacity-60"
+                        : feedback === "incorrect" && isCorrect
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-900"
+                          : "border-slate-200 hover:border-[#c9972c] hover:bg-[#c9972c]/5"
+                  }`}
+                >
+                  <span className="mr-2 font-bold text-[#c9972c]">{letter}.</span>
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (step === 3 && recommendation && placementBand != null && programme) {
+    const goal = programmeGoalLabel(programme);
+    const barIdx = levelBarIndex(cefrLevel);
+
+    return (
+      <Shell step={3}>
+        <h1 className="text-xl font-bold text-[#0d1b35]">
+          Your English Level: {cefrLevel}
+        </h1>
+        <p className="mt-1 text-sm font-medium text-slate-600">{cefrLabel}</p>
+
+        <div className="mt-6 flex justify-between gap-1 text-[10px] font-semibold uppercase text-slate-400">
+          {CEFR_MARKERS.map((m, i) => (
+            <span key={m} className={i === barIdx ? "text-[#c9972c]" : ""}>
+              {m}
+              {i === barIdx ? " ●" : ""}
+            </span>
+          ))}
+        </div>
+
+        <p className="mt-6 text-sm leading-relaxed text-slate-600">
+          You understand English well and can communicate in most everyday situations. You are
+          ready to start focused {goal} preparation.
+        </p>
+
+        <div className="mt-6 rounded-xl border border-[#c9972c]/30 bg-[#c9972c]/10 p-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#c9972c]">
+            Speakify recommends
+          </p>
+          {recommendation.kind === "ielts" && (
+            <>
+              <p className="mt-2 text-lg font-bold text-[#0d1b35]">{recommendation.trackLabel}</p>
+              <p className="mt-1 text-sm text-slate-600">Target: {recommendation.target}</p>
+              <p className="text-sm text-slate-600">Duration: {recommendation.weeks} weeks</p>
+            </>
+          )}
+          {recommendation.kind === "step" && (
+            <>
+              <p className="mt-2 text-lg font-bold text-[#0d1b35]">STEP Phase {recommendation.phase}</p>
+              <p className="mt-1 text-sm text-slate-600">Target score range: {recommendation.score}</p>
+            </>
+          )}
+          {recommendation.kind === "pathway" && (
+            <>
+              <p className="mt-2 text-lg font-bold text-[#0d1b35]">English Pathway {recommendation.level}</p>
+              <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+            </>
+          )}
+          {recommendation.kind === "business_english" && (
+            <>
+              <p className="mt-2 text-lg font-bold text-[#0d1b35]">Business English {recommendation.level}</p>
+              <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+            </>
+          )}
+        </div>
+
+        {recommendation.kind === "ielts" && (
+          <p className="mt-4 text-xs text-slate-500">
+            94% of students at your level who complete IELTS Plus reach Band 6.0 or above.
+          </p>
+        )}
+
+        {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+
+        <button
+          type="button"
+          disabled={saving}
+          onClick={finishOnboarding}
+          className="mt-6 w-full rounded-xl py-3.5 text-sm font-bold text-[#0d1b35] disabled:opacity-60"
+          style={{ backgroundColor: GOLD }}
+        >
+          {saving ? "Saving…" : "Confirm my track →"}
+        </button>
+        <button
+          type="button"
+          className="mt-3 w-full text-center text-xs text-slate-500 underline"
+          onClick={() => setStep(1)}
+        >
+          I want a different track
+        </button>
+      </Shell>
+    );
+  }
+
+  if (step === 4 && recommendation && placementBand != null && programme) {
+    const target = targetBandFromRecommendation(programme, placementBand, recommendation);
+    const name = firstName(session?.user?.name);
+
+    return (
+      <Shell step={4}>
+        <h1 className="text-2xl font-bold text-[#0d1b35]">You are all set, {name}!</h1>
+        <ul className="mt-6 space-y-3 text-sm text-slate-700">
+          <li>✅ Your level: {cefrLevel} {cefrLabel}</li>
+          <li>
+            ✅ Your programme:{" "}
+            {recommendation.kind === "ielts"
+              ? recommendation.trackLabel
+              : recommendation.kind === "step"
+                ? `STEP Phase ${recommendation.phase}`
+                : recommendation.kind === "pathway"
+                  ? `English Pathway ${recommendation.level}`
+                  : `Business English ${recommendation.level}`}
+          </li>
+          <li>✅ Your target: {target}</li>
+          <li>✅ Your dashboard is personalised and ready</li>
+        </ul>
+        <p className="mt-6 text-sm leading-relaxed text-slate-600">
+          Every lesson, every practice session, and every mock exam is now calibrated to your
+          exact level and your target band score.
+        </p>
+        <button
+          type="button"
+          onClick={enterDashboard}
+          className="mt-8 w-full rounded-xl py-4 text-base font-bold text-[#0d1b35]"
+          style={{ backgroundColor: GOLD }}
+        >
+          Enter my dashboard →
+        </button>
+      </Shell>
+    );
+  }
+
+  return (
+    <div
+      className="flex min-h-screen items-center justify-center text-white"
+      style={{ backgroundColor: NAVY }}
+    >
+      <span
+        className="h-10 w-10 animate-spin rounded-full border-4 border-t-transparent"
+        style={{ borderColor: `${GOLD}40`, borderTopColor: GOLD }}
+      />
+    </div>
+  );
+}

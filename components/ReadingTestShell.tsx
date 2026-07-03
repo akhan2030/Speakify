@@ -57,7 +57,7 @@ function MockQuestionInput({
         {question.options.map((option) => (
           <label
             key={option.key}
-            className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+            className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
           >
             <input
               type="radio"

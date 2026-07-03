@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { dashboardPathForSessionUser } from "@/lib/auth";
+import { resolvePostLoginPath } from "@/lib/onboarding/postLogin";
 import { normalizeRole } from "@/lib/roles";
 import {
   loginProgramContextFromCallback,
@@ -70,6 +70,14 @@ function safeCallbackPath(callbackUrl: string | null): string | null {
   if (!callbackUrl) return null;
   const decoded = decodeURIComponent(callbackUrl);
   if (decoded.startsWith("/") && !decoded.startsWith("//")) return decoded;
+  try {
+    const url = new URL(decoded);
+    if (url.pathname.startsWith("/") && !url.pathname.startsWith("//")) {
+      return url.pathname + url.search;
+    }
+  } catch {
+    /* ignore */
+  }
   return null;
 }
 
@@ -147,7 +155,7 @@ function LoginForm() {
       const session = await waitForServerSession();
       if (!session?.user) {
         setError(
-          "Signed in but session did not start. If you use a shared link (not localhost), run npm run share and try again."
+          "Signed in but session did not start. Try again, or clear cookies for this site and refresh."
         );
         return;
       }
@@ -164,31 +172,24 @@ function LoginForm() {
       }
 
       const role = normalizeRole((session.user as { role?: string }).role);
-      const roleHome = dashboardPathForSessionUser(
-        session.user as {
-          role?: string;
-          programType?: string;
-          enrolledPrograms?: unknown;
-          stepEnrolled?: boolean;
-        }
-      );
-      const callbackPath = safeCallbackPath(callbackUrl);
-      const redirectPath =
-        role === "admin" || role === "teacher"
-          ? roleHome
-          : callbackPath ?? roleHome;
+      const sessionUser = session.user as {
+        role?: string;
+        programType?: string;
+        enrolledPrograms?: unknown;
+        stepEnrolled?: boolean;
+        onboardingCompleted?: boolean;
+      };
 
-      window.location.href =
-        redirectPath && redirectPath !== "/login"
-          ? redirectPath
-          : dashboardPathForSessionUser(
-              session.user as {
-                role?: string;
-                programType?: string;
-                enrolledPrograms?: unknown;
-                stepEnrolled?: boolean;
-              }
-            );
+      const redirectPath = resolvePostLoginPath({
+        role,
+        mustChangePassword: false,
+        onboardingCompleted: sessionUser.onboardingCompleted,
+        programType: sessionUser.programType,
+        enrolledPrograms: sessionUser.enrolledPrograms,
+        stepEnrolled: sessionUser.stepEnrolled,
+      });
+
+      window.location.href = redirectPath;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went wrong. Please try again."

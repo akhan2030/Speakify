@@ -1,5 +1,6 @@
 import { WRITING_QUESTION_ORDER } from "./bank/writing";
 import { QUESTION_BANK, getQuestionById } from "./questionBank";
+import { isValidQuestion } from "./isValidQuestion";
 import { presentQuestion } from "./shuffleOptions";
 import { buildPlacementResult, clampBand } from "./scoring";
 import type { Answer, PlacementResult, Question, Section, TestState } from "./types";
@@ -323,4 +324,28 @@ export function gradeObjectiveAnswer(
   }
 
   return student === expected || expected.includes(student) || student.includes(expected);
+}
+
+/** Mark a broken question as used so the engine never picks it again. */
+export function skipInvalidQuestion(state: TestState, questionId: string): TestState {
+  if (state.answeredIds.includes(questionId)) return state;
+  return {
+    ...state,
+    answeredIds: [...state.answeredIds, questionId],
+  };
+}
+
+/** Pick the next question, skipping any MCQ with missing or empty options. */
+export function selectNextValidQuestion(state: TestState): Question | null {
+  let working = state;
+  const maxAttempts = Math.max(QUESTION_BANK.length, 1);
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const candidate = selectNextQuestion(working);
+    if (!candidate) return null;
+    if (isValidQuestion(candidate)) return candidate;
+    working = skipInvalidQuestion(working, candidate.id);
+  }
+
+  return null;
 }

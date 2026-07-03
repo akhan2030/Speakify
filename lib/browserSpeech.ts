@@ -368,6 +368,81 @@ export async function speakDialogueWithBrowser(transcript: string): Promise<void
   }
 }
 
+function pickFemaleBritishVoice(
+  voices: SpeechSynthesisVoice[]
+): SpeechSynthesisVoice | undefined {
+  const preferLocal = (candidates: SpeechSynthesisVoice[]) =>
+    candidates.find((v) => v.localService) ?? candidates[0];
+
+  const gbPool = voices.filter((v) => normalizeLang(v.lang).startsWith("en-GB"));
+  const femaleGb = gbPool.filter(isFemaleVoice);
+  if (femaleGb.length > 0) return preferLocal(femaleGb);
+
+  const femaleGbHints = gbPool.filter((v) => {
+    const n = v.name.toLowerCase();
+    return n.includes("hazel") || n.includes("libby") || n.includes("sonia");
+  });
+  if (femaleGbHints.length > 0) return preferLocal(femaleGbHints);
+
+  const enPool = voices.filter((v) => normalizeLang(v.lang).startsWith("en"));
+  const femaleEn = enPool.filter(isFemaleVoice);
+  if (femaleEn.length > 0) return preferLocal(femaleEn);
+
+  return undefined;
+}
+
+/** Sarah — female British examiner voice for IELTS Speaking. */
+export async function speakSarahExaminer(
+  text: string,
+  handlers?: {
+    onStart?: () => void;
+    onEnd?: () => void;
+    onBoundary?: (charIndex: number, charLength: number) => void;
+  }
+): Promise<void> {
+  if (!canUseBrowserSpeech()) {
+    handlers?.onEnd?.();
+    return;
+  }
+
+  const synth = window.speechSynthesis;
+  synth.cancel();
+
+  let voices = synth.getVoices();
+  if (voices.length === 0) {
+    voices = await waitForVoices();
+  }
+
+  const voice = pickFemaleBritishVoice(voices);
+  const utterance = buildUtterance(text, "en-GB", voice);
+  utterance.pitch = 1.08;
+  utterance.rate = 0.9;
+
+  utterance.onstart = () => handlers?.onStart?.();
+  utterance.onboundary = (e) => {
+    if (e.charIndex >= 0) handlers?.onBoundary?.(e.charIndex, e.charLength || 1);
+  };
+  utterance.onend = () => handlers?.onEnd?.();
+  utterance.onerror = (e) => {
+    if (e.error !== "canceled" && e.error !== "interrupted") {
+      console.warn("[speakSarahExaminer]", e.error);
+    }
+    handlers?.onEnd?.();
+  };
+
+  await new Promise<void>((resolve) => {
+    const prevEnd = utterance.onend;
+    utterance.onend = (ev) => {
+      prevEnd?.call(utterance, ev);
+      resolve();
+    };
+    window.setTimeout(() => {
+      synth.speak(utterance);
+      synth.resume();
+    }, 80);
+  });
+}
+
 export function speakWithBrowser(text: string, lang: BrowserSpeechLang = "en-GB"): Promise<void> {
   if (!canUseBrowserSpeech()) {
     return Promise.reject(new Error("Browser speech is not supported on this device."));

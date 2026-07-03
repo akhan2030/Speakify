@@ -1,0 +1,1101 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { speakSarahExaminer, stopBrowserSpeech } from "@/lib/browserSpeech";
+import { checkMicrophoneAccess } from "@/lib/speaking/checkMicrophone";
+import {
+  MIN_SPEAKING_SECONDS,
+  MIN_STUDENT_CHARS,
+  hasValidSpeechInput,
+  studentTranscriptFromHistory,
+} from "@/lib/speaking/validateSpeechInput";
+
+type Part = 1 | 2 | 3;
+
+type HistoryEntry = { role: "student" | "examiner"; text: string; part?: Part };
+
+type CueCard = {
+  id: string;
+  topic: string;
+  prompt: string;
+  bullets: string[];
+  closing: string;
+};
+
+const PART_LABELS: Record<Part, string> = {
+  1: "Personal Questions",
+  2: "Long Turn",
+  3: "Discussion",
+};
+
+const PART_GUIDES: Record<
+  Part,
+  { title: string; duration: string; whatHappens: string; tips: string[] }
+> = {
+  1: {
+    title: "Part 1 — Personal Questions",
+    duration: "4–5 minutes",
+    whatHappens:
+      "Sarah asks short questions about familiar topics: your home, work or studies, hobbies, food, and daily life. She will ask follow-up questions based on your answers.",
+    tips: [
+      "Give 2–4 sentence answers — not one word, not a long speech",
+      "Tap the microphone, speak your answer, then tap again to send",
+      "Wait until Sarah finishes speaking before you tap the mic",
+    ],
+  },
+  2: {
+    title: "Part 2 — Cue Card (Long Turn)",
+    duration: "3–4 minutes (1 min prep + 2 min speaking)",
+    whatHappens:
+      "Sarah gives you a cue card topic. You get 60 seconds to prepare notes, then speak for up to 2 minutes without interruption.",
+    tips: [
+      "Use the prep time to jot quick notes — they are not submitted",
+      "Cover all bullet points on the cue card",
+      "Recording starts automatically when prep time ends",
+    ],
+  },
+  3: {
+    title: "Part 3 — Discussion",
+    duration: "4–5 minutes",
+    whatHappens:
+      "Sarah asks deeper, abstract questions linked to your Part 2 topic — opinions, comparisons, and society-level ideas.",
+    tips: [
+      "Explain your opinion and give reasons or examples",
+      "It is fine to say \"That's an interesting question\" while you think",
+      "Tap the mic for each answer, same as Part 1",
+    ],
+  },
+};
+function formatElapsed(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+export default function ActiveSession({
+  sessionId,
+  sessionNumber,
+  currentPart,
+  setCurrentPart,
+  conversationHistory,
+  setConversationHistory,
+  examinerSpeech,
+  setExaminerSpeech,
+  isListening,
+  setIsListening,
+  isExaminerSpeaking,
+  setIsExaminerSpeaking,
+  transcript,
+  setTranscript,
+  cueCard,
+  part2Timer,
+  setPart2Timer,
+  part2Phase,
+  setPart2Phase,
+  sessionStatus,
+  setSessionStatus,
+  sessionType,
+  studentId,
+  onComplete,
+}: {
+  sessionId: string | null;
+  sessionNumber: number;
+  currentPart: Part;
+  setCurrentPart: (p: Part) => void;
+  conversationHistory: HistoryEntry[];
+  setConversationHistory: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
+  examinerSpeech: string;
+  setExaminerSpeech: (s: string) => void;
+  isListening: boolean;
+  setIsListening: (v: boolean) => void;
+  isExaminerSpeaking: boolean;
+  setIsExaminerSpeaking: (v: boolean) => void;
+  transcript: string;
+  setTranscript: (s: string) => void;
+  cueCard: CueCard | null;
+  part2Timer: number | null;
+  setPart2Timer: (n: number | null) => void;
+  part2Phase: "prep" | "speaking" | "done";
+  setPart2Phase: (p: "prep" | "speaking" | "done") => void;
+  sessionStatus: "idle" | "active" | "scoring" | "complete";
+  setSessionStatus: (s: "idle" | "active" | "scoring" | "complete") => void;
+  sessionType: "practice" | "mock";
+  studentId?: string;
+  onComplete: (feedback: unknown) => void;
+}) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [sessionElapsed, setSessionElapsed] = useState(0);
+  const [prepNotes, setPrepNotes] = useState("");
+  const [displayedSpeech, setDisplayedSpeech] = useState("");
+  const [part2Pulse, setPart2Pulse] = useState(false);
+  const [viewPart, setViewPart] = useState<Part>(1);
+  const [micError, setMicError] = useState<string | null>(null);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [microphoneGranted, setMicrophoneGranted] = useState(false);
+  const [totalSpeakingSeconds, setTotalSpeakingSeconds] = useState(0);
+  const [testEnded, setTestEnded] = useState(false);
+  const [micGateError, setMicGateError] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordStartRef = useRef(0);
+  const transcriptRef = useRef("");
+  const part2TranscriptRef = useRef("");
+  const openedRef = useRef(false);
+  const processingRef = useRef(false);
+  const isExaminerSpeakingRef = useRef(false);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const currentPartRef = useRef(currentPart);
+  const part2PhaseRef = useRef(part2Phase);
+  const recordingModeRef = useRef<"manual" | "part2" | null>(null);
+  const sendStudentMessageRef = useRef<(text: string) => Promise<void>>(async () => {});
+  const totalSpeakingSecondsRef = useRef(0);
+
+  useEffect(() => {
+    currentPartRef.current = currentPart;
+    setViewPart((v) => (currentPart > v ? currentPart : v));
+  }, [currentPart]);
+
+  useEffect(() => {
+    part2PhaseRef.current = part2Phase;
+  }, [part2Phase]);
+
+  useEffect(() => {
+    isExaminerSpeakingRef.current = isExaminerSpeaking;
+  }, [isExaminerSpeaking]);
+
+  const clearRecordTimer = useCallback(() => {
+    if (recordTimerRef.current) {
+      clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+  }, []);
+
+  const releaseMicStream = useCallback(() => {
+    micStreamRef.current?.getTracks().forEach((t) => t.stop());
+    micStreamRef.current = null;
+  }, []);
+
+  const transcribeBlob = useCallback(async (blob: Blob): Promise<string> => {
+    const formData = new FormData();
+    formData.append("audio", blob, "recording.webm");
+    const res = await fetch("/api/speaking/transcribe", { method: "POST", body: formData });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Transcription failed");
+    }
+    return String(data.transcript ?? "").trim();
+  }, []);
+
+  const processRecordedAudio = useCallback(
+    async (blob: Blob, durationMs: number, mode: "manual" | "part2") => {
+      if (blob.size < 500 || durationMs < 700) {
+        setMicError("Recording too short. Tap the mic, speak for a few seconds, then tap again.");
+        return;
+      }
+
+      setIsProcessing(true);
+      setTranscript("Transcribing your answer…");
+
+      try {
+        const text = await transcribeBlob(blob);
+        transcriptRef.current = text;
+        setTranscript(text);
+
+        if (!text) {
+          setMicError("Couldn't hear anything. Speak clearly and try again.");
+          return;
+        }
+
+        setMicError(null);
+
+        const spokenSeconds = Math.max(1, Math.floor(durationMs / 1000));
+        totalSpeakingSecondsRef.current += spokenSeconds;
+        setTotalSpeakingSeconds(totalSpeakingSecondsRef.current);
+
+        if (mode === "part2") {
+          part2TranscriptRef.current = text;
+          return;
+        }
+
+        await sendStudentMessageRef.current(text);
+      } catch (err) {
+        console.error(err);
+        setMicError(
+          err instanceof Error ? err.message : "Could not transcribe your answer. Try again."
+        );
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [transcribeBlob, setTranscript]
+  );
+
+  const stopRecording = useCallback((): Promise<void> => {
+    clearRecordTimer();
+    setRecordSeconds(0);
+
+    const recorder = mediaRecorderRef.current;
+    const mode = recordingModeRef.current ?? "manual";
+    recordingModeRef.current = null;
+
+    if (!recorder || recorder.state === "inactive") {
+      setIsListening(false);
+      releaseMicStream();
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      const durationMs = Date.now() - recordStartRef.current;
+
+      recorder.onstop = () => {
+        releaseMicStream();
+        mediaRecorderRef.current = null;
+        setIsListening(false);
+
+        const mime = recorder.mimeType || "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type: mime });
+        audioChunksRef.current = [];
+
+        void processRecordedAudio(blob, durationMs, mode === "part2" ? "part2" : "manual").finally(
+          resolve
+        );
+      };
+
+      try {
+        recorder.stop();
+      } catch {
+        releaseMicStream();
+        setIsListening(false);
+        resolve();
+      }
+    });
+  }, [clearRecordTimer, releaseMicStream, processRecordedAudio, setIsListening]);
+
+  const startRecording = useCallback(
+    async (mode: "manual" | "part2" = "manual") => {
+      if (isExaminerSpeakingRef.current || processingRef.current || sessionStatus !== "active") {
+        return;
+      }
+      if (currentPartRef.current === 2 && part2PhaseRef.current === "prep") return;
+      if (mediaRecorderRef.current?.state === "recording") return;
+
+      setMicError(null);
+      stopBrowserSpeech();
+      isExaminerSpeakingRef.current = false;
+      setIsExaminerSpeaking(false);
+
+      audioChunksRef.current = [];
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micStreamRef.current = stream;
+        setMicrophoneGranted(true);
+
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/webm")
+            ? "audio/webm"
+            : "";
+
+        const recorder = mimeType
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) audioChunksRef.current.push(event.data);
+        };
+
+        recorder.onerror = () => {
+          setMicError("Recording failed. Tap the mic to try again.");
+          void stopRecording();
+        };
+
+        mediaRecorderRef.current = recorder;
+        recordingModeRef.current = mode;
+        recordStartRef.current = Date.now();
+        recorder.start(300);
+        setIsListening(true);
+        setTranscript("");
+        transcriptRef.current = "";
+        setRecordSeconds(0);
+
+        recordTimerRef.current = setInterval(() => {
+          setRecordSeconds(Math.floor((Date.now() - recordStartRef.current) / 1000));
+        }, 500);
+      } catch {
+        releaseMicStream();
+        setMicrophoneGranted(false);
+        setMicError(
+          "Microphone blocked. Click the lock icon in your browser address bar, allow microphone access, then try again."
+        );
+      }
+    },
+    [
+      sessionStatus,
+      releaseMicStream,
+      setIsListening,
+      setIsExaminerSpeaking,
+      setTranscript,
+      stopRecording,
+    ]
+  );
+
+  const toggleMic = async () => {
+    if (isListening) {
+      await stopRecording();
+      return;
+    }
+    await startRecording("manual");
+  };
+
+  const speakExaminer = useCallback(
+    (text: string, onEnd?: () => void) => {
+      setDisplayedSpeech("");
+      setExaminerSpeech(text);
+
+      void speakSarahExaminer(text, {
+        onStart: () => setIsExaminerSpeaking(true),
+        onBoundary: (charIndex, charLength) => {
+          setDisplayedSpeech(text.slice(0, charIndex + charLength));
+        },
+        onEnd: () => {
+          setDisplayedSpeech(text);
+          setIsExaminerSpeaking(false);
+          isExaminerSpeakingRef.current = false;
+          onEnd?.();
+        },
+      });
+    },
+    [setExaminerSpeech, setIsExaminerSpeaking]
+  );
+  const finishSession = useCallback(async () => {
+    if (!sessionId || !studentId || processingRef.current) return;
+
+    const studentText = studentTranscriptFromHistory(conversationHistory);
+    const clientValidation = hasValidSpeechInput({
+      transcript: conversationHistory
+        .filter((e) => e.role === "student")
+        .map((e) => ({ role: "student", text: e.text, part: e.part ?? 1 })),
+      speakingTimeSeconds: totalSpeakingSecondsRef.current,
+    });
+
+    if (
+      !microphoneGranted ||
+      totalSpeakingSecondsRef.current < MIN_SPEAKING_SECONDS ||
+      studentText.length < MIN_STUDENT_CHARS ||
+      !clientValidation.valid
+    ) {
+      setMicError(
+        clientValidation.reason ||
+          "No speech detected. Please complete the speaking session before requesting a score."
+      );
+      return;
+    }
+
+    processingRef.current = true;
+    setSessionStatus("scoring");
+
+    try {
+      const res = await fetch("/api/speaking/session/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          studentId,
+          speakingTimeSeconds: totalSpeakingSecondsRef.current,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.insufficientSpeech) {
+          setSessionStatus("active");
+          processingRef.current = false;
+          onComplete({ insufficientSpeech: true, message: data.error });
+          return;
+        }
+        throw new Error(data.error || "Scoring failed");
+      }
+      setSessionStatus("complete");
+      onComplete(data);
+    } catch (err) {
+      console.error(err);
+      setMicError(
+        err instanceof Error
+          ? err.message
+          : "Could not generate feedback. Please try again."
+      );
+      setSessionStatus("active");
+      processingRef.current = false;
+    }
+  }, [
+    sessionId,
+    studentId,
+    conversationHistory,
+    microphoneGranted,
+    setSessionStatus,
+    onComplete,
+  ]);
+
+  const handleExaminerAction = useCallback(
+    (action: string, speech: string) => {
+      if (action === "start_part2") {
+        setCurrentPart(2);
+        setPart2Phase("prep");
+        setPart2Timer(60);
+        speakExaminer(speech);
+        return;
+      }
+      if (action === "start_part3") {
+        setCurrentPart(3);
+        setPart2Phase("done");
+        setPart2Timer(null);
+        speakExaminer(speech);
+        return;
+      }
+      if (action === "end_test") {
+        speakExaminer(speech, () => {
+          setTestEnded(true);
+        });
+        return;
+      }
+      speakExaminer(speech);
+    },
+    [speakExaminer, setCurrentPart, setPart2Phase, setPart2Timer]
+  );
+
+  const sendStudentMessage = useCallback(
+    async (text: string) => {
+      if (!sessionId || !text.trim() || processingRef.current) return;
+
+      setIsProcessing(true);
+      setTranscript("");
+      transcriptRef.current = "";
+
+      const studentEntry: HistoryEntry = {
+        role: "student",
+        text: text.trim(),
+        part: currentPart,
+      };
+      const historyForApi = [...conversationHistory, studentEntry];
+
+      try {
+        const res = await fetch("/api/speaking/session/message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId,
+            studentMessage: text.trim(),
+            currentPart,
+            conversationHistory: historyForApi,
+            cueCardTopic: cueCard?.topic || "",
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Message failed");
+
+        const examinerEntry: HistoryEntry = { role: "examiner", text: data.speech };
+        setConversationHistory([...historyForApi, examinerEntry]);
+        handleExaminerAction(data.action, data.speech);
+      } catch (err) {
+        console.error(err);
+        alert("Could not send your response. Please try again.");
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [
+      sessionId,
+      currentPart,
+      conversationHistory,
+      cueCard,
+      setConversationHistory,
+      setTranscript,
+      handleExaminerAction,
+    ]
+  );
+
+  sendStudentMessageRef.current = sendStudentMessage;
+
+  // Microphone check then opening greeting
+  useEffect(() => {
+    if (openedRef.current) return;
+    openedRef.current = true;
+
+    void (async () => {
+      const mic = await checkMicrophoneAccess();
+      if (!mic.ok) {
+        setMicGateError(
+          mic.error ||
+            "Microphone not detected or not working. Please check your microphone settings and try again."
+        );
+        setSessionStatus("idle");
+        return;
+      }
+
+      setMicrophoneGranted(true);
+      setSessionReady(true);
+      setSessionStatus("active");
+
+      const opening =
+        "Good morning. My name is Sarah, and I'll be conducting your IELTS Speaking test today. First, could you tell me your full name please?";
+      setConversationHistory([{ role: "examiner", text: opening, part: 1 }]);
+      speakExaminer(opening);
+    })();
+  }, [setSessionStatus, setConversationHistory, speakExaminer]);
+
+  useEffect(() => () => {
+    clearRecordTimer();
+    if (mediaRecorderRef.current?.state === "recording") {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {
+        /* noop */
+      }
+    }
+    stopBrowserSpeech();
+    releaseMicStream();
+  }, [clearRecordTimer, releaseMicStream]);
+  // Session elapsed timer
+  useEffect(() => {
+    if (sessionStatus !== "active") return;
+    const id = setInterval(() => setSessionElapsed((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [sessionStatus]);
+
+  // Part 2 prep / speaking countdown
+  useEffect(() => {
+    if (currentPart !== 2 || part2Timer == null || part2Phase === "done") return;
+
+    if (part2Timer <= 0) {
+      if (part2Phase === "prep") {
+        const begin =
+          "Right, please begin speaking now.";
+        speakExaminer(begin, () => {
+          setPart2Phase("speaking");
+          setPart2Timer(120);
+          part2TranscriptRef.current = "";
+          void startRecording("part2");
+        });
+      } else if (part2Phase === "speaking") {
+        void (async () => {
+          await stopRecording();
+          const thankYou = "Thank you.";
+          speakExaminer(thankYou, () => {
+            const part2Text = part2TranscriptRef.current.trim();
+            if (part2Text) {
+              sendStudentMessage(part2Text);
+            }
+            setPart2Phase("done");
+            setPart2Timer(null);
+          });
+        })();
+      }
+      return;
+    }
+
+    const id = setTimeout(() => setPart2Timer(part2Timer - 1), 1000);
+    return () => clearTimeout(id);
+  }, [
+    currentPart,
+    part2Timer,
+    part2Phase,
+    speakExaminer,
+    setPart2Phase,
+    setPart2Timer,
+    startRecording,
+    stopRecording,
+    sendStudentMessage,
+  ]);
+
+  // Pulse progress bar at 30s remaining in Part 2 speaking
+  useEffect(() => {
+    if (part2Phase === "speaking" && part2Timer != null && part2Timer <= 30) {
+      setPart2Pulse(true);
+    } else {
+      setPart2Pulse(false);
+    }
+  }, [part2Phase, part2Timer]);
+
+  const recentHistory = conversationHistory.slice(-6);
+  const prepAmber = part2Phase === "prep" && part2Timer != null && part2Timer <= 20;
+  const part2Progress =
+    part2Phase === "speaking" && part2Timer != null
+      ? ((120 - part2Timer) / 120) * 100
+      : 0;
+
+  const studentText = useMemo(
+    () => studentTranscriptFromHistory(conversationHistory),
+    [conversationHistory]
+  );
+
+  const canSubmit = useMemo(
+    () =>
+      microphoneGranted &&
+      totalSpeakingSeconds >= MIN_SPEAKING_SECONDS &&
+      studentText.length >= MIN_STUDENT_CHARS &&
+      conversationHistory.some((e) => e.role === "student" && e.part === 1),
+    [microphoneGranted, totalSpeakingSeconds, studentText, conversationHistory]
+  );
+
+  if (micGateError) {
+    return (
+      <div style={{ maxWidth: "560px" }}>
+        <div
+          style={{
+            background: "#fef2f2",
+            border: "2px solid #ef4444",
+            borderRadius: "12px",
+            padding: "2rem",
+            textAlign: "center",
+          }}
+        >
+          <p style={{ fontSize: "24px", marginBottom: "8px" }}>🎤</p>
+          <h3 style={{ color: "#991b1b", fontSize: "18px", marginBottom: "8px" }}>
+            Microphone required
+          </h3>
+          <p style={{ color: "#666", lineHeight: 1.6 }}>{micGateError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sessionReady) {
+    return (
+      <div style={{ maxWidth: "560px", padding: "2rem", textAlign: "center" }}>
+        <p style={{ color: "#64748b" }}>Checking microphone…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: "800px" }}>
+      {/* Top bar */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "1.5rem",
+          flexWrap: "wrap",
+          gap: "8px",
+        }}
+      >
+        <p style={{ fontSize: "13px", fontWeight: 600, color: "#0d1b35", margin: 0 }}>
+          Session #{sessionNumber} — Part {currentPart}: {PART_LABELS[currentPart]}
+          {sessionType === "mock" ? " (Mock)" : ""}
+        </p>
+
+        <div style={{ display: "flex", gap: "6px" }}>
+          {([1, 2, 3] as Part[]).map((p) => {
+            const isActive = currentPart === p;
+            const isViewing = viewPart === p;
+            const isLocked = p > currentPart;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setViewPart(p)}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  border: isViewing ? "2px solid #c9972c" : "2px solid transparent",
+                  background: isActive ? "#c9972c" : isLocked ? "#f8fafc" : "#f1f5f9",
+                  color: isActive ? "white" : isLocked ? "#cbd5e1" : "#64748b",
+                  cursor: "pointer",
+                }}
+              >
+                Part {p}
+                {isLocked ? " 🔒" : ""}
+              </button>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: "13px", fontWeight: 600, color: "#64748b", margin: 0, fontVariantNumeric: "tabular-nums" }}>
+          {formatElapsed(sessionElapsed)}
+        </p>
+      </div>
+
+      {/* Part guide panel */}
+      <div
+        style={{
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          borderRadius: "12px",
+          padding: "1rem 1.25rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        {viewPart > currentPart ? (
+          <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+            <strong style={{ color: "#0d1b35" }}>Part {viewPart}</strong> unlocks when Sarah
+            moves you on from Part {currentPart}. Focus on the current part for now.
+          </p>
+        ) : (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
+              <p style={{ fontSize: "14px", fontWeight: 700, color: "#0d1b35", margin: "0 0 6px" }}>
+                {PART_GUIDES[viewPart].title}
+                {viewPart === currentPart && (
+                  <span style={{ color: "#0d9488", fontWeight: 600, fontSize: "11px", marginLeft: "8px" }}>
+                    ● LIVE NOW
+                  </span>
+                )}
+              </p>
+              <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600 }}>
+                {PART_GUIDES[viewPart].duration}
+              </span>
+            </div>
+            <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 10px", lineHeight: 1.6 }}>
+              {PART_GUIDES[viewPart].whatHappens}
+            </p>
+            <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+              {PART_GUIDES[viewPart].tips.map((tip) => (
+                <li key={tip} style={{ fontSize: "12px", color: "#64748b", marginBottom: "4px" }}>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+
+      {/* Examiner speech */}      <div
+        style={{
+          background: "white",
+          border: "1px solid #e5e7eb",
+          borderRadius: "16px",
+          padding: "1.5rem",
+          marginBottom: "1.5rem",
+          minHeight: "120px",
+        }}
+      >
+        <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+          <div
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
+              background: "#0d1b35",
+              color: "#c9972c",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 700,
+              fontSize: "18px",
+              flexShrink: 0,
+            }}
+          >
+            S
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "#64748b", margin: "0 0 6px" }}>
+              Sarah {isExaminerSpeaking && (
+                <span style={{ color: "#0d9488" }}>
+                  <span className="speaking-dot" style={{ animation: "pulse 1s infinite" }}>
+                    ● speaking
+                  </span>
+                </span>
+              )}
+            </p>
+            <p style={{ fontSize: "16px", color: "#0d1b35", lineHeight: 1.6, margin: 0 }}>
+              {displayedSpeech || examinerSpeech || "…"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Part 2 cue card */}
+      {currentPart === 2 && cueCard && part2Phase !== "done" && (
+        <div
+          style={{
+            background: "#fffbeb",
+            border: "2px solid #c9972c",
+            borderRadius: "16px",
+            padding: "1.5rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <p style={{ fontSize: "11px", fontWeight: 700, color: "#c9972c", margin: "0 0 8px" }}>
+            CUE CARD — Part 2
+          </p>
+          <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#0d1b35", margin: "0 0 8px" }}>
+            {cueCard.topic}
+          </h3>
+          <p style={{ fontSize: "14px", color: "#0d1b35", margin: "0 0 12px" }}>
+            {cueCard.prompt}
+          </p>
+          <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 6px" }}>You should say:</p>
+          <ul style={{ margin: "0 0 12px", paddingLeft: "1.25rem" }}>
+            {cueCard.bullets.map((b) => (
+              <li key={b} style={{ fontSize: "13px", color: "#0d1b35", marginBottom: "4px" }}>
+                {b}
+              </li>
+            ))}
+            <li style={{ fontSize: "13px", color: "#0d1b35" }}>{cueCard.closing}</li>
+          </ul>
+
+          {part2Phase === "prep" && part2Timer != null && (
+            <>
+              <p
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: prepAmber ? "#d97706" : "#0d1b35",
+                  margin: "0 0 8px",
+                }}
+              >
+                {part2Timer} seconds to prepare
+              </p>
+              <p style={{ fontSize: "12px", color: "#888", margin: "0 0 8px" }}>
+                You may make notes
+              </p>
+              <textarea
+                value={prepNotes}
+                onChange={(e) => setPrepNotes(e.target.value)}
+                placeholder="Your notes (not submitted)…"
+                rows={3}
+                style={{
+                  width: "100%",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "8px",
+                  fontSize: "13px",
+                  resize: "vertical",
+                }}
+              />
+            </>
+          )}
+
+          {part2Phase === "speaking" && (
+            <>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", margin: "0 0 8px" }}>
+                Speaking… {part2Timer != null && `(${part2Timer}s remaining)`}
+              </p>
+              <div
+                style={{
+                  height: "8px",
+                  background: "#f1f5f9",
+                  borderRadius: "4px",
+                  overflow: "hidden",
+                  marginBottom: "8px",
+                  animation: part2Pulse ? "pulse 1.5s infinite" : undefined,
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${part2Progress}%`,
+                    background: "#c9972c",
+                    borderRadius: "4px",
+                    transition: "width 1s linear",
+                  }}
+                />
+              </div>
+              {transcript && (
+                <p style={{ fontSize: "13px", color: "#64748b", fontStyle: "italic", margin: 0 }}>
+                  {transcript}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Mic area — hidden during Part 2 prep/speaking auto modes */}
+      {!(currentPart === 2 && (part2Phase === "prep" || part2Phase === "speaking")) && (
+        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+          <button
+            type="button"
+            onClick={toggleMic}
+            disabled={isProcessing || isExaminerSpeaking || sessionStatus === "scoring"}
+            style={{
+              width: "88px",
+              height: "88px",
+              borderRadius: "50%",
+              background: "#0d1b35",
+              border: isListening ? "4px solid #c9972c" : "4px solid transparent",
+              cursor: isProcessing ? "wait" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto",
+              position: "relative",
+              opacity: isExaminerSpeaking ? 0.5 : 1,
+            }}
+          >
+            {isProcessing ? (
+              <span style={{ color: "white", fontSize: "12px" }}>⏳</span>
+            ) : (
+              <span style={{ fontSize: "32px" }}>🎤</span>
+            )}
+            {isListening && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "8px",
+                  right: "8px",
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                }}
+              />
+            )}
+          </button>
+          <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", marginTop: "12px" }}>
+            {isProcessing
+              ? "Processing…"
+              : isListening
+                ? `Recording… ${recordSeconds}s — tap again when finished`
+                : "Tap to speak"}
+          </p>
+          {transcript && (
+            <p
+              style={{
+                fontSize: "13px",
+                color: "#64748b",
+                marginTop: "8px",
+                fontStyle: "italic",
+                maxWidth: "500px",
+                margin: "8px auto 0",
+              }}
+            >
+              {transcript}
+            </p>
+          )}
+          <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>
+            {isExaminerSpeaking
+              ? "Wait for Sarah to finish speaking, then tap the mic"
+              : isListening
+                ? "Speak clearly, then tap the mic again to send your answer"
+                : "Uses AI transcription — works best in Chrome with microphone allowed"}
+          </p>
+          {micError && (
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#dc2626",
+                marginTop: "10px",
+                maxWidth: "420px",
+                margin: "10px auto 0",
+                lineHeight: 1.5,
+              }}
+            >
+              {micError}
+            </p>
+          )}        </div>
+      )}
+
+      {sessionStatus === "scoring" && (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "2rem",
+            background: "white",
+            borderRadius: "12px",
+            border: "1px solid #e5e7eb",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <p style={{ fontSize: "15px", fontWeight: 600, color: "#0d1b35" }}>
+            Generating your band score report…
+          </p>
+        </div>
+      )}
+
+      {/* Submit score — only when enough real speech recorded */}
+      <div style={{ marginBottom: "1.5rem", textAlign: "center" }}>
+        <button
+          type="button"
+          disabled={!canSubmit || isProcessing || isListening || sessionStatus === "scoring"}
+          onClick={() => void finishSession()}
+          style={{
+            width: "100%",
+            maxWidth: "400px",
+            padding: "14px 20px",
+            borderRadius: "12px",
+            border: "none",
+            fontSize: "14px",
+            fontWeight: 700,
+            background: canSubmit ? "#c9972c" : "#e5e7eb",
+            color: canSubmit ? "white" : "#999",
+            cursor: canSubmit ? "pointer" : "not-allowed",
+          }}
+        >
+          {canSubmit
+            ? "Get My Band Score →"
+            : testEnded
+              ? "Complete speaking to get your score"
+              : `Record at least ${MIN_SPEAKING_SECONDS}s of speech to unlock scoring`}
+        </button>
+        {totalSpeakingSeconds > 0 && totalSpeakingSeconds < MIN_SPEAKING_SECONDS && (
+          <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>
+            Speaking time: {totalSpeakingSeconds}s / {MIN_SPEAKING_SECONDS}s minimum
+          </p>
+        )}
+      </div>
+
+      {/* Conversation history */}
+      <div
+        style={{
+          background: "white",
+          border: "1px solid #e5e7eb",
+          borderRadius: "12px",
+          padding: "1rem",
+          maxHeight: "240px",
+          overflowY: "auto",
+        }}
+      >
+        <p style={{ fontSize: "12px", fontWeight: 600, color: "#888", margin: "0 0 12px" }}>
+          Recent conversation
+        </p>
+        {recentHistory.map((entry, i) => {
+          const isStudent = entry.role === "student";
+          const opacity = 0.5 + (i / recentHistory.length) * 0.5;
+          return (
+            <div
+              key={`${entry.role}-${i}-${entry.text.slice(0, 20)}`}
+              style={{
+                display: "flex",
+                justifyContent: isStudent ? "flex-end" : "flex-start",
+                marginBottom: "8px",
+                opacity,
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: "75%",
+                  padding: "8px 12px",
+                  borderRadius: "12px",
+                  fontSize: "13px",
+                  lineHeight: 1.5,
+                  background: isStudent ? "#c9972c" : "#0d1b35",
+                  color: "white",
+                }}
+              >
+                {entry.text}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <style jsx global>{`
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}

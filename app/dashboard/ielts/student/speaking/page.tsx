@@ -1,115 +1,394 @@
 "use client";
 
-import { Suspense } from "react";
-import Link from "next/link";
+import { Suspense, useCallback, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { PageSpinner } from "@/components/StudentSidebar";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
-import SkillTabs from "@/components/ielts/SkillTabs";
-import SubmissionHistory from "@/components/ielts/SubmissionHistory";
+import ActiveSession from "@/components/speaking/ActiveSession";
+import FeedbackReport from "@/components/speaking/FeedbackReport";
+import ProgressSummary from "@/components/speaking/ProgressSummary";
+import NoSpeechDetected from "@/components/speaking/NoSpeechDetected";
 
-const BASE = "/dashboard/ielts/student/speaking";
+type Part = 1 | 2 | 3;
+type Mode = "home" | "practice" | "mock" | "feedback" | "no_speech";
 
-const TABS = [
-  { id: "part1", label: "Part 1" },
-  { id: "part2", label: "Part 2" },
-  { id: "part3", label: "Part 3" },
-  { id: "recordings", label: "My Recordings" },
-];
+type CueCard = {
+  id: string;
+  topic: string;
+  prompt: string;
+  bullets: string[];
+  closing: string;
+};
 
-function PartPracticeCard({
-  part,
-  title,
-  subtitle,
-  minutes,
-  href,
-  color,
-}: {
-  part: string;
-  title: string;
-  subtitle: string;
-  minutes: string;
-  href: string;
-  color: string;
-}) {
+function SpeakingPartnerContent() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const studentId = session?.user?.id;
+
+  const [mode, setMode] = useState<Mode>("home");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentPart, setCurrentPart] = useState<Part>(1);
+  const [conversationHistory, setConversationHistory] = useState<
+    { role: "student" | "examiner"; text: string }[]
+  >([]);
+  const [examinerSpeech, setExaminerSpeech] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [isExaminerSpeaking, setIsExaminerSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [cueCard, setCueCard] = useState<CueCard | null>(null);
+  const [sessionNumber, setSessionNumber] = useState(0);
+  const [feedback, setFeedback] = useState<Record<string, unknown> | null>(null);
+  const [bandHistory, setBandHistory] = useState<
+    { sessionNumber: number; band: number; date: string }[]
+  >([]);
+  const [part2Timer, setPart2Timer] = useState<number | null>(null);
+  const [part2Phase, setPart2Phase] = useState<"prep" | "speaking" | "done">("prep");
+  const [sessionStatus, setSessionStatus] = useState<
+    "idle" | "active" | "scoring" | "complete"
+  >("idle");
+  const [starting, setStarting] = useState(false);
+  const [progressRefreshKey, setProgressRefreshKey] = useState(0);
+  const [noSpeechMessage, setNoSpeechMessage] = useState<string | null>(null);
+
+  const resetSessionState = useCallback(() => {
+    setSessionId(null);
+    setCurrentPart(1);
+    setConversationHistory([]);
+    setExaminerSpeech("");
+    setIsListening(false);
+    setIsExaminerSpeaking(false);
+    setTranscript("");
+    setCueCard(null);
+    setSessionNumber(0);
+    setPart2Timer(null);
+    setPart2Phase("prep");
+    setSessionStatus("idle");
+  }, []);
+
+  const startSession = async (type: "practice" | "mock") => {
+    if (!studentId || starting) return;
+    setStarting(true);
+
+    try {
+      const res = await fetch("/api/speaking/session/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          sessionType: type,
+          programme: "ielts",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not start session");
+
+      resetSessionState();
+      setSessionId(data.sessionId);
+      setSessionNumber(data.sessionNumber);
+      setCueCard(data.cueCard);
+      setMode(type);
+    } catch (err) {
+      console.error(err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Could not start session. Make sure speaking tables are set up in Supabase."
+      );
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const handleComplete = async (fb: unknown) => {
+    const result = fb as Record<string, unknown>;
+    if (result.insufficientSpeech) {
+      setNoSpeechMessage(
+        typeof result.message === "string"
+          ? result.message
+          : "No speech detected. Please complete the speaking session before requesting a score."
+      );
+      setMode("no_speech");
+      return;
+    }
+
+    setFeedback(result);
+    setProgressRefreshKey((k) => k + 1);
+    try {
+      const prog = await fetch("/api/speaking/session/progress");
+      const data = await prog.json();
+      setBandHistory(data.bandHistory || []);
+    } catch {
+      setBandHistory([]);
+    }
+    setMode("feedback");
+  };
+
+  if (mode === "no_speech") {
+    return (
+      <NoSpeechDetected
+        message={noSpeechMessage ?? undefined}
+        onTryAgain={() => {
+          setNoSpeechMessage(null);
+          resetSessionState();
+          setMode("home");
+        }}
+      />
+    );
+  }
+
+  if (mode === "feedback" && feedback && !("insufficientSpeech" in feedback)) {
+    return (
+      <FeedbackReport
+        feedback={feedback as Parameters<typeof FeedbackReport>[0]["feedback"]}
+        bandHistory={bandHistory}
+        onStartNext={() => {
+          setFeedback(null);
+          resetSessionState();
+          startSession("practice");
+        }}
+        onReturnHome={() => {
+          setFeedback(null);
+          resetSessionState();
+          router.push("/dashboard/ielts/student");
+        }}
+      />
+    );
+  }
+
+  if (mode === "practice" || mode === "mock") {
+    return (
+      <ActiveSession
+        sessionId={sessionId}
+        sessionNumber={sessionNumber}
+        currentPart={currentPart}
+        setCurrentPart={setCurrentPart}
+        conversationHistory={conversationHistory}
+        setConversationHistory={setConversationHistory}
+        examinerSpeech={examinerSpeech}
+        setExaminerSpeech={setExaminerSpeech}
+        isListening={isListening}
+        setIsListening={setIsListening}
+        isExaminerSpeaking={isExaminerSpeaking}
+        setIsExaminerSpeaking={setIsExaminerSpeaking}
+        transcript={transcript}
+        setTranscript={setTranscript}
+        cueCard={cueCard}
+        part2Timer={part2Timer}
+        setPart2Timer={setPart2Timer}
+        part2Phase={part2Phase}
+        setPart2Phase={setPart2Phase}
+        sessionStatus={sessionStatus}
+        setSessionStatus={setSessionStatus}
+        sessionType={mode}
+        studentId={studentId}
+        onComplete={handleComplete}
+      />
+    );
+  }
+
   return (
-    <div
-      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-      style={{ borderLeftWidth: 4, borderLeftColor: color }}
-    >
-      <p className="text-xs font-semibold uppercase text-[#0d9488]">{part}</p>
-      <h3 className="mt-1 text-lg font-bold text-[#0d1b35]">{title}</h3>
-      <p className="mt-2 text-sm text-slate-600">{subtitle}</p>
-      <p className="mt-2 text-xs text-slate-400">{minutes}</p>
-      <Link
-        href={href}
-        className="mt-4 inline-block rounded-xl px-5 py-2.5 text-sm font-bold text-white hover:opacity-95"
-        style={{ backgroundColor: color }}
+    <div style={{ maxWidth: "800px" }}>
+      <h1
+        style={{
+          fontSize: "22px",
+          fontWeight: 600,
+          color: "#0d1b35",
+          marginBottom: "8px",
+        }}
       >
-        Start recording →
-      </Link>
-    </div>
-  );
-}
+        Speaking Practice
+      </h1>
+      <p style={{ color: "#888", fontSize: "14px", marginBottom: "2rem" }}>
+        Choose your practice mode below
+      </p>
 
-function SpeakingContent() {
-  return (
-    <SkillTabs tabs={TABS} defaultTab="part1">
-      {(tab) => {
-        if (tab === "part1") {
-          return (
-            <div>
-              <PartPracticeCard
-                part="Part 1"
-                title="Personal questions"
-                subtitle="Familiar topics — home, work, hobbies. Record in browser; AI transcribes and scores fluency, vocabulary, grammar, pronunciation."
-                minutes="4–5 minutes · Voice recording"
-                href={`${BASE}/part1`}
-                color="#c9972c"
-              />
-              <p className="mt-4 rounded-lg bg-[#0d9488]/10 px-4 py-3 text-sm text-[#0d1b35]">
-                <strong>Pronunciation tip (Arabic speakers):</strong> Focus on word
-                stress and final consonants — e.g. &quot;world&quot;, &quot;developed&quot;.
-              </p>
-            </div>
-          );
-        }
-        if (tab === "part2") {
-          return (
-            <PartPracticeCard
-              part="Part 2"
-              title="Cue card"
-              subtitle="1 minute prep, 1–2 minutes speaking. Model answers played after your recording."
-              minutes="3–4 minutes · 60 sec prep"
-              href={`${BASE}/part2`}
-              color="#0d9488"
-            />
-          );
-        }
-        if (tab === "part3") {
-          return (
-            <PartPracticeCard
-              part="Part 3"
-              title="Discussion"
-              subtitle="Abstract questions linked to Part 2. Practice analysing and expressing complex ideas."
-              minutes="4–5 minutes · 4 questions"
-              href={`${BASE}/part3`}
-              color="#7c3aed"
-            />
-          );
-        }
-        return (
-          <div>
-            <SubmissionHistory skill="speaking" />
-            <Link
-              href={`${BASE}/results`}
-              className="mt-4 inline-block text-sm font-semibold text-[#0d9488] hover:underline"
-            >
-              View detailed feedback history →
-            </Link>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "1.5rem",
+          marginBottom: "2rem",
+        }}
+      >
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => startSession("practice")}
+          onKeyDown={(e) => e.key === "Enter" && startSession("practice")}
+          style={{
+            background: "white",
+            border: "2px solid #0d9488",
+            borderRadius: "16px",
+            padding: "2rem",
+            cursor: starting ? "wait" : "pointer",
+            transition: "all 0.2s",
+            opacity: starting ? 0.7 : 1,
+          }}
+        >
+          <div style={{ fontSize: "40px", marginBottom: "1rem" }}>🎤</div>
+          <h2
+            style={{
+              fontSize: "18px",
+              fontWeight: 600,
+              color: "#0d1b35",
+              margin: "0 0 8px",
+            }}
+          >
+            Daily Speaking Practice
+          </h2>
+          <p
+            style={{
+              fontSize: "13px",
+              color: "#0d9488",
+              fontWeight: 600,
+              margin: "0 0 12px",
+            }}
+          >
+            Talk to your AI examiner — live conversation
+          </p>
+          <p
+            style={{
+              fontSize: "13px",
+              color: "#888",
+              margin: "0 0 1rem",
+              lineHeight: 1.6,
+            }}
+          >
+            Have a real conversation with Sarah, your AI IELTS examiner. She listens,
+            responds, and asks follow-up questions — just like the real exam.
+          </p>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {["Parts 1, 2 & 3", "Live feedback", "15 minutes", "Band score"].map(
+              (tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    fontSize: "11px",
+                    background: "#f0fdf4",
+                    color: "#0d9488",
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  {tag}
+                </span>
+              )
+            )}
           </div>
-        );
-      }}
-    </SkillTabs>
+          <div
+            style={{
+              marginTop: "1.5rem",
+              background: "#0d9488",
+              color: "white",
+              padding: "10px",
+              borderRadius: "8px",
+              textAlign: "center",
+              fontSize: "14px",
+              fontWeight: 600,
+            }}
+          >
+            Start Practice Session →
+          </div>
+        </div>
+
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => startSession("mock")}
+          onKeyDown={(e) => e.key === "Enter" && startSession("mock")}
+          style={{
+            background: "white",
+            border: "1px solid #e5e7eb",
+            borderRadius: "16px",
+            padding: "2rem",
+            cursor: starting ? "wait" : "pointer",
+            opacity: starting ? 0.7 : 1,
+          }}
+        >
+          <div style={{ fontSize: "40px", marginBottom: "1rem" }}>📝</div>
+          <h2
+            style={{
+              fontSize: "18px",
+              fontWeight: 600,
+              color: "#0d1b35",
+              margin: "0 0 8px",
+            }}
+          >
+            Mock Speaking Test
+          </h2>
+          <p
+            style={{
+              fontSize: "13px",
+              color: "#c9972c",
+              fontWeight: 600,
+              margin: "0 0 12px",
+            }}
+          >
+            Full exam simulation — record and submit
+          </p>
+          <p
+            style={{
+              fontSize: "13px",
+              color: "#888",
+              margin: "0 0 1rem",
+              lineHeight: 1.6,
+            }}
+          >
+            Simulate the real IELTS Speaking test exactly. No interruptions. Timed.
+            Full band score report when you finish.
+          </p>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {["All 3 parts", "Timed", "14 minutes", "Band report"].map((tag) => (
+              <span
+                key={tag}
+                style={{
+                  fontSize: "11px",
+                  background: "#fffbeb",
+                  color: "#c9972c",
+                  padding: "3px 8px",
+                  borderRadius: "4px",
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          <div
+            style={{
+              marginTop: "1.5rem",
+              background: "#c9972c",
+              color: "white",
+              padding: "10px",
+              borderRadius: "8px",
+              textAlign: "center",
+              fontSize: "14px",
+              fontWeight: 600,
+            }}
+          >
+            Start Mock Test →
+          </div>
+        </div>
+      </div>
+
+      <ProgressSummary studentId={studentId} refreshKey={progressRefreshKey} />
+
+      <button
+        type="button"
+        onClick={() => router.push("/dashboard/ielts/student")}
+        style={{
+          marginTop: "1.5rem",
+          background: "none",
+          border: "none",
+          color: "#64748b",
+          fontSize: "13px",
+          cursor: "pointer",
+          textDecoration: "underline",
+        }}
+      >
+        ← Back to dashboard
+      </button>
+    </div>
   );
 }
 
@@ -119,10 +398,10 @@ export default function IeltsSpeakingPage() {
       <SkillBandHeader
         skill="speaking"
         title="Speaking"
-        subtitle="Record in browser → AI transcribes → scores fluency, vocab, grammar, pronunciation"
+        subtitle="AI examiner Sarah — live conversation across Parts 1, 2 & 3"
       />
       <Suspense fallback={<PageSpinner />}>
-        <SpeakingContent />
+        <SpeakingPartnerContent />
       </Suspense>
     </main>
   );
