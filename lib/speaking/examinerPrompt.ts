@@ -285,36 +285,6 @@ export const PART2_CUE_CARDS = [
   },
 ];
 
-/** @deprecated Use generatePart3Questions() — coarse keyword buckets caused topic mismatches. */
-export const PART3_QUESTIONS: Record<string, string[]> = {
-  place: [
-    "Do you think tourism has a positive or negative impact on local communities?",
-    "How has travel changed in recent years with the growth of technology?",
-    "Do you think it is better to travel to familiar places or explore new destinations?",
-    "How important is it for young people to travel and experience other cultures?",
-  ],
-  person: [
-    "What qualities do you think make a good role model for young people?",
-    "Do you think celebrities have too much influence on young people today?",
-    "How has the concept of leadership changed in modern society?",
-    "Do you think parents or teachers have more influence on children?",
-  ],
-  skill: [
-    "What skills do you think are most important in the modern workplace?",
-    "How has technology changed the way people learn new skills?",
-    "Do you think formal education or practical experience is more valuable?",
-    "What skills do you think young people in Saudi Arabia need most?",
-  ],
-  journey: [
-    "How important is it for people to experience different ways of travelling?",
-    "Do you think air travel should be made more environmentally friendly?",
-    "How has infrastructure development changed transportation in Saudi Arabia?",
-    "Do you think people today travel more or less than previous generations?",
-  ],
-  default: [
-    "How do you think technology has changed the way people communicate?",
-    "Do you think Vision 2030 has had a positive impact on daily life in Saudi Arabia?",
-    "How important is it for young people to balance work and personal life?",
-    "What changes do you think will happen in education over the next 20 years?",
-  ],
-};
+// PART3_QUESTIONS keyword buckets were removed — they caused topic mismatches
+// (e.g. "helped someone" fell through to a technology default).
+// Part 3 is generated only via lib/speaking/part3Generation.ts from the Part 2 cue card.

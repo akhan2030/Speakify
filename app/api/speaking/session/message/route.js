@@ -6,6 +6,7 @@ import {
   PART2_CUE_CARDS,
 } from "@/lib/speaking/examinerPrompt";
 import {
+  buildPart3TransitionSpeech,
   extractPart2TranscriptFromSession,
   generatePart3Questions,
   normalizeExaminerCueCard,
@@ -27,37 +28,66 @@ function getSupabase() {
 }
 
 function cueCardFromSession(session) {
-  const stored = normalizeExaminerCueCard(session?.part2_cue_card ?? {});
+  const stored = normalizeExaminerCueCard({
+    id: session?.part2_cue_card?.id,
+    topic: session?.part2_cue_card?.title ?? session?.part2_cue_card?.topic,
+    prompt: session?.part2_cue_card?.prompt,
+    bullets: session?.part2_cue_card?.bullets,
+    closing: session?.part2_cue_card?.closing,
+  });
   if (stored) return stored;
 
   const card = PART2_CUE_CARDS.find((entry) => entry.id === session?.cue_card_id);
   return card ? normalizeExaminerCueCard(card) : null;
 }
 
+async function persistPart3Fields(supabase, sessionId, fields) {
+  const { error } = await supabase
+    .from("speaking_sessions")
+    .update(fields)
+    .eq("id", sessionId);
+
+  if (error) {
+    // Columns may not exist yet if speaking_part3_columns.sql was not run.
+    console.warn("[speaking/session/message] persist Part 3 fields:", error.message);
+  }
+}
+
+/**
+ * Part 3 questions are ALWAYS derived from the Part 2 cue card (+ transcript).
+ * Never selected from an independent topic bank.
+ */
 async function ensureSessionPart3Questions(supabase, openai, session) {
   if (Array.isArray(session?.part3_questions) && session.part3_questions.length >= 3) {
-    return session.part3_questions;
+    return {
+      questions: session.part3_questions,
+      cueCard: cueCardFromSession(session),
+    };
   }
 
   const cueCard = cueCardFromSession(session);
-  if (!cueCard) return [];
+  if (!cueCard) {
+    return { questions: [], cueCard: null };
+  }
 
   const part2Transcript =
     String(session?.part2_transcript || "").trim() ||
     extractPart2TranscriptFromSession(session?.transcript);
 
-  const questions = await generatePart3Questions(openai, cueCard, part2Transcript, session?.programme);
+  const questions = await generatePart3Questions(
+    openai,
+    cueCard,
+    part2Transcript,
+    session?.programme
+  );
 
-  await supabase
-    .from("speaking_sessions")
-    .update({
-      part2_cue_card: cueCard,
-      part2_transcript: part2Transcript || null,
-      part3_questions: questions,
-    })
-    .eq("id", session.id);
+  await persistPart3Fields(supabase, session.id, {
+    part2_cue_card: cueCard,
+    part2_transcript: part2Transcript || null,
+    part3_questions: questions,
+  });
 
-  return questions;
+  return { questions, cueCard };
 }
 
 export async function POST(req) {
@@ -104,18 +134,32 @@ export async function POST(req) {
       .eq("id", sessionId)
       .single();
 
-    const cueCard = cueCardFromSession(session);
-    const part2Transcript =
+    let cueCard = cueCardFromSession(session);
+    let part2Transcript =
       String(session?.part2_transcript || "").trim() ||
       extractPart2TranscriptFromSession(session?.transcript);
 
-    let part3Questions = Array.isArray(session?.part3_questions) ? session.part3_questions : [];
+    if (currentPart === 2) {
+      part2Transcript = part2Transcript
+        ? `${part2Transcript} ${studentMessage}`.trim()
+        : String(studentMessage).trim();
+    }
 
-    if (currentPart === 3 && part3Questions.length < 3) {
-      part3Questions = await ensureSessionPart3Questions(supabase, openai, {
+    // Generate Part 3 BEFORE the examiner speaks, so transition speech cannot invent a new topic.
+    let part3Questions = Array.isArray(session?.part3_questions) ? session.part3_questions : [];
+    if (currentPart === 2 || currentPart === 3 || part3Questions.length < 3) {
+      const ensured = await ensureSessionPart3Questions(supabase, openai, {
         ...session,
         part2_transcript: part2Transcript,
+        transcript: [
+          ...(session?.transcript || []),
+          ...(currentPart === 2
+            ? [{ role: "student", text: studentMessage, part: 2 }]
+            : []),
+        ],
       });
+      part3Questions = ensured.questions;
+      if (ensured.cueCard) cueCard = ensured.cueCard;
     }
 
     const historyMessages = (conversationHistory || []).map((entry) => ({
@@ -127,8 +171,8 @@ export async function POST(req) {
       currentPart === 1
         ? "You are conducting Part 1. Ask personal questions and follow-ups."
         : currentPart === 2
-          ? "Part 2 has just finished. Acknowledge briefly and prepare to transition to Part 3 on the same theme."
-          : `You are conducting Part 3. The Part 2 cue card topic was "${cueCard?.title ?? "the previous topic"}". Stay on this theme only. Ask abstract discussion questions from this approved list (use them in order, adapting slightly for natural speech): ${JSON.stringify(part3Questions)}. Do not introduce unrelated topics such as generic technology unless the cue card was about technology.`;
+          ? `Part 2 has just finished on the cue card "${cueCard?.title ?? "the topic"}". Acknowledge briefly. If you move to Part 3, you MUST use ONLY these approved Part 3 questions (same theme): ${JSON.stringify(part3Questions)}. Do not invent a different topic.`
+          : `You are conducting Part 3. The Part 2 cue card topic was "${cueCard?.title ?? "the previous topic"}". Stay on this theme only. Ask abstract discussion questions from this approved list (use them in order, adapting slightly for natural speech): ${JSON.stringify(part3Questions)}. Do not introduce unrelated topics. Never ask about technology, Vision 2030, or education unless the Part 2 cue card was about that theme.`;
 
     const messages = [
       {
@@ -165,6 +209,21 @@ export async function POST(req) {
       };
     }
 
+    // Hard override: Part 3 transition speech must open with the themed first question.
+    if (
+      (examinerResponse.action === "start_part3" || currentPart === 2) &&
+      cueCard &&
+      part3Questions[0]
+    ) {
+      const wantsPart3 =
+        examinerResponse.action === "start_part3" ||
+        /part\s*3|move on|discussion/i.test(String(examinerResponse.speech || ""));
+      if (wantsPart3 || examinerResponse.action === "start_part3") {
+        examinerResponse.action = "start_part3";
+        examinerResponse.speech = buildPart3TransitionSpeech(cueCard, part3Questions[0]);
+      }
+    }
+
     const updatedTranscript = [
       ...(session?.transcript || []),
       {
@@ -177,36 +236,28 @@ export async function POST(req) {
         role: "examiner",
         text: examinerResponse.speech,
         action: examinerResponse.action,
-        part: currentPart,
+        part: currentPart === 2 && examinerResponse.action === "start_part3" ? 3 : currentPart,
         timestamp: new Date().toISOString(),
       },
     ];
 
     const updatePayload = { transcript: updatedTranscript };
-
     if (currentPart === 2) {
-      updatePayload.part2_transcript = part2Transcript
-        ? `${part2Transcript} ${studentMessage}`.trim()
-        : String(studentMessage).trim();
+      updatePayload.part2_transcript = part2Transcript;
+    }
+    if (part3Questions.length >= 3) {
+      updatePayload.part3_questions = part3Questions;
+    }
+    if (cueCard) {
+      updatePayload.part2_cue_card = cueCard;
     }
 
-    if (examinerResponse.action === "start_part3" || currentPart === 2) {
-      const generated = await ensureSessionPart3Questions(supabase, openai, {
-        ...session,
-        transcript: updatedTranscript,
-        part2_transcript: updatePayload.part2_transcript ?? part2Transcript,
-      });
-      if (generated.length >= 3) {
-        updatePayload.part3_questions = generated;
-      }
-    }
-
-    await supabase.from("speaking_sessions").update(updatePayload).eq("id", sessionId);
+    await persistPart3Fields(supabase, sessionId, updatePayload);
 
     return NextResponse.json({
       speech: examinerResponse.speech,
       action: examinerResponse.action,
-      part3Questions: updatePayload.part3_questions ?? part3Questions,
+      part3Questions,
     });
   } catch (err) {
     console.error("[speaking/session/message]", err);
