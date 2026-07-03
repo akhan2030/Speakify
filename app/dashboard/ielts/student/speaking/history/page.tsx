@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
 import { PageSpinner } from "@/components/StudentSidebar";
 import FeedbackReport from "@/components/speaking/FeedbackReport";
+import MockSpeakingFeedbackReport from "@/components/speaking/MockSpeakingFeedbackReport";
 
 type SessionRow = {
   id: string;
@@ -61,6 +62,10 @@ function SpeakingHistoryContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Record<string, unknown> | null>(null);
+  const [viewSessionType, setViewSessionType] = useState<string>("practice");
+  const [mockJourney, setMockJourney] = useState<
+    { sessionNumber: number; overallBand: number | null }[]
+  >([]);
   const [detailLoading, setDetailLoading] = useState(false);
 
   const loadList = useCallback(() => {
@@ -101,7 +106,23 @@ function SpeakingHistoryContent() {
         if (json.error) throw new Error(json.error);
         const fb = json.session?.feedback;
         if (!fb) throw new Error("No feedback saved for this session");
+        setViewSessionType(json.session?.session_type ?? "practice");
         setFeedback(fb as Record<string, unknown>);
+        if (json.session?.session_type === "mock") {
+          fetch("/api/speaking/session/history?mockOnly=true")
+            .then((r) => r.json())
+            .then((data) => {
+              setMockJourney(
+                (data.sessions ?? []).map(
+                  (s: { sessionNumber: number; overallBand: number | null }) => ({
+                    sessionNumber: s.sessionNumber,
+                    overallBand: s.overallBand,
+                  })
+                )
+              );
+            })
+            .catch(() => setMockJourney([]));
+        }
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Could not load feedback");
@@ -115,6 +136,19 @@ function SpeakingHistoryContent() {
   }
 
   if (viewId && feedback) {
+    if (viewSessionType === "mock") {
+      return (
+        <MockSpeakingFeedbackReport
+          feedback={
+            feedback as Parameters<typeof MockSpeakingFeedbackReport>[0]["feedback"]
+          }
+          mockJourney={mockJourney}
+          onReturnHome={() => router.push("/dashboard/ielts/student/speaking/history")}
+          onStartNext={() => router.push("/dashboard/ielts/student/speaking")}
+        />
+      );
+    }
+
     return (
       <FeedbackReport
         feedback={feedback as Parameters<typeof FeedbackReport>[0]["feedback"]}

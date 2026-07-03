@@ -7,6 +7,7 @@ import { PageSpinner } from "@/components/StudentSidebar";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
 import ActiveSession from "@/components/speaking/ActiveSession";
 import FeedbackReport from "@/components/speaking/FeedbackReport";
+import MockSpeakingFeedbackReport from "@/components/speaking/MockSpeakingFeedbackReport";
 import ProgressSummary from "@/components/speaking/ProgressSummary";
 import NoSpeechDetected from "@/components/speaking/NoSpeechDetected";
 
@@ -49,6 +50,12 @@ function SpeakingPartnerContent() {
   >("idle");
   const [starting, setStarting] = useState(false);
   const [progressRefreshKey, setProgressRefreshKey] = useState(0);
+  const [feedbackSessionType, setFeedbackSessionType] = useState<"practice" | "mock">(
+    "practice"
+  );
+  const [mockJourney, setMockJourney] = useState<
+    { sessionNumber: number; overallBand: number | null }[]
+  >([]);
   const [noSpeechMessage, setNoSpeechMessage] = useState<string | null>(null);
 
   const resetSessionState = useCallback(() => {
@@ -113,6 +120,7 @@ function SpeakingPartnerContent() {
     }
 
     setFeedback(result);
+    setFeedbackSessionType(mode === "mock" ? "mock" : "practice");
     setProgressRefreshKey((k) => k + 1);
     try {
       const prog = await fetch("/api/speaking/session/progress");
@@ -120,6 +128,24 @@ function SpeakingPartnerContent() {
       setBandHistory(data.bandHistory || []);
     } catch {
       setBandHistory([]);
+    }
+    if (mode === "mock") {
+      try {
+        const hist = await fetch("/api/speaking/session/history?mockOnly=true");
+        const data = await hist.json();
+        setMockJourney(
+          (data.sessions ?? []).map(
+            (s: { sessionNumber: number; overallBand: number | null }) => ({
+              sessionNumber: s.sessionNumber,
+              overallBand: s.overallBand,
+            })
+          )
+        );
+      } catch {
+        setMockJourney([]);
+      }
+    } else {
+      setMockJourney([]);
     }
     setMode("feedback");
   };
@@ -138,6 +164,32 @@ function SpeakingPartnerContent() {
   }
 
   if (mode === "feedback" && feedback && !("insufficientSpeech" in feedback)) {
+    if (feedbackSessionType === "mock") {
+      return (
+        <MockSpeakingFeedbackReport
+          feedback={
+            feedback as Parameters<typeof MockSpeakingFeedbackReport>[0]["feedback"]
+          }
+          mockJourney={mockJourney}
+          onStartNext={() => {
+            setFeedback(null);
+            resetSessionState();
+            startSession("mock");
+          }}
+          onStartPractice={() => {
+            setFeedback(null);
+            resetSessionState();
+            startSession("practice");
+          }}
+          onReturnHome={() => {
+            setFeedback(null);
+            resetSessionState();
+            setMode("home");
+          }}
+        />
+      );
+    }
+
     return (
       <FeedbackReport
         feedback={feedback as Parameters<typeof FeedbackReport>[0]["feedback"]}

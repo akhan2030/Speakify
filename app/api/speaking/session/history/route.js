@@ -25,6 +25,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId");
+    const mockOnly = searchParams.get("mockOnly") === "true";
 
     const supabase = createClient(getSupabaseUrl(), process.env.SUPABASE_SERVICE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -52,7 +53,7 @@ export async function GET(request) {
       return NextResponse.json({ session: data });
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("speaking_sessions")
       .select(
         "id, session_number, session_type, overall_band, duration_minutes, speaking_time_seconds, started_at, completed_at, feedback"
@@ -60,7 +61,13 @@ export async function GET(request) {
       .eq("student_id", studentId)
       .not("completed_at", "is", null)
       .order("completed_at", { ascending: false })
-      .limit(50);
+      .limit(mockOnly ? 6 : 50);
+
+    if (mockOnly) {
+      query = query.eq("session_type", "mock");
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("[speaking/session/history]", error.message);
