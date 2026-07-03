@@ -269,6 +269,16 @@ export default function ActiveSession({
       setIsProcessing(true);
       setTranscript("Transcribing your answer…");
 
+      const rearmIfNeeded = () => {
+        if (mode === "part2") return;
+        if (
+          sessionStatus === "active" &&
+          !(currentPartRef.current === 2 && part2PhaseRef.current !== "done")
+        ) {
+          turnControllerRef.current?.armAfterExaminer();
+        }
+      };
+
       try {
         const stt = await transcribeBlob(blob);
         const text = stt.text;
@@ -277,6 +287,9 @@ export default function ActiveSession({
 
         if (!text) {
           setMicError("Couldn't hear anything. Speak clearly into your microphone and try again.");
+          setTranscript("");
+          transcriptRef.current = "";
+          rearmIfNeeded();
           return;
         }
 
@@ -290,12 +303,8 @@ export default function ActiveSession({
           transcriptRef.current = "";
           if (mode === "part2") {
             part2TranscriptRef.current = "";
-          } else if (
-            sessionStatus === "active" &&
-            !(currentPartRef.current === 2 && part2PhaseRef.current !== "done")
-          ) {
-            // Let the student try the same turn again.
-            turnControllerRef.current?.armAfterExaminer();
+          } else {
+            rearmIfNeeded();
           }
           return;
         }
@@ -322,10 +331,15 @@ export default function ActiveSession({
 
         await sendStudentMessageRef.current(text, meta);
       } catch (err) {
-        console.error(err);
+        console.error("[speaking] processRecordedAudio", err);
+        setTranscript("");
+        transcriptRef.current = "";
         setMicError(
-          err instanceof Error ? err.message : "Could not transcribe your answer. Try again."
+          err instanceof Error
+            ? err.message
+            : "Could not transcribe your answer. Tap Start listening now and try again."
         );
+        rearmIfNeeded();
       } finally {
         setIsProcessing(false);
       }
