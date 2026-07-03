@@ -97,6 +97,8 @@ export async function POST(req) {
       studentMessage,
       currentPart,
       conversationHistory,
+      words,
+      speakingDurationMs,
     } = await req.json();
 
     if (!sessionId || !studentMessage) {
@@ -224,6 +226,17 @@ export async function POST(req) {
       }
     }
 
+    const studentWords = Array.isArray(words)
+      ? words
+          .map((w) => ({
+            word: String(w?.word || "").trim(),
+            start: Number(w?.start) || 0,
+            end: Number(w?.end) || 0,
+            confidence: w?.confidence != null ? Number(w.confidence) : undefined,
+          }))
+          .filter((w) => w.word)
+      : [];
+
     const updatedTranscript = [
       ...(session?.transcript || []),
       {
@@ -231,6 +244,9 @@ export async function POST(req) {
         text: studentMessage,
         part: currentPart,
         timestamp: new Date().toISOString(),
+        words: studentWords,
+        speakingDurationMs:
+          speakingDurationMs != null ? Number(speakingDurationMs) : undefined,
       },
       {
         role: "examiner",

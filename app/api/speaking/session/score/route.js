@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
-import { SCORING_PROMPT } from "@/lib/speaking/examinerPrompt";
 import { buildTranscriptReview } from "@/lib/speaking/transcriptReview";
+import {
+  collectWordTimingsFromTranscript,
+  computeFluencyMetrics,
+} from "@/lib/speaking/fluencyMetrics";
+import { assessPronunciation } from "@/lib/speaking/pronunciationAssessment";
+import {
+  structuredScoreToLegacyFeedback,
+} from "@/lib/speaking/scoringSchema";
+import {
+  runStructuredScoring,
+  structuredToCoachingFields,
+} from "@/lib/speaking/structuredScoring";
 import {
   extractStudentSpeech,
   hasValidSpeechInput,
@@ -249,36 +260,78 @@ export async function POST(req) {
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    console.time("[speaking/session/score] LLM grading");
-    let response;
+    const validEntries = transcript.filter(
+      (t) => t.role === "student" && isLikelyRealStudentSpeech(String(t.text || "")).ok
+    );
+    const words = collectWordTimingsFromTranscript(validEntries);
+    const speakingSecondsFromEntries = validEntries.reduce((sum, entry) => {
+      const ms = Number(entry.speakingDurationMs);
+      return sum + (Number.isFinite(ms) ? ms / 1000 : 0);
+    }, 0);
+
+    const fluencyMetrics = computeFluencyMetrics({
+      text: extracted.text,
+      words,
+      speakingSeconds: speakingSecondsFromEntries || speechSeconds,
+    });
+
+    const pronunciationMetrics = await assessPronunciation({
+      words,
+      transcript: extracted.text,
+      speakingSeconds: fluencyMetrics.speaking_seconds,
+    });
+
+    console.time("[speaking/session/score] structured grading");
+    let structuredScore;
     try {
-      response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: SCORING_PROMPT },
-          {
-            role: "user",
-            content: `Full student transcript:\n\n${studentTranscript}\n\nProvide band scores, criterionFeedback, and detailed feedback.`,
-          },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 2600,
+      structuredScore = await runStructuredScoring({
+        openai,
+        sessionId,
+        studentTranscript,
+        fluencyMetrics,
+        pronunciationMetrics,
       });
     } finally {
-      console.timeEnd("[speaking/session/score] LLM grading");
+      console.timeEnd("[speaking/session/score] structured grading");
     }
 
-    const raw = response.choices[0]?.message?.content || "{}";
-    const feedback = JSON.parse(raw);
-    const criterionFeedback = buildCriterionFeedback(feedback, studentTranscript);
-    const sessionScore = buildSessionScore(
-      { ...feedback, criterionFeedback },
+    const legacyFromStructured = structuredScoreToLegacyFeedback(structuredScore);
+    const coaching = structuredToCoachingFields(structuredScore);
+    const criterionFeedback = buildCriterionFeedback(
+      {
+        ...legacyFromStructured,
+        criterionFeedback: legacyFromStructured.criterionFeedback,
+      },
       studentTranscript
     );
-    feedback.criterionFeedback = criterionFeedback;
-    feedback.sessionScore = sessionScore;
-    feedback.sessionTranscript = transcript;
+
+    const feedback = {
+      overallBand: structuredScore.overall_band,
+      criteria: legacyFromStructured.criteria,
+      criterionFeedback,
+      structuredScore,
+      fluencyMetrics,
+      pronunciationMetrics,
+      topImprovements: coaching.topImprovements,
+      strengths: coaching.strengths,
+      saudiSpecificErrors: coaching.saudiSpecificErrors,
+      vocabularyChallenge:
+        coaching.vocabularyChallenge.length > 0
+          ? coaching.vocabularyChallenge
+          : ["precise", "significant", "beneficial", "contribute", "develop"],
+      sessionScore: {
+        overall_band: structuredScore.overall_band,
+        fluency: criterionFeedback.fluency,
+        lexical: criterionFeedback.lexical,
+        grammar: criterionFeedback.grammar,
+        pronunciation: criterionFeedback.pronunciation,
+        transcript: studentTranscript,
+      },
+      sessionTranscript: transcript,
+      transcriptReview: null,
+    };
     feedback.transcriptReview = buildTranscriptReview(transcript, feedback);
+    const sessionScore = feedback.sessionScore;
 
     const completedAt = new Date();
     const startedAt = session.started_at ? new Date(session.started_at) : completedAt;

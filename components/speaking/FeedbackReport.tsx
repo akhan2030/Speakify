@@ -3,6 +3,7 @@
 import Link from "next/link";
 import SessionTranscriptReview from "@/components/speaking/SessionTranscriptReview";
 import type { TranscriptEntry, TranscriptReview } from "@/lib/speaking/transcriptReview";
+import type { StructuredSpeakingScore } from "@/lib/speaking/scoringSchema";
 import {
   LineChart,
   Line,
@@ -45,6 +46,9 @@ type FeedbackData = {
   vocabularyChallenge?: string[];
   sessionTranscript?: TranscriptEntry[];
   transcriptReview?: TranscriptReview | null;
+  structuredScore?: StructuredSpeakingScore;
+  fluencyMetrics?: StructuredSpeakingScore["fluency_metrics"];
+  pronunciationMetrics?: StructuredSpeakingScore["pronunciation_metrics"];
 };
 
 function bandColor(band: number) {
@@ -82,6 +86,7 @@ function MiniProgressBar({ value }: { value: number }) {
 const CRITERION_CARDS = [
   {
     key: "fluency" as const,
+    structuredKey: "fluency_coherence" as const,
     label: "Fluency & Coherence",
     scoreKey: "fluencyCoherence" as const,
     fallback:
@@ -89,6 +94,7 @@ const CRITERION_CARDS = [
   },
   {
     key: "lexical" as const,
+    structuredKey: "lexical_resource" as const,
     label: "Lexical Resource",
     scoreKey: "lexicalResource" as const,
     fallback:
@@ -96,6 +102,7 @@ const CRITERION_CARDS = [
   },
   {
     key: "grammar" as const,
+    structuredKey: "grammatical_range_accuracy" as const,
     label: "Grammatical Range & Accuracy",
     scoreKey: "grammaticalRange" as const,
     fallback:
@@ -103,6 +110,7 @@ const CRITERION_CARDS = [
   },
   {
     key: "pronunciation" as const,
+    structuredKey: "pronunciation" as const,
     label: "Pronunciation",
     scoreKey: "pronunciation" as const,
     fallback:
@@ -167,12 +175,26 @@ export default function FeedbackReport({
         }}
       >
         <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#0d1b35", margin: "0 0 1rem" }}>
-          IELTS Criteria Breakdown
+          IELTS Criteria Breakdown (25% each)
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
+        {feedback.fluencyMetrics ? (
+          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 12px", lineHeight: 1.5 }}>
+            Measured fluency: {feedback.fluencyMetrics.words_per_minute} WPM ·{" "}
+            {feedback.fluencyMetrics.pause_count} pauses ·{" "}
+            {feedback.fluencyMetrics.filler_word_count} fillers ·{" "}
+            {feedback.fluencyMetrics.speaking_seconds}s speaking
+            {feedback.pronunciationMetrics?.estimated
+              ? " · Pronunciation estimated (no dedicated audio API)"
+              : ""}
+          </p>
+        ) : null}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px" }}>
           {CRITERION_CARDS.map((criterion) => {
+            const structured = feedback.structuredScore?.criteria?.[criterion.structuredKey];
             const detail = feedback.criterionFeedback?.[criterion.key];
-            const value = detail?.band ?? feedback.criteria[criterion.scoreKey];
+            const value =
+              structured?.band ?? detail?.band ?? feedback.criteria[criterion.scoreKey];
+            const deductions = structured?.deductions ?? [];
             return (
               <div
                 key={criterion.key}
@@ -192,22 +214,53 @@ export default function FeedbackReport({
                   </p>
                 </div>
                 <MiniProgressBar value={value} />
-                <p style={{ fontSize: "13px", color: "#475569", margin: "10px 0 0", lineHeight: 1.55 }}>
-                  {detail?.note || criterion.fallback}
-                </p>
-                {detail?.evidence ? (
-                  <p
-                    style={{
-                      fontSize: "12px",
-                      color: "#64748b",
-                      fontStyle: "italic",
-                      margin: "8px 0 0",
-                      background: "#f8fafc",
-                      borderRadius: "8px",
-                      padding: "7px 8px",
-                    }}
-                  >
-                    Evidence: &ldquo;{detail.evidence}&rdquo;
+                {deductions.length > 0 ? (
+                  <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {deductions.map((deduction, index) => (
+                      <div
+                        key={`${criterion.key}-${index}`}
+                        style={{
+                          background: "#fff7ed",
+                          border: "1px solid #fed7aa",
+                          borderRadius: "8px",
+                          padding: "8px",
+                        }}
+                      >
+                        <p style={{ fontSize: "12px", color: "#9a3412", fontWeight: 700, margin: "0 0 4px" }}>
+                          {deduction.band_impact < 0 ? `${deduction.band_impact}` : `-${Math.abs(deduction.band_impact)}`}{" "}
+                          · {deduction.reason}
+                        </p>
+                        <p style={{ fontSize: "12px", color: "#64748b", margin: 0, fontStyle: "italic" }}>
+                          Evidence: &ldquo;{deduction.evidence}&rdquo;
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ fontSize: "13px", color: "#475569", margin: "10px 0 0", lineHeight: 1.55 }}>
+                      {detail?.note || criterion.fallback}
+                    </p>
+                    {detail?.evidence ? (
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "#64748b",
+                          fontStyle: "italic",
+                          margin: "8px 0 0",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          padding: "7px 8px",
+                        }}
+                      >
+                        Evidence: &ldquo;{detail.evidence}&rdquo;
+                      </p>
+                    ) : null}
+                  </>
+                )}
+                {structured?.strengths?.length ? (
+                  <p style={{ fontSize: "12px", color: "#0d9488", margin: "8px 0 0" }}>
+                    ✓ {structured.strengths[0]}
                   </p>
                 ) : null}
               </div>

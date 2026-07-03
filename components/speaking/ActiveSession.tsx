@@ -176,6 +176,10 @@ export default function ActiveSession({
   const recordStartRef = useRef(0);
   const transcriptRef = useRef("");
   const part2TranscriptRef = useRef("");
+  const part2MetaRef = useRef<{
+    words?: { word: string; start: number; end: number; confidence?: number }[];
+    speakingDurationMs?: number;
+  }>({});
   const openedRef = useRef(false);
   const processingRef = useRef(false);
   const isExaminerSpeakingRef = useRef(false);
@@ -183,7 +187,15 @@ export default function ActiveSession({
   const currentPartRef = useRef(currentPart);
   const part2PhaseRef = useRef(part2Phase);
   const recordingModeRef = useRef<"manual" | "part2" | null>(null);
-  const sendStudentMessageRef = useRef<(text: string) => Promise<void>>(async () => {});
+  const sendStudentMessageRef = useRef<
+    (
+      text: string,
+      meta?: {
+        words?: { word: string; start: number; end: number; confidence?: number }[];
+        speakingDurationMs?: number;
+      }
+    ) => Promise<void>
+  >(async () => {});
   const totalSpeakingSecondsRef = useRef(0);
 
   useEffect(() => {
@@ -215,21 +227,37 @@ export default function ActiveSession({
     micStreamRef.current = null;
   }, []);
 
-  const transcribeBlob = useCallback(async (blob: Blob): Promise<string> => {
-    const formData = new FormData();
-    formData.append("audio", blob, "recording.webm");
-    console.time("[speaking] STT call");
-    try {
-      const res = await fetch("/api/speaking/transcribe", { method: "POST", body: formData });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Transcription failed");
+  const transcribeBlob = useCallback(
+    async (
+      blob: Blob
+    ): Promise<{
+      text: string;
+      words: { word: string; start: number; end: number; confidence?: number }[];
+      duration?: number;
+    }> => {
+      const formData = new FormData();
+      formData.append("audio", blob, "recording.webm");
+      console.time("[speaking] STT call");
+      try {
+        const res = await fetch("/api/speaking/transcribe", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "Transcription failed");
+        }
+        return {
+          text: String(data.transcript ?? "").trim(),
+          words: Array.isArray(data.words) ? data.words : [],
+          duration: data.duration != null ? Number(data.duration) : undefined,
+        };
+      } finally {
+        console.timeEnd("[speaking] STT call");
       }
-      return String(data.transcript ?? "").trim();
-    } finally {
-      console.timeEnd("[speaking] STT call");
-    }
-  }, []);
+    },
+    []
+  );
 
   const processRecordedAudio = useCallback(
     async (blob: Blob, durationMs: number, mode: "manual" | "part2") => {
@@ -242,7 +270,8 @@ export default function ActiveSession({
       setTranscript("Transcribing your answer…");
 
       try {
-        const text = await transcribeBlob(blob);
+        const stt = await transcribeBlob(blob);
+        const text = stt.text;
         transcriptRef.current = text;
         setTranscript(text);
 
@@ -273,16 +302,25 @@ export default function ActiveSession({
 
         setMicError(null);
 
-        const spokenSeconds = Math.max(1, Math.floor(durationMs / 1000));
+        const spokenSeconds = Math.max(
+          1,
+          Math.floor((stt.duration ? stt.duration * 1000 : durationMs) / 1000)
+        );
         totalSpeakingSecondsRef.current += spokenSeconds;
         setTotalSpeakingSeconds(totalSpeakingSecondsRef.current);
 
+        const meta = {
+          words: stt.words,
+          speakingDurationMs: spokenSeconds * 1000,
+        };
+
         if (mode === "part2") {
           part2TranscriptRef.current = text;
+          part2MetaRef.current = meta;
           return;
         }
 
-        await sendStudentMessageRef.current(text);
+        await sendStudentMessageRef.current(text, meta);
       } catch (err) {
         console.error(err);
         setMicError(
@@ -701,7 +739,13 @@ export default function ActiveSession({
   );
 
   const sendStudentMessage = useCallback(
-    async (text: string) => {
+    async (
+      text: string,
+      meta?: {
+        words?: { word: string; start: number; end: number; confidence?: number }[];
+        speakingDurationMs?: number;
+      }
+    ) => {
       if (!sessionId || !text.trim() || processingRef.current) return;
 
       turnControllerRef.current?.cancelArm();
@@ -735,6 +779,8 @@ export default function ActiveSession({
               studentMessage: text.trim(),
               currentPart,
               conversationHistory: historyForApi,
+              words: meta?.words ?? [],
+              speakingDurationMs: meta?.speakingDurationMs,
             }),
           });
           data = await res.json();
@@ -838,9 +884,10 @@ export default function ActiveSession({
 
     if (part2Text && authenticity.ok) {
       const thankYou = "Thank you.";
+      const part2Meta = part2MetaRef.current;
       speakExaminer(thankYou, () => {
         void (async () => {
-          await sendStudentMessage(part2Text);
+          await sendStudentMessage(part2Text, part2Meta);
           await ensurePart3Questions(part2Text);
         })();
       });
@@ -876,6 +923,7 @@ export default function ActiveSession({
           setPart2Phase("speaking");
           setPart2Timer(120);
           part2TranscriptRef.current = "";
+          part2MetaRef.current = {};
           void startRecording("part2");
         });
       } else if (part2Phase === "speaking") {
