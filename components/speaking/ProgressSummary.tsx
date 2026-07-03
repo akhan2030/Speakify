@@ -27,6 +27,9 @@ type VocabWord = {
   word: string;
   reviewCount?: number;
   nextReviewDate?: string;
+  personalized?: boolean;
+  from?: string;
+  context?: string;
 };
 
 type ProgressData = {
@@ -273,14 +276,19 @@ export default function ProgressSummary({
         <p style={{ fontSize: "13px", fontWeight: 600, color: "#0d1b35", margin: "0 0 10px" }}>
           Today&apos;s vocabulary challenge
         </p>
+        <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 10px", lineHeight: 1.45 }}>
+          Personalized words come from your recent speaking transcripts and lexical feedback.
+          General words are only used as backfill and are labeled.
+        </p>
         {(data?.todayVocabulary?.length ?? 0) > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {data!.todayVocabulary.map((item) => (
               <div
                 key={item.id}
                 style={{
-                  background: "#fffbeb",
-                  border: "1px solid #fde68a",
+                  background: item.personalized === false ? "#f8fafc" : "#fffbeb",
+                  border:
+                    item.personalized === false ? "1px solid #e2e8f0" : "1px solid #fde68a",
                   borderRadius: "10px",
                   padding: "12px",
                 }}
@@ -297,10 +305,31 @@ export default function ProgressSummary({
                   <span style={{ fontSize: "15px", fontWeight: 700, color: "#0d1b35" }}>
                     {item.word}
                   </span>
-                  <span style={{ fontSize: "11px", color: "#92400e", fontWeight: 600 }}>
-                    Review {Number(item.reviewCount ?? 0) + 1}
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: item.personalized === false ? "#64748b" : "#0d9488",
+                      background: item.personalized === false ? "#e2e8f0" : "#ccfbf1",
+                      borderRadius: "999px",
+                      padding: "2px 8px",
+                    }}
+                  >
+                    {item.personalized === false ? "General" : "From your speech"}
                   </span>
                 </div>
+                {item.from || item.context ? (
+                  <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 8px", lineHeight: 1.45 }}>
+                    {item.from ? (
+                      <>
+                        Upgrade for <strong>{item.from}</strong>
+                        {item.context ? ` — ${item.context}` : ""}
+                      </>
+                    ) : (
+                      item.context
+                    )}
+                  </p>
+                ) : null}
 
                 <label
                   htmlFor={`vocab-${item.id}`}

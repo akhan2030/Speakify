@@ -259,21 +259,34 @@ export type VocabularyUpgrade = {
   word: string;
   from?: string;
   context?: string;
+  personalized: boolean;
 };
 
+/** Generic backfill only — never present these as if they came from the student. */
+export const GENERAL_VOCAB_BACKFILL = [
+  "elaborate",
+  "perspective",
+  "consequence",
+  "maintain",
+  "consider",
+];
+
 /**
- * Build practice vocabulary from the student's actual language, not a static bank.
+ * Build practice vocabulary upgrades from the student's actual language.
+ * Returns rich objects so the UI can show why each word was chosen.
  */
-export function deriveVocabularyChallenge(
+export function deriveVocabularyUpgrades(
   studentTranscript: string,
-  score: StructuredSpeakingScore
-): string[] {
+  score: StructuredSpeakingScore | null | undefined
+): VocabularyUpgrade[] {
   const utterances = extractStudentUtterances(studentTranscript);
   const full = utterances.join(" ").toLowerCase();
+  if (!full.trim()) return [];
+
   const suggestions: VocabularyUpgrade[] = [];
 
-  // From lexical deductions: pull basic words mentioned in evidence.
-  for (const d of score.criteria.lexical_resource.deductions) {
+  const lexicalDeductions = score?.criteria?.lexical_resource?.deductions ?? [];
+  for (const d of lexicalDeductions) {
     const tokens = String(d.evidence || "")
       .toLowerCase()
       .split(/[^a-z']+/)
@@ -284,22 +297,28 @@ export function deriveVocabularyChallenge(
           word: UPGRADE_MAP[token][0],
           from: token,
           context: d.evidence,
+          personalized: true,
         });
       }
     }
-    // "Replace with: x, y" patterns in reason
     const replaceMatch = String(d.reason || "").match(
       /replace with[:\s]+([a-zA-Z,\s/]+)/i
     );
     if (replaceMatch) {
       for (const w of replaceMatch[1].split(/[,/]/)) {
-        const cleaned = w.trim().toLowerCase();
-        if (cleaned.length > 3) suggestions.push({ word: cleaned, context: d.evidence });
+        const cleaned = w.trim().toLowerCase().replace(/[^a-z]/g, "");
+        if (cleaned.length > 3) {
+          suggestions.push({
+            word: cleaned,
+            from: tokens.find((t) => BASIC_WORDS.has(t)),
+            context: d.evidence,
+            personalized: true,
+          });
+        }
       }
     }
   }
 
-  // Scan transcript for basic/overused words the student actually said.
   const counts = new Map<string, number>();
   for (const token of full.split(/[^a-z']+/).filter(Boolean)) {
     if (!BASIC_WORDS.has(token)) continue;
@@ -308,29 +327,151 @@ export function deriveVocabularyChallenge(
   for (const [token, count] of counts) {
     if (count < 1 || !UPGRADE_MAP[token]) continue;
     for (const upgrade of UPGRADE_MAP[token].slice(0, 2)) {
-      suggestions.push({ word: upgrade, from: token });
+      suggestions.push({
+        word: upgrade,
+        from: token,
+        context: `You used “${token}” ${count} time${count === 1 ? "" : "s"}`,
+        personalized: true,
+      });
     }
   }
 
-  // Redundant "very X"
-  const veryMatch = full.match(/\bvery\s+(delicious|beautiful|nice|good|interesting|important)\b/);
+  const veryMatch = full.match(
+    /\bvery\s+(delicious|beautiful|nice|good|interesting|important)\b/
+  );
   if (veryMatch) {
     const base = veryMatch[1];
     const upgrade = UPGRADE_MAP[base]?.[0];
-    if (upgrade) suggestions.push({ word: upgrade, from: `very ${base}` });
+    if (upgrade) {
+      suggestions.push({
+        word: upgrade,
+        from: `very ${base}`,
+        context: `You said “very ${base}”`,
+        personalized: true,
+      });
+    }
   }
 
-  const unique: string[] = [];
+  const unique: VocabularyUpgrade[] = [];
   const seen = new Set<string>();
   for (const item of suggestions) {
     const w = item.word.toLowerCase().replace(/[^a-z]/g, "");
     if (w.length < 4 || seen.has(w)) continue;
-    // Don't suggest a word they already used.
     if (new RegExp(`\\b${w}\\b`, "i").test(full)) continue;
     seen.add(w);
-    unique.push(w);
-    if (unique.length >= 5) break;
+    unique.push({ ...item, word: w, personalized: true });
+    if (unique.length >= 8) break;
   }
 
   return unique;
+}
+
+/** Word strings only (for legacy fields). */
+export function deriveVocabularyChallenge(
+  studentTranscript: string,
+  score: StructuredSpeakingScore
+): string[] {
+  return deriveVocabularyUpgrades(studentTranscript, score).map((u) => u.word);
+}
+
+/**
+ * Build today's challenge list from recent scored sessions.
+ * Personalized words first; general backfill only if needed and clearly labeled.
+ */
+export function buildTodayVocabularyFromSessions(
+  sessions: Array<{ id?: string; feedback?: Record<string, unknown> | null }>,
+  limit = 5
+): Array<{
+  id: string;
+  word: string;
+  personalized: boolean;
+  from?: string;
+  context?: string;
+  reviewCount: number;
+}> {
+  const personalized: Array<{
+    id: string;
+    word: string;
+    personalized: boolean;
+    from?: string;
+    context?: string;
+    reviewCount: number;
+  }> = [];
+  const seen = new Set<string>();
+
+  for (const session of sessions) {
+    const feedback = session.feedback;
+    if (!feedback) continue;
+
+    const detailed = Array.isArray(feedback.vocabularyChallengeDetailed)
+      ? feedback.vocabularyChallengeDetailed
+      : [];
+
+    if (detailed.length > 0) {
+      for (const item of detailed) {
+        const word = String(item?.word || "")
+          .toLowerCase()
+          .replace(/[^a-z]/g, "");
+        if (word.length < 4 || seen.has(word)) continue;
+        if (item?.personalized === false) continue;
+        seen.add(word);
+        personalized.push({
+          id: `personal-${session.id || "x"}-${word}`,
+          word,
+          personalized: true,
+          from: item.from ? String(item.from) : undefined,
+          context: item.context ? String(item.context) : undefined,
+          reviewCount: 0,
+        });
+      }
+    } else {
+      const transcriptText =
+        typeof feedback.sessionScore?.transcript === "string"
+          ? feedback.sessionScore.transcript
+          : Array.isArray(feedback.sessionTranscript)
+            ? feedback.sessionTranscript
+                .filter((t: { role?: string }) => t?.role === "student")
+                .map((t: { text?: string; part?: number }) =>
+                  `[Part ${t.part ?? "?"}] ${t.text || ""}`
+                )
+                .join("\n")
+            : "";
+
+      const upgrades = deriveVocabularyUpgrades(
+        transcriptText,
+        feedback.structuredScore as StructuredSpeakingScore
+      );
+      for (const item of upgrades) {
+        if (seen.has(item.word)) continue;
+        seen.add(item.word);
+        personalized.push({
+          id: `personal-${session.id || "x"}-${item.word}`,
+          word: item.word,
+          personalized: true,
+          from: item.from,
+          context: item.context,
+          reviewCount: 0,
+        });
+      }
+    }
+  }
+
+  const result = personalized.slice(0, limit);
+
+  if (result.length < limit) {
+    for (const word of GENERAL_VOCAB_BACKFILL) {
+      if (seen.has(word)) continue;
+      seen.add(word);
+      result.push({
+        id: `general-${word}`,
+        word,
+        personalized: false,
+        context: "General practice word (not from your recent sessions)",
+        reviewCount: 0,
+      });
+      if (result.length >= limit) break;
+    }
+  }
+
+  return result;
 }

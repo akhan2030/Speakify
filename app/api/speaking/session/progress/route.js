@@ -6,16 +6,14 @@ import {
   generateProgressChartInsight,
   normalizeCriteriaHistory,
 } from "@/lib/speaking/progressChartInsight";
+import { buildTodayVocabularyFromSessions } from "@/lib/speaking/scoreEvidence";
+
 export const runtime = "nodejs";
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")
     .replace(/\/rest\/v1\/?$/i, "")
     .replace(/\/$/, "");
-}
-
-function todayDateString() {
-  return new Date().toISOString().split("T")[0];
 }
 
 export async function GET() {
@@ -35,6 +33,8 @@ export async function GET() {
       chartInsight: null,
       lastSessionAt: null,
       todayVocabulary: [],
+      vocabularySource:
+        "Built from lexical_resource deductions + transcript of recent scored sessions (personalized first; general backfill labeled).",
       lastImprovementTip: null,
     };
 
@@ -70,29 +70,18 @@ export async function GET() {
       }
     }
 
-    const today = todayDateString();
-    let vocabRows = [];
-    const { data: bankRows, error: bankError } = await supabase
-      .from("vocabulary_bank")
-      .select("id, word, review_count, next_review_date, status")
+    // Today's vocabulary: derive from recent scored sessions' transcripts + lexical deductions.
+    // Do NOT read a static bank of generic words as if they were personalized.
+    const { data: recentScored } = await supabase
+      .from("speaking_sessions")
+      .select("id, feedback, completed_at")
       .eq("student_id", studentId)
-      .lte("next_review_date", today)
-      .neq("status", "mastered")
-      .order("next_review_date", { ascending: true })
+      .not("completed_at", "is", null)
+      .not("feedback", "is", null)
+      .order("completed_at", { ascending: false })
       .limit(5);
 
-    if (!bankError) {
-      vocabRows = bankRows ?? [];
-    } else {
-      const { data: legacyRows } = await supabase
-        .from("speaking_vocabulary_progress")
-        .select("id, word, practiced")
-        .eq("student_id", studentId)
-        .eq("assigned_date", today)
-        .eq("practiced", false)
-        .limit(5);
-      vocabRows = legacyRows ?? [];
-    }
+    const todayVocabulary = buildTodayVocabularyFromSessions(recentScored ?? [], 5);
 
     const { data: lastSession } = await supabase
       .from("speaking_sessions")
@@ -139,12 +128,9 @@ export async function GET() {
       bandHistory: criteriaBandHistory,
       chartInsight,
       lastSessionAt: progress?.last_session_at ?? null,
-      todayVocabulary: (vocabRows ?? []).map((r) => ({
-        id: r.id,
-        word: r.word,
-        reviewCount: r.review_count ?? 0,
-        nextReviewDate: r.next_review_date ?? today,
-      })),
+      todayVocabulary,
+      vocabularySource:
+        "buildTodayVocabularyFromSessions(recent feedback.structuredScore + session transcript). Personalized upgrades from lexical deductions / overused words; general backfill only if fewer than 5 and labeled personalized:false.",
       lastImprovementTip,
     });
   } catch (err) {
@@ -157,6 +143,7 @@ export async function GET() {
       bandHistory: [],
       chartInsight: null,
       todayVocabulary: [],
+      vocabularySource: null,
       lastImprovementTip: null,
     });
   }

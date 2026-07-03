@@ -11,7 +11,7 @@ import {
   structuredScoreToLegacyFeedback,
 } from "@/lib/speaking/scoringSchema";
 import {
-  deriveVocabularyChallenge,
+  deriveVocabularyUpgrades,
   repairStructuredScoreEvidence,
 } from "@/lib/speaking/scoreEvidence";
 import {
@@ -146,46 +146,23 @@ function wordsFromReplacementText(text) {
   return candidates;
 }
 
-function extractVocabularyBankWords(feedback) {
-  const words = new Set();
-
-  for (const word of feedback.vocabularyChallenge || []) {
-    const cleaned = cleanVocabularyWord(word);
-    if (cleaned) words.add(cleaned);
-  }
-
-  const lexical = feedback.criterionFeedback?.lexical || feedback.sessionScore?.lexical;
-  for (const word of lexical?.flaggedWords || []) {
-    const cleaned = cleanVocabularyWord(word);
-    if (cleaned) words.add(cleaned);
-  }
-
-  for (const improvement of feedback.topImprovements || []) {
-    const category = String(improvement.category || "").toLowerCase();
-    if (!category.includes("lex") && !category.includes("vocab")) continue;
-    for (const field of ["suggestion", "improvedVersion", "example"]) {
-      for (const word of wordsFromReplacementText(improvement[field])) {
-        if (word) words.add(word);
-      }
-    }
-  }
-
-  return [...words].slice(0, 12);
-}
-
 async function upsertVocabularyBank(supabase, studentId, sessionId, feedback) {
-  const words = extractVocabularyBankWords(feedback);
-  if (words.length === 0) return;
+  // Only persist personalized upgrades — never seed the bank with generic lists.
+  const detailed = Array.isArray(feedback.vocabularyChallengeDetailed)
+    ? feedback.vocabularyChallengeDetailed.filter((item) => item?.personalized !== false)
+    : [];
+  if (detailed.length === 0) return;
 
   const today = new Date().toISOString().split("T")[0];
-  const rows = words.map((word) => ({
+  const rows = detailed.map((item) => ({
     student_id: studentId,
-    word,
+    word: cleanVocabularyWord(item.word),
     source: "speaking_scoring",
     source_session_id: sessionId,
+    suggested_from: item.from || item.context || null,
     next_review_date: today,
     status: "due",
-  }));
+  })).filter((row) => row.word);
 
   const { error } = await supabase.from("vocabulary_bank").upsert(rows, {
     onConflict: "student_id,word",
@@ -318,16 +295,13 @@ export async function POST(req) {
       studentTranscript
     );
 
-    const vocabularyChallenge = [
-      ...(Array.isArray(structuredScore.vocabulary_challenge)
-        ? structuredScore.vocabulary_challenge
-        : []),
-      ...coaching.vocabularyChallenge,
-      ...deriveVocabularyChallenge(studentTranscript, structuredScore),
-    ]
-      .map((w) => String(w || "").toLowerCase().trim())
-      .filter((w, i, arr) => w.length > 3 && arr.indexOf(w) === i)
-      .slice(0, 5);
+    // Transcript-derived upgrades only — never a static academic word bank.
+    // Source: lexical deductions + basic/overused words actually spoken.
+    const vocabularyChallengeDetailed = deriveVocabularyUpgrades(
+      studentTranscript,
+      structuredScore
+    ).slice(0, 5);
+    const vocabularyChallenge = vocabularyChallengeDetailed.map((item) => item.word);
 
     const feedback = {
       overallBand: structuredScore.overall_band,
@@ -340,6 +314,7 @@ export async function POST(req) {
       strengths: coaching.strengths,
       saudiSpecificErrors: coaching.saudiSpecificErrors,
       vocabularyChallenge,
+      vocabularyChallengeDetailed,
       sessionScore: {
         overall_band: structuredScore.overall_band,
         fluency: criterionFeedback.fluency,

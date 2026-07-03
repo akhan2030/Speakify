@@ -44,6 +44,12 @@ type FeedbackData = {
     count?: number;
   }[];
   vocabularyChallenge?: string[];
+  vocabularyChallengeDetailed?: Array<{
+    word: string;
+    from?: string;
+    context?: string;
+    personalized?: boolean;
+  }>;
   sessionTranscript?: TranscriptEntry[];
   transcriptReview?: TranscriptReview | null;
   structuredScore?: StructuredSpeakingScore;
@@ -146,7 +152,15 @@ export default function FeedbackReport({
     .filter((row) => row.band > 0);
 
   const improvements = (feedback.topImprovements || []).slice(0, 3);
-  const vocab = (feedback.vocabularyChallenge || []).slice(0, 5);
+  const vocabDetailed =
+    feedback.vocabularyChallengeDetailed?.length
+      ? feedback.vocabularyChallengeDetailed.slice(0, 5)
+      : (feedback.vocabularyChallenge || []).slice(0, 5).map((word) => ({
+          word,
+          personalized: true as boolean | undefined,
+          from: undefined as string | undefined,
+          context: undefined as string | undefined,
+        }));
 
   return (
     <div style={{ maxWidth: "800px" }}>
@@ -430,8 +444,8 @@ export default function FeedbackReport({
         </div>
       )}
 
-      {/* Vocabulary challenge */}
-      {vocab.length > 0 && (
+      {/* Vocabulary challenge — transcript-derived upgrades */}
+      {vocabDetailed.length > 0 && (
         <div
           style={{
             background: "white",
@@ -444,14 +458,25 @@ export default function FeedbackReport({
           <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#0d1b35", margin: "0 0 1rem" }}>
             Vocabulary Challenge
           </h2>
-          {vocab.map((word) => (
-            <div key={word} style={{ marginBottom: "10px" }}>
+          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 12px" }}>
+            Upgrades based on words and phrases you actually used in this session.
+          </p>
+          {vocabDetailed.map((item) => (
+            <div key={item.word} style={{ marginBottom: "10px" }}>
               <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", margin: "0 0 2px" }}>
-                {word}
+                {item.word}
+                {item.personalized === false ? (
+                  <span style={{ fontSize: "11px", color: "#94a3b8", marginLeft: "8px" }}>
+                    (general)
+                  </span>
+                ) : null}
               </p>
               <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>
-                {WORD_HINTS[word.toLowerCase()] ||
-                  "Practice using this word in a full sentence about your daily life."}
+                {item.from
+                  ? `Try this instead of “${item.from}”${item.context ? ` — ${item.context}` : ""}`
+                  : item.context ||
+                    WORD_HINTS[item.word.toLowerCase()] ||
+                    "Practice using this word in a full sentence about your daily life."}
               </p>
             </div>
           ))}
