@@ -13,6 +13,7 @@ export type IeltsActivePage =
   | "weekly-plan"
   | "writing"
   | "speaking"
+  | "speaking-history"
   | "reading"
   | "listening"
   | "practice"
@@ -176,17 +177,27 @@ const MOBILE_NAV: { id: IeltsActivePage; label: string; href: string; icon: stri
   { id: "readiness", label: "Progress", href: "/dashboard/ielts/student/readiness", icon: "📊" },
 ];
 
+const SPEAKING_HISTORY_HREF = "/dashboard/ielts/student/speaking/history";
+
 const ALL_ITEMS = [
   ...NAV_GROUPS.flatMap((g) => g.items),
+  {
+    id: "speaking-history" as const,
+    label: "Session history",
+    href: SPEAKING_HISTORY_HREF,
+    icon: "📋",
+  },
   { id: "dashboard" as const, label: "Dashboard", href: "/dashboard/ielts/student", icon: "🏠" },
   { id: "settings" as const, label: "Settings", href: "/dashboard/ielts/student/settings", icon: "⚙" },
 ];
 
 function activeFromPath(pathname: string): IeltsActivePage {
   if (pathname === "/dashboard/ielts/student") return "today";
-  const match = ALL_ITEMS.find(
-    (item) => item.href !== "/dashboard/ielts/student" && pathname.startsWith(item.href)
-  );
+  const match = [...ALL_ITEMS]
+    .sort((a, b) => b.href.length - a.href.length)
+    .find(
+      (item) => item.href !== "/dashboard/ielts/student" && pathname.startsWith(item.href)
+    );
   return match?.id ?? "today";
 }
 
@@ -319,12 +330,25 @@ export default function IELTSSidebar({
               </p>
               <div className="space-y-0.5">
                 {group.items.map((item) => (
-                  <NavLink
-                    key={item.id}
-                    item={item}
-                    isActive={item.id === current}
-                    badge={badgeForItem(item, badges)}
-                  />
+                  <div key={item.id}>
+                    <NavLink
+                      item={item}
+                      isActive={item.id === current}
+                      badge={badgeForItem(item, badges)}
+                    />
+                    {item.id === "speaking" ? (
+                      <Link
+                        href={SPEAKING_HISTORY_HREF}
+                        className={`ml-8 mt-0.5 block rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                          current === "speaking-history"
+                            ? "font-semibold text-[#c9972c]"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Session history →
+                      </Link>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             </div>

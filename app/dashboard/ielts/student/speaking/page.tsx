@@ -373,6 +373,24 @@ function SpeakingPartnerContent() {
 
       <ProgressSummary studentId={studentId} refreshKey={progressRefreshKey} />
 
+      <div style={{ marginTop: "1rem", textAlign: "right" }}>
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard/ielts/student/speaking/history")}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#0d9488",
+            fontSize: "13px",
+            fontWeight: 600,
+            cursor: "pointer",
+            textDecoration: "underline",
+          }}
+        >
+          View history →
+        </button>
+      </div>
+
       <button
         type="button"
         onClick={() => router.push("/dashboard/ielts/student")}
