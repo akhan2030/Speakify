@@ -27,6 +27,10 @@ const BASIC_WORDS = new Set([
   "important",
 ]);
 
+/**
+ * Preferred upgrades by base word. First entry is the default when register is neutral.
+ * Sense-sensitive picks are handled in pickRegisterFitUpgrade().
+ */
 const UPGRADE_MAP: Record<string, string[]> = {
   good: ["beneficial", "valuable", "worthwhile", "positive"],
   nice: ["pleasant", "enjoyable", "appealing"],
@@ -37,11 +41,39 @@ const UPGRADE_MAP: Record<string, string[]> = {
   beautiful: ["striking", "impressive", "scenic"],
   interesting: ["compelling", "engaging", "fascinating"],
   important: ["essential", "significant", "crucial"],
-  like: ["enjoy", "appreciate", "prefer"],
-  love: ["admire", "value", "cherish"],
+  // enjoy/appreciate fit places & activities; avoid "admire" (respect/esteem for people)
+  like: ["enjoy", "prefer", "appreciate"],
+  love: ["enjoy", "appreciate", "value"],
   big: ["substantial", "significant", "major"],
   happy: ["content", "delighted", "satisfied"],
 };
+
+/** Pick one upgrade that preserves meaning/register for the student's sentence. */
+function pickRegisterFitUpgrade(from: string, contextLine: string): string | null {
+  const line = contextLine.toLowerCase();
+  const options = UPGRADE_MAP[from];
+  if (!options?.length) return null;
+
+  const aboutPerson =
+    /\b(her|him|them|people|teacher|friend|friends|parents?|mother|father|leader|colleague|boss)\b/.test(
+      line
+    );
+  const aboutPlaceOrActivity =
+    /\b(nightlife|city|place|food|weather|music|sport|hobby|living|riyadh|neighbourhood|neighborhood|area|restaurant|trip|travel)\b/.test(
+      line
+    );
+
+  if (from === "love" || from === "like") {
+    if (aboutPerson) return "appreciate";
+    if (aboutPlaceOrActivity) return "enjoy";
+    return "enjoy";
+  }
+
+  if (from === "good" && aboutPlaceOrActivity) return "pleasant";
+  if (from === "beautiful" && aboutPlaceOrActivity) return "scenic";
+
+  return options[0];
+}
 
 function stripPartPrefix(line: string) {
   return line.replace(/^\[Part \d+\]\s*/i, "").trim();
@@ -271,9 +303,17 @@ export const GENERAL_VOCAB_BACKFILL = [
   "consider",
 ];
 
+type UpgradeCandidate = {
+  from: string;
+  count: number;
+  context: string;
+  exampleLine: string;
+};
+
 /**
  * Build practice vocabulary upgrades from the student's actual language.
- * Returns rich objects so the UI can show why each word was chosen.
+ * One strong upgrade per distinct overused/basic word (by frequency),
+ * with register-aware synonym choice — no thesaurus doubles for the same word.
  */
 export function deriveVocabularyUpgrades(
   studentTranscript: string,
@@ -283,84 +323,99 @@ export function deriveVocabularyUpgrades(
   const full = utterances.join(" ").toLowerCase();
   if (!full.trim()) return [];
 
-  const suggestions: VocabularyUpgrade[] = [];
+  // fromKey -> best candidate (highest count, richest context)
+  const byFrom = new Map<string, UpgradeCandidate>();
+
+  const remember = (from: string, count: number, context: string, exampleLine: string) => {
+    const key = from.toLowerCase();
+    const existing = byFrom.get(key);
+    if (!existing || count > existing.count) {
+      byFrom.set(key, { from: key, count, context, exampleLine });
+    } else if (existing && count === existing.count && exampleLine.length > existing.exampleLine.length) {
+      byFrom.set(key, { from: key, count, context, exampleLine });
+    }
+  };
 
   const lexicalDeductions = score?.criteria?.lexical_resource?.deductions ?? [];
   for (const d of lexicalDeductions) {
-    const tokens = String(d.evidence || "")
+    const evidence = String(d.evidence || "");
+    const tokens = evidence
       .toLowerCase()
       .split(/[^a-z']+/)
       .filter(Boolean);
     for (const token of tokens) {
-      if (UPGRADE_MAP[token]) {
-        suggestions.push({
-          word: UPGRADE_MAP[token][0],
-          from: token,
-          context: d.evidence,
-          personalized: true,
-        });
-      }
-    }
-    const replaceMatch = String(d.reason || "").match(
-      /replace with[:\s]+([a-zA-Z,\s/]+)/i
-    );
-    if (replaceMatch) {
-      for (const w of replaceMatch[1].split(/[,/]/)) {
-        const cleaned = w.trim().toLowerCase().replace(/[^a-z]/g, "");
-        if (cleaned.length > 3) {
-          suggestions.push({
-            word: cleaned,
-            from: tokens.find((t) => BASIC_WORDS.has(t)),
-            context: d.evidence,
-            personalized: true,
-          });
-        }
-      }
+      if (!UPGRADE_MAP[token] && !BASIC_WORDS.has(token)) continue;
+      if (token === "very") continue; // handled as "very X" phrases
+      remember(token, 1, evidence, evidence);
     }
   }
 
   const counts = new Map<string, number>();
-  for (const token of full.split(/[^a-z']+/).filter(Boolean)) {
-    if (!BASIC_WORDS.has(token)) continue;
-    counts.set(token, (counts.get(token) || 0) + 1);
+  const exampleLineFor = new Map<string, string>();
+  for (const line of utterances) {
+    const lower = line.toLowerCase();
+    for (const token of lower.split(/[^a-z']+/).filter(Boolean)) {
+      if (!BASIC_WORDS.has(token) || token === "very") continue;
+      counts.set(token, (counts.get(token) || 0) + 1);
+      if (!exampleLineFor.has(token)) exampleLineFor.set(token, line);
+    }
   }
   for (const [token, count] of counts) {
-    if (count < 1 || !UPGRADE_MAP[token]) continue;
-    for (const upgrade of UPGRADE_MAP[token].slice(0, 2)) {
-      suggestions.push({
-        word: upgrade,
-        from: token,
-        context: `You used “${token}” ${count} time${count === 1 ? "" : "s"}`,
-        personalized: true,
-      });
-    }
+    if (!UPGRADE_MAP[token]) continue;
+    remember(
+      token,
+      count,
+      `You used “${token}” ${count} time${count === 1 ? "" : "s"}`,
+      exampleLineFor.get(token) || token
+    );
   }
 
-  const veryMatch = full.match(
-    /\bvery\s+(delicious|beautiful|nice|good|interesting|important)\b/
-  );
-  if (veryMatch) {
-    const base = veryMatch[1];
-    const upgrade = UPGRADE_MAP[base]?.[0];
-    if (upgrade) {
-      suggestions.push({
-        word: upgrade,
-        from: `very ${base}`,
-        context: `You said “very ${base}”`,
-        personalized: true,
-      });
-    }
+  // Redundant intensifiers count as their own distinct "from" keys
+  for (const line of utterances) {
+    const match = line
+      .toLowerCase()
+      .match(/\bvery\s+(delicious|beautiful|nice|good|interesting|important)\b/);
+    if (!match) continue;
+    const phrase = `very ${match[1]}`;
+    remember(phrase, 1, `You said “${phrase}”`, line);
   }
+
+  // Sort distinct sources by frequency (desc), then by having a deduction context
+  const ranked = [...byFrom.values()].sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return b.exampleLine.length - a.exampleLine.length;
+  });
 
   const unique: VocabularyUpgrade[] = [];
-  const seen = new Set<string>();
-  for (const item of suggestions) {
-    const w = item.word.toLowerCase().replace(/[^a-z]/g, "");
-    if (w.length < 4 || seen.has(w)) continue;
+  const seenWords = new Set<string>();
+  const seenFrom = new Set<string>();
+
+  for (const candidate of ranked) {
+    if (seenFrom.has(candidate.from)) continue;
+
+    let upgrade: string | null = null;
+    if (candidate.from.startsWith("very ")) {
+      const base = candidate.from.slice(5);
+      upgrade = UPGRADE_MAP[base]?.[0] ?? pickRegisterFitUpgrade(base, candidate.exampleLine);
+    } else {
+      upgrade = pickRegisterFitUpgrade(candidate.from, candidate.exampleLine);
+    }
+
+    if (!upgrade) continue;
+    const w = upgrade.toLowerCase().replace(/[^a-z]/g, "");
+    if (w.length < 4 || seenWords.has(w)) continue;
     if (new RegExp(`\\b${w}\\b`, "i").test(full)) continue;
-    seen.add(w);
-    unique.push({ ...item, word: w, personalized: true });
-    if (unique.length >= 8) break;
+
+    seenFrom.add(candidate.from);
+    seenWords.add(w);
+    unique.push({
+      word: w,
+      from: candidate.from,
+      context: candidate.context,
+      personalized: true,
+    });
+
+    if (unique.length >= 5) break;
   }
 
   return unique;
