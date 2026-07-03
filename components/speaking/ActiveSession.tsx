@@ -469,13 +469,8 @@ export default function ActiveSession({
     void createTurnTakingController({
       onStateChange: (state) => {
         if (!cancelled) setTurnState(state);
-        if (state === "listening" || state === "idle" || state === "thinking") {
-          setIsListening(state === "listening" || state === "speaking");
-        }
-        if (state === "speaking") {
-          setIsListening(true);
-        }
-        if (state === "processing" || state === "idle") {
+        setIsListening(state === "listening" || state === "speaking");
+        if (state === "processing" || state === "idle" || state === "thinking") {
           clearAnswerTimer();
         }
       },
