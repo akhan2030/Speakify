@@ -278,7 +278,7 @@ export default function VocabularyPage() {
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <Link
-              href="/dashboard/student/vocabulary/study"
+              href={`${base}/vocabulary/study`}
               className="flex flex-col rounded-xl bg-[#0d1b35] p-6 text-white shadow-md transition-colors hover:bg-[#152a4d]"
             >
               <span className="text-2xl" aria-hidden>

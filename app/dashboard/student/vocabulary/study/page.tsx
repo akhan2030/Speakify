@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import VocabularyFlashcard from "@/components/vocabulary/VocabularyFlashcard";
 import { useVocabularyCefr } from "@/components/vocabulary/useVocabularyCefr";
 import { formatVocabTopicLabel } from "@/lib/vocabularyTopics";
@@ -15,6 +16,7 @@ function VocabularyStudyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const topic = searchParams.get("topic");
+  const { base, usesProgramShell } = usePathwayStudentContext();
   const { cefrLevel, ready } = useVocabularyCefr();
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [index, setIndex] = useState(0);
@@ -85,11 +87,13 @@ function VocabularyStudyContent() {
 
   return (
     <div className="flex min-h-screen">
-      <StudentSidebar activePage="vocabulary" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 px-8 py-8">
+      {!usesProgramShell ? <StudentSidebar activePage="vocabulary" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mx-auto max-w-xl">
           <Link
-            href="/dashboard/student/vocabulary"
+            href={`${base}/vocabulary`}
             className="text-sm font-medium text-[#0d9488] hover:underline"
           >
             ← Back to Vocabulary
@@ -114,13 +118,13 @@ function VocabularyStudyContent() {
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Link
-                  href="/dashboard/student/vocabulary/quiz"
+                  href={`${base}/vocabulary/quiz`}
                   className="rounded-xl bg-[#0d9488] px-5 py-2.5 text-sm font-bold text-white"
                 >
                   Take a quiz
                 </Link>
                 <Link
-                  href="/dashboard/student/vocabulary"
+                  href={`${base}/vocabulary`}
                   className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-bold text-[#0d1b35]"
                 >
                   Home

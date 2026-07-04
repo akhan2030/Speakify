@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { useVocabularyCefr } from "@/components/vocabulary/useVocabularyCefr";
 import type { VocabularyWord } from "@/lib/vocabulary";
 
@@ -100,6 +101,7 @@ function buildQuestions(pool: VocabularyWord[]): QuizQuestion[] {
 
 export default function VocabularyQuizPage() {
   const { status } = useSession();
+  const { base, usesProgramShell } = usePathwayStudentContext();
   const router = useRouter();
   const { cefrLevel, ready } = useVocabularyCefr();
   const [pool, setPool] = useState<VocabularyWord[]>([]);
@@ -184,11 +186,13 @@ export default function VocabularyQuizPage() {
 
   return (
     <div className="flex min-h-screen">
-      <StudentSidebar activePage="vocabulary" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 px-8 py-8">
+      {!usesProgramShell ? <StudentSidebar activePage="vocabulary" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mx-auto max-w-xl">
           <Link
-            href="/dashboard/student/vocabulary"
+            href={`${base}/vocabulary`}
             className="text-sm font-medium text-[#0d9488] hover:underline"
           >
             ← Back to Vocabulary
@@ -229,7 +233,7 @@ export default function VocabularyQuizPage() {
                 <p className="mt-4 text-sm text-[#0d9488]">Perfect score — excellent!</p>
               )}
               <Link
-                href="/dashboard/student/vocabulary/study"
+                href={`${base}/vocabulary/study`}
                 className="mt-6 inline-block rounded-xl bg-[#0d1b35] px-6 py-3 text-sm font-bold text-white"
               >
                 Study again

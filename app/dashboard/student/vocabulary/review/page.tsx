@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import VocabularyFlashcard from "@/components/vocabulary/VocabularyFlashcard";
 import { useVocabularyCefr } from "@/components/vocabulary/useVocabularyCefr";
 import type { VocabRating, VocabularyWord } from "@/lib/vocabulary";
@@ -21,6 +22,7 @@ function daysUntil(dateKey: string | null) {
 export default function VocabularyReviewPage() {
   const { status } = useSession();
   const router = useRouter();
+  const { base, usesProgramShell } = usePathwayStudentContext();
   const { cefrLevel, ready } = useVocabularyCefr();
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [index, setIndex] = useState(0);
@@ -84,11 +86,13 @@ export default function VocabularyReviewPage() {
 
   return (
     <div className="flex min-h-screen">
-      <StudentSidebar activePage="vocabulary" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 px-8 py-8">
+      {!usesProgramShell ? <StudentSidebar activePage="vocabulary" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mx-auto max-w-xl">
           <Link
-            href="/dashboard/student/vocabulary"
+            href={`${base}/vocabulary`}
             className="text-sm font-medium text-[#0d9488] hover:underline"
           >
             ← Back to Vocabulary
@@ -107,7 +111,7 @@ export default function VocabularyReviewPage() {
                   : "No upcoming reviews scheduled yet. Study new words to build your queue."}
               </p>
               <Link
-                href="/dashboard/student/vocabulary/study"
+                href={`${base}/vocabulary/study`}
                 className="mt-6 inline-block rounded-xl bg-[#0d1b35] px-6 py-3 text-sm font-bold text-white"
               >
                 Study new words

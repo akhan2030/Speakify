@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { BAND_FILTERS, IELTS_SKILLS, type IeltsPhrase } from "@/lib/vocabulary";
 
 export default function VocabularyPhrasesPage() {
   const { status } = useSession();
   const router = useRouter();
+  const { base, usesProgramShell } = usePathwayStudentContext();
   const [skill, setSkill] = useState("");
   const [band, setBand] = useState("");
   const [phrases, setPhrases] = useState<IeltsPhrase[]>([]);
@@ -44,11 +46,13 @@ export default function VocabularyPhrasesPage() {
 
   return (
     <div className="flex min-h-screen">
-      <StudentSidebar activePage="vocabulary" />
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50 px-8 py-8">
+      {!usesProgramShell ? <StudentSidebar activePage="vocabulary" /> : null}
+      <main
+        className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
+      >
         <div className="mx-auto max-w-4xl">
           <Link
-            href="/dashboard/student/vocabulary"
+            href={`${base}/vocabulary`}
             className="text-sm font-medium text-[#0d9488] hover:underline"
           >
             ← Back to Vocabulary
