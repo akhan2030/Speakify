@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
@@ -9,20 +8,39 @@ import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudent
 import VocabularyFlashcard from "@/components/vocabulary/VocabularyFlashcard";
 import { useVocabularyCefr } from "@/components/vocabulary/useVocabularyCefr";
 import { formatVocabTopicLabel } from "@/lib/vocabularyTopics";
-import type { VocabRating, VocabularyWord } from "@/lib/vocabulary";
+import {
+  normalizeSpeakifyCefrLevel,
+  type VocabRating,
+  type VocabularyWord,
+} from "@/lib/vocabulary";
+
+function readParam(searchParams: URLSearchParams, key: string): string | null {
+  const fromHook = searchParams.get(key);
+  if (fromHook) return fromHook;
+  // Fallback: App Router soft-nav can drop useSearchParams briefly; window is authoritative.
+  if (typeof window !== "undefined") {
+    return new URLSearchParams(window.location.search).get(key);
+  }
+  return null;
+}
 
 function VocabularyStudyContent() {
   const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const topic = searchParams.get("topic");
+  const topic = readParam(searchParams, "topic");
+  const cefrFromUrl = readParam(searchParams, "cefrLevel");
   const { base, usesProgramShell } = usePathwayStudentContext();
-  const { cefrLevel, ready } = useVocabularyCefr();
+  const { cefrLevel: storedCefr, ready } = useVocabularyCefr();
+  const cefrLevel = cefrFromUrl
+    ? normalizeSpeakifyCefrLevel(cefrFromUrl)
+    : storedCefr;
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -32,6 +50,7 @@ function VocabularyStudyContent() {
     if (status !== "authenticated" || !ready) return;
     (async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         const params = new URLSearchParams({
           cefrLevel,
@@ -40,10 +59,18 @@ function VocabularyStudyContent() {
         });
         if (topic) params.set("topic", topic);
         const res = await fetch(`/api/vocabulary/words?${params.toString()}`);
-        const json = await res.json();
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setLoadError(json.error || "Could not load words for this topic.");
+          setWords([]);
+          return;
+        }
         setWords(json.words ?? []);
         setIndex(0);
         setDone(false);
+      } catch {
+        setLoadError("Could not load words for this topic.");
+        setWords([]);
       } finally {
         setLoading(false);
       }
@@ -92,16 +119,21 @@ function VocabularyStudyContent() {
         className={`min-h-screen flex-1 bg-slate-50 px-8 py-8 ${usesProgramShell ? "" : "ml-[200px]"}`}
       >
         <div className="mx-auto max-w-xl">
-          <Link
+          <a
             href={`${base}/vocabulary`}
             className="text-sm font-medium text-[#0d9488] hover:underline"
           >
             ← Back to Vocabulary
-          </Link>
-          <h1 className="mt-4 text-2xl font-bold text-[#0d1b35]">Study Words</h1>
+          </a>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#0d9488]">
+            Topic study session
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-[#0d1b35]">
+            {topic ? formatVocabTopicLabel(topic) : "Study Words"}
+          </h1>
           <p className="mt-1 text-sm text-slate-600">
             Level {cefrLevel}
-            {topic ? ` · ${formatVocabTopicLabel(topic)}` : ""} · 10-word session
+            {topic ? ` · filtered to “${formatVocabTopicLabel(topic)}”` : ""} · 10-word session
           </p>
 
           {loading ? (
@@ -112,23 +144,27 @@ function VocabularyStudyContent() {
                 {words.length === 0 ? "No words found" : "Session complete!"}
               </p>
               <p className="mt-2 text-sm text-slate-600">
-                {words.length === 0
-                  ? "Try another CEFR level on the home page."
-                  : "Great work — your progress has been saved."}
+                {loadError
+                  ? loadError
+                  : words.length === 0
+                    ? topic
+                      ? `No words for “${formatVocabTopicLabel(topic)}” at ${cefrLevel} yet. Try another topic or level.`
+                      : "Try another CEFR level on the home page."
+                    : "Great work — your progress has been saved."}
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <Link
+                <a
                   href={`${base}/vocabulary/quiz`}
                   className="rounded-xl bg-[#0d9488] px-5 py-2.5 text-sm font-bold text-white"
                 >
                   Take a quiz
-                </Link>
-                <Link
+                </a>
+                <a
                   href={`${base}/vocabulary`}
                   className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-bold text-[#0d1b35]"
                 >
-                  Home
-                </Link>
+                  Back to topics
+                </a>
               </div>
             </div>
           ) : (

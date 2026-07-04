@@ -126,15 +126,26 @@ export default function VocabularyFlashcard({
               {word.part_of_speech ?? "word"} · {word.cefr_level}
             </p>
             <h2 className="mt-4 text-4xl font-bold text-[#0d1b35]">{word.word}</h2>
+            {/* Short lexical Arabic equivalent — fast speaking recall anchor. */}
+            {word.arabic_equivalent?.trim() ? (
+              <p
+                className="mt-3 text-3xl font-bold leading-none text-[#0d9488]"
+                dir="rtl"
+                lang="ar"
+              >
+                {word.arabic_equivalent.trim()}
+              </p>
+            ) : null}
             {word.pronunciation_ipa ? (
               <p className="mt-2 text-lg text-slate-500">{word.pronunciation_ipa}</p>
             ) : null}
             {word.definition ? (
               <div className="mt-4 max-w-md px-2 text-center">
                 <p className="text-sm leading-relaxed text-slate-700">{word.definition}</p>
+                {/* Full Arabic definition — secondary conceptual explanation. */}
                 {word.definition_arabic?.trim() ? (
                   <p
-                    className="mt-2 text-xs leading-relaxed text-slate-400"
+                    className="mt-2 text-sm leading-relaxed text-slate-500"
                     dir="rtl"
                     lang="ar"
                   >
@@ -142,6 +153,14 @@ export default function VocabularyFlashcard({
                   </p>
                 ) : null}
               </div>
+            ) : word.definition_arabic?.trim() ? (
+              <p
+                className="mt-4 max-w-md px-2 text-center text-sm leading-relaxed text-slate-500"
+                dir="rtl"
+                lang="ar"
+              >
+                {word.definition_arabic.trim()}
+              </p>
             ) : null}
             <div
               ref={listenMenuRef}
@@ -206,7 +225,25 @@ export default function VocabularyFlashcard({
           </div>
 
           <div className="absolute inset-0 flex flex-col justify-center rounded-2xl border border-[#0d9488]/30 bg-gradient-to-br from-white to-teal-50/80 p-8 shadow-lg [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            {word.arabic_equivalent?.trim() ? (
+              <p
+                className="mb-2 text-2xl font-bold text-[#0d9488]"
+                dir="rtl"
+                lang="ar"
+              >
+                {word.arabic_equivalent.trim()}
+              </p>
+            ) : null}
             <p className="text-sm font-semibold text-[#0d1b35]">{word.definition}</p>
+            {word.definition_arabic?.trim() ? (
+              <p
+                className="mt-2 text-sm leading-relaxed text-slate-500"
+                dir="rtl"
+                lang="ar"
+              >
+                {word.definition_arabic.trim()}
+              </p>
+            ) : null}
             {synonyms.length > 0 ? (
               <div className="mt-3">
                 <p className="text-xs font-semibold text-slate-500">Synonyms:</p>
@@ -223,8 +260,13 @@ export default function VocabularyFlashcard({
               </div>
             ) : null}
             <p className="mt-4 text-sm italic text-slate-600">
-              &ldquo;{word.example_sentence}&rdquo;
+              &ldquo;{word.ielts_example?.trim() || word.example_sentence}&rdquo;
             </p>
+            {word.ielts_example?.trim() ? (
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-[#c9972c]">
+                IELTS-style example
+              </p>
+            ) : null}
             {word.memory_hook ? (
               <p className="mt-4 rounded-lg bg-[#c9972c]/10 px-3 py-2 text-xs text-slate-700">
                 <span className="font-semibold text-[#c9972c]">Memory hook: </span>

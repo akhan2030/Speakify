@@ -13,7 +13,12 @@ import {
   VOCAB_LEVEL_BANKS,
   type VocabularyWord,
 } from "@/lib/vocabulary";
-import type { VocabTopicSummary } from "@/lib/vocabularyTopics";
+import {
+  defaultTopicForTrack,
+  sortTopicsForTrack,
+  type VocabProgramTrack,
+  type VocabTopicSummary,
+} from "@/lib/vocabularyTopics";
 import { GENERAL_VOCAB_THEMES } from "@/lib/ielts-general/grammarTips";
 
 type HomeData = {
@@ -27,13 +32,32 @@ type HomeData = {
 export default function VocabularyPage() {
   const { status } = useSession();
   const router = useRouter();
-  const { isPathway, isIeltsGeneralProgram, base, usesProgramShell } =
+  const { isPathway, isIeltsGeneralProgram, isIeltsProgram, base, usesProgramShell } =
     usePathwayStudentContext();
-  const { cefrLevel, setCefrLevel, ready } = useVocabularyCefr();
+  const { cefrLevel, setCefrLevel, source: cefrSource, ready } = useVocabularyCefr();
   const [data, setData] = useState<HomeData | null>(null);
   const [topics, setTopics] = useState<VocabTopicSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [topicsLoading, setTopicsLoading] = useState(true);
+
+  const programTrack: VocabProgramTrack = isPathway
+    ? "pathway"
+    : isIeltsGeneralProgram
+      ? "ielts_general"
+      : isIeltsProgram
+        ? "ielts_academic"
+        : "default";
+
+  const studyHref = useCallback(
+    (topicKey?: string | null) => {
+      const params = new URLSearchParams();
+      params.set("cefrLevel", cefrLevel);
+      if (topicKey) params.set("topic", topicKey);
+      // Always an absolute path under the program base — never relative to /vocabulary.
+      return `${base}/vocabulary/study?${params.toString()}`;
+    },
+    [base, cefrLevel]
+  );
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -75,14 +99,15 @@ export default function VocabularyPage() {
           `/api/vocabulary/topics?cefrLevel=${encodeURIComponent(cefrLevel)}`
         );
         const json = await res.json();
-        setTopics(json.topics ?? []);
+        const list = (json.topics ?? []) as VocabTopicSummary[];
+        setTopics(sortTopicsForTrack(list, programTrack));
       } catch {
         setTopics([]);
       } finally {
         setTopicsLoading(false);
       }
     })();
-  }, [status, ready, cefrLevel]);
+  }, [status, ready, cefrLevel, programTrack]);
 
   useEffect(() => {
     if (status !== "authenticated" || !ready) return;
@@ -100,6 +125,15 @@ export default function VocabularyPage() {
       learned: 0,
       total: 0,
     };
+  const recommendedTopic = defaultTopicForTrack(programTrack, topics);
+  const cefrSourceLabel =
+    cefrSource === "placement"
+      ? "From your placement result"
+      : cefrSource === "profile"
+        ? "From your student profile"
+        : cefrSource === "manual"
+          ? "Manually selected"
+          : "Default level — take placement to personalize";
 
   return (
     <div className="flex min-h-screen">
@@ -142,6 +176,7 @@ export default function VocabularyPage() {
                   Your CEFR level
                 </p>
                 <p className="mt-1 text-xl font-bold text-[#0d1b35]">{currentLevel}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{cefrSourceLabel}</p>
               </div>
               <label className="text-sm text-slate-600">
                 <span className="mr-2 font-medium">Change level</span>
@@ -201,14 +236,14 @@ export default function VocabularyPage() {
               </p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {GENERAL_VOCAB_THEMES.map((theme) => (
-                  <Link
+                  <a
                     key={theme.key}
-                    href={`${base}/vocabulary/study?topic=${encodeURIComponent(theme.key)}`}
-                    className="flex items-center gap-2 rounded-lg border border-white bg-white px-3 py-2 text-sm font-medium text-[#0d1b35] shadow-sm hover:border-[#0d9488]/40"
+                    href={studyHref(theme.key)}
+                    className="flex items-center gap-2 rounded-lg border border-white bg-white px-3 py-2 text-left text-sm font-medium text-[#0d1b35] shadow-sm hover:border-[#0d9488]/40"
                   >
                     <span>{theme.icon}</span>
                     {theme.label}
-                  </Link>
+                  </a>
                 ))}
               </div>
             </div>
@@ -223,17 +258,17 @@ export default function VocabularyPage() {
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {(data?.todaysWords ?? []).map((w) => (
-                <Link
+                <a
                   key={w.id}
-                  href={`${base}/vocabulary/study`}
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:border-[#c9972c]/50 hover:shadow-md"
+                  href={studyHref(recommendedTopic)}
+                  className="rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-shadow hover:border-[#c9972c]/50 hover:shadow-md"
                 >
                   <p className="text-lg font-bold text-[#0d1b35]">{w.word}</p>
                   {w.pronunciation_ipa ? (
                     <p className="text-xs text-slate-500">{w.pronunciation_ipa}</p>
                   ) : null}
                   <p className="mt-2 line-clamp-2 text-sm text-slate-600">{w.definition}</p>
-                </Link>
+                </a>
               ))}
               {!loading && (data?.todaysWords.length ?? 0) === 0 ? (
                 <p className="col-span-full text-sm text-slate-500">
@@ -248,7 +283,13 @@ export default function VocabularyPage() {
             <p className="mt-1 text-sm text-slate-600">
               {topicsLoading
                 ? "Loading topics…"
-                : `IELTS vocabulary at ${currentLevel} grouped by theme`}
+                : isIeltsGeneralProgram
+                  ? `Everyday & workplace themes first for General Training · ${currentLevel}`
+                  : isPathway
+                    ? `Pathway-relevant themes at ${currentLevel}`
+                    : isIeltsProgram
+                      ? `Academic-register themes first for IELTS Academic · ${currentLevel}`
+                      : `Vocabulary at ${currentLevel} grouped by theme`}
             </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {topics.map((topic) => (
@@ -260,12 +301,17 @@ export default function VocabularyPage() {
                   <p className="mt-1 text-sm text-slate-600">
                     {topic.wordCount} word{topic.wordCount === 1 ? "" : "s"} at {currentLevel}
                   </p>
-                  <Link
-                    href={`${base}/vocabulary/study?topic=${encodeURIComponent(topic.key)}`}
-                    className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-[#0d1b35] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#152a4d]"
+                  {topic.key === recommendedTopic ? (
+                    <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-[#0d9488]">
+                      Recommended for your track
+                    </p>
+                  ) : null}
+                  <a
+                    href={studyHref(topic.key)}
+                    className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-lg bg-[#0d1b35] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#152a4d]"
                   >
                     Study this topic
-                  </Link>
+                  </a>
                 </div>
               ))}
               {!topicsLoading && topics.length === 0 ? (
@@ -277,21 +323,24 @@ export default function VocabularyPage() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <Link
-              href={`${base}/vocabulary/study`}
-              className="flex flex-col rounded-xl bg-[#0d1b35] p-6 text-white shadow-md transition-colors hover:bg-[#152a4d]"
+            <a
+              href={studyHref(recommendedTopic)}
+              className="flex flex-col rounded-xl bg-[#0d1b35] p-6 text-left text-white shadow-md transition-colors hover:bg-[#152a4d]"
             >
               <span className="text-2xl" aria-hidden>
                 📚
               </span>
               <h3 className="mt-3 text-xl font-bold">Study Words</h3>
               <p className="mt-2 flex-1 text-sm text-slate-300">
-                Flashcards with spaced repetition at your level
+                Flashcards with spaced repetition
+                {recommendedTopic
+                  ? ` · starts with ${topics.find((t) => t.key === recommendedTopic)?.label ?? recommendedTopic}`
+                  : " at your level"}
               </p>
               <span className="mt-4 text-sm font-semibold text-[#c9972c]">
                 Start session →
               </span>
-            </Link>
+            </a>
             {!isPathway ? (
             <Link
               href={`${base}/vocabulary/phrases`}
@@ -309,9 +358,9 @@ export default function VocabularyPage() {
               </span>
             </Link>
             ) : (
-            <Link
-              href={`${base}/vocabulary/study`}
-              className="flex flex-col rounded-xl border-2 border-[#0d9488] bg-white p-6 shadow-sm transition-colors hover:bg-[#0d9488]/5"
+            <a
+              href={studyHref(recommendedTopic)}
+              className="flex flex-col rounded-xl border-2 border-[#0d9488] bg-white p-6 text-left shadow-sm transition-colors hover:bg-[#0d9488]/5"
             >
               <span className="text-2xl" aria-hidden>
                 ✍️
@@ -321,9 +370,9 @@ export default function VocabularyPage() {
                 Everyday English phrases for speaking and writing
               </p>
               <span className="mt-4 text-sm font-semibold text-[#0d9488]">
-                Browse phrases →
+                Start session →
               </span>
-            </Link>
+            </a>
             )}
           </div>
 

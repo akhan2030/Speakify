@@ -162,7 +162,8 @@ Each word MUST use this exact JSON shape:
   "cefr_level": "${cefrLevel}",
   "ielts_band_target": "${getBandForLevel(cefrLevel)}",
   "definition": "string",
-  "definition_arabic": "string",
+  "arabic_equivalent": "string (1-3 MSA words, dictionary gloss e.g. مسؤول)",
+  "definition_arabic": "string (short natural MSA definition sentence)",
   "pronunciation_ipa": "string",
   "example_sentence": "string",
   "ielts_example": "string",
@@ -180,7 +181,8 @@ Each word MUST use this exact JSON shape:
 
 Rules:
 - All ${WORDS_PER_LEVEL} headwords must be unique and appropriate for ${cefrLevel} only.
-- definition_arabic is mandatory (Modern Standard Arabic).
+- arabic_equivalent is mandatory: a short direct MSA gloss (1–3 words), not a sentence.
+- definition_arabic is mandatory: a natural short MSA definition sentence (not stiff/legalistic).
 - mini_quiz must have exactly 4 options; correct_index 0-3.
 - Vary correct_index across words (not all 0).
 - Saudi context must feel authentic for Saudi IELTS students.
@@ -246,6 +248,7 @@ function normalizeWordEntry(entry, cefrLevel, topic, slotIndex) {
       entry.ielts_band_target ?? getBandForLevel(cefrLevel)
     ).trim(),
     definition: String(entry.definition ?? "").trim(),
+    arabic_equivalent: String(entry.arabic_equivalent ?? "").trim(),
     definition_arabic: String(
       entry.definition_arabic ?? entry.arabic_translation ?? ""
     ).trim(),
@@ -267,6 +270,7 @@ function validateWordData(row) {
   const required = [
     "word",
     "definition",
+    "arabic_equivalent",
     "definition_arabic",
     "pronunciation_ipa",
     "example_sentence",

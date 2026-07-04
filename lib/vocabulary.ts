@@ -92,7 +92,10 @@ export type VocabularyWord = {
   cefr_level: string;
   part_of_speech: string | null;
   definition: string;
+  /** Full conceptual definition in Modern Standard Arabic. */
   definition_arabic: string;
+  /** Short lexical equivalent (1–3 words), e.g. مسؤول for "responsible". */
+  arabic_equivalent: string;
   pronunciation_ipa: string;
   example_sentence: string;
   ielts_example: string | null;
@@ -128,10 +131,11 @@ export function todayBounds(dateKey = todayDateKey()) {
   };
 }
 
+/** SM-2-lite intervals (days). Again = due today (0). */
 export function ratingToInterval(rating: VocabRating): number {
   switch (rating) {
     case "again":
-      return 1;
+      return 0;
     case "hard":
       return 1;
     case "good":
@@ -172,3 +176,64 @@ export function addDaysToDateKey(dateKey: string, days: number) {
 }
 
 export const VOCAB_STORAGE_KEY = "speakify_vocab_cefr_level";
+/** Set when the student manually overrides CEFR in the vocabulary UI. */
+export const VOCAB_MANUAL_CEFR_KEY = "speakify_vocab_cefr_manual";
+
+/**
+ * Map an IELTS band (e.g. 6.5) to the nearest Speakify sub-level (e.g. B2.1).
+ * Band 6.5 ≈ B2; band 7.0+ moves into C1 territory.
+ */
+export function bandToSpeakifyCefr(band: number): SpeakifyCefrLevel {
+  if (!Number.isFinite(band)) return DEFAULT_CEFR_LEVEL;
+  if (band < 4.0) return "A1.1";
+  if (band < 4.5) return "A1.2";
+  if (band < 5.0) return "A2.1";
+  if (band < 5.5) return "A2.2";
+  if (band < 6.0) return "B1.1";
+  if (band < 6.5) return "B1.2";
+  if (band < 7.0) return "B2.1";
+  if (band < 7.5) return "B2.2";
+  if (band < 8.0) return "C1.1";
+  if (band < 8.5) return "C1.2";
+  if (band < 9.0) return "C2.1";
+  return "C2.2";
+}
+
+/**
+ * Resolve a profile/placement CEFR value (B1, B1+, b1-1, B1.1) to Speakify form.
+ * Prefer placement band when available — coarse labels alone are ambiguous.
+ */
+export function profileCefrToSpeakify(
+  raw: string | null | undefined,
+  band?: number | null
+): SpeakifyCefrLevel {
+  if (band != null && Number.isFinite(Number(band))) {
+    return bandToSpeakifyCefr(Number(band));
+  }
+
+  const cleaned = String(raw || "").trim();
+  if (!cleaned) return DEFAULT_CEFR_LEVEL;
+
+  if (/^[A-Ca-c]\d\.\d$/.test(cleaned)) {
+    return normalizeSpeakifyCefrLevel(cleaned);
+  }
+
+  const slug = cleaned.toLowerCase().replace(/_/g, "-");
+  const slugMatch = slug.match(/^([a-c])(\d)-(\d)$/);
+  if (slugMatch) {
+    return normalizeSpeakifyCefrLevel(
+      `${slugMatch[1].toUpperCase()}${slugMatch[2]}.${slugMatch[3]}`
+    );
+  }
+
+  const coarse = cleaned.toUpperCase().replace(/\+$/, "");
+  const coarseMap: Record<string, SpeakifyCefrLevel> = {
+    A1: "A1.1",
+    A2: "A2.1",
+    B1: "B1.1",
+    B2: "B2.1",
+    C1: "C1.1",
+    C2: "C2.1",
+  };
+  return coarseMap[coarse] ?? DEFAULT_CEFR_LEVEL;
+}

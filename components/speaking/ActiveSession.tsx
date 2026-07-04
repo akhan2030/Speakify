@@ -11,6 +11,10 @@ import {
   isLikelyRealStudentSpeech,
 } from "@/lib/speaking/validateSpeechInput";
 import {
+  isSpeakingTestClosing as isClosingPhrase,
+  shouldAutoArmTurn as canAutoArmTurn,
+} from "@/lib/speaking/sessionMicPolicy";
+import {
   AUDIO_CONSTRAINTS,
   createTurnTakingController,
   getUserMediaWithFallback,
@@ -295,8 +299,11 @@ export default function ActiveSession({
           part2ArmingRef.current = false;
           return;
         }
+        // Part 1 / Part 3 turn-taking: re-arm so the student can answer again.
         if (
           sessionStatus === "active" &&
+          !testEndedRef.current &&
+          sessionTypeRef.current === "practice" &&
           !(currentPartRef.current === 2 && part2PhaseRef.current !== "done")
         ) {
           turnControllerRef.current?.armAfterExaminer();
@@ -311,16 +318,19 @@ export default function ActiveSession({
 
         if (!text) {
           recoverAfterFailure(
-            "Couldn't hear anything. Tap Retry mic and speak your Part 2 answer again."
+            mode === "part2"
+              ? "Couldn't hear anything. Tap Retry mic and speak your Part 2 answer again."
+              : "Couldn't hear anything. Speak clearly into your microphone and try again."
           );
           return;
         }
 
+        // Client-side junk/echo gate — must run on every recording path (VAD + Part 2).
         const authenticity = isLikelyRealStudentSpeech(text);
         if (!authenticity.ok) {
           recoverAfterFailure(
             authenticity.reason ||
-              "That recording was not a valid spoken answer. Tap Retry mic and try Part 2 again."
+              "That recording was not a valid spoken answer. Use headphones and speak your own response."
           );
           return;
         }
@@ -505,6 +515,11 @@ export default function ActiveSession({
     ]
   );
 
+  const sessionTypeRef = useRef(sessionType);
+  useEffect(() => {
+    sessionTypeRef.current = sessionType;
+  }, [sessionType]);
+
   const pendingArmRef = useRef(false);
   const sessionStatusRef = useRef(sessionStatus);
 
@@ -514,12 +529,13 @@ export default function ActiveSession({
 
   // Use refs so opening-greeting closures never see a stale sessionStatus ("idle").
   const shouldAutoArmTurn = useCallback(() => {
-    if (sessionStatusRef.current !== "active") return false;
-    if (processingRef.current || testEndedRef.current) return false;
-    if (currentPartRef.current === 2 && part2PhaseRef.current !== "done") {
-      return false;
-    }
-    return true;
+    return canAutoArmTurn({
+      sessionStatus: sessionStatusRef.current,
+      processing: processingRef.current,
+      testEnded: testEndedRef.current,
+      currentPart: currentPartRef.current,
+      part2Phase: part2PhaseRef.current,
+    });
   }, []);
 
   const markTestEnded = useCallback(() => {
@@ -530,12 +546,15 @@ export default function ActiveSession({
   }, []);
 
   const isSpeakingTestClosing = useCallback((text: string) => {
-    return /that is the end of the speaking test|end of the speaking test|have a (nice|good) day|goodbye/i.test(
-      text
-    );
+    return isClosingPhrase(text);
   }, []);
 
   const requestArmAfterExaminer = useCallback(() => {
+    // Mock exam: manual record/submit only — never auto-arm VAD after Sarah speaks.
+    if (sessionTypeRef.current === "mock") {
+      turnControllerRef.current?.cancelArm();
+      return;
+    }
     if (!shouldAutoArmTurn()) {
       console.info("[turnTaking] skip arm — not eligible");
       turnControllerRef.current?.cancelArm();
@@ -606,7 +625,7 @@ export default function ActiveSession({
   }, [testEnded]);
 
   useEffect(() => {
-    if (!sessionReady) return;
+    if (!sessionReady || sessionType !== "practice") return;
 
     const controller = createTurnTakingController({
       onStateChange: (state) => {
@@ -647,7 +666,7 @@ export default function ActiveSession({
       void turnControllerRef.current?.destroy();
       turnControllerRef.current = null;
     };
-  }, [sessionReady, clearAnswerTimer, setIsListening, shouldAutoArmTurn]);
+  }, [sessionReady, sessionType, clearAnswerTimer, setIsListening, shouldAutoArmTurn]);
   const finishSession = useCallback(async () => {
     if (!sessionId || !studentId || processingRef.current) return;
 
@@ -872,6 +891,21 @@ export default function ActiveSession({
     ) => {
       if (!sessionId || !text.trim() || processingRef.current) return;
 
+      // Defense in depth: never submit junk even if a caller skipped processRecordedAudio.
+      const authenticity = isLikelyRealStudentSpeech(text.trim());
+      if (!authenticity.ok) {
+        setMicError(
+          authenticity.reason ||
+            "That recording was not a valid spoken answer. Use headphones and speak your own response."
+        );
+        setTranscript("");
+        transcriptRef.current = "";
+        if (!testEndedRef.current && sessionTypeRef.current === "practice") {
+          turnControllerRef.current?.armAfterExaminer();
+        }
+        return;
+      }
+
       turnControllerRef.current?.cancelArm();
       setIsProcessing(true);
       setTranscript("");
@@ -914,7 +948,7 @@ export default function ActiveSession({
         if (!res.ok) {
           setSarahThinking(false);
           setMicError(data.error || "Could not send your response. Please try again.");
-          if (!testEndedRef.current) {
+          if (!testEndedRef.current && sessionTypeRef.current === "practice") {
             turnControllerRef.current?.armAfterExaminer();
           }
           return;
@@ -1287,7 +1321,11 @@ export default function ActiveSession({
               <p style={{ fontSize: "12px", color: "#0d9488", margin: "0 0 10px", fontWeight: 600 }}>
                 Daily Practice — tap any part above to drill Part 1, 2, or 3 directly.
               </p>
-            ) : null}
+            ) : (
+              <p style={{ fontSize: "12px", color: "#c9972c", margin: "0 0 10px", fontWeight: 600 }}>
+                Mock exam — record each answer manually. Sarah stays neutral; band score only at the end.
+              </p>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
               <p style={{ fontSize: "14px", fontWeight: 700, color: "#0d1b35", margin: "0 0 6px" }}>
                 {PART_GUIDES[viewPart].title}
@@ -1605,10 +1643,85 @@ export default function ActiveSession({
         </div>
       ) : null}
 
-      {/* Conversational turn-taking (Parts 1 & 3) — hidden during Part 2 and after exam end */}
+      {/* Parts 1 & 3 recording — mock = manual record/submit; practice = VAD turn-taking */}
       {!testEnded &&
         !(currentPart === 2 && (part2Phase === "prep" || part2Phase === "speaking")) && (
         <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+          {sessionType === "mock" ? (
+            <>
+              <div
+                style={{
+                  width: "88px",
+                  height: "88px",
+                  borderRadius: "50%",
+                  background: "#0d1b35",
+                  border: isListening ? "4px solid #c9972c" : "4px solid transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto",
+                  opacity: isExaminerSpeaking || isProcessing ? 0.7 : 1,
+                  animation: isListening ? "pulse 0.8s infinite" : undefined,
+                }}
+              >
+                <span style={{ fontSize: "32px" }}>{isProcessing ? "⏳" : "🎤"}</span>
+              </div>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", marginTop: "12px" }}>
+                {isProcessing
+                  ? "Processing your answer…"
+                  : isExaminerSpeaking
+                    ? "Sarah is speaking — wait for your turn"
+                    : isListening
+                      ? `Recording… ${recordSeconds}s`
+                      : sarahThinking
+                        ? "Sarah is preparing the next question…"
+                        : "Tap Record when you are ready to answer"}
+              </p>
+              {!isExaminerSpeaking && !isProcessing && !sarahThinking && (
+                <div style={{ marginTop: "12px", display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
+                  {!isListening ? (
+                    <button
+                      type="button"
+                      onClick={() => void startRecording("manual")}
+                      style={{
+                        padding: "12px 20px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: "#c9972c",
+                        color: "#0d1b35",
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Record answer
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void stopRecording()}
+                      style={{
+                        padding: "12px 20px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: "#0d1b35",
+                        color: "white",
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Submit answer
+                    </button>
+                  )}
+                </div>
+              )}
+              <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px", maxWidth: "420px", marginLeft: "auto", marginRight: "auto", lineHeight: 1.45 }}>
+                Mock exam mode — no live feedback until you finish all parts. Use headphones.
+              </p>
+            </>
+          ) : (
+            <>
           <div
             style={{
               width: "88px",
@@ -1738,6 +1851,8 @@ export default function ActiveSession({
                   ? "If recording did not start, tap the button above."
                   : "Recording starts automatically after Sarah finishes."}
           </p>
+            </>
+          )}
           {micError && (
             <p
               style={{

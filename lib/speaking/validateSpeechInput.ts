@@ -8,13 +8,18 @@ const PLACEHOLDER_RESPONSES = new Set([
   "i have finished speaking about the topic on the cue card.",
 ]);
 
-/** Background media / YouTube outros often leak into the mic. */
+/**
+ * Background media / YouTube outros often leak into the mic.
+ * Note: "thank you for watching" must allow optional "you" / "so much" —
+ * `thanks?\s+for\s+watching` alone does NOT match "Thank you for watching!".
+ */
 const BACKGROUND_MEDIA_PATTERNS = [
-  /\bthanks?\s+for\s+watching\b/i,
+  /\bthanks?\s+(you\s+)?(so\s+much\s+)?for\s+watching\b/i,
+  /\bthank\s+you\s+(so\s+much\s+)?for\s+watching\b/i,
   /\bplease\s+subscribe\b/i,
   /\blike\s+and\s+subscribe\b/i,
-  /\bsubscribe\s*,?\s*share\b/i,
-  /\bshare\s*,?\s*and\s+like\b/i,
+  /\bsubscribe\s*(and|&|,)?\s*(share|like)\b/i,
+  /\bshare\s*(and|&|,)?\s*(like|subscribe)\b/i,
   /\bdon'?t\s+forget\s+to\s+(like|subscribe|share)\b/i,
   /\bthis\s+video\s+is\s+available\b/i,
   /\bhit\s+the\s+(like|bell|subscribe)\b/i,

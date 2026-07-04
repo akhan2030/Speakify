@@ -9,6 +9,7 @@ import {
 } from "@/lib/vocabulary";
 import { getSupabase, getSupabaseUrl, fetchVocabularyWordsByIds, mapWordRow } from "@/lib/vocabularySupabase";
 import { buildStudyQueue, buildTopicStudyQueue } from "@/lib/vocabularyStudy";
+import { ensureArabicDefinitions } from "@/lib/vocabularyArabic";
 
 export const runtime = "nodejs";
 
@@ -82,7 +83,8 @@ export async function GET(request) {
         .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
         .map(mapWordRow);
 
-      return NextResponse.json({ words: sorted, reviewComplete: false });
+      const withArabic = await ensureArabicDefinitions(supabase, sorted);
+      return NextResponse.json({ words: withArabic, reviewComplete: false });
     }
 
     console.log("[vocabulary/words] study query", {
@@ -115,14 +117,18 @@ export async function GET(request) {
       ? await buildTopicStudyQueue(supabase, studentId, cefrLevel, topic, limit)
       : await buildStudyQueue(supabase, studentId, cefrLevel, limit);
 
+    const withArabic = await ensureArabicDefinitions(supabase, words);
+
     console.log("[vocabulary/words] study response", {
       cefrLevel,
-      wordCount: words.length,
-      sampleWords: words.slice(0, 5).map((w) => w.word),
+      wordCount: withArabic.length,
+      sampleWords: withArabic.slice(0, 5).map((w) => w.word),
+      arabicFilled: withArabic.filter((w) => w.definition_arabic?.trim()).length,
+      equivalentFilled: withArabic.filter((w) => w.arabic_equivalent?.trim()).length,
       meta,
     });
 
-    return NextResponse.json({ words, meta });
+    return NextResponse.json({ words: withArabic, meta });
   } catch (err) {
     console.error("[vocabulary/words]", err);
     return NextResponse.json(
