@@ -163,6 +163,11 @@ export default function ActiveSession({
   const [part3Generating, setPart3Generating] = useState(false);
   const [turnState, setTurnState] = useState<TurnState>("idle");
   const [answerSeconds, setAnswerSeconds] = useState(0);
+  /** Part 2 mic arming status — never prompt "begin speaking" until live. */
+  const [part2MicStatus, setPart2MicStatus] = useState<
+    "idle" | "arming" | "live" | "error"
+  >("idle");
+  const part2ArmingRef = useRef(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const turnControllerRef = useRef<TurnTakingController | null>(null);
@@ -399,17 +404,28 @@ export default function ActiveSession({
   }, [clearRecordTimer, releaseMicStream, processRecordedAudio, setIsListening]);
 
   const startRecording = useCallback(
-    async (mode: "manual" | "part2" = "manual") => {
-      if (isExaminerSpeakingRef.current || processingRef.current || sessionStatus !== "active") {
-        return;
+    async (mode: "manual" | "part2" = "manual"): Promise<boolean> => {
+      // Part 2 arms the mic before Sarah says "begin speaking", so allow recording
+      // while examiner TTS is about to play (do not block on isExaminerSpeaking).
+      if (processingRef.current || sessionStatus !== "active") {
+        return false;
       }
-      if (currentPartRef.current === 2 && part2PhaseRef.current === "prep") return;
-      if (mediaRecorderRef.current?.state === "recording") return;
+      // Block accidental recording only during prep notes — not when intentionally arming Part 2.
+      if (
+        mode !== "part2" &&
+        currentPartRef.current === 2 &&
+        part2PhaseRef.current === "prep"
+      ) {
+        return false;
+      }
+      if (mediaRecorderRef.current?.state === "recording") return true;
 
       setMicError(null);
-      stopBrowserSpeech();
-      isExaminerSpeakingRef.current = false;
-      setIsExaminerSpeaking(false);
+      if (mode !== "part2") {
+        stopBrowserSpeech();
+        isExaminerSpeakingRef.current = false;
+        setIsExaminerSpeaking(false);
+      }
 
       audioChunksRef.current = [];
 
@@ -435,7 +451,7 @@ export default function ActiveSession({
         };
 
         recorder.onerror = () => {
-          setMicError("Recording failed. Tap the mic to try again.");
+          setMicError("Recording failed. Tap Retry mic, then speak.");
           void stopRecording();
         };
 
@@ -451,12 +467,15 @@ export default function ActiveSession({
         recordTimerRef.current = setInterval(() => {
           setRecordSeconds(Math.floor((Date.now() - recordStartRef.current) / 1000));
         }, 500);
+        return true;
       } catch {
         releaseMicStream();
         setMicrophoneGranted(false);
+        setIsListening(false);
         setMicError(
-          "Microphone blocked. Click the lock icon in your browser address bar, allow microphone access, then try again."
+          "Microphone blocked. Click the lock icon in your browser address bar, allow microphone access, then tap Retry mic."
         );
+        return false;
       }
     },
     [
@@ -694,6 +713,8 @@ export default function ActiveSession({
       if (part === 2 && cueCard) {
         setPart2Phase("prep");
         setPart2Timer(60);
+        setPart2MicStatus("idle");
+        part2ArmingRef.current = false;
         setPrepNotes("");
         part2TranscriptRef.current = "";
         const speech = buildPart2PracticeIntro(cueCard);
@@ -750,6 +771,8 @@ export default function ActiveSession({
         setCurrentPart(2);
         setPart2Phase("prep");
         setPart2Timer(60);
+        setPart2MicStatus("idle");
+        part2ArmingRef.current = false;
         speakExaminer(speech);
         return;
       }
@@ -757,6 +780,8 @@ export default function ActiveSession({
         setCurrentPart(3);
         setPart2Phase("done");
         setPart2Timer(null);
+        setPart2MicStatus("idle");
+        part2ArmingRef.current = false;
         speakExaminer(speech);
         return;
       }
@@ -908,6 +933,8 @@ export default function ActiveSession({
     part2PhaseRef.current = "done";
     setPart2Phase("done");
     setPart2Timer(null);
+    setPart2MicStatus("idle");
+    part2ArmingRef.current = false;
     turnControllerRef.current?.cancelArm();
 
     await stopRecording();
@@ -943,27 +970,56 @@ export default function ActiveSession({
     setPart2Timer,
   ]);
 
+  const armPart2Microphone = useCallback(async () => {
+    if (part2ArmingRef.current) return;
+    part2ArmingRef.current = true;
+    turnControllerRef.current?.cancelArm();
+    part2PhaseRef.current = "speaking";
+    setPart2Phase("speaking");
+    setPart2Timer(null);
+    setPart2MicStatus("arming");
+    setMicError(null);
+    part2TranscriptRef.current = "";
+    part2MetaRef.current = {};
+
+    const armed = await startRecording("part2");
+    part2ArmingRef.current = false;
+
+    if (!armed || mediaRecorderRef.current?.state !== "recording") {
+      setPart2MicStatus("error");
+      setMicError(
+        "Microphone is not recording yet. Tap Retry mic and wait for MIC LIVE before you speak."
+      );
+      return;
+    }
+
+    setPart2MicStatus("live");
+    setPart2Timer(120);
+    // Mic is already live — only now tell the student to begin.
+    speakExaminer("Right, please begin speaking now.");
+  }, [startRecording, speakExaminer, setPart2Phase, setPart2Timer]);
+
   // Part 2 prep / speaking countdown
   useEffect(() => {
-    if (currentPart !== 2 || part2Timer == null || part2Phase === "done") return;
+    if (currentPart !== 2 || part2Phase === "done") return;
+
+    // Prep finished → arm mic BEFORE Sarah says "begin speaking".
+    if (part2Phase === "prep" && part2Timer != null && part2Timer <= 0) {
+      void armPart2Microphone();
+      return;
+    }
+
+    if (part2Timer == null) return;
 
     if (part2Timer <= 0) {
-      if (part2Phase === "prep") {
-        const begin =
-          "Right, please begin speaking now.";
-        speakExaminer(begin, () => {
-          turnControllerRef.current?.cancelArm();
-          setPart2Phase("speaking");
-          setPart2Timer(120);
-          part2TranscriptRef.current = "";
-          part2MetaRef.current = {};
-          void startRecording("part2");
-        });
-      } else if (part2Phase === "speaking") {
+      if (part2Phase === "speaking" && part2MicStatus === "live") {
         void finishPart2Speaking();
       }
       return;
     }
+
+    // Only tick the 2-minute clock while mic is confirmed live.
+    if (part2Phase === "speaking" && part2MicStatus !== "live") return;
 
     const id = setTimeout(() => setPart2Timer(part2Timer - 1), 1000);
     return () => clearTimeout(id);
@@ -971,10 +1027,8 @@ export default function ActiveSession({
     currentPart,
     part2Timer,
     part2Phase,
-    speakExaminer,
-    setPart2Phase,
-    setPart2Timer,
-    startRecording,
+    part2MicStatus,
+    armPart2Microphone,
     finishPart2Speaking,
   ]);
 
@@ -1266,53 +1320,128 @@ export default function ActiveSession({
 
           {part2Phase === "speaking" && (
             <>
-              <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", margin: "0 0 8px" }}>
-                Speaking… {part2Timer != null && `(${part2Timer}s remaining)`}
-              </p>
               <div
                 style={{
-                  height: "8px",
-                  background: "#f1f5f9",
-                  borderRadius: "4px",
-                  overflow: "hidden",
-                  marginBottom: "8px",
-                  animation: part2Pulse ? "pulse 1.5s infinite" : undefined,
+                  marginBottom: "12px",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  background:
+                    part2MicStatus === "live"
+                      ? "#ecfdf5"
+                      : part2MicStatus === "error"
+                        ? "#fef2f2"
+                        : "#fff7ed",
+                  border: `2px solid ${
+                    part2MicStatus === "live"
+                      ? "#10b981"
+                      : part2MicStatus === "error"
+                        ? "#ef4444"
+                        : "#f59e0b"
+                  }`,
                 }}
               >
-                <div
+                <p
                   style={{
-                    height: "100%",
-                    width: `${part2Progress}%`,
-                    background: "#c9972c",
-                    borderRadius: "4px",
-                    transition: "width 1s linear",
+                    fontSize: "15px",
+                    fontWeight: 800,
+                    margin: 0,
+                    color:
+                      part2MicStatus === "live"
+                        ? "#047857"
+                        : part2MicStatus === "error"
+                          ? "#b91c1c"
+                          : "#b45309",
                   }}
-                />
+                >
+                  {part2MicStatus === "live"
+                    ? "● MIC LIVE — Recording now. Start speaking."
+                    : part2MicStatus === "error"
+                      ? "● MIC NOT READY — Do not speak yet."
+                      : "● Arming microphone… Please wait."}
+                </p>
+                <p style={{ fontSize: "12px", color: "#64748b", margin: "6px 0 0" }}>
+                  {part2MicStatus === "live"
+                    ? "Your answer is being captured. Speak for up to 2 minutes."
+                    : "Sarah will say “begin speaking” only after the mic is live."}
+                </p>
               </div>
+
+              {part2MicStatus === "live" ? (
+                <>
+                  <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", margin: "0 0 8px" }}>
+                    Speaking… {part2Timer != null && `(${part2Timer}s remaining)`}
+                  </p>
+                  <div
+                    style={{
+                      height: "8px",
+                      background: "#f1f5f9",
+                      borderRadius: "4px",
+                      overflow: "hidden",
+                      marginBottom: "8px",
+                      animation: part2Pulse ? "pulse 1.5s infinite" : undefined,
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${part2Progress}%`,
+                        background: "#c9972c",
+                        borderRadius: "4px",
+                        transition: "width 1s linear",
+                      }}
+                    />
+                  </div>
+                </>
+              ) : null}
+
               {transcript && (
                 <p style={{ fontSize: "13px", color: "#64748b", fontStyle: "italic", margin: 0 }}>
                   {transcript}
                 </p>
               )}
-              <button
-                type="button"
-                onClick={() => void finishPart2Speaking()}
-                disabled={isProcessing}
-                style={{
-                  marginTop: "12px",
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: "10px",
-                  border: "none",
-                  background: "#0d1b35",
-                  color: "white",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  cursor: isProcessing ? "wait" : "pointer",
-                }}
-              >
-                I&apos;m finished speaking
-              </button>
+
+              {part2MicStatus === "error" || part2MicStatus === "arming" ? (
+                <button
+                  type="button"
+                  onClick={() => void armPart2Microphone()}
+                  disabled={part2MicStatus === "arming" || isProcessing}
+                  style={{
+                    marginTop: "12px",
+                    width: "100%",
+                    padding: "12px 16px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: "#0d9488",
+                    color: "white",
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    cursor: part2MicStatus === "arming" ? "wait" : "pointer",
+                  }}
+                >
+                  {part2MicStatus === "arming" ? "Arming mic…" : "Retry mic"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void finishPart2Speaking()}
+                  disabled={isProcessing || part2MicStatus !== "live"}
+                  style={{
+                    marginTop: "12px",
+                    width: "100%",
+                    padding: "12px 16px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: part2MicStatus === "live" ? "#0d1b35" : "#94a3b8",
+                    color: "white",
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    cursor:
+                      isProcessing || part2MicStatus !== "live" ? "not-allowed" : "pointer",
+                  }}
+                >
+                  I&apos;m finished speaking
+                </button>
+              )}
               <p style={{ fontSize: "11px", color: "#94a3b8", margin: "8px 0 0", textAlign: "center" }}>
                 Use headphones and mute other media so only your voice is recorded.
               </p>
