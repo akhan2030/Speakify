@@ -217,6 +217,22 @@ export async function generatePart3Questions(
   return fallbackPart3Questions(cueCard, staticFallback);
 }
 
-export function buildPart3TransitionSpeech(cueCard: Part2CueCardInput, firstQuestion: string) {
-  return `We've been talking about ${cueCard.title}, and I'd like to discuss some related questions with you. ${firstQuestion}`;
+/** Mid-sentence topic phrase, e.g. "A piece of technology you use" → "a piece of technology you use". */
+function naturalTopicPhrase(title: string) {
+  const t = String(title || "").trim();
+  if (!t) return "that topic";
+  return t.charAt(0).toLowerCase() + t.slice(1);
+}
+
+/**
+ * Real IELTS examiners explicitly close Part 2, then open Part 3 as a broader discussion
+ * linked to the cue card — they do not jump straight into the first abstract question.
+ */
+export function buildPart3TransitionSpeech(
+  cueCard: Part2CueCardInput,
+  firstQuestion: string
+) {
+  const topic = naturalTopicPhrase(cueCard.title);
+  const question = String(firstQuestion || "").trim();
+  return `Thank you. That is the end of Part 2. We've been talking about ${topic}, and I'd now like to ask you some more general questions related to this. Let's begin Part 3. ${question}`;
 }

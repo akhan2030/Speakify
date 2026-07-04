@@ -758,7 +758,7 @@ export default function ActiveSession({
         const speech =
           questions[0] != null
             ? buildPart3TransitionSpeech(card, questions[0])
-            : `Let's practice Part 3. We've been talking about ${cueCard.topic}.`;
+            : `Thank you. That is the end of Part 2. We've been talking about ${String(cueCard.topic).charAt(0).toLowerCase()}${String(cueCard.topic).slice(1)}, and I'd now like to ask you some more general questions related to this. Let's begin Part 3.`;
         setExaminerSpeech(speech);
         setConversationHistory((history) => [
           ...history,
