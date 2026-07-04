@@ -163,9 +163,14 @@ export default function ActiveSession({
   const [part3Generating, setPart3Generating] = useState(false);
   const [turnState, setTurnState] = useState<TurnState>("idle");
   const [answerSeconds, setAnswerSeconds] = useState(0);
-  /** Part 2 mic arming status — never prompt "begin speaking" until live. */
+  /**
+   * Part 2 mic status:
+   * arming = requesting permission
+   * ready = stream open, waiting for Sarah (do not speak yet)
+   * live = MediaRecorder actively capturing
+   */
   const [part2MicStatus, setPart2MicStatus] = useState<
-    "idle" | "arming" | "live" | "error"
+    "idle" | "arming" | "ready" | "live" | "error"
   >("idle");
   const part2ArmingRef = useRef(false);
 
@@ -274,8 +279,21 @@ export default function ActiveSession({
       setIsProcessing(true);
       setTranscript("Transcribing your answer…");
 
-      const rearmIfNeeded = () => {
-        if (mode === "part2") return;
+      const recoverAfterFailure = (message: string) => {
+        setMicError(message);
+        setTranscript("");
+        transcriptRef.current = "";
+        if (mode === "part2") {
+          // Keep student on Part 2 with retry — do not silently advance to Part 3.
+          part2TranscriptRef.current = "";
+          part2MetaRef.current = {};
+          part2PhaseRef.current = "speaking";
+          setPart2Phase("speaking");
+          setPart2Timer(null);
+          setPart2MicStatus("error");
+          part2ArmingRef.current = false;
+          return;
+        }
         if (
           sessionStatus === "active" &&
           !(currentPartRef.current === 2 && part2PhaseRef.current !== "done")
@@ -291,26 +309,18 @@ export default function ActiveSession({
         setTranscript(text);
 
         if (!text) {
-          setMicError("Couldn't hear anything. Speak clearly into your microphone and try again.");
-          setTranscript("");
-          transcriptRef.current = "";
-          rearmIfNeeded();
+          recoverAfterFailure(
+            "Couldn't hear anything. Tap Retry mic and speak your Part 2 answer again."
+          );
           return;
         }
 
         const authenticity = isLikelyRealStudentSpeech(text);
         if (!authenticity.ok) {
-          setMicError(
+          recoverAfterFailure(
             authenticity.reason ||
-              "That recording was not a valid spoken answer. Use headphones and speak your own response."
+              "That recording was not a valid spoken answer. Tap Retry mic and try Part 2 again."
           );
-          setTranscript("");
-          transcriptRef.current = "";
-          if (mode === "part2") {
-            part2TranscriptRef.current = "";
-          } else {
-            rearmIfNeeded();
-          }
           return;
         }
 
@@ -337,19 +347,16 @@ export default function ActiveSession({
         await sendStudentMessageRef.current(text, meta);
       } catch (err) {
         console.error("[speaking] processRecordedAudio", err);
-        setTranscript("");
-        transcriptRef.current = "";
-        setMicError(
+        recoverAfterFailure(
           err instanceof Error
             ? err.message
-            : "Could not transcribe your answer. Tap Start listening now and try again."
+            : "Could not transcribe your answer. Tap Retry mic and try again."
         );
-        rearmIfNeeded();
       } finally {
         setIsProcessing(false);
       }
     },
-    [transcribeBlob, setTranscript, sessionStatus]
+    [transcribeBlob, setTranscript, sessionStatus, setPart2Phase, setPart2Timer]
   );
 
   processRecordedAudioRef.current = processRecordedAudio;
@@ -403,39 +410,14 @@ export default function ActiveSession({
     });
   }, [clearRecordTimer, releaseMicStream, processRecordedAudio, setIsListening]);
 
-  const startRecording = useCallback(
-    async (mode: "manual" | "part2" = "manual"): Promise<boolean> => {
-      // Part 2 arms the mic before Sarah says "begin speaking", so allow recording
-      // while examiner TTS is about to play (do not block on isExaminerSpeaking).
-      if (processingRef.current || sessionStatus !== "active") {
-        return false;
-      }
-      // Block accidental recording only during prep notes — not when intentionally arming Part 2.
-      if (
-        mode !== "part2" &&
-        currentPartRef.current === 2 &&
-        part2PhaseRef.current === "prep"
-      ) {
-        return false;
-      }
+  /** Start MediaRecorder on an already-open stream (sync — no getUserMedia delay). */
+  const startRecordingFromStream = useCallback(
+    (stream: MediaStream, mode: "manual" | "part2"): boolean => {
+      if (processingRef.current || sessionStatus !== "active") return false;
       if (mediaRecorderRef.current?.state === "recording") return true;
 
-      setMicError(null);
-      if (mode !== "part2") {
-        stopBrowserSpeech();
-        isExaminerSpeakingRef.current = false;
-        setIsExaminerSpeaking(false);
-      }
-
       audioChunksRef.current = [];
-
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: AUDIO_CONSTRAINTS,
-        });
-        micStreamRef.current = stream;
-        setMicrophoneGranted(true);
-
         const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus"
           : MediaRecorder.isTypeSupported("audio/webm")
@@ -452,6 +434,7 @@ export default function ActiveSession({
 
         recorder.onerror = () => {
           setMicError("Recording failed. Tap Retry mic, then speak.");
+          setPart2MicStatus((s) => (s === "live" ? "error" : s));
           void stopRecording();
         };
 
@@ -469,6 +452,42 @@ export default function ActiveSession({
         }, 500);
         return true;
       } catch {
+        setMicError("Recording failed. Tap Retry mic, then speak.");
+        return false;
+      }
+    },
+    [sessionStatus, stopRecording, setIsListening, setTranscript]
+  );
+
+  const startRecording = useCallback(
+    async (mode: "manual" | "part2" = "manual"): Promise<boolean> => {
+      if (processingRef.current || sessionStatus !== "active") {
+        return false;
+      }
+      if (
+        mode !== "part2" &&
+        currentPartRef.current === 2 &&
+        part2PhaseRef.current === "prep"
+      ) {
+        return false;
+      }
+      if (mediaRecorderRef.current?.state === "recording") return true;
+
+      setMicError(null);
+      if (mode !== "part2") {
+        stopBrowserSpeech();
+        isExaminerSpeakingRef.current = false;
+        setIsExaminerSpeaking(false);
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: AUDIO_CONSTRAINTS,
+        });
+        micStreamRef.current = stream;
+        setMicrophoneGranted(true);
+        return startRecordingFromStream(stream, mode);
+      } catch {
         releaseMicStream();
         setMicrophoneGranted(false);
         setIsListening(false);
@@ -483,8 +502,7 @@ export default function ActiveSession({
       releaseMicStream,
       setIsListening,
       setIsExaminerSpeaking,
-      setTranscript,
-      stopRecording,
+      startRecordingFromStream,
     ]
   );
 
@@ -930,12 +948,17 @@ export default function ActiveSession({
 
   const finishPart2Speaking = useCallback(async () => {
     if (part2PhaseRef.current !== "speaking") return;
-    part2PhaseRef.current = "done";
-    setPart2Phase("done");
-    setPart2Timer(null);
-    setPart2MicStatus("idle");
+    if (mediaRecorderRef.current?.state !== "recording" && !part2TranscriptRef.current) {
+      setPart2MicStatus("error");
+      setMicError(
+        "Microphone was not recording. Tap Retry mic and wait for MIC LIVE before you speak."
+      );
+      return;
+    }
+
     part2ArmingRef.current = false;
     turnControllerRef.current?.cancelArm();
+    setPart2Timer(null);
 
     await stopRecording();
 
@@ -943,6 +966,9 @@ export default function ActiveSession({
     const authenticity = part2Text ? isLikelyRealStudentSpeech(part2Text) : { ok: false };
 
     if (part2Text && authenticity.ok) {
+      part2PhaseRef.current = "done";
+      setPart2Phase("done");
+      setPart2MicStatus("idle");
       const thankYou = "Thank you.";
       const part2Meta = part2MetaRef.current;
       speakExaminer(thankYou, () => {
@@ -954,13 +980,17 @@ export default function ActiveSession({
       return;
     }
 
+    // Stay on Part 2 — do not advance to Part 3 with an empty/invalid answer.
+    part2PhaseRef.current = "speaking";
+    setPart2Phase("speaking");
+    setPart2MicStatus("error");
+    part2TranscriptRef.current = "";
+    part2MetaRef.current = {};
     setMicError(
       authenticity && "reason" in authenticity && authenticity.reason
         ? authenticity.reason
-        : "No clear Part 2 answer was heard. Use headphones, mute other media, and try Part 2 again."
+        : "No clear Part 2 answer was heard. Tap Retry mic and speak again — do not continue until you see MIC LIVE."
     );
-    part2TranscriptRef.current = "";
-    await ensurePart3Questions("");
   }, [
     stopRecording,
     speakExaminer,
@@ -982,22 +1012,49 @@ export default function ActiveSession({
     part2TranscriptRef.current = "";
     part2MetaRef.current = {};
 
-    const armed = await startRecording("part2");
-    part2ArmingRef.current = false;
+    // Pre-warm getUserMedia only — do not start MediaRecorder yet (avoids capturing Sarah's TTS).
+    try {
+      if (mediaRecorderRef.current?.state === "recording") {
+        await stopRecording();
+      }
+      releaseMicStream();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: AUDIO_CONSTRAINTS,
+      });
+      micStreamRef.current = stream;
+      setMicrophoneGranted(true);
+      setPart2MicStatus("ready");
+      part2ArmingRef.current = false;
 
-    if (!armed || mediaRecorderRef.current?.state !== "recording") {
+      // Stream is ready. Start MediaRecorder the instant Sarah finishes (no getUserMedia delay).
+      speakExaminer("Right, please begin speaking now.", () => {
+        const started = startRecordingFromStream(stream, "part2");
+        if (!started || mediaRecorderRef.current?.state !== "recording") {
+          setPart2MicStatus("error");
+          setMicError(
+            "Microphone is not recording yet. Tap Retry mic and wait for MIC LIVE before you speak."
+          );
+          return;
+        }
+        setPart2MicStatus("live");
+        setPart2Timer(120);
+      });
+    } catch {
+      part2ArmingRef.current = false;
       setPart2MicStatus("error");
+      setMicrophoneGranted(false);
       setMicError(
-        "Microphone is not recording yet. Tap Retry mic and wait for MIC LIVE before you speak."
+        "Microphone blocked. Allow mic access, tap Retry mic, and wait for MIC LIVE before speaking."
       );
-      return;
     }
-
-    setPart2MicStatus("live");
-    setPart2Timer(120);
-    // Mic is already live — only now tell the student to begin.
-    speakExaminer("Right, please begin speaking now.");
-  }, [startRecording, speakExaminer, setPart2Phase, setPart2Timer]);
+  }, [
+    speakExaminer,
+    startRecordingFromStream,
+    stopRecording,
+    releaseMicStream,
+    setPart2Phase,
+    setPart2Timer,
+  ]);
 
   // Part 2 prep / speaking countdown
   useEffect(() => {
@@ -1338,6 +1395,10 @@ export default function ActiveSession({
                         ? "#ef4444"
                         : "#f59e0b"
                   }`,
+                  animation:
+                    part2MicStatus === "live" || part2MicStatus === "ready"
+                      ? "pulse 1.2s infinite"
+                      : undefined,
                 }}
               >
                 <p
@@ -1355,14 +1416,18 @@ export default function ActiveSession({
                 >
                   {part2MicStatus === "live"
                     ? "● MIC LIVE — Recording now. Start speaking."
-                    : part2MicStatus === "error"
-                      ? "● MIC NOT READY — Do not speak yet."
-                      : "● Arming microphone… Please wait."}
+                    : part2MicStatus === "ready"
+                      ? "● MIC READY — Wait for Sarah, then speak."
+                      : part2MicStatus === "error"
+                        ? "● MIC NOT READY — Do not speak yet."
+                        : "● Arming microphone… Please wait."}
                 </p>
                 <p style={{ fontSize: "12px", color: "#64748b", margin: "6px 0 0" }}>
                   {part2MicStatus === "live"
                     ? "Your answer is being captured. Speak for up to 2 minutes."
-                    : "Sarah will say “begin speaking” only after the mic is live."}
+                    : part2MicStatus === "ready"
+                      ? "Do not start your answer until this banner turns green (MIC LIVE)."
+                      : "Sarah will only prompt you after the microphone is ready."}
                 </p>
               </div>
 
@@ -1420,6 +1485,18 @@ export default function ActiveSession({
                 >
                   {part2MicStatus === "arming" ? "Arming mic…" : "Retry mic"}
                 </button>
+              ) : part2MicStatus === "ready" ? (
+                <p
+                  style={{
+                    marginTop: "12px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#b45309",
+                    textAlign: "center",
+                  }}
+                >
+                  Wait for Sarah to finish — recording starts automatically.
+                </p>
               ) : (
                 <button
                   type="button"
