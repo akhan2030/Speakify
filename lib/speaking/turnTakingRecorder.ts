@@ -22,14 +22,28 @@ export const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   autoGainControl: true,
 };
 
+/** Prefer enhanced constraints; fall back to plain audio if the device rejects them. */
+export async function getUserMediaWithFallback(): Promise<MediaStream> {
+  try {
+    return await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
+  } catch (enhancedError) {
+    console.warn(
+      "[turnTaking] enhanced audio constraints failed, falling back to { audio: true }",
+      enhancedError
+    );
+    return navigator.mediaDevices.getUserMedia({ audio: true });
+  }
+}
+
 export function thinkingPauseMs() {
-  return 4000 + Math.floor(Math.random() * 2000);
+  // Short pause so auto-arm feels natural but stays reliable.
+  return 1200 + Math.floor(Math.random() * 800); // 1.2–2.0s
 }
 
 export const SILENCE_AUTO_STOP_MS = 2800;
 export const POST_TTS_MUTE_MS = 300;
 /** If still thinking after this, force mic arm or surface an error. */
-export const THINKING_WATCHDOG_MS = 8000;
+export const THINKING_WATCHDOG_MS = 4000;
 
 const VAD_ASSET_BASE =
   "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/";
@@ -316,9 +330,7 @@ export function createTurnTakingController(
     lastLoudAt = 0;
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: AUDIO_CONSTRAINTS,
-      });
+      stream = await getUserMediaWithFallback();
 
       if (generation !== armGeneration || destroyed) {
         releaseStream();

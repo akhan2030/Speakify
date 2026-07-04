@@ -13,6 +13,7 @@ import {
 import {
   AUDIO_CONSTRAINTS,
   createTurnTakingController,
+  getUserMediaWithFallback,
   type TurnState,
   type TurnTakingController,
 } from "@/lib/speaking/turnTakingRecorder";
@@ -481,9 +482,7 @@ export default function ActiveSession({
       }
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: AUDIO_CONSTRAINTS,
-        });
+        const stream = await getUserMediaWithFallback();
         micStreamRef.current = stream;
         setMicrophoneGranted(true);
         return startRecordingFromStream(stream, mode);
@@ -507,15 +506,21 @@ export default function ActiveSession({
   );
 
   const pendingArmRef = useRef(false);
+  const sessionStatusRef = useRef(sessionStatus);
 
+  useEffect(() => {
+    sessionStatusRef.current = sessionStatus;
+  }, [sessionStatus]);
+
+  // Use refs so opening-greeting closures never see a stale sessionStatus ("idle").
   const shouldAutoArmTurn = useCallback(() => {
-    if (sessionStatus !== "active") return false;
+    if (sessionStatusRef.current !== "active") return false;
     if (processingRef.current || testEndedRef.current) return false;
     if (currentPartRef.current === 2 && part2PhaseRef.current !== "done") {
       return false;
     }
     return true;
-  }, [sessionStatus]);
+  }, []);
 
   const markTestEnded = useCallback(() => {
     testEndedRef.current = true;
@@ -970,6 +975,8 @@ export default function ActiveSession({
       setMicrophoneGranted(true);
       setSessionReady(true);
       setSessionStatus("active");
+      // Sync ref immediately — speakExaminer closures must not see stale "idle".
+      sessionStatusRef.current = "active";
 
       const opening =
         "Good morning. My name is Sarah, and I'll be conducting your IELTS Speaking test today. First, could you tell me your full name please?";
@@ -1069,9 +1076,7 @@ export default function ActiveSession({
         await stopRecording();
       }
       releaseMicStream();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: AUDIO_CONSTRAINTS,
-      });
+      const stream = await getUserMediaWithFallback();
       micStreamRef.current = stream;
       setMicrophoneGranted(true);
       setPart2MicStatus("ready");
@@ -1654,13 +1659,13 @@ export default function ActiveSession({
               : isExaminerSpeaking
                 ? "Sarah is speaking…"
                 : turnState === "thinking"
-                  ? "Get ready — your mic arms in a few seconds…"
+                  ? "Get ready — recording starts in a moment…"
                   : turnState === "listening"
-                    ? "Listening — start speaking when ready"
+                    ? "Your turn — start speaking when ready"
                     : turnState === "speaking"
-                      ? `Speaking… ${answerSeconds}s`
+                      ? `Recording… ${answerSeconds}s`
                       : micError
-                        ? "Mic not ready — see the message below"
+                        ? "Recording not started — see below"
                         : "Waiting for your turn…"}
           </p>
 
@@ -1706,7 +1711,7 @@ export default function ActiveSession({
                   cursor: "pointer",
                 }}
               >
-                {turnState === "thinking" ? "Skip wait — start listening" : "Start listening now"}
+                {turnState === "thinking" ? "I'm ready — start recording" : "Tap to speak now"}
               </button>
             )}
 
@@ -1726,10 +1731,12 @@ export default function ActiveSession({
           )}
           <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px", maxWidth: "420px", marginLeft: "auto", marginRight: "auto", lineHeight: 1.45 }}>
             {isExaminerSpeaking
-              ? "Wait for Sarah to finish — the mic arms automatically"
+              ? "Wait for Sarah to finish — recording starts automatically"
               : turnState === "listening" || turnState === "speaking"
                 ? "Speak naturally. Tap I'm done, or pause ~3 seconds to send automatically. Use headphones."
-                : "Natural conversation mode — no need to tap the mic to start"}
+                : turnState === "idle" || turnState === "thinking"
+                  ? "If recording did not start, tap the button above."
+                  : "Recording starts automatically after Sarah finishes."}
           </p>
           {micError && (
             <p
