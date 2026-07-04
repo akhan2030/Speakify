@@ -517,9 +517,23 @@ export default function ActiveSession({
     return true;
   }, [sessionStatus]);
 
+  const markTestEnded = useCallback(() => {
+    testEndedRef.current = true;
+    setTestEnded(true);
+    pendingArmRef.current = false;
+    turnControllerRef.current?.cancelArm();
+  }, []);
+
+  const isSpeakingTestClosing = useCallback((text: string) => {
+    return /that is the end of the speaking test|end of the speaking test|have a (nice|good) day|goodbye/i.test(
+      text
+    );
+  }, []);
+
   const requestArmAfterExaminer = useCallback(() => {
     if (!shouldAutoArmTurn()) {
       console.info("[turnTaking] skip arm — not eligible");
+      turnControllerRef.current?.cancelArm();
       return;
     }
     const controller = turnControllerRef.current;
@@ -541,6 +555,11 @@ export default function ActiveSession({
       setMicError(null);
       setDisplayedSpeech("");
       setExaminerSpeech(text);
+
+      if (isSpeakingTestClosing(text)) {
+        markTestEnded();
+      }
+
       console.time("[speaking] TTS call");
 
       void speakSarahExaminer(text, {
@@ -557,12 +576,24 @@ export default function ActiveSession({
           isExaminerSpeakingRef.current = false;
           console.timeEnd("[speaking] TTS call");
           onEnd?.();
-          // Arm AFTER cancelArm from this speak cycle — fresh timer for this turn.
+          // Never re-arm after the exam has closed.
+          if (testEndedRef.current || isSpeakingTestClosing(text)) {
+            markTestEnded();
+            turnControllerRef.current?.cancelArm();
+            return;
+          }
           requestArmAfterExaminer();
         },
       });
     },
-    [setExaminerSpeech, setIsExaminerSpeaking, requestArmAfterExaminer, clearAnswerTimer]
+    [
+      setExaminerSpeech,
+      setIsExaminerSpeaking,
+      requestArmAfterExaminer,
+      clearAnswerTimer,
+      isSpeakingTestClosing,
+      markTestEnded,
+    ]
   );
 
   useEffect(() => {
@@ -658,11 +689,14 @@ export default function ActiveSession({
       onComplete(data);
     } catch (err) {
       console.error(err);
-      setMicError(
-        err instanceof Error
-          ? err.message
-          : "Could not generate feedback. Please try again."
-      );
+      const raw = err instanceof Error ? err.message : "";
+      // Never surface raw ReferenceErrors / stack-like messages to students.
+      const clean =
+        !raw ||
+        /is not defined|cannot read|undefined|null|stack|at\s+\w+/i.test(raw)
+          ? "Could not generate your report. Please try Get My Band Score again."
+          : raw;
+      setMicError(clean);
       setSessionStatus("active");
       processingRef.current = false;
     }
@@ -803,15 +837,24 @@ export default function ActiveSession({
         speakExaminer(speech);
         return;
       }
-      if (action === "end_test") {
+      if (action === "end_test" || isSpeakingTestClosing(speech)) {
+        markTestEnded();
         speakExaminer(speech, () => {
-          setTestEnded(true);
+          markTestEnded();
+          turnControllerRef.current?.cancelArm();
         });
         return;
       }
       speakExaminer(speech);
     },
-    [speakExaminer, setCurrentPart, setPart2Phase, setPart2Timer]
+    [
+      speakExaminer,
+      setCurrentPart,
+      setPart2Phase,
+      setPart2Timer,
+      markTestEnded,
+      isSpeakingTestClosing,
+    ]
   );
 
   const sendStudentMessage = useCallback(
@@ -866,7 +909,9 @@ export default function ActiveSession({
         if (!res.ok) {
           setSarahThinking(false);
           setMicError(data.error || "Could not send your response. Please try again.");
-          turnControllerRef.current?.armAfterExaminer();
+          if (!testEndedRef.current) {
+            turnControllerRef.current?.armAfterExaminer();
+          }
           return;
         }
 
@@ -874,10 +919,14 @@ export default function ActiveSession({
           setPart3Questions(data.part3Questions);
         }
 
-        const examinerEntry: HistoryEntry = { role: "examiner", text: data.speech ?? "" };
+        const examinerSpeechText = data.speech ?? "";
+        const examinerEntry: HistoryEntry = { role: "examiner", text: examinerSpeechText };
         setConversationHistory([...historyForApi, examinerEntry]);
         setSarahThinking(false);
-        handleExaminerAction(data.action ?? "follow_up", data.speech ?? "");
+        if (data.action === "end_test" || isSpeakingTestClosing(examinerSpeechText)) {
+          markTestEnded();
+        }
+        handleExaminerAction(data.action ?? "follow_up", examinerSpeechText);
       } catch (err) {
         setSarahThinking(false);
         console.error(err);
@@ -895,6 +944,8 @@ export default function ActiveSession({
       setConversationHistory,
       setTranscript,
       handleExaminerAction,
+      isSpeakingTestClosing,
+      markTestEnded,
     ]
   );
 
@@ -1527,8 +1578,31 @@ export default function ActiveSession({
         </div>
       )}
 
-      {/* Conversational turn-taking (Parts 1 & 3) — hidden during Part 2 prep/speaking */}
-      {!(currentPart === 2 && (part2Phase === "prep" || part2Phase === "speaking")) && (
+      {/* Session complete — mic fully disarmed */}
+      {testEnded && sessionStatus !== "scoring" ? (
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "1.5rem",
+            background: "#ecfdf5",
+            border: "2px solid #10b981",
+            borderRadius: "16px",
+            padding: "1.5rem",
+          }}
+        >
+          <p style={{ fontSize: "18px", fontWeight: 800, color: "#047857", margin: "0 0 8px" }}>
+            Session complete
+          </p>
+          <p style={{ fontSize: "14px", color: "#065f46", margin: "0 0 12px", lineHeight: 1.5 }}>
+            The speaking test has ended. Your microphone is off. Tap below to get your band score
+            report.
+          </p>
+        </div>
+      ) : null}
+
+      {/* Conversational turn-taking (Parts 1 & 3) — hidden during Part 2 and after exam end */}
+      {!testEnded &&
+        !(currentPart === 2 && (part2Phase === "prep" || part2Phase === "speaking")) && (
         <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
           <div
             style={{
@@ -1711,12 +1785,29 @@ export default function ActiveSession({
           }}
         >
           {canSubmit
-            ? "Get My Band Score →"
+            ? testEnded
+              ? "Get My Band Score →"
+              : "Get My Band Score →"
             : testEnded
-              ? "Complete speaking to get your score"
+              ? "Session ended — not enough valid speech for a score"
               : `Record at least ${MIN_SPEAKING_SECONDS}s of your own speech to unlock scoring`}
         </button>
-        {!canSubmit ? (
+        {micError && testEnded ? (
+          <p
+            style={{
+              fontSize: "12px",
+              color: "#b91c1c",
+              marginTop: "10px",
+              maxWidth: "420px",
+              marginLeft: "auto",
+              marginRight: "auto",
+              lineHeight: 1.45,
+            }}
+          >
+            {micError}
+          </p>
+        ) : null}
+        {!canSubmit && !testEnded ? (
           <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px", maxWidth: "420px", marginLeft: "auto", marginRight: "auto", lineHeight: 1.45 }}>
             {speechValidation.reason ||
               `Valid speaking time: ${totalSpeakingSeconds}s / ${MIN_SPEAKING_SECONDS}s minimum. Background audio and examiner echo do not count.`}

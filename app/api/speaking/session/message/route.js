@@ -275,6 +275,21 @@ export async function POST(req) {
       }
     }
 
+    // Normalize closing lines so the client always receives end_test.
+    const speechText = String(examinerResponse.speech || "");
+    if (
+      examinerResponse.action === "end_test" ||
+      /that is the end of the speaking test|end of the speaking test|have a (nice|good) day|goodbye/i.test(
+        speechText
+      )
+    ) {
+      examinerResponse.action = "end_test";
+      if (!/end of the speaking test/i.test(speechText)) {
+        examinerResponse.speech =
+          "Thank you. That is the end of the Speaking test. Have a good day. Goodbye.";
+      }
+    }
+
     const studentWords = Array.isArray(words)
       ? words
           .map((w) => ({

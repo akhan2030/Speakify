@@ -60,17 +60,24 @@ function buildCriterionFeedback(feedback, studentTranscript) {
   const criteria = feedback.criteria || {};
   const existing = feedback.criterionFeedback || {};
 
-  const item = (key, band, fallbackNote) => ({
-    band: numberOrNull(existing[key]?.band) ?? numberOrNull(band) ?? 0,
-    note: String(existing[key]?.note || fallbackNote),
-    evidence: pickEvidence(existing[key]?.evidence, studentTranscript),
-    ...(existing[key]?.flaggedWords
-      ? { flaggedWords: existing[key].flaggedWords }
-      : {}),
-    ...(existing[key]?.exampleError
-      ? { exampleError: existing[key].exampleError }
-      : {}),
-  });
+  const item = (key, band, fallbackNoteFor) => {
+    const evidenceQuote = pickEvidence(existing[key]?.evidence, studentTranscript);
+    const fallbackNote =
+      typeof fallbackNoteFor === "function"
+        ? fallbackNoteFor(evidenceQuote)
+        : String(fallbackNoteFor || "");
+    return {
+      band: numberOrNull(existing[key]?.band) ?? numberOrNull(band) ?? 0,
+      note: String(existing[key]?.note || fallbackNote),
+      evidence: evidenceQuote,
+      ...(existing[key]?.flaggedWords
+        ? { flaggedWords: existing[key].flaggedWords }
+        : {}),
+      ...(existing[key]?.exampleError
+        ? { exampleError: existing[key].exampleError }
+        : {}),
+    };
+  };
 
   const topLexical = (feedback.topImprovements || []).find((entry) =>
     String(entry.category || "").toLowerCase().includes("lex")
@@ -83,24 +90,28 @@ function buildCriterionFeedback(feedback, studentTranscript) {
     fluency: item(
       "fluency",
       criteria.fluencyCoherence,
-      `Your fluency score reflects the answer around "${evidence}". Build longer answers with linking phrases and fewer restarts.`
+      (evidenceQuote) =>
+        `Your fluency score reflects the answer around "${evidenceQuote}". Build longer answers with linking phrases and fewer restarts.`
     ),
     lexical: item(
       "lexical",
       criteria.lexicalResource,
-      topLexical?.suggestion ||
-        `Your vocabulary needs more precise topic words. Upgrade repeated basic words from "${evidence}".`
+      (evidenceQuote) =>
+        topLexical?.suggestion ||
+        `Your vocabulary needs more precise topic words. Upgrade repeated basic words from "${evidenceQuote}".`
     ),
     grammar: item(
       "grammar",
       criteria.grammaticalRange,
-      topGrammar?.suggestion ||
-        `Your grammar was understandable, but review tense and sentence control in phrases like "${evidence}".`
+      (evidenceQuote) =>
+        topGrammar?.suggestion ||
+        `Your grammar was understandable, but review tense and sentence control in phrases like "${evidenceQuote}".`
     ),
     pronunciation: item(
       "pronunciation",
       criteria.pronunciation,
-      `Pronunciation is estimated from the transcript and speaking flow. Practise sentence stress using a phrase like "${evidence}".`
+      (evidenceQuote) =>
+        `Pronunciation is estimated from the transcript and speaking flow. Practise sentence stress using a phrase like "${evidenceQuote}".`
     ),
   };
 }
@@ -402,9 +413,11 @@ export async function POST(req) {
     return NextResponse.json(feedback);
   } catch (err) {
     console.error("[speaking/session/score]", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Scoring failed" },
-      { status: 500 }
-    );
+    const raw = err instanceof Error ? err.message : "";
+    const clean =
+      !raw || /is not defined|cannot read|undefined|null|stack|at\s+\w+/i.test(raw)
+        ? "Could not generate your speaking report. Please try again."
+        : raw;
+    return NextResponse.json({ error: clean }, { status: 500 });
   }
 }
