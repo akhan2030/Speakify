@@ -27,6 +27,7 @@
     "agent:step-research": "node agent/stepResearchAgent.js",
     "agent:step-questions": "node agent/stepQuestionAgent.js",
     "test:listening": "node scripts/listening-regression-check.mjs",
+    "test:speaking-scoring": "node --experimental-strip-types scripts/speaking-scoring-regression.ts",
     "test:content-usage": "node scripts/test-student-content-usage.mjs",
     "refresh:section1-speakers": "node scripts/refresh-section1-bank-speakers.mjs",
     "seed:vocabulary": "node scripts/seedVocabulary.js",

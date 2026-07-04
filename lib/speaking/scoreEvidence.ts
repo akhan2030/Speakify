@@ -123,8 +123,12 @@ function findGrammarEvidence(utterances: string[]): string | null {
   const patterns: RegExp[] = [
     /\bfrom last\b/i,
     /\bfrom the last\b/i,
+    // Planted / common L1 errors
+    /\bsince\s+(\w+\s+)?(years?|months?|days?)\b/i,
+    /\bam living\b.*\bsince\b/i,
     /\bI go\b/i,
-    /\bI come\b.*\bago\b/i,
+    /\bI come\b.*\b(ago|yesterday)\b/i,
+    /\byesterday\b/i,
     /\bhe go\b/i,
     /\bshe go\b/i,
     /\bmore better\b/i,
@@ -142,18 +146,33 @@ function findGrammarEvidence(utterances: string[]): string | null {
 }
 
 function findLexicalEvidence(utterances: string[]): string | null {
+  // Prefer redundant intensifiers and absolute adjectives first.
+  for (const line of utterances) {
+    if (INTRO_NAME_PATTERN.test(line) && line.split(/\s+/).length <= 6) continue;
+    if (
+      /\bvery\s+(delicious|beautiful|nice|good|interesting|important|unique)\b/i.test(
+        line
+      )
+    ) {
+      return line.slice(0, 160);
+    }
+  }
+
+  // Prefer a line that contains repeated basic words (good/nice).
+  const basicHits: string[] = [];
   for (const line of utterances) {
     if (INTRO_NAME_PATTERN.test(line) && line.split(/\s+/).length <= 6) continue;
     const lower = line.toLowerCase();
-    // Redundant intensifier: "very delicious", "very beautiful"
-    if (/\bvery\s+(delicious|beautiful|nice|good|interesting|important)\b/i.test(line)) {
-      return line.slice(0, 160);
-    }
-    // Repetition of like/love in same line
     if ((lower.match(/\b(like|love)\b/g) || []).length >= 2) {
       return line.slice(0, 160);
     }
-    const tokens = lower.split(/[^a-z']+/).filter(Boolean);
+    if (/\b(good|nice)\b/i.test(line)) basicHits.push(line);
+  }
+  if (basicHits.length > 0) return basicHits[0].slice(0, 160);
+
+  for (const line of utterances) {
+    if (INTRO_NAME_PATTERN.test(line) && line.split(/\s+/).length <= 6) continue;
+    const tokens = line.toLowerCase().split(/[^a-z']+/).filter(Boolean);
     if (tokens.some((t) => BASIC_WORDS.has(t))) {
       return line.slice(0, 160);
     }
@@ -276,13 +295,19 @@ export function repairStructuredScoreEvidence(
     return { ...criterion, deductions };
   };
 
+  // Repair grammar/lexical first so planted structural errors are not consumed by fluency.
+  const grammatical_range_accuracy = repairCriterion("grammatical_range_accuracy");
+  const lexical_resource = repairCriterion("lexical_resource");
+  const fluency_coherence = repairCriterion("fluency_coherence");
+  const pronunciation = repairCriterion("pronunciation");
+
   return {
     ...score,
     criteria: {
-      fluency_coherence: repairCriterion("fluency_coherence"),
-      lexical_resource: repairCriterion("lexical_resource"),
-      grammatical_range_accuracy: repairCriterion("grammatical_range_accuracy"),
-      pronunciation: repairCriterion("pronunciation"),
+      fluency_coherence,
+      lexical_resource,
+      grammatical_range_accuracy,
+      pronunciation,
     },
   };
 }
