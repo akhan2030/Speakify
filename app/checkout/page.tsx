@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ACCELERATOR_TRACKS, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
+import { MoyasarCheckoutForm } from "@/components/payments/MoyasarCheckoutForm";
 
 const GOLD = "#c9972c";
 const NAVY = "#0d1b35";
@@ -18,6 +19,10 @@ type CheckoutState = {
   paymentId: string;
   mockMode: boolean;
   publishableKey: string | null;
+  amountHalalas: number;
+  callbackUrl: string;
+  description: string;
+  studentId: string;
 };
 
 export default function CheckoutPage() {
@@ -27,6 +32,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [checkout, setCheckout] = useState<CheckoutState | null>(null);
 
   const reason = searchParams.get("reason");
@@ -34,6 +40,7 @@ export default function CheckoutPage() {
   const initCheckout = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setFormError(null);
     try {
       const statusRes = await fetch("/api/payments/status");
       const statusData = await statusRes.json();
@@ -62,6 +69,10 @@ export default function CheckoutPage() {
         paymentId: data.paymentId,
         mockMode: data.mockMode,
         publishableKey: data.publishableKey,
+        amountHalalas: data.amountHalalas,
+        callbackUrl: data.callbackUrl,
+        description: data.description,
+        studentId: data.studentId,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -112,6 +123,11 @@ export default function CheckoutPage() {
   )}`;
 
   const meta = checkout?.track ? ACCELERATOR_TRACKS[checkout.track] : null;
+  const showLiveForm =
+    checkout &&
+    !checkout.mockMode &&
+    checkout.publishableKey &&
+    checkout.amountHalalas > 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: NAVY }}>
@@ -188,20 +204,29 @@ export default function CheckoutPage() {
                     {paying ? "Processing…" : `Pay ${checkout.price} (test)`}
                   </button>
                 </div>
-              ) : (
+              ) : showLiveForm ? (
                 <div className="mt-6">
                   <p className="text-sm text-slate-600">
-                    You will be redirected to Moyasar secure checkout. Payment is processed in SAR.
+                    Pay securely below. Test mada card: 4201320111111010 (sandbox).
                   </p>
-                  <button
-                    type="button"
-                    disabled={paying}
-                    onClick={() => router.push("/checkout/success")}
-                    className="mt-4 w-full rounded-xl py-3.5 text-sm font-bold text-[#0d1b35] disabled:opacity-60"
-                    style={{ backgroundColor: GOLD }}
-                  >
-                    Pay {checkout.price} securely →
-                  </button>
+                  {formError ? (
+                    <p className="mt-2 text-sm text-red-600">{formError}</p>
+                  ) : null}
+                  <MoyasarCheckoutForm
+                    amountHalalas={checkout.amountHalalas}
+                    publishableKey={checkout.publishableKey!}
+                    callbackUrl={checkout.callbackUrl}
+                    description={checkout.description}
+                    studentId={checkout.studentId}
+                    track={checkout.track}
+                    onError={setFormError}
+                  />
+                </div>
+              ) : (
+                <div className="mt-6">
+                  <p className="text-sm text-red-600">
+                    Payment form could not load. Check Moyasar keys in Vercel.
+                  </p>
                 </div>
               )}
 
