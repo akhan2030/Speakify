@@ -10,6 +10,7 @@ import {
 } from "../lib/ielts/missionTasks.ts";
 import { validateListeningQuestionContent, normalizeListeningMcqOptions } from "../lib/listeningQuestionContent.js";
 import { READING_INCOMPLETE_UI_TYPES } from "../lib/readingQuestionContent.js";
+import { deleteSmokeTestUsers } from "./purge-test-users.mjs";
 
 dotenv.config({ path: ".env.local" });
 
@@ -315,6 +316,18 @@ async function main() {
   const passed = results.filter((r) => r.ok).length;
   const failed = results.filter((r) => !r.ok).length;
   console.log(`${passed} passed, ${failed} failed`);
+
+  if (process.env.SUPABASE_SERVICE_KEY) {
+    try {
+      const cleanup = await deleteSmokeTestUsers(supabase);
+      if (cleanup.deleted > 0) {
+        console.log(`\nCleaned up ${cleanup.deleted} smoke test account(s).`);
+      }
+    } catch (err) {
+      console.warn("\nSmoke account cleanup failed:", err?.message || err);
+    }
+  }
+
   process.exit(failed > 0 ? 1 : 0);
 }
 
