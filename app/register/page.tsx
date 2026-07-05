@@ -1,7 +1,9 @@
 import Link from "next/link";
 import TeacherInviteRegisterForm from "@/components/register/TeacherInviteRegisterForm";
-import { REGISTRATION_PROGRAMS } from "@/lib/registration";
+import { getRegisterHubPrograms } from "@/lib/registration";
 import { buildLoginPath, PROGRAM_LOGIN_PATHS } from "@/lib/courses/loginPaths";
+
+export const dynamic = "force-dynamic";
 
 type Props = {
   searchParams?: { token?: string };
@@ -12,16 +14,8 @@ export default function RegisterIndexPage({ searchParams }: Props) {
   if (token) {
     return <TeacherInviteRegisterForm token={token} />;
   }
-  const programs = [
-    REGISTRATION_PROGRAMS.pathway,
-    REGISTRATION_PROGRAMS.ielts,
-    REGISTRATION_PROGRAMS["ielts-general"],
-    REGISTRATION_PROGRAMS.toefl,
-    REGISTRATION_PROGRAMS["step-test"],
-    REGISTRATION_PROGRAMS["business-english"],
-    REGISTRATION_PROGRAMS["legal-english"],
-    REGISTRATION_PROGRAMS["kids-english"],
-  ];
+
+  const programs = getRegisterHubPrograms();
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#0d1b35] px-4 py-12">
@@ -29,10 +23,11 @@ export default function RegisterIndexPage({ searchParams }: Props) {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#c9972c]" />
         <h1 className="mt-6 text-3xl font-bold text-white">Speakify Registration</h1>
         <p className="mt-3 text-slate-300">
-          Select your course to open the correct registration page — 8 programmes available
+          Select your course to open the correct registration page — {programs.length} programmes
+          available
         </p>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {programs.map((program) => (
             <Link
               key={program.slug}

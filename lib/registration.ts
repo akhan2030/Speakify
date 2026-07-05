@@ -70,7 +70,7 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
   "ielts-general": {
     slug: "ielts-general",
     programType: "ielts",
-    label: "IELTS General Training",
+    label: "IELTS General",
     tagline: "General Training · Letters & essays",
     description:
       "Full IELTS General Training preparation with letter writing, everyday essays, GT reading, and AI band feedback.",
@@ -174,6 +174,11 @@ export function getRegistrationProgram(slug: string): RegistrationProgramConfig 
 
 export function isRegistrationSlug(value: string): value is RegistrationSlug {
   return REGISTRATION_SLUGS.includes(value as RegistrationSlug);
+}
+
+/** All programmes shown on /register — keep in sync with REGISTRATION_SLUGS. */
+export function getRegisterHubPrograms(): RegistrationProgramConfig[] {
+  return REGISTRATION_SLUGS.map((slug) => REGISTRATION_PROGRAMS[slug]);
 }
 
 /** @deprecated Use REGISTRATION_PROGRAMS */
