@@ -17,8 +17,15 @@ import {
   dashboardPathForProgramme,
   programmeGoalLabel,
   recommendGatewayTrack,
+  recommendationProgrammeLabel,
   targetBandFromRecommendation,
 } from "@/lib/onboarding/recommendTrack";
+import {
+  ONBOARDING_PROGRAMME_OPTIONS,
+  enrolledProgramsForGateway,
+  placementAssessmentTitle,
+  programTypeForGateway,
+} from "@/lib/onboarding/programmes";
 import type { GatewayProgramme, GatewayRecommendation } from "@/lib/onboarding/types";
 import { bandToCefr } from "@/lib/placement/scoring";
 import type { Question } from "@/lib/placement/types";
@@ -33,23 +40,6 @@ import {
 
 const GOLD = "#c9972c";
 const NAVY = "#0d1b35";
-
-const PROGRAMMES: {
-  id: GatewayProgramme;
-  icon: string;
-  title: string;
-  subtitle: string;
-}[] = [
-  { id: "ielts", icon: "🎯", title: "Prepare for IELTS", subtitle: "Academic band preparation" },
-  { id: "pathway", icon: "📚", title: "Build my English", subtitle: "CEFR pathway levels" },
-  { id: "step", icon: "🏛", title: "Prepare for STEP", subtitle: "Qiyas university test" },
-  {
-    id: "business_english",
-    icon: "💼",
-    title: "Business English",
-    subtitle: "Professional communication",
-  },
-];
 
 const CEFR_MARKERS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
@@ -83,7 +73,15 @@ function ProgressBar({ step }: { step: number }) {
   );
 }
 
-function Shell({ step, children }: { step: number; children: React.ReactNode }) {
+function Shell({
+  step,
+  children,
+  wide = false,
+}: {
+  step: number;
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: NAVY }}>
       <header className="px-6 pt-6 sm:px-8">
@@ -92,12 +90,76 @@ function Shell({ step, children }: { step: number; children: React.ReactNode }) 
         </p>
       </header>
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8">
-        <div className="w-full max-w-[560px] rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
+        <div
+          className={`w-full rounded-2xl bg-white p-6 shadow-2xl sm:p-8 ${
+            wide ? "max-w-3xl" : "max-w-[560px]"
+          }`}
+        >
           <ProgressBar step={step} />
           {children}
         </div>
       </main>
     </div>
+  );
+}
+
+function RecommendationDetails({ recommendation }: { recommendation: GatewayRecommendation }) {
+  if (recommendation.kind === "ielts" || recommendation.kind === "ielts_general") {
+    return (
+      <>
+        <p className="mt-2 text-lg font-bold text-[#0d1b35]">{recommendation.trackLabel}</p>
+        <p className="mt-1 text-sm text-slate-600">Target: {recommendation.target}</p>
+        <p className="text-sm text-slate-600">Duration: {recommendation.weeks} weeks</p>
+      </>
+    );
+  }
+  if (recommendation.kind === "toefl") {
+    return (
+      <>
+        <p className="mt-2 text-lg font-bold text-[#0d1b35]">TOEFL Preparation</p>
+        <p className="mt-1 text-sm text-slate-600">Target score: {recommendation.targetScore}</p>
+        <p className="text-sm text-slate-600">{recommendation.levelLabel}</p>
+      </>
+    );
+  }
+  if (recommendation.kind === "step") {
+    return (
+      <>
+        <p className="mt-2 text-lg font-bold text-[#0d1b35]">STEP Phase {recommendation.phase}</p>
+        <p className="mt-1 text-sm text-slate-600">Target score range: {recommendation.score}</p>
+      </>
+    );
+  }
+  if (recommendation.kind === "pathway") {
+    return (
+      <>
+        <p className="mt-2 text-lg font-bold text-[#0d1b35]">English Pathway {recommendation.level}</p>
+        <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+      </>
+    );
+  }
+  if (recommendation.kind === "business_english") {
+    return (
+      <>
+        <p className="mt-2 text-lg font-bold text-[#0d1b35]">Business English {recommendation.level}</p>
+        <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+      </>
+    );
+  }
+  if (recommendation.kind === "legal_english") {
+    return (
+      <>
+        <p className="mt-2 text-lg font-bold text-[#0d1b35]">Legal English {recommendation.level}</p>
+        <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+      </>
+    );
+  }
+  return (
+    <>
+      <p className="mt-2 text-lg font-bold text-[#0d1b35]">Kids English — {recommendation.level}</p>
+      <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+      <p className="text-sm text-slate-600">Recommended for {recommendation.ageBand}</p>
+    </>
   );
 }
 
@@ -118,6 +180,7 @@ export default function OnboardingPage() {
   const [purchasedTrack, setPurchasedTrack] = useState<AcceleratorTrackId | null>(null);
   const [autoStarted, setAutoStarted] = useState(false);
   const [contextLoaded, setContextLoaded] = useState(false);
+  const [skipPurchasedAutoStart, setSkipPurchasedAutoStart] = useState(false);
 
   const purchasedMeta = purchasedTrack ? ACCELERATOR_TRACKS[purchasedTrack] : null;
 
@@ -179,10 +242,18 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (autoStarted || !purchasedTrack || step !== 1 || status !== "authenticated") return;
+    if (
+      autoStarted ||
+      skipPurchasedAutoStart ||
+      !purchasedTrack ||
+      step !== 1 ||
+      status !== "authenticated"
+    ) {
+      return;
+    }
     setAutoStarted(true);
     startAssessment("ielts");
-  }, [purchasedTrack, autoStarted, step, status, startAssessment]);
+  }, [purchasedTrack, autoStarted, skipPurchasedAutoStart, step, status, startAssessment]);
 
   const handleAnswer = useCallback(
     (selected: string) => {
@@ -239,20 +310,8 @@ export default function OnboardingPage() {
       }
       await update({
         onboardingCompleted: true,
-        programType:
-          programme === "pathway"
-            ? "pathway"
-            : programme === "business_english"
-              ? "business_english"
-              : "ielts",
-        enrolledPrograms:
-          programme === "step"
-            ? ["step"]
-            : programme === "pathway"
-              ? ["pathway"]
-              : programme === "business_english"
-                ? ["business_english"]
-                : ["ielts"],
+        programType: programTypeForGateway(programme),
+        enrolledPrograms: enrolledProgramsForGateway(programme),
         stepEnrolled: programme === "step",
       });
       setStep(4);
@@ -283,7 +342,7 @@ export default function OnboardingPage() {
   }
 
   if (step === 1) {
-    if (!contextLoaded || (purchasedTrack && !autoStarted)) {
+    if (!contextLoaded || (purchasedTrack && !autoStarted && !skipPurchasedAutoStart)) {
       return (
         <div
           className="flex min-h-screen items-center justify-center text-white"
@@ -298,14 +357,14 @@ export default function OnboardingPage() {
     }
 
     return (
-      <Shell step={1}>
+      <Shell step={1} wide>
         <h1 className="text-2xl font-bold text-[#0d1b35]">Welcome to Speakify</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Tell us your goal and we will place you at exactly the right level.
+          Choose your programme and we will place you at exactly the right level.
         </p>
         <p className="mt-6 text-sm font-semibold text-[#0d1b35]">What are you here for?</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {PROGRAMMES.map((p) => (
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {ONBOARDING_PROGRAMME_OPTIONS.map((p) => (
             <button
               key={p.id}
               type="button"
@@ -313,8 +372,8 @@ export default function OnboardingPage() {
               className="rounded-xl border-2 border-slate-200 p-4 text-left transition hover:border-[#c9972c] hover:bg-[#c9972c]/5"
             >
               <span className="text-2xl">{p.icon}</span>
-              <p className="mt-2 font-bold text-[#0d1b35]">{p.title}</p>
-              <p className="mt-1 text-xs text-slate-500">{p.subtitle}</p>
+              <p className="mt-2 text-sm font-bold leading-snug text-[#0d1b35]">{p.title}</p>
+              <p className="mt-1 text-[11px] leading-snug text-slate-500">{p.subtitle}</p>
             </button>
           ))}
         </div>
@@ -337,7 +396,9 @@ export default function OnboardingPage() {
 
     return (
       <Shell step={2}>
-        <h1 className="text-xl font-bold text-[#0d1b35]">Quick Level Check — 15 questions</h1>
+        <h1 className="text-xl font-bold text-[#0d1b35]">
+          {programme ? placementAssessmentTitle(programme) : "Quick Level Check — 15 questions"}
+        </h1>
         <p className="mt-1 text-sm text-slate-600">
           This takes about 8 minutes and places you at exactly the right level.
         </p>
@@ -449,31 +510,7 @@ export default function OnboardingPage() {
               <p className="text-xs font-bold uppercase tracking-wide text-[#c9972c]">
                 Speakify recommends
               </p>
-              {recommendation.kind === "ielts" && (
-                <>
-                  <p className="mt-2 text-lg font-bold text-[#0d1b35]">{recommendation.trackLabel}</p>
-                  <p className="mt-1 text-sm text-slate-600">Target: {recommendation.target}</p>
-                  <p className="text-sm text-slate-600">Duration: {recommendation.weeks} weeks</p>
-                </>
-              )}
-              {recommendation.kind === "step" && (
-                <>
-                  <p className="mt-2 text-lg font-bold text-[#0d1b35]">STEP Phase {recommendation.phase}</p>
-                  <p className="mt-1 text-sm text-slate-600">Target score range: {recommendation.score}</p>
-                </>
-              )}
-              {recommendation.kind === "pathway" && (
-                <>
-                  <p className="mt-2 text-lg font-bold text-[#0d1b35]">English Pathway {recommendation.level}</p>
-                  <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
-                </>
-              )}
-              {recommendation.kind === "business_english" && (
-                <>
-                  <p className="mt-2 text-lg font-bold text-[#0d1b35]">Business English {recommendation.level}</p>
-                  <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
-                </>
-              )}
+              <RecommendationDetails recommendation={recommendation} />
             </>
           )}
         </div>
@@ -512,7 +549,15 @@ export default function OnboardingPage() {
           <button
             type="button"
             className="mt-3 w-full text-center text-xs text-slate-500 underline"
-            onClick={() => setStep(1)}
+            onClick={() => {
+              setSkipPurchasedAutoStart(true);
+              setAutoStarted(false);
+              setProgramme(null);
+              setRecommendation(null);
+              setPlacementBand(null);
+              setAssessmentDone(false);
+              setStep(1);
+            }}
           >
             I want a different track
           </button>
@@ -529,13 +574,7 @@ export default function OnboardingPage() {
     const programmeLabel =
       purchasedMeta && programme === "ielts"
         ? `IELTS ${purchasedMeta.name}`
-        : recommendation.kind === "ielts"
-          ? recommendation.trackLabel
-          : recommendation.kind === "step"
-            ? `STEP Phase ${recommendation.phase}`
-            : recommendation.kind === "pathway"
-              ? `English Pathway ${recommendation.level}`
-              : `Business English ${recommendation.level}`;
+        : recommendationProgrammeLabel(recommendation);
     const name = firstName(session?.user?.name);
 
     return (

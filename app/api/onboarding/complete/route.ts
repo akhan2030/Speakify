@@ -8,6 +8,11 @@ import {
   recommendGatewayTrack,
   targetBandFromRecommendation,
 } from "@/lib/onboarding/recommendTrack";
+import {
+  enrolledProgramsForGateway,
+  GATEWAY_PROGRAMME_IDS,
+  programTypeForGateway,
+} from "@/lib/onboarding/programmes";
 import type { GatewayProgramme } from "@/lib/onboarding/types";
 import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
 import { normalizeRole } from "@/lib/roles";
@@ -18,13 +23,6 @@ import {
 } from "@/lib/accelerator/tracks";
 
 export const runtime = "nodejs";
-
-const VALID_PROGRAMMES: GatewayProgramme[] = [
-  "ielts",
-  "pathway",
-  "step",
-  "business_english",
-];
 
 function getSupabase() {
   const url = (process.env.SUPABASE_URL || "")
@@ -57,7 +55,7 @@ export async function POST(request: Request) {
     const programme = String(body.programme ?? "") as GatewayProgramme;
     const placementBand = Number(body.placementBand);
 
-    if (!VALID_PROGRAMMES.includes(programme)) {
+    if (!GATEWAY_PROGRAMME_IDS.includes(programme)) {
       return NextResponse.json({ error: "Invalid programme" }, { status: 400 });
     }
 
@@ -93,27 +91,17 @@ export async function POST(request: Request) {
       cefr_level: cefrLevel,
       target_band: targetBandNumeric,
       placement_test_completed: true,
+      program_type: programTypeForGateway(programme),
+      enrolled_programs: enrolledProgramsForGateway(programme),
+      step_enrolled: programme === "step",
     };
 
-    if (programme === "ielts") {
-      updates.program_type = "ielts";
-      updates.enrolled_programs = ["ielts"];
-      if (
-        recommendation.kind === "ielts" &&
-        !existingUser?.accelerator_track
-      ) {
-        updates.accelerator_track = recommendation.track;
-      }
-    } else if (programme === "pathway") {
-      updates.program_type = "pathway";
-      updates.enrolled_programs = ["pathway"];
-    } else if (programme === "step") {
-      updates.program_type = "ielts";
-      updates.step_enrolled = true;
-      updates.enrolled_programs = ["step"];
-    } else if (programme === "business_english") {
-      updates.program_type = "business_english";
-      updates.enrolled_programs = ["business_english"];
+    if (
+      programme === "ielts" &&
+      recommendation.kind === "ielts" &&
+      !existingUser?.accelerator_track
+    ) {
+      updates.accelerator_track = recommendation.track;
     }
 
     const { error } = await supabase.from("users").update(updates).eq("id", studentId);
