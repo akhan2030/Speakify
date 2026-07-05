@@ -9,6 +9,11 @@ import {
   getRegistrationProgram,
   isRegistrationSlug,
 } from "@/lib/registration";
+import {
+  ACCELERATOR_TRACKS,
+  isValidTrack,
+  type AcceleratorTrackId,
+} from "@/lib/accelerator/tracks";
 
 function CheckmarkIcon({ className }: { className?: string }) {
   return (
@@ -41,6 +46,11 @@ function WelcomeContent() {
   const studentName = nameFromUrl || nameFromSession || "there";
 
   const programParam = searchParams.get("program")?.trim() ?? "ielts";
+  const trackParam = searchParams.get("track")?.trim().toLowerCase() ?? "";
+  const purchasedTrack: AcceleratorTrackId | null = isValidTrack(trackParam)
+    ? trackParam
+    : null;
+  const trackMeta = purchasedTrack ? ACCELERATOR_TRACKS[purchasedTrack] : null;
   const registrationProgram = isRegistrationSlug(programParam)
     ? getRegistrationProgram(programParam)
     : getRegistrationProgram(normalizeProgramType(programParam) === "pathway" ? "pathway" : "ielts");
@@ -48,7 +58,10 @@ function WelcomeContent() {
   const programType = normalizeProgramType(registrationProgram.programType);
   const isPathway = programType === "pathway";
   const isToefl = registrationProgram.slug === "toefl";
-  const programLabel = registrationProgram.label;
+  const programLabel =
+    trackMeta && registrationProgram.slug === "ielts"
+      ? `IELTS ${trackMeta.name}`
+      : registrationProgram.label;
   const dashboardPath =
     registrationProgram.dashboardPath ?? studentDashboardPath(programType);
   const isStep = registrationProgram.slug === "step-test";
@@ -89,7 +102,9 @@ function WelcomeContent() {
             ? "Your English Pathway account is ready. Sign in and take the one-time placement test to find your CEFR starting level."
             : isToefl
               ? "Your TOEFL Preparation account is ready. Sign in to access practice tests, skill tracking, and your personalised study plan."
-              : "Your IELTS Accelerator account is ready. Sign in to access mock exams, band tracking, and your personalised study plan."}
+              : trackMeta
+                ? `Your IELTS ${trackMeta.name} account is ready. Sign in to access mock exams, band tracking, and your personalised study plan.`
+                : "Your IELTS Accelerator account is ready. Sign in to access mock exams, band tracking, and your personalised study plan."}
         </p>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">

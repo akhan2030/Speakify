@@ -16,6 +16,7 @@ type SkillRow = {
 type BandsData = {
   current: number | null;
   target: number;
+  targetLabel?: string;
   gap: number | null;
   skills: SkillRow[];
 };
@@ -30,6 +31,7 @@ function skillGapColor(gap: number | null, onTarget: boolean) {
 export default function NorthStarCard({ bands }: { bands: BandsData }) {
   const current = bands.current;
   const target = bands.target;
+  const targetDisplay = bands.targetLabel ?? target.toFixed(1);
   const gap = bands.gap;
   const currentPct = current != null ? (current / 9) * 100 : 0;
   const targetPct = (target / 9) * 100;
@@ -57,7 +59,7 @@ export default function NorthStarCard({ bands }: { bands: BandsData }) {
         </div>
         <div>
           <p className="text-[11px] text-slate-500">Target band</p>
-          <p className="mt-1 text-4xl font-medium text-[#0d9488]">{target.toFixed(1)}</p>
+          <p className="mt-1 text-4xl font-medium text-[#0d9488]">{targetDisplay}</p>
           <p className="mt-1 text-[11px] text-slate-500">your goal</p>
         </div>
       </div>

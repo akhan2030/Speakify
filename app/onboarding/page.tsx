@@ -25,6 +25,11 @@ import type { Question } from "@/lib/placement/types";
 import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
 import { dashboardPathForStudentUser } from "@/lib/studentLoginRedirect";
 import { normalizeRole } from "@/lib/roles";
+import {
+  ACCELERATOR_TRACKS,
+  targetBandDisplayFromTrack,
+  type AcceleratorTrackId,
+} from "@/lib/accelerator/tracks";
 
 const GOLD = "#c9972c";
 const NAVY = "#0d1b35";
@@ -110,6 +115,11 @@ export default function OnboardingPage() {
   const [recommendation, setRecommendation] = useState<GatewayRecommendation | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [purchasedTrack, setPurchasedTrack] = useState<AcceleratorTrackId | null>(null);
+  const [autoStarted, setAutoStarted] = useState(false);
+  const [contextLoaded, setContextLoaded] = useState(false);
+
+  const purchasedMeta = purchasedTrack ? ACCELERATOR_TRACKS[purchasedTrack] : null;
 
   const role = normalizeRole((session?.user as { role?: string })?.role);
   const onboardingCompleted =
@@ -131,6 +141,28 @@ export default function OnboardingPage() {
   }, [status, role, onboardingCompleted, router, session?.user]);
 
   useEffect(() => {
+    if (status !== "authenticated" || onboardingCompleted) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/onboarding/context");
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.purchasedTrack) {
+          setPurchasedTrack(data.purchasedTrack as AcceleratorTrackId);
+        }
+      } catch {
+        /* optional */
+      } finally {
+        if (!cancelled) setContextLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, onboardingCompleted]);
+
+  useEffect(() => {
     if (step !== 2 || !currentQuestion || assessmentDone) return;
     if (!isValidQuestion(currentQuestion)) {
       const next = selectGatewayQuestion(skipInvalidQuestion(testState, currentQuestion.id));
@@ -145,6 +177,12 @@ export default function OnboardingPage() {
     setCurrentQuestion(selectGatewayQuestion(state));
     setStep(2);
   }, []);
+
+  useEffect(() => {
+    if (autoStarted || !purchasedTrack || step !== 1 || status !== "authenticated") return;
+    setAutoStarted(true);
+    startAssessment("ielts");
+  }, [purchasedTrack, autoStarted, step, status, startAssessment]);
 
   const handleAnswer = useCallback(
     (selected: string) => {
@@ -245,6 +283,20 @@ export default function OnboardingPage() {
   }
 
   if (step === 1) {
+    if (!contextLoaded || (purchasedTrack && !autoStarted)) {
+      return (
+        <div
+          className="flex min-h-screen items-center justify-center text-white"
+          style={{ backgroundColor: NAVY }}
+        >
+          <span
+            className="h-10 w-10 animate-spin rounded-full border-4 border-t-transparent"
+            style={{ borderColor: `${GOLD}40`, borderTopColor: GOLD }}
+          />
+        </div>
+      );
+    }
+
     return (
       <Shell step={1}>
         <h1 className="text-2xl font-bold text-[#0d1b35]">Welcome to Speakify</h1>
@@ -346,6 +398,11 @@ export default function OnboardingPage() {
   if (step === 3 && recommendation && placementBand != null && programme) {
     const goal = programmeGoalLabel(programme);
     const barIdx = levelBarIndex(cefrLevel);
+    const whatsappRaw =
+      process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() || "966500000000";
+    const whatsappHref = `https://wa.me/${whatsappRaw.replace(/\D/g, "")}?text=${encodeURIComponent(
+      "Hi Speakify, I registered for an IELTS tier and need help changing my plan."
+    )}`;
 
     return (
       <Shell step={3}>
@@ -364,42 +421,64 @@ export default function OnboardingPage() {
         </div>
 
         <p className="mt-6 text-sm leading-relaxed text-slate-600">
-          You understand English well and can communicate in most everyday situations. You are
-          ready to start focused {goal} preparation.
+          {purchasedMeta
+            ? `Your placement check is complete. We will personalise your study plan to your current level while you follow your purchased ${purchasedMeta.name} programme.`
+            : `You understand English well and can communicate in most everyday situations. You are ready to start focused ${goal} preparation.`}
         </p>
 
         <div className="mt-6 rounded-xl border border-[#c9972c]/30 bg-[#c9972c]/10 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#c9972c]">
-            Speakify recommends
-          </p>
-          {recommendation.kind === "ielts" && (
+          {purchasedMeta && programme === "ielts" ? (
             <>
-              <p className="mt-2 text-lg font-bold text-[#0d1b35]">{recommendation.trackLabel}</p>
-              <p className="mt-1 text-sm text-slate-600">Target: {recommendation.target}</p>
-              <p className="text-sm text-slate-600">Duration: {recommendation.weeks} weeks</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#c9972c]">
+                Your purchased plan
+              </p>
+              <p className="mt-2 text-lg font-bold text-[#0d1b35]">
+                IELTS {purchasedMeta.name}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">Target: {purchasedMeta.target}</p>
+              <p className="text-sm text-slate-600">
+                Duration: {purchasedMeta.weekCount} weeks
+              </p>
+              <p className="mt-3 text-xs text-slate-500">
+                Placement estimate: Band {placementBand.toFixed(1)} — used to personalise your
+                daily tasks, not to change your tier.
+              </p>
             </>
-          )}
-          {recommendation.kind === "step" && (
+          ) : (
             <>
-              <p className="mt-2 text-lg font-bold text-[#0d1b35]">STEP Phase {recommendation.phase}</p>
-              <p className="mt-1 text-sm text-slate-600">Target score range: {recommendation.score}</p>
-            </>
-          )}
-          {recommendation.kind === "pathway" && (
-            <>
-              <p className="mt-2 text-lg font-bold text-[#0d1b35]">English Pathway {recommendation.level}</p>
-              <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
-            </>
-          )}
-          {recommendation.kind === "business_english" && (
-            <>
-              <p className="mt-2 text-lg font-bold text-[#0d1b35]">Business English {recommendation.level}</p>
-              <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#c9972c]">
+                Speakify recommends
+              </p>
+              {recommendation.kind === "ielts" && (
+                <>
+                  <p className="mt-2 text-lg font-bold text-[#0d1b35]">{recommendation.trackLabel}</p>
+                  <p className="mt-1 text-sm text-slate-600">Target: {recommendation.target}</p>
+                  <p className="text-sm text-slate-600">Duration: {recommendation.weeks} weeks</p>
+                </>
+              )}
+              {recommendation.kind === "step" && (
+                <>
+                  <p className="mt-2 text-lg font-bold text-[#0d1b35]">STEP Phase {recommendation.phase}</p>
+                  <p className="mt-1 text-sm text-slate-600">Target score range: {recommendation.score}</p>
+                </>
+              )}
+              {recommendation.kind === "pathway" && (
+                <>
+                  <p className="mt-2 text-lg font-bold text-[#0d1b35]">English Pathway {recommendation.level}</p>
+                  <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+                </>
+              )}
+              {recommendation.kind === "business_english" && (
+                <>
+                  <p className="mt-2 text-lg font-bold text-[#0d1b35]">Business English {recommendation.level}</p>
+                  <p className="mt-1 text-sm text-slate-600">{recommendation.levelLabel}</p>
+                </>
+              )}
             </>
           )}
         </div>
 
-        {recommendation.kind === "ielts" && (
+        {!purchasedMeta && recommendation.kind === "ielts" && (
           <p className="mt-4 text-xs text-slate-500">
             94% of students at your level who complete IELTS Plus reach Band 6.0 or above.
           </p>
@@ -414,21 +493,49 @@ export default function OnboardingPage() {
           className="mt-6 w-full rounded-xl py-3.5 text-sm font-bold text-[#0d1b35] disabled:opacity-60"
           style={{ backgroundColor: GOLD }}
         >
-          {saving ? "Saving…" : "Confirm my track →"}
+          {saving
+            ? "Saving…"
+            : purchasedMeta
+              ? `Continue with my ${purchasedMeta.name} plan →`
+              : "Confirm my track →"}
         </button>
-        <button
-          type="button"
-          className="mt-3 w-full text-center text-xs text-slate-500 underline"
-          onClick={() => setStep(1)}
-        >
-          I want a different track
-        </button>
+        {purchasedMeta ? (
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 block text-center text-xs text-slate-500 underline"
+          >
+            Need to change your plan? Chat with support
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="mt-3 w-full text-center text-xs text-slate-500 underline"
+            onClick={() => setStep(1)}
+          >
+            I want a different track
+          </button>
+        )}
       </Shell>
     );
   }
 
   if (step === 4 && recommendation && placementBand != null && programme) {
-    const target = targetBandFromRecommendation(programme, placementBand, recommendation);
+    const target =
+      purchasedTrack && programme === "ielts"
+        ? targetBandDisplayFromTrack(purchasedTrack)
+        : targetBandFromRecommendation(programme, placementBand, recommendation);
+    const programmeLabel =
+      purchasedMeta && programme === "ielts"
+        ? `IELTS ${purchasedMeta.name}`
+        : recommendation.kind === "ielts"
+          ? recommendation.trackLabel
+          : recommendation.kind === "step"
+            ? `STEP Phase ${recommendation.phase}`
+            : recommendation.kind === "pathway"
+              ? `English Pathway ${recommendation.level}`
+              : `Business English ${recommendation.level}`;
     const name = firstName(session?.user?.name);
 
     return (
@@ -436,16 +543,7 @@ export default function OnboardingPage() {
         <h1 className="text-2xl font-bold text-[#0d1b35]">You are all set, {name}!</h1>
         <ul className="mt-6 space-y-3 text-sm text-slate-700">
           <li>✅ Your level: {cefrLevel} {cefrLabel}</li>
-          <li>
-            ✅ Your programme:{" "}
-            {recommendation.kind === "ielts"
-              ? recommendation.trackLabel
-              : recommendation.kind === "step"
-                ? `STEP Phase ${recommendation.phase}`
-                : recommendation.kind === "pathway"
-                  ? `English Pathway ${recommendation.level}`
-                  : `Business English ${recommendation.level}`}
-          </li>
+          <li>✅ Your programme: {programmeLabel}</li>
           <li>✅ Your target: {target}</li>
           <li>✅ Your dashboard is personalised and ready</li>
         </ul>

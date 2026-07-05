@@ -11,6 +11,11 @@ import {
 import type { GatewayProgramme } from "@/lib/onboarding/types";
 import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
 import { normalizeRole } from "@/lib/roles";
+import {
+  isValidTrack,
+  targetBandNumericFromTrack,
+  type AcceleratorTrackId,
+} from "@/lib/accelerator/tracks";
 
 export const runtime = "nodejs";
 
@@ -61,7 +66,7 @@ export async function POST(request: Request) {
     }
 
     const recommendation = recommendGatewayTrack(programme, placementBand);
-    const targetBand = targetBandFromRecommendation(programme, placementBand, recommendation);
+    const targetBandLabel = targetBandFromRecommendation(programme, placementBand, recommendation);
     const cefrLevel = bandToPathwaySubLevel(placementBand);
     const dashboardPath = dashboardPathForProgramme(programme);
 
@@ -72,12 +77,21 @@ export async function POST(request: Request) {
       .eq("id", studentId)
       .maybeSingle();
 
+    const purchasedRaw = String(existingUser?.accelerator_track ?? "").trim().toLowerCase();
+    const purchasedTrack: AcceleratorTrackId | null = isValidTrack(purchasedRaw)
+      ? purchasedRaw
+      : null;
+
+    const targetBandNumeric = purchasedTrack
+      ? targetBandNumericFromTrack(purchasedTrack)
+      : Number(String(targetBandLabel).replace(/\+.*$/, "").trim()) || 6.5;
+
     const updates: Record<string, unknown> = {
       onboarding_completed: true,
       placement_band: placementBand,
       program_selected: programme,
       cefr_level: cefrLevel,
-      target_band: targetBand,
+      target_band: targetBandNumeric,
       placement_test_completed: true,
     };
 
@@ -124,7 +138,9 @@ export async function POST(request: Request) {
       recommendation,
       placementBand,
       cefrLevel,
-      targetBand,
+      targetBand: purchasedTrack
+        ? targetBandNumericFromTrack(purchasedTrack)
+        : targetBandNumeric,
     });
   } catch (err) {
     console.error("[onboarding/complete]", err);

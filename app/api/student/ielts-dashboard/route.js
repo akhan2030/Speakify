@@ -7,6 +7,7 @@ import { buildRecommendations } from "@/lib/course/recommendationEngine";
 import { computeReadinessMeter } from "@/lib/course/readinessMeter";
 import {
   ACCELERATOR_TRACKS,
+  resolveTargetBandForStudent,
 } from "@/lib/accelerator/tracks";
 import { getProfileAcceleratorTrack } from "@/lib/course/studentProfile";
 import {
@@ -297,6 +298,12 @@ export async function GET() {
       profile.placementBand ?? profile.currentBand ?? profile.skillBands?.reading ?? null;
     const recommendedTrack = getProfileAcceleratorTrack(profile);
     const trackMeta = ACCELERATOR_TRACKS[recommendedTrack];
+    const tierTarget = resolveTargetBandForStudent({
+      acceleratorTrack: profile.acceleratorTrack,
+      enrolledTrackSlug: profile.enrolledTrackSlug,
+      placementBand: profile.placementBand ?? profile.currentBand,
+      storedTargetBand: profile.targetBand,
+    });
 
     const todayKey = todayDateKey();
     const studyDay = getStudyDay();
@@ -322,7 +329,8 @@ export async function GET() {
       bandHistoryRows = merged.historyRows;
     }
 
-    const targetBand = profile.targetBand ?? parseTargetBand(readiness.targetBand) ?? 6.5;
+    const targetBand = tierTarget.targetBand;
+    const targetLabel = tierTarget.targetLabel;
     const mergedSkillBands = [bands.writing, bands.speaking, bands.reading, bands.listening];
     const currentBand =
       averageBand(mergedSkillBands) ??
@@ -519,6 +527,7 @@ export async function GET() {
       bands: {
         current: currentBand,
         target: targetBand,
+        targetLabel,
         gap,
         skills: skillRows,
       },

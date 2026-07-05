@@ -88,6 +88,9 @@ export default function RegisterForm({
         name: fullName.trim(),
         program: slug,
       });
+      if (purchasedTrack) {
+        params.set("track", purchasedTrack);
+      }
       router.push(`/register/welcome?${params.toString()}`);
     } catch {
       setError("Something went wrong. Please try again.");

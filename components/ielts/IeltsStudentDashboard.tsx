@@ -47,6 +47,7 @@ type DashboardData = {
   bands: {
     current: number | null;
     target: number;
+    targetLabel?: string;
     gap: number | null;
     skills: Array<{
       key: string;
@@ -519,71 +520,6 @@ export default function IeltsStudentDashboard() {
               daysRemaining={data.exam.daysRemaining}
             />
           ) : null}
-
-          {/* Exam countdown */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            {data.exam.daysRemaining != null ? (
-              <>
-                <p className="text-center text-5xl font-bold text-[#0d1b35]">
-                  {data.exam.daysRemaining}
-                </p>
-                <p className="text-center text-sm text-slate-500">days to IELTS</p>
-                <dl className="mt-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-slate-500">Target band</dt>
-                    <dd className="font-semibold">{data.bands.target.toFixed(1)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-500">Current estimate</dt>
-                    <dd className="font-semibold">
-                      {data.bands.current?.toFixed(1) ?? "—"}
-                    </dd>
-                  </div>
-                </dl>
-                <p className="mt-3 text-center text-sm text-slate-600">
-                  You need +{data.bands.gap?.toFixed(1)} band in {data.exam.daysRemaining}{" "}
-                  days
-                </p>
-                <p
-                  className={`mt-2 text-center text-sm font-semibold ${data.exam.achievable ? "text-green-600" : "text-amber-600"}`}
-                >
-                  {data.exam.achievable
-                    ? "At current pace: achievable ✅"
-                    : "Needs more effort ⚠"}
-                </p>
-                <p className="mt-2 text-center text-xs text-slate-500">
-                  {data.exam.paceMessage}
-                </p>
-                <Link
-                  href="/dashboard/ielts/student/settings"
-                  className="mt-4 block text-center text-sm font-semibold text-[#0d9488] hover:underline"
-                >
-                  Update exam date
-                </Link>
-              </>
-            ) : (
-              <>
-                <h3 className="font-bold text-[#0d1b35]">When is your IELTS exam?</h3>
-                <input
-                  type="date"
-                  value={examDateInput}
-                  onChange={(e) => setExamDateInput(e.target.value)}
-                  className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={saveExamDate}
-                  disabled={!examDateInput || savingExam}
-                  className="mt-3 w-full rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-bold text-white hover:opacity-95 disabled:opacity-50"
-                >
-                  {savingExam ? "Saving…" : "Set exam date →"}
-                </button>
-                <p className="mt-3 text-xs text-slate-500">
-                  Setting your date helps Speakify plan your study pace
-                </p>
-              </>
-            )}
-          </div>
 
           {/* Study streak — enhanced */}
           <StreakCard streak={data.streak} />

@@ -694,6 +694,47 @@ export function isValidTrack(track: string): track is AcceleratorTrackId {
   return track === "foundation" || track === "plus" || track === "elite";
 }
 
+/** Numeric target for gap math and projections (Elite = 7.0 floor). */
+export function targetBandNumericFromTrack(trackId: AcceleratorTrackId): number {
+  if (trackId === "elite") return 7.0;
+  if (trackId === "plus") return 6.5;
+  return 5.5;
+}
+
+/** Display label for North Star / onboarding (from tier metadata). */
+export function targetBandDisplayFromTrack(trackId: AcceleratorTrackId): string {
+  const raw = ACCELERATOR_TRACKS[trackId].target;
+  const stripped = raw.replace(/^Band\s*/i, "").trim();
+  if (trackId === "elite") return stripped.includes("+") ? "7.0+" : stripped;
+  if (trackId === "plus") return "6.5";
+  if (trackId === "foundation") return "5.5";
+  return stripped;
+}
+
+/** Purchased or enrolled tier wins; otherwise infer from placement. */
+export function resolveTargetBandForStudent(options: {
+  acceleratorTrack?: string | null;
+  enrolledTrackSlug?: string | null;
+  placementBand?: number | null;
+  storedTargetBand?: number | null;
+}): { trackId: AcceleratorTrackId; targetBand: number; targetLabel: string } {
+  const trackId = resolveAcceleratorTrack({
+    acceleratorTrack: options.acceleratorTrack,
+    enrolledLevelSlug: options.enrolledTrackSlug,
+    placementBand: options.placementBand,
+  });
+  const fromTier = targetBandNumericFromTrack(trackId);
+  const hasPurchasedTier = Boolean(
+    trackFromEnrollmentSlug(options.acceleratorTrack) ||
+      trackFromEnrollmentSlug(options.enrolledTrackSlug)
+  );
+  return {
+    trackId,
+    targetBand: hasPurchasedTier ? fromTier : (options.storedTargetBand ?? fromTier),
+    targetLabel: targetBandDisplayFromTrack(trackId),
+  };
+}
+
 export const PROGRESS_STORAGE_KEY = "speakify_accelerator_progress";
 
 export type AcceleratorProgress = {
