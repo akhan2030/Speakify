@@ -16,6 +16,8 @@ export type AcceleratorTrack = {
   entry: string;
   duration: string;
   price: string;
+  /** Moyasar amount in halalas (1 SAR = 100 halalas) */
+  priceHalalas: number;
   weekCount: number;
   badge?: string;
   bullets: string[];
@@ -38,6 +40,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
     entry: "A2.2–B1.1",
     duration: "6 weeks",
     price: "1,200 SAR",
+    priceHalalas: 120_000,
     weekCount: 6,
     bullets: [
       "Core IELTS format overview & band descriptors",
@@ -63,6 +66,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
     entry: "B1.2–B2.1",
     duration: "6 weeks",
     price: "1,800 SAR",
+    priceHalalas: 180_000,
     badge: "Most Popular — 50% of Saudi students",
     weekCount: 6,
     bullets: [
@@ -89,6 +93,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
     entry: "B2.2–C1",
     duration: "4 weeks intensive",
     price: "2,400 SAR",
+    priceHalalas: 240_000,
     weekCount: 4,
     bullets: [
       "Advanced lexical resource & collocation",
@@ -680,11 +685,14 @@ export function trackFromEnrollmentSlug(
  */
 export function resolveAcceleratorTrack(options: {
   acceleratorTrack?: string | null;
+  checkoutTrack?: string | null;
   enrolledLevelSlug?: string | null;
   placementBand?: number | null;
 }): AcceleratorTrackId {
   const fromUser = trackFromEnrollmentSlug(options.acceleratorTrack);
   if (fromUser) return fromUser;
+  const fromCheckout = trackFromEnrollmentSlug(options.checkoutTrack);
+  if (fromCheckout) return fromCheckout;
   const fromEnrollment = trackFromEnrollmentSlug(options.enrolledLevelSlug);
   if (fromEnrollment) return fromEnrollment;
   return recommendTrack(options.placementBand ?? null);
@@ -714,18 +722,21 @@ export function targetBandDisplayFromTrack(trackId: AcceleratorTrackId): string 
 /** Purchased or enrolled tier wins; otherwise infer from placement. */
 export function resolveTargetBandForStudent(options: {
   acceleratorTrack?: string | null;
+  checkoutTrack?: string | null;
   enrolledTrackSlug?: string | null;
   placementBand?: number | null;
   storedTargetBand?: number | null;
 }): { trackId: AcceleratorTrackId; targetBand: number; targetLabel: string } {
   const trackId = resolveAcceleratorTrack({
     acceleratorTrack: options.acceleratorTrack,
+    checkoutTrack: options.checkoutTrack,
     enrolledLevelSlug: options.enrolledTrackSlug,
     placementBand: options.placementBand,
   });
   const fromTier = targetBandNumericFromTrack(trackId);
   const hasPurchasedTier = Boolean(
     trackFromEnrollmentSlug(options.acceleratorTrack) ||
+      trackFromEnrollmentSlug(options.checkoutTrack) ||
       trackFromEnrollmentSlug(options.enrolledTrackSlug)
   );
   return {

@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import {
   ACCELERATOR_TRACKS,
   isValidTrack,
+  resolveAcceleratorTrack,
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
 
@@ -35,12 +36,21 @@ export async function GET() {
     const supabase = getSupabase();
     const { data: user } = await supabase
       .from("users")
-      .select("accelerator_track, program_type, enrolled_programs")
+      .select(
+        "checkout_track, accelerator_track, payment_status, placement_band, program_type, enrolled_programs"
+      )
       .eq("id", studentId)
       .maybeSingle();
 
-    const raw = String(user?.accelerator_track ?? "").trim().toLowerCase();
-    const purchasedTrack: AcceleratorTrackId | null = isValidTrack(raw) ? raw : null;
+    const intentRaw = resolveAcceleratorTrack({
+      checkoutTrack: user?.checkout_track,
+      acceleratorTrack: user?.accelerator_track,
+      placementBand: user?.placement_band,
+    });
+
+    const purchasedTrack: AcceleratorTrackId | null = isValidTrack(intentRaw)
+      ? intentRaw
+      : null;
 
     if (!purchasedTrack) {
       return NextResponse.json({ purchasedTrack: null });
@@ -53,7 +63,9 @@ export async function GET() {
       target: meta.target,
       weeks: meta.weekCount,
       duration: meta.duration,
+      price: meta.price,
       isIeltsAccelerator: true,
+      isPaidIntent: String(user?.checkout_track ?? "").length > 0,
     });
   } catch (err) {
     console.error("[onboarding/context]", err);

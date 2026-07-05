@@ -18,9 +18,11 @@ import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
 import { normalizeRole } from "@/lib/roles";
 import {
   isValidTrack,
+  resolveAcceleratorTrack,
   targetBandNumericFromTrack,
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
+import { hasDashboardAccess, requiresIeltsAcademicPayment } from "@/lib/payments/access";
 
 export const runtime = "nodejs";
 
@@ -71,18 +73,46 @@ export async function POST(request: Request) {
     const supabase = getSupabase();
     const { data: existingUser } = await supabase
       .from("users")
-      .select("accelerator_track")
+      .select(
+        "accelerator_track, checkout_track, payment_status, payment_comped_until, enrolled_programs, program_selected"
+      )
       .eq("id", studentId)
       .maybeSingle();
 
-    const purchasedRaw = String(existingUser?.accelerator_track ?? "").trim().toLowerCase();
-    const purchasedTrack: AcceleratorTrackId | null = isValidTrack(purchasedRaw)
-      ? purchasedRaw
+    const intentTrack = resolveAcceleratorTrack({
+      checkoutTrack: existingUser?.checkout_track,
+      acceleratorTrack: existingUser?.accelerator_track,
+      placementBand,
+    });
+
+    const purchasedTrack: AcceleratorTrackId | null = isValidTrack(intentTrack)
+      ? intentTrack
       : null;
+
+    const paymentStatus = String(existingUser?.payment_status ?? "unpaid");
+    const alreadyPaid =
+      paymentStatus === "paid" ||
+      hasDashboardAccess({
+        role,
+        paymentStatus,
+        paymentCompedUntil: existingUser?.payment_comped_until,
+        enrolledPrograms: enrolledProgramsForGateway(programme),
+        programSelected: programme,
+      });
 
     const targetBandNumeric = purchasedTrack
       ? targetBandNumericFromTrack(purchasedTrack)
       : Number(String(targetBandLabel).replace(/\+.*$/, "").trim()) || 6.5;
+
+    let checkoutTrack: AcceleratorTrackId | null = purchasedTrack;
+
+    if (
+      programme === "ielts" &&
+      recommendation.kind === "ielts" &&
+      !checkoutTrack
+    ) {
+      checkoutTrack = recommendation.track;
+    }
 
     const updates: Record<string, unknown> = {
       onboarding_completed: true,
@@ -96,12 +126,12 @@ export async function POST(request: Request) {
       step_enrolled: programme === "step",
     };
 
-    if (
-      programme === "ielts" &&
-      recommendation.kind === "ielts" &&
-      !existingUser?.accelerator_track
-    ) {
-      updates.accelerator_track = recommendation.track;
+    if (checkoutTrack) {
+      updates.checkout_track = checkoutTrack;
+    }
+
+    if (alreadyPaid && checkoutTrack) {
+      updates.accelerator_track = checkoutTrack;
     }
 
     const { error } = await supabase.from("users").update(updates).eq("id", studentId);
@@ -109,6 +139,7 @@ export async function POST(request: Request) {
     if (error) {
       const withoutOptional = { ...updates };
       delete withoutOptional.accelerator_track;
+      delete withoutOptional.checkout_track;
       delete withoutOptional.program_selected;
       delete withoutOptional.placement_band;
       delete withoutOptional.placement_test_completed;
@@ -120,12 +151,26 @@ export async function POST(request: Request) {
       }
     }
 
+    const needsPayment =
+      programme === "ielts" &&
+      requiresIeltsAcademicPayment({
+        role,
+        enrolledPrograms: enrolledProgramsForGateway(programme),
+        programSelected: programme,
+      }) &&
+      !alreadyPaid;
+
+    const nextPath = needsPayment ? "/checkout" : dashboardPath;
+
     return NextResponse.json({
       ok: true,
+      nextPath,
       dashboardPath,
+      needsPayment,
       recommendation,
       placementBand,
       cefrLevel,
+      checkoutTrack,
       targetBand: purchasedTrack
         ? targetBandNumericFromTrack(purchasedTrack)
         : targetBandNumeric,

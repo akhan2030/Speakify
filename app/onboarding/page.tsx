@@ -105,9 +105,11 @@ function Shell({
 
 function RecommendationDetails({ recommendation }: { recommendation: GatewayRecommendation }) {
   if (recommendation.kind === "ielts" || recommendation.kind === "ielts_general") {
+    const meta = ACCELERATOR_TRACKS[recommendation.track];
     return (
       <>
         <p className="mt-2 text-lg font-bold text-[#0d1b35]">{recommendation.trackLabel}</p>
+        <p className="mt-1 text-sm font-semibold text-[#0d1b35]">{meta.price}</p>
         <p className="mt-1 text-sm text-slate-600">Target: {recommendation.target}</p>
         <p className="text-sm text-slate-600">Duration: {recommendation.weeks} weeks</p>
       </>
@@ -181,12 +183,18 @@ export default function OnboardingPage() {
   const [autoStarted, setAutoStarted] = useState(false);
   const [contextLoaded, setContextLoaded] = useState(false);
   const [skipPurchasedAutoStart, setSkipPurchasedAutoStart] = useState(false);
+  const [needsPayment, setNeedsPayment] = useState(false);
 
   const purchasedMeta = purchasedTrack ? ACCELERATOR_TRACKS[purchasedTrack] : null;
 
   const role = normalizeRole((session?.user as { role?: string })?.role);
   const onboardingCompleted =
     (session?.user as { onboardingCompleted?: boolean })?.onboardingCompleted === true;
+
+  const hasDashboardAccess =
+    (session?.user as { hasDashboardAccess?: boolean })?.hasDashboardAccess === true;
+  const requiresPayment =
+    (session?.user as { requiresPayment?: boolean })?.requiresPayment === true;
 
   useEffect(() => {
     if (status === "loading") return;
@@ -199,9 +207,21 @@ export default function OnboardingPage() {
       return;
     }
     if (onboardingCompleted) {
+      if (requiresPayment && !hasDashboardAccess) {
+        router.replace("/checkout");
+        return;
+      }
       router.replace(dashboardPathForStudentUser(session?.user ?? {}));
     }
-  }, [status, role, onboardingCompleted, router, session?.user]);
+  }, [
+    status,
+    role,
+    onboardingCompleted,
+    hasDashboardAccess,
+    requiresPayment,
+    router,
+    session?.user,
+  ]);
 
   useEffect(() => {
     if (status !== "authenticated" || onboardingCompleted) return;
@@ -313,7 +333,11 @@ export default function OnboardingPage() {
         programType: programTypeForGateway(programme),
         enrolledPrograms: enrolledProgramsForGateway(programme),
         stepEnrolled: programme === "step",
+        ...(data.needsPayment
+          ? { paymentStatus: "unpaid", hasDashboardAccess: false }
+          : { hasDashboardAccess: true }),
       });
+      setNeedsPayment(Boolean(data.needsPayment));
       setStep(4);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -323,6 +347,10 @@ export default function OnboardingPage() {
   };
 
   const enterDashboard = () => {
+    if (needsPayment && programme === "ielts") {
+      window.location.href = "/checkout";
+      return;
+    }
     const path = programme ? dashboardPathForProgramme(programme) : "/dashboard/ielts/student";
     window.location.href = path;
   };
@@ -507,6 +535,7 @@ export default function OnboardingPage() {
               <p className="mt-2 text-lg font-bold text-[#0d1b35]">
                 IELTS {purchasedMeta.name}
               </p>
+              <p className="mt-1 text-sm font-semibold text-[#0d1b35]">{purchasedMeta.price}</p>
               <p className="mt-1 text-sm text-slate-600">Target: {purchasedMeta.target}</p>
               <p className="text-sm text-slate-600">
                 Duration: {purchasedMeta.weekCount} weeks
@@ -545,7 +574,9 @@ export default function OnboardingPage() {
             ? "Saving…"
             : purchasedMeta
               ? `Continue with my ${purchasedMeta.name} plan →`
-              : "Confirm my track →"}
+              : programme === "ielts"
+                ? "Confirm & continue →"
+                : "Confirm my track →"}
         </button>
         {purchasedMeta ? (
           <a
@@ -595,11 +626,16 @@ export default function OnboardingPage() {
           <li>✅ Your level: {cefrLevel} {cefrLabel}</li>
           <li>✅ Your programme: {programmeLabel}</li>
           <li>✅ Your target: {target}</li>
-          <li>✅ Your dashboard is personalised and ready</li>
+          <li>
+            {needsPayment && programme === "ielts"
+              ? "🔒 Complete payment to unlock your dashboard"
+              : "✅ Your dashboard is personalised and ready"}
+          </li>
         </ul>
         <p className="mt-6 text-sm leading-relaxed text-slate-600">
-          Every lesson, every practice session, and every mock exam is now calibrated to your
-          exact level and your target band score.
+          {needsPayment && programme === "ielts"
+            ? "Your placement results and study plan are saved. Pay once to unlock daily practice, mocks, and AI feedback."
+            : "Every lesson, every practice session, and every mock exam is now calibrated to your exact level and your target band score."}
         </p>
         <button
           type="button"
@@ -607,7 +643,9 @@ export default function OnboardingPage() {
           className="mt-8 w-full rounded-xl py-4 text-base font-bold text-[#0d1b35]"
           style={{ backgroundColor: GOLD }}
         >
-          Enter my dashboard →
+          {needsPayment && programme === "ielts"
+            ? "Continue to payment →"
+            : "Enter my dashboard →"}
         </button>
       </Shell>
     );

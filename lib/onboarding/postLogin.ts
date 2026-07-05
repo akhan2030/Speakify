@@ -1,5 +1,6 @@
 import { dashboardPathForStudentUser } from "@/lib/studentLoginRedirect";
 import { normalizeRole } from "@/lib/roles";
+import { hasDashboardAccess, requiresIeltsAcademicPayment } from "@/lib/payments/access";
 
 export function shouldSkipGateway(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
@@ -13,6 +14,10 @@ export function resolvePostLoginPath(user: {
   programType?: string | null;
   enrolledPrograms?: unknown;
   stepEnrolled?: boolean;
+  paymentStatus?: string | null;
+  paymentCompedUntil?: string | null;
+  programSelected?: string | null;
+  hasDashboardAccess?: boolean;
 }): string {
   if (user.mustChangePassword) return "/change-password";
 
@@ -23,6 +28,22 @@ export function resolvePostLoginPath(user: {
 
   if (user.onboardingCompleted !== true) {
     return "/onboarding";
+  }
+
+  const accessUser = {
+    role,
+    paymentStatus: user.paymentStatus,
+    paymentCompedUntil: user.paymentCompedUntil,
+    enrolledPrograms: user.enrolledPrograms,
+    programSelected: user.programSelected,
+  };
+
+  if (
+    requiresIeltsAcademicPayment(accessUser) &&
+    !hasDashboardAccess(accessUser) &&
+    user.hasDashboardAccess !== true
+  ) {
+    return "/checkout";
   }
 
   return dashboardPathForStudentUser(user);

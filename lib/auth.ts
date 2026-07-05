@@ -30,6 +30,8 @@ import {
 
 } from "@/lib/studentLoginRedirect";
 
+import { hasDashboardAccess, requiresIeltsAcademicPayment } from "@/lib/payments/access";
+
 
 
 function getSupabaseUrl() {
@@ -94,6 +96,12 @@ type DbUser = {
 
   onboardingCompleted: boolean;
 
+  paymentStatus: string;
+
+  paymentCompedUntil: string | null;
+
+  programSelected: string | null;
+
 };
 
 
@@ -128,6 +136,12 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     onboarding_completed?: boolean | null;
 
+    payment_status?: string | null;
+
+    payment_comped_until?: string | null;
+
+    program_selected?: string | null;
+
   } | null = null;
 
   let error: { message?: string } | null = null;
@@ -138,7 +152,7 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     .from("users")
 
-    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed")
+    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, payment_comped_until, program_selected")
 
     .eq("email", normalizedEmail)
 
@@ -211,6 +225,12 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
   const onboardingCompleted = data.onboarding_completed === true;
 
+  const paymentStatus = String(data.payment_status ?? "unpaid").trim().toLowerCase() || "unpaid";
+
+  const paymentCompedUntil = data.payment_comped_until ?? null;
+
+  const programSelected = data.program_selected ?? null;
+
 
 
   return {
@@ -230,6 +250,12 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
     stepEnrolled,
 
     onboardingCompleted,
+
+    paymentStatus,
+
+    paymentCompedUntil,
+
+    programSelected,
 
   };
 
@@ -447,6 +473,18 @@ export const authOptions: NextAuthOptions = {
         if ((session as { stepEnrolled?: boolean }).stepEnrolled === true) {
           (token as any).stepEnrolled = true;
         }
+        if ((session as { hasDashboardAccess?: boolean }).hasDashboardAccess === true) {
+          (token as any).hasDashboardAccess = true;
+        }
+        if ((session as { hasDashboardAccess?: boolean }).hasDashboardAccess === false) {
+          (token as any).hasDashboardAccess = false;
+        }
+        if ((session as { paymentStatus?: string }).paymentStatus) {
+          (token as any).paymentStatus = (session as { paymentStatus?: string }).paymentStatus;
+        }
+        if ((session as { requiresPayment?: boolean }).requiresPayment === true) {
+          (token as any).requiresPayment = true;
+        }
       }
 
       if (user) {
@@ -480,6 +518,26 @@ export const authOptions: NextAuthOptions = {
           (token as any).stepEnrolled = dbUser.stepEnrolled;
 
           (token as any).onboardingCompleted = dbUser.onboardingCompleted;
+
+          (token as any).paymentStatus = dbUser.paymentStatus;
+
+          (token as any).paymentCompedUntil = dbUser.paymentCompedUntil;
+
+          (token as any).programSelected = dbUser.programSelected;
+
+          (token as any).hasDashboardAccess = hasDashboardAccess({
+            role: dbUser.role,
+            paymentStatus: dbUser.paymentStatus,
+            paymentCompedUntil: dbUser.paymentCompedUntil,
+            enrolledPrograms: dbUser.enrolledPrograms,
+            programSelected: dbUser.programSelected,
+          });
+
+          (token as any).requiresPayment = requiresIeltsAcademicPayment({
+            role: dbUser.role,
+            enrolledPrograms: dbUser.enrolledPrograms,
+            programSelected: dbUser.programSelected,
+          });
 
         } else {
 
@@ -561,6 +619,13 @@ export const authOptions: NextAuthOptions = {
 
       (session.user as any).onboardingCompleted =
         (token as any).onboardingCompleted === true;
+
+      (session.user as any).paymentStatus = (token as any).paymentStatus ?? "unpaid";
+
+      (session.user as any).hasDashboardAccess =
+        (token as any).hasDashboardAccess === true;
+
+      (session.user as any).requiresPayment = (token as any).requiresPayment === true;
 
       if ((token as any).email) {
 

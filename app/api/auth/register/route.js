@@ -115,7 +115,7 @@ export async function POST(request) {
         : isIeltsRegistration
           ? {
               enrolled_programs: ["ielts"],
-              ...(purchasedTrack ? { accelerator_track: purchasedTrack } : {}),
+              ...(purchasedTrack ? { checkout_track: purchasedTrack, payment_status: "unpaid" } : {}),
             }
           : {}),
       ...(englishLevel ? { english_level: englishLevel } : {}),
@@ -161,27 +161,14 @@ export async function POST(request) {
     if (isIeltsRegistration && purchasedTrack) {
       const { error: trackUpdateError } = await supabase
         .from("users")
-        .update({ accelerator_track: purchasedTrack })
+        .update({ checkout_track: purchasedTrack, payment_status: "unpaid" })
         .eq("id", newUser.id);
-      if (trackUpdateError?.message?.includes("accelerator_track")) {
+      if (trackUpdateError?.message?.includes("checkout_track")) {
         console.warn(
-          "[auth/register] users.accelerator_track column missing — run supabase/accelerator_track_setup.sql"
+          "[auth/register] users.checkout_track column missing — run supabase/payment_setup.sql"
         );
       } else if (trackUpdateError) {
-        console.warn("[auth/register] accelerator_track update:", trackUpdateError.message);
-      }
-
-      try {
-        const { enrollStudentInLevel } = await import("@/lib/course/enrollment.js");
-        const enrollResult = await enrollStudentInLevel({
-          studentId: newUser.id,
-          levelSlug: purchasedTrack,
-        });
-        if (!enrollResult.ok) {
-          console.warn("[auth/register] course enrollment:", enrollResult.error);
-        }
-      } catch (enrollErr) {
-        console.warn("[auth/register] course enrollment failed:", enrollErr);
+        console.warn("[auth/register] checkout_track update:", trackUpdateError.message);
       }
     }
 
