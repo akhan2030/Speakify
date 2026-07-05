@@ -2,17 +2,30 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isValidTrack, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 import { grantPaidAccess } from "@/lib/payments/grantAccess";
-import { verifyMoyasarWebhookSignature } from "@/lib/payments/moyasar";
+import { verifyMoyasarWebhookSecret } from "@/lib/payments/moyasar";
 import { trackPriceHalalas } from "@/lib/payments/moyasar";
 
 export const runtime = "nodejs";
 
-/** Browser/Moyasar dashboard ping — real events are POST only. */
+type MoyasarWebhookEvent = {
+  id?: string;
+  type?: string;
+  secret_token?: string;
+  data?: {
+    id?: string;
+    status?: string;
+    amount?: number;
+    metadata?: { student_id?: string; track?: string };
+  };
+};
+
+/** Browser check — Moyasar delivers real events via POST. */
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    endpoint: "moyasar-webhook",
-    method: "POST",
+    live: true,
+    message: "Webhook endpoint is live. Moyasar sends POST payment events here.",
+    events: ["payment_paid"],
   });
 }
 
@@ -28,26 +41,29 @@ function getSupabase() {
 export async function POST(request: Request) {
   try {
     const rawBody = await request.text();
-    const signature = request.headers.get("x-moyasar-signature");
+    let payload: MoyasarWebhookEvent;
 
-    if (process.env.MOYASAR_WEBHOOK_SECRET?.trim()) {
-      if (!verifyMoyasarWebhookSignature(rawBody, signature)) {
-        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-      }
+    try {
+      payload = JSON.parse(rawBody) as MoyasarWebhookEvent;
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const payload = JSON.parse(rawBody) as {
-      id?: string;
-      status?: string;
-      amount?: number;
-      metadata?: { student_id?: string; track?: string };
-    };
+    if (!verifyMoyasarWebhookSecret(payload.secret_token)) {
+      return NextResponse.json({ error: "Invalid secret_token" }, { status: 401 });
+    }
 
-    const paymentId = String(payload.id ?? "").trim();
-    const status = String(payload.status ?? "").trim().toLowerCase();
+    const eventType = String(payload.type ?? "").trim();
+    if (eventType !== "payment_paid") {
+      return NextResponse.json({ ok: true, ignored: true, type: eventType || "unknown" });
+    }
+
+    const payment = payload.data ?? {};
+    const paymentId = String(payment.id ?? "").trim();
+    const status = String(payment.status ?? "").trim().toLowerCase();
 
     if (!paymentId || status !== "paid") {
-      return NextResponse.json({ ok: true, ignored: true });
+      return NextResponse.json({ ok: true, ignored: true, reason: "not_paid" });
     }
 
     const supabase = getSupabase();
@@ -58,10 +74,10 @@ export async function POST(request: Request) {
       .eq("moyasar_payment_id", paymentId)
       .maybeSingle();
 
-    let studentId = String(payload.metadata?.student_id ?? tx?.student_id ?? "").trim();
-    let trackRaw = String(payload.metadata?.track ?? tx?.track ?? "").trim().toLowerCase();
+    let studentId = String(payment.metadata?.student_id ?? tx?.student_id ?? "").trim();
+    let trackRaw = String(payment.metadata?.track ?? tx?.track ?? "").trim().toLowerCase();
     const amountHalalas =
-      Number(payload.amount) ||
+      Number(payment.amount) ||
       Number(tx?.amount_halalas) ||
       (isValidTrack(trackRaw as AcceleratorTrackId)
         ? trackPriceHalalas(trackRaw as AcceleratorTrackId)
@@ -80,12 +96,17 @@ export async function POST(request: Request) {
     }
 
     if (!studentId || !isValidTrack(trackRaw)) {
-      console.error("[payments/moyasar/webhook] missing student or track", {
+      console.warn("[payments/moyasar/webhook] acknowledged without grant", {
+        eventId: payload.id,
         paymentId,
         studentId,
         trackRaw,
       });
-      return NextResponse.json({ error: "Missing payment metadata" }, { status: 422 });
+      return NextResponse.json({
+        ok: true,
+        acknowledged: true,
+        reason: "payment_not_linked_to_student",
+      });
     }
 
     const result = await grantPaidAccess(supabase, {

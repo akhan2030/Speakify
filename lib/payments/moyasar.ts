@@ -98,18 +98,20 @@ export async function createMoyasarPayment(options: {
   };
 }
 
+export function verifyMoyasarWebhookSecret(secretToken: string | null | undefined): boolean {
+  const secret = process.env.MOYASAR_WEBHOOK_SECRET?.trim();
+  if (!secret) return true;
+  return String(secretToken ?? "").trim() === secret;
+}
+
+/** @deprecated Moyasar uses secret_token in body, not HMAC headers */
 export function verifyMoyasarWebhookSignature(
   payload: string,
   signature: string | null
 ): boolean {
-  const secret = process.env.MOYASAR_WEBHOOK_SECRET?.trim();
-  if (!secret) return false;
-  if (!signature) return false;
-
   try {
-    const crypto = require("crypto") as typeof import("crypto");
-    const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    const parsed = JSON.parse(payload) as { secret_token?: string };
+    return verifyMoyasarWebhookSecret(parsed.secret_token);
   } catch {
     return false;
   }
