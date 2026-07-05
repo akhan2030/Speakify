@@ -158,6 +158,33 @@ export async function POST(request) {
       );
     }
 
+    if (isIeltsRegistration && purchasedTrack) {
+      const { error: trackUpdateError } = await supabase
+        .from("users")
+        .update({ accelerator_track: purchasedTrack })
+        .eq("id", newUser.id);
+      if (trackUpdateError?.message?.includes("accelerator_track")) {
+        console.warn(
+          "[auth/register] users.accelerator_track column missing — run supabase/accelerator_track_setup.sql"
+        );
+      } else if (trackUpdateError) {
+        console.warn("[auth/register] accelerator_track update:", trackUpdateError.message);
+      }
+
+      try {
+        const { enrollStudentInLevel } = await import("@/lib/course/enrollment.js");
+        const enrollResult = await enrollStudentInLevel({
+          studentId: newUser.id,
+          levelSlug: purchasedTrack,
+        });
+        if (!enrollResult.ok) {
+          console.warn("[auth/register] course enrollment:", enrollResult.error);
+        }
+      } catch (enrollErr) {
+        console.warn("[auth/register] course enrollment failed:", enrollErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       userId: newUser.id,
