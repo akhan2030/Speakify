@@ -42,7 +42,7 @@ export const ONBOARDING_PROGRAMME_OPTIONS: OnboardingProgrammeOption[] = [
     id: "pathway",
     icon: "📚",
     title: "English Pathway",
-    subtitle: "CEFR pathway levels (A1–C2)",
+    subtitle: "Build my English · CEFR levels (A1–C2)",
     assessmentLabel: "CEFR level placement test",
   },
   {

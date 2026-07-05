@@ -342,6 +342,7 @@ export default function OnboardingPage() {
   }
 
   if (step === 1) {
+    // deploy: onboarding-goal-grid-v8 — all 8 Speakify programmes (Step 1)
     if (!contextLoaded || (purchasedTrack && !autoStarted && !skipPurchasedAutoStart)) {
       return (
         <div
@@ -363,22 +364,30 @@ export default function OnboardingPage() {
           Choose from all 8 Speakify programmes — we will place you at exactly the right level.
         </p>
         <p className="mt-6 text-sm font-semibold text-[#0d1b35]">
-          What are you here for? <span className="font-normal text-slate-500">(8 options)</span>
+          What are you here for?{" "}
+          <span className="font-normal text-slate-500">({ONBOARDING_PROGRAMME_OPTIONS.length} programmes)</span>
         </p>
-        <div className="mt-4 grid max-h-[min(70vh,520px)] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-4 lg:max-h-none lg:overflow-visible">
+        <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
           {ONBOARDING_PROGRAMME_OPTIONS.map((p) => (
             <button
               key={p.id}
               type="button"
               onClick={() => startAssessment(p.id)}
-              className="rounded-xl border-2 border-slate-200 p-4 text-left transition hover:border-[#c9972c] hover:bg-[#c9972c]/5"
+              className="rounded-xl border-2 border-slate-200 p-3 text-left transition hover:border-[#c9972c] hover:bg-[#c9972c]/5 md:p-4"
             >
-              <span className="text-2xl">{p.icon}</span>
-              <p className="mt-2 text-sm font-bold leading-snug text-[#0d1b35]">{p.title}</p>
-              <p className="mt-1 text-[11px] leading-snug text-slate-500">{p.subtitle}</p>
+              <span className="text-xl md:text-2xl">{p.icon}</span>
+              <p className="mt-1.5 text-xs font-bold leading-snug text-[#0d1b35] md:mt-2 md:text-sm">
+                {p.title}
+              </p>
+              <p className="mt-0.5 text-[10px] leading-snug text-slate-500 md:mt-1 md:text-[11px]">
+                {p.subtitle}
+              </p>
             </button>
           ))}
         </div>
+        <p className="mt-3 text-center text-[11px] text-slate-400">
+          IELTS Academic · IELTS General · TOEFL · STEP · Pathway · Business · Legal · Kids
+        </p>
       </Shell>
     );
   }
