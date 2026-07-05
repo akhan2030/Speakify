@@ -15,6 +15,7 @@ export default function RegisterIndexPage({ searchParams }: Props) {
   const programs = [
     REGISTRATION_PROGRAMS.pathway,
     REGISTRATION_PROGRAMS.ielts,
+    REGISTRATION_PROGRAMS["ielts-general"],
     REGISTRATION_PROGRAMS.toefl,
     REGISTRATION_PROGRAMS["step-test"],
     REGISTRATION_PROGRAMS["business-english"],
@@ -28,7 +29,7 @@ export default function RegisterIndexPage({ searchParams }: Props) {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#c9972c]" />
         <h1 className="mt-6 text-3xl font-bold text-white">Speakify Registration</h1>
         <p className="mt-3 text-slate-300">
-          Select your course to open the correct registration page
+          Select your course to open the correct registration page — 8 programmes available
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
