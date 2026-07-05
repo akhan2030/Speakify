@@ -1,4 +1,4 @@
-import { ACCELERATOR_TRACKS } from "@/lib/accelerator/tracks";
+import { ACCELERATOR_TRACKS, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 import { bandToCefr } from "@/lib/placement/scoring";
 import type {
   GatewayProgramme,
@@ -21,8 +21,13 @@ const PATHWAY_LABELS: Record<string, string> = {
   "A1.1": "Beginner",
 };
 
-function ieltsTrackRecommendation(estimatedBand: number, prefix: string) {
-  const track =
+function ieltsTrackRecommendation(estimatedBand: number, prefix: string): {
+  track: AcceleratorTrackId;
+  trackLabel: string;
+  target: string;
+  weeks: number;
+} {
+  const track: AcceleratorTrackId =
     estimatedBand >= 7.0 ? "elite" : estimatedBand >= 5.5 ? "plus" : "foundation";
   const meta = ACCELERATOR_TRACKS[track];
   return { track, trackLabel: `${prefix} ${meta.name}`, target: meta.target, weeks: meta.weekCount };
