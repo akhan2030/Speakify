@@ -655,6 +655,41 @@ export function recommendTrack(placementBand: number | null): AcceleratorTrackId
   return "elite";
 }
 
+const PURCHASE_SLUG_TO_TRACK: Record<string, AcceleratorTrackId> = {
+  "ielts-foundation": "foundation",
+  "ielts-plus": "plus",
+  "ielts-elite": "elite",
+  foundation: "foundation",
+  plus: "plus",
+  elite: "elite",
+};
+
+/** Map course slug or level slug from enrollment to an accelerator track id. */
+export function trackFromEnrollmentSlug(
+  slug: string | null | undefined
+): AcceleratorTrackId | null {
+  if (!slug) return null;
+  const key = slug.trim().toLowerCase();
+  if (isValidTrack(key)) return key;
+  return PURCHASE_SLUG_TO_TRACK[key] ?? null;
+}
+
+/**
+ * Resolve the student's accelerator track.
+ * Purchased/enrolled tier wins over placement-band recommendation.
+ */
+export function resolveAcceleratorTrack(options: {
+  acceleratorTrack?: string | null;
+  enrolledLevelSlug?: string | null;
+  placementBand?: number | null;
+}): AcceleratorTrackId {
+  const fromUser = trackFromEnrollmentSlug(options.acceleratorTrack);
+  if (fromUser) return fromUser;
+  const fromEnrollment = trackFromEnrollmentSlug(options.enrolledLevelSlug);
+  if (fromEnrollment) return fromEnrollment;
+  return recommendTrack(options.placementBand ?? null);
+}
+
 export function isValidTrack(track: string): track is AcceleratorTrackId {
   return track === "foundation" || track === "plus" || track === "elite";
 }

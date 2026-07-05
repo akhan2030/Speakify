@@ -130,7 +130,7 @@ const JOURNEY_STEPS: Record<AcceleratorTrackId, { id: string; title: string; sec
     { id: "integrated", title: "Integrated Practice" },
     { id: "mini_mock", title: "Mini Mock Tests" },
     { id: "full_mock", title: "Full Mock Tests", section: "listening" },
-    { id: "graduation", title: "Graduation Test" },
+    { id: "graduation", title: "Track completion check" },
   ],
   plus: [
     { id: "diagnostic", title: "Diagnostic" },
@@ -142,7 +142,7 @@ const JOURNEY_STEPS: Record<AcceleratorTrackId, { id: string; title: string; sec
     { id: "integrated", title: "Integrated Practice" },
     { id: "full_mock_1", title: "Full Mock #1" },
     { id: "full_mock_2", title: "Full Mock #2" },
-    { id: "graduation", title: "Band 6.5 Readiness" },
+    { id: "graduation", title: "Band 6.5 readiness check" },
   ],
   elite: [
     { id: "diagnostic", title: "Diagnostic" },
@@ -153,7 +153,7 @@ const JOURNEY_STEPS: Record<AcceleratorTrackId, { id: string; title: string; sec
     { id: "integrated", title: "Timed Integration" },
     { id: "full_mock_1", title: "Full Mock #1" },
     { id: "full_mock_2", title: "Full Mock #2" },
-    { id: "graduation", title: "Elite Graduation" },
+    { id: "graduation", title: "Elite track completion check" },
   ],
 };
 
@@ -377,10 +377,10 @@ export function buildLearningJourney(
     graduationTarget: GRADUATION_TARGET[track],
     graduationLabel:
       track === "foundation"
-        ? "Foundation Graduation"
+        ? "Foundation track completion"
         : track === "plus"
-          ? "Plus Track Graduation"
-          : "Elite Graduation",
+          ? "Plus track completion"
+          : "Elite track completion",
     nextActivity: pickNextActivity(track, dashboard, skillReadiness),
     continueActivity: pickContinue(dashboard, track),
     journeySteps: buildJourneySteps(track, dashboard.lastBySection, fullMockDone),

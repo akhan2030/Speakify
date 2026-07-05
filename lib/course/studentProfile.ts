@@ -2,6 +2,10 @@ import { roundToHalfBand } from "@/lib/placement/scoring";
 import { bandToProgramTrackSlug, getProgramTrack } from "@/lib/course/programTracks";
 import { bandToCefrSubLevelSlug, getCefrLevel } from "@/lib/course/cefrLevels";
 import type { PlacementResult } from "@/lib/placement/types";
+import {
+  resolveAcceleratorTrack,
+  type AcceleratorTrackId,
+} from "@/lib/accelerator/tracks";
 
 export type SkillBandMap = {
   writing: number | null;
@@ -21,6 +25,8 @@ export type StudentProfile = {
   weakAreas: string[];
   strongAreas: string[];
   placementBand: number | null;
+  /** Purchased IELTS tier stored on users.accelerator_track (foundation | plus | elite) */
+  acceleratorTrack: string | null;
   enrolledTrackSlug: string | null;
   enrolledTrackName: string | null;
   courseProgressPercent: number;
@@ -86,6 +92,7 @@ export function buildStudentProfile(input: {
   skillBands: SkillBandMap;
   targetBand?: number | null;
   placementBand?: number | null;
+  acceleratorTrack?: string | null;
   enrolledTrackSlug?: string | null;
   enrolledTrackName?: string | null;
   lessonsCompleted?: number;
@@ -132,6 +139,7 @@ export function buildStudentProfile(input: {
     weakAreas,
     strongAreas,
     placementBand: input.placementBand ?? null,
+    acceleratorTrack: input.acceleratorTrack ?? null,
     enrolledTrackSlug: input.enrolledTrackSlug ?? null,
     enrolledTrackName: input.enrolledTrackName ?? null,
     courseProgressPercent,
@@ -146,6 +154,14 @@ export function buildStudentProfile(input: {
 
 export function getSkillLabel(skill: string) {
   return SKILL_LABELS[skill] ?? skill.replace(/_/g, " ");
+}
+
+export function getProfileAcceleratorTrack(profile: StudentProfile): AcceleratorTrackId {
+  return resolveAcceleratorTrack({
+    acceleratorTrack: profile.acceleratorTrack,
+    enrolledLevelSlug: profile.enrolledTrackSlug,
+    placementBand: profile.placementBand,
+  });
 }
 
 export function getRecommendedTrackSlug(profile: StudentProfile): string {

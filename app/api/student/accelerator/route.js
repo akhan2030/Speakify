@@ -4,8 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 import {
   ACCELERATOR_TRACKS,
-  recommendTrack,
 } from "@/lib/accelerator/tracks";
+import { getProfileAcceleratorTrack } from "@/lib/course/studentProfile";
 
 export const runtime = "nodejs";
 
@@ -25,7 +25,7 @@ export async function GET() {
       profile.skillBands?.reading ??
       null;
 
-    const recommendedTrack = recommendTrack(placementBand);
+    const recommendedTrack = getProfileAcceleratorTrack(profile);
 
     return NextResponse.json({
       placementBand,

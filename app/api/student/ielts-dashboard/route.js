@@ -7,8 +7,8 @@ import { buildRecommendations } from "@/lib/course/recommendationEngine";
 import { computeReadinessMeter } from "@/lib/course/readinessMeter";
 import {
   ACCELERATOR_TRACKS,
-  recommendTrack,
 } from "@/lib/accelerator/tracks";
+import { getProfileAcceleratorTrack } from "@/lib/course/studentProfile";
 import {
   getMissionTasksForDay,
   getWeakestSkillActions,
@@ -295,12 +295,12 @@ export async function GET() {
 
     const placementBand =
       profile.placementBand ?? profile.currentBand ?? profile.skillBands?.reading ?? null;
-    const recommendedTrack = recommendTrack(placementBand);
+    const recommendedTrack = getProfileAcceleratorTrack(profile);
     const trackMeta = ACCELERATOR_TRACKS[recommendedTrack];
 
     const todayKey = todayDateKey();
     const studyDay = getStudyDay();
-    const missionTasks = getMissionTasksForDay(studyDay);
+    const missionTasks = getMissionTasksForDay(studyDay, recommendedTrack);
 
     const bands = {
       writing: profile.skillBands.writing,

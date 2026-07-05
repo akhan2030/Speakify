@@ -58,11 +58,36 @@ export default function ReadingPracticeIndexPage() {
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {QUESTION_TYPES.map((type) => {
               const comingSoon = READING_INCOMPLETE_UI_TYPES.has(type.slug);
+              const cardClass = `flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow ${
+                comingSoon
+                  ? "cursor-not-allowed opacity-75"
+                  : "hover:shadow-md hover:ring-2 hover:ring-[#c9972c]/20"
+              }`;
+
+              if (comingSoon) {
+                return (
+                  <div key={type.slug} className={cardClass} aria-disabled="true">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="font-bold text-[#0d1b35]">{type.name}</h2>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${DIFFICULTY_CLASS[type.difficulty]}`}
+                      >
+                        {type.difficulty}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold text-amber-700">
+                      Coming soon — exam-style UI is in development
+                    </p>
+                    <span className="mt-4 text-sm font-bold text-slate-400">Not available yet</span>
+                  </div>
+                );
+              }
+
               return (
               <Link
                 key={type.slug}
                 href={`${base}/reading/practice/${type.slug}`}
-                className={`flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-[#c9972c]/20 ${comingSoon ? "opacity-80" : ""}`}
+                className={cardClass}
               >
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="font-bold text-[#0d1b35]">{type.name}</h2>
@@ -70,13 +95,8 @@ export default function ReadingPracticeIndexPage() {
                     {type.difficulty}
                   </span>
                 </div>
-                {comingSoon ? (
-                  <p className="mt-2 text-xs font-semibold text-amber-700">
-                    Coming soon — dedicated UI not ready yet
-                  </p>
-                ) : null}
                 <span className="mt-4 text-sm font-bold text-[#c9972c]">
-                  {comingSoon ? "Preview →" : "Start Practice →"}
+                  Start Practice →
                 </span>
               </Link>
             );

@@ -65,6 +65,13 @@ export async function POST(request: Request) {
     const cefrLevel = bandToPathwaySubLevel(placementBand);
     const dashboardPath = dashboardPathForProgramme(programme);
 
+    const supabase = getSupabase();
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("accelerator_track")
+      .eq("id", studentId)
+      .maybeSingle();
+
     const updates: Record<string, unknown> = {
       onboarding_completed: true,
       placement_band: placementBand,
@@ -77,7 +84,10 @@ export async function POST(request: Request) {
     if (programme === "ielts") {
       updates.program_type = "ielts";
       updates.enrolled_programs = ["ielts"];
-      if (recommendation.kind === "ielts") {
+      if (
+        recommendation.kind === "ielts" &&
+        !existingUser?.accelerator_track
+      ) {
         updates.accelerator_track = recommendation.track;
       }
     } else if (programme === "pathway") {
@@ -92,7 +102,6 @@ export async function POST(request: Request) {
       updates.enrolled_programs = ["business_english"];
     }
 
-    const supabase = getSupabase();
     const { error } = await supabase.from("users").update(updates).eq("id", studentId);
 
     if (error) {

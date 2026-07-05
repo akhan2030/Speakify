@@ -6,6 +6,7 @@ import {
   validateRegistration,
 } from "@/lib/registration";
 import { hashPassword } from "@/lib/password";
+import { trackFromEnrollmentSlug } from "@/lib/accelerator/tracks";
 
 export const runtime = "nodejs";
 
@@ -55,6 +56,11 @@ export async function POST(request) {
 
     const body = await request.json().catch(() => ({}));
     const registrationSlug = String(body.registrationSlug ?? "").trim();
+    const courseSlug = String(body.courseSlug ?? registrationSlug ?? "").trim();
+    const acceleratorTrackParam = String(body.acceleratorTrack ?? body.track ?? "").trim();
+    const purchasedTrack =
+      trackFromEnrollmentSlug(acceleratorTrackParam) ??
+      trackFromEnrollmentSlug(courseSlug);
     const validated = validateRegistration(body);
     if (!validated.ok) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
@@ -91,6 +97,10 @@ export async function POST(request) {
     const cefrLevel = englishLevel ? englishLevelToCefr(englishLevel) : null;
 
     const isStepRegistration = registrationSlug === "step-test";
+    const isIeltsRegistration =
+      programType === "ielts" ||
+      registrationSlug === "ielts" ||
+      registrationSlug.startsWith("ielts-");
 
     const { data: newUser, error: userError } = await insertUser(supabase, {
       id: userId,
@@ -99,10 +109,15 @@ export async function POST(request) {
       password: passwordHash,
       role: "student",
       phone,
-      program_type: programType,
+      program_type: isIeltsRegistration ? "ielts" : programType,
       ...(isStepRegistration
         ? { step_enrolled: true, enrolled_programs: ["step"] }
-        : {}),
+        : isIeltsRegistration
+          ? {
+              enrolled_programs: ["ielts"],
+              ...(purchasedTrack ? { accelerator_track: purchasedTrack } : {}),
+            }
+          : {}),
       ...(englishLevel ? { english_level: englishLevel } : {}),
       ...(targetBand ? { target_band: targetBand } : {}),
       ...(studyReason ? { study_reason: studyReason } : {}),

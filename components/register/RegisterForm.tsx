@@ -8,6 +8,7 @@ import {
   type RegistrationSlug,
 } from "@/lib/registration";
 import { buildLoginPath } from "@/lib/courses/loginPaths";
+import { ACCELERATOR_TRACKS, isValidTrack, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 
 function Spinner() {
   return (
@@ -15,9 +16,21 @@ function Spinner() {
   );
 }
 
-export default function RegisterForm({ slug }: { slug: RegistrationSlug }) {
+export default function RegisterForm({
+  slug,
+  acceleratorTrack,
+}: {
+  slug: RegistrationSlug;
+  acceleratorTrack?: string;
+}) {
   const router = useRouter();
   const program = getRegistrationProgram(slug);
+  const purchasedTrack: AcceleratorTrackId | undefined = isValidTrack(
+    String(acceleratorTrack ?? "")
+  )
+    ? (acceleratorTrack as AcceleratorTrackId)
+    : undefined;
+  const trackMeta = purchasedTrack ? ACCELERATOR_TRACKS[purchasedTrack] : null;
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -54,6 +67,8 @@ export default function RegisterForm({ slug }: { slug: RegistrationSlug }) {
         body: JSON.stringify({
           programType: program.programType,
           registrationSlug: slug,
+          acceleratorTrack: purchasedTrack ?? undefined,
+          courseSlug: purchasedTrack ? `ielts-${purchasedTrack}` : undefined,
           fullName: fullName.trim(),
           email: email.trim(),
           phone: phone.trim(),
@@ -103,8 +118,13 @@ export default function RegisterForm({ slug }: { slug: RegistrationSlug }) {
             </div>
           </div>
           <p className="mt-8 text-xl font-semibold text-white/95">
-            Join {program.label}
+            Join {trackMeta ? `IELTS ${trackMeta.name}` : program.label}
           </p>
+          {trackMeta ? (
+            <p className="mt-2 text-sm font-semibold text-[#c9972c]">
+              Target {trackMeta.target} · {trackMeta.duration}
+            </p>
+          ) : null}
           <p className="mt-3 text-sm leading-relaxed text-slate-300">
             {program.description}
           </p>

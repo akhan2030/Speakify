@@ -118,7 +118,9 @@ export default function IeltsTrackPage() {
       </header>
 
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="font-bold text-[#0d1b35]">6-week roadmap</h2>
+        <h2 className="font-bold text-[#0d1b35]">
+          {track.weekCount}-week roadmap
+        </h2>
         <div className="mt-4">
           <WeekTimeline weeks={track.weeks} currentWeek={track.currentWeek} />
         </div>
@@ -219,8 +221,15 @@ export default function IeltsTrackPage() {
           <p className="text-3xl">🎓</p>
           <h2 className="mt-2 text-lg font-bold text-[#0d1b35]">Track complete!</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Certificate preview — full graduation flow coming in Session 5
+            You finished the {track.name} programme. Keep practising with mock exams and skill
+            drills to stay exam-ready.
           </p>
+          <Link
+            href="/dashboard/ielts/student/mock-exam"
+            className="mt-4 inline-flex rounded-xl bg-[#0d1b35] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#152a4d]"
+          >
+            Take a mock exam →
+          </Link>
         </section>
       ) : null}
     </main>

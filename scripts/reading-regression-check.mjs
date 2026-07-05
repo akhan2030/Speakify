@@ -14,6 +14,7 @@ import {
   validateReadingPracticeContent,
   validateTfngAnswerBalance,
 } from "../lib/readingQuestionContent.js";
+import { resolveAcceleratorTrack } from "../lib/accelerator/tracks.ts";
 
 let failed = 0;
 
@@ -234,6 +235,18 @@ test("validateTfngAnswerBalance accepts balanced set", () => {
     { correct: "TRUE" },
   ]);
   assert.ok(check.valid, check.errors.join("; "));
+});
+
+test("resolveAcceleratorTrack prefers purchased tier over placement band", () => {
+  assert.equal(
+    resolveAcceleratorTrack({ acceleratorTrack: "elite", placementBand: 4.0 }),
+    "elite"
+  );
+  assert.equal(
+    resolveAcceleratorTrack({ enrolledLevelSlug: "ielts-plus", placementBand: 8.0 }),
+    "plus"
+  );
+  assert.equal(resolveAcceleratorTrack({ placementBand: 4.0 }), "foundation");
 });
 
 if (failed > 0) {

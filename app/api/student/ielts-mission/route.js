@@ -4,9 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import {
   ACCELERATOR_TRACKS,
-  recommendTrack,
 } from "@/lib/accelerator/tracks";
 import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
+import { getProfileAcceleratorTrack } from "@/lib/course/studentProfile";
 import { getMissionTasksForDay } from "@/lib/ielts/missionTasks";
 import {
   getStudyDay,
@@ -73,11 +73,11 @@ function computeTrackWeek(completions, weekCount) {
   return { currentWeek, progressPercent, completedWeeks };
 }
 
-function buildWeekPayload(completions, weekDates, todayKey, trackCurrentWeek) {
+function buildWeekPayload(completions, weekDates, todayKey, trackCurrentWeek, trackId) {
   return weekDates.map((d) => {
     const ids = completionsSetForDate(completions, d.dateKey);
-    const status = dayCompletionStatus(d.dateKey, d.day, ids);
-    const tasks = attachTaskCompletion(getMissionTasksForDay(d.day), d.dateKey, ids);
+    const status = dayCompletionStatus(d.dateKey, d.day, ids, trackId);
+    const tasks = attachTaskCompletion(getMissionTasksForDay(d.day, trackId), d.dateKey, ids);
     const isToday = d.dateKey === todayKey;
     const isFuture = d.dateKey > todayKey;
     const weekNum = trackCurrentWeek;
@@ -124,7 +124,7 @@ export async function GET(request) {
     const profile = await fetchStudentProfile(studentId);
     const placementBand =
       profile.placementBand ?? profile.currentBand ?? profile.skillBands?.reading ?? null;
-    const trackId = recommendTrack(placementBand);
+    const trackId = getProfileAcceleratorTrack(profile);
     const trackMeta = ACCELERATOR_TRACKS[trackId];
 
     let completions = [];
@@ -156,7 +156,7 @@ export async function GET(request) {
     const { currentWeek, progressPercent } = computeTrackWeek(completions, trackMeta.weekCount);
     const completedIds = completionsSetForDate(completions, targetDateKey);
     const tasks = attachTaskCompletion(
-      getMissionTasksForDay(studyDay),
+      getMissionTasksForDay(studyDay, trackId),
       targetDateKey,
       completedIds
     );
@@ -166,19 +166,21 @@ export async function GET(request) {
       .reduce((s, t) => s + t.minutes, 0);
 
     const tomorrowDay = getTomorrowDay(studyDay);
-    const tomorrowTasks = getMissionTasksForDay(tomorrowDay);
+    const tomorrowTasks = getMissionTasksForDay(tomorrowDay, trackId);
 
     const thisWeekDays = buildWeekPayload(
       completions,
       getStudyWeekDates(),
       todayKey,
-      currentWeek
+      currentWeek,
+      trackId
     );
     const nextWeekDays = buildWeekPayload(
       completions,
       getNextStudyWeekDates(),
       todayKey,
-      currentWeek + 1
+      currentWeek + 1,
+      trackId
     );
 
     const weeks = Array.from({ length: trackMeta.weekCount }, (_, i) => {
@@ -267,7 +269,9 @@ export async function POST(request) {
 
     const supabase = getSupabase();
     const studyDay = getStudyDay();
-    const missionTasks = getMissionTasksForDay(studyDay);
+    const profile = await fetchStudentProfile(studentId);
+    const trackId = getProfileAcceleratorTrack(profile);
+    const missionTasks = getMissionTasksForDay(studyDay, trackId);
     const baseTaskId = taskId.includes("::") ? parseMissionTaskKey(taskId).taskId : taskId;
     const task = missionTasks.find((t) => t.id === baseTaskId);
 

@@ -9,6 +9,7 @@ import ScreenLock from "@/components/ScreenLock";
 import DailyLimitReached from "@/components/DailyLimitReached";
 import { useReadingTimer } from "@/lib/readingTimer";
 import { isValidQuestionType, normalizeQuestionType } from "@/lib/readingPassageTypes";
+import { READING_INCOMPLETE_UI_TYPES } from "@/lib/readingQuestionContent.js";
 import { initDailyLimit, fetchPassage } from "@/lib/useDailyLimitGate";
 import type { DailyLimitState } from "@/lib/useDailyLimitGate";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
@@ -352,6 +353,30 @@ export default function ReadingPracticePage() {
               className="mt-6 inline-flex rounded-xl bg-[#0d1b35] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#152a4d]"
             >
               Choose a Question Type
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (READING_INCOMPLETE_UI_TYPES.has(slug)) {
+    return (
+      <div className="min-h-screen flex bg-white">
+        {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
+        <main className={`flex-1 bg-slate-50 p-8 ${usesProgramShell ? "" : "ml-[200px]"}`}>
+          <div className="mx-auto max-w-lg rounded-xl border border-amber-200 bg-white p-8 text-center shadow-sm">
+            <h1 className="text-xl font-bold text-[#0d1b35]">Coming soon</h1>
+            <p className="mt-3 text-sm text-slate-600">
+              Exam-style practice for{" "}
+              <span className="font-medium">{slug.replace(/-/g, " ")}</span> is in development.
+              Choose another question type for now.
+            </p>
+            <Link
+              href={`${base}/reading/practice`}
+              className="mt-6 inline-flex rounded-xl bg-[#0d1b35] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#152a4d]"
+            >
+              Back to question types
             </Link>
           </div>
         </main>

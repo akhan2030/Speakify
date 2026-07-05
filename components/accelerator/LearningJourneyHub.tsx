@@ -287,7 +287,7 @@ export default function LearningJourneyHub({
           IELTS Exam Readiness
         </h2>
         <p className="mb-4 text-sm text-slate-500">
-          To reach {journey.graduationLabel}: need {journey.graduationTarget}% readiness
+          To complete {journey.graduationLabel}: reach {journey.graduationTarget}% readiness
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           {journey.skillReadiness.map((skill) => (
