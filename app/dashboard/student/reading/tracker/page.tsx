@@ -10,6 +10,7 @@ import {
   trackerStatus,
 } from "@/lib/readingScorer";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 
 type Difficulty = "Easy" | "Medium" | "Hard";
 
@@ -118,6 +119,7 @@ type PassageHistoryRow = {
 export default function ReadingTrackerPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { base, usesProgramShell } = usePathwayStudentContext();
   const [trackerRows, setTrackerRows] = useState<TrackerRow[]>([]);
   const [passageHistory, setPassageHistory] = useState<PassageHistoryRow[]>([]);
   const [passageHistoryTotal, setPassageHistoryTotal] = useState(0);
@@ -193,9 +195,9 @@ export default function ReadingTrackerPage() {
 
   return (
     <div className="min-h-screen flex bg-white">
-      <StudentSidebar activePage="reading" />
+      {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
 
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50">
+      <main className={`min-h-screen flex-1 bg-slate-50 ${usesProgramShell ? "" : "ml-[200px]"}`}>
         <div className="mx-auto max-w-6xl px-6 py-8">
           <header>
             <h1 className="text-2xl font-bold text-[#0d1b35] sm:text-3xl">
@@ -263,7 +265,7 @@ export default function ReadingTrackerPage() {
                         </td>
                         <td className="px-4 py-4">
                           <Link
-                            href={`/dashboard/student/reading/practice/${type.slug}`}
+                            href={`${base}/reading/practice/${type.slug}`}
                             className="inline-flex rounded-lg bg-[#c9972c] px-3 py-1.5 text-xs font-bold text-[#0d1b35] hover:bg-[#b8862b]"
                           >
                             Practice
@@ -304,7 +306,7 @@ export default function ReadingTrackerPage() {
                       </td>
                       <td className="px-4 py-4">
                         <Link
-                          href={`/dashboard/student/reading/practice/${type.slug}`}
+                          href={`${base}/reading/practice/${type.slug}`}
                           className="inline-flex rounded-lg bg-[#c9972c] px-3 py-1.5 text-xs font-bold text-[#0d1b35] hover:bg-[#b8862b]"
                         >
                           Practice

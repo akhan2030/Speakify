@@ -151,7 +151,13 @@ function LimitProgressBar({
   );
 }
 
-function MockTestModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null }) {
+function MockTestModeCard({
+  dailyLimit,
+  base,
+}: {
+  dailyLimit: DailyLimitInfo | null;
+  base: string;
+}) {
   const maxTests = dailyLimit?.mockTestsMax ?? 10;
   const testsUsed = dailyLimit?.unlimited ? 0 : (dailyLimit?.mockTestsUsed ?? 0);
   const atLimit = Boolean(dailyLimit && !dailyLimit.unlimited && !dailyLimit.canTakeMockTest);
@@ -182,7 +188,7 @@ function MockTestModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null })
           {buttonLabel}
         </span>
       ) : (
-        <Link href="/dashboard/student/reading/test" className={`mt-6 block w-full rounded-xl py-3 text-center text-sm font-bold transition-colors ${buttonClass}`}>
+        <Link href={`${base}/reading/test`} className={`mt-6 block w-full rounded-xl py-3 text-center text-sm font-bold transition-colors ${buttonClass}`}>
           {buttonLabel}
         </Link>
       )}
@@ -190,7 +196,13 @@ function MockTestModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null })
   );
 }
 
-function PassageTestModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null }) {
+function PassageTestModeCard({
+  dailyLimit,
+  base,
+}: {
+  dailyLimit: DailyLimitInfo | null;
+  base: string;
+}) {
   const maxTests = dailyLimit?.passageTestsMax ?? 15;
   const testsUsed = dailyLimit?.unlimited ? 0 : (dailyLimit?.passageTestsUsed ?? 0);
   const atLimit = Boolean(dailyLimit && !dailyLimit.unlimited && !dailyLimit.canTakePassageTest);
@@ -222,7 +234,7 @@ function PassageTestModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null
         </span>
       ) : (
         <Link
-          href="/dashboard/student/reading/test/passage/multiple-choice"
+          href={`${base}/reading/test/passage/multiple-choice`}
           className={`mt-6 block w-full rounded-xl py-3 text-center text-sm font-bold transition-colors ${buttonClass}`}
         >
           {buttonLabel}
@@ -232,7 +244,13 @@ function PassageTestModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null
   );
 }
 
-function PracticeModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null }) {
+function PracticeModeCard({
+  dailyLimit,
+  base,
+}: {
+  dailyLimit: DailyLimitInfo | null;
+  base: string;
+}) {
   const maxTests = dailyLimit?.practiceTestsMax ?? 15;
   const testsUsed = dailyLimit?.unlimited ? 0 : (dailyLimit?.practiceTestsUsed ?? 0);
   const atLimit = Boolean(dailyLimit && !dailyLimit.unlimited && !dailyLimit.canTakePracticeTest);
@@ -264,7 +282,7 @@ function PracticeModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null })
         </span>
       ) : (
         <Link
-          href="/dashboard/student/reading/practice"
+          href={`${base}/reading/practice`}
           className={`mt-6 block w-full rounded-xl py-3 text-center text-sm font-bold transition-colors ${buttonClass}`}
         >
           {buttonLabel}
@@ -277,7 +295,7 @@ function PracticeModeCard({ dailyLimit }: { dailyLimit: DailyLimitInfo | null })
 export default function StudentReadingPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { isPathway } = usePathwayStudentContext();
+  const { isPathway, base, usesProgramShell } = usePathwayStudentContext();
   const [trackerRows, setTrackerRows] = useState<TrackerRow[]>([]);
   const [stats, setStats] = useState<ReadingStats | null>(null);
   const [dailyLimit, setDailyLimit] = useState<DailyLimitInfo | null>(null);
@@ -374,9 +392,9 @@ export default function StudentReadingPage() {
 
   return (
     <div className="flex min-h-screen bg-white">
-      <StudentSidebar activePage="reading" />
+      {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
 
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50">
+      <main className={`min-h-screen flex-1 bg-slate-50 ${usesProgramShell ? "" : "ml-[200px]"}`}>
         <div className="mx-auto max-w-6xl px-6 py-8">
           <header>
             <h1 className="text-2xl font-bold text-[#0d1b35] sm:text-3xl">
@@ -405,9 +423,9 @@ export default function StudentReadingPage() {
           </div>
 
           <div className={`mt-8 grid grid-cols-1 gap-6 ${isPathway ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
-            <PracticeModeCard dailyLimit={dailyLimit} />
-            <PassageTestModeCard dailyLimit={dailyLimit} />
-            {!isPathway ? <MockTestModeCard dailyLimit={dailyLimit} /> : null}
+            <PracticeModeCard dailyLimit={dailyLimit} base={base} />
+            <PassageTestModeCard dailyLimit={dailyLimit} base={base} />
+            {!isPathway ? <MockTestModeCard dailyLimit={dailyLimit} base={base} /> : null}
           </div>
 
           <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -419,7 +437,7 @@ export default function StudentReadingPage() {
                 </p>
                 <p className="mt-1 text-base font-bold text-[#0d1b35]">{continueLabel}</p>
               </div>
-              <Link href={`/dashboard/student/reading/practice/${continueSlug}`} className="rounded-xl bg-[#c9972c] px-6 py-2.5 text-sm font-bold text-[#0d1b35] hover:bg-[#b8862b]">
+              <Link href={`${base}/reading/practice/${continueSlug}`} className="rounded-xl bg-[#c9972c] px-6 py-2.5 text-sm font-bold text-[#0d1b35] hover:bg-[#b8862b]">
                 Continue
               </Link>
             </div>
@@ -464,10 +482,10 @@ export default function StudentReadingPage() {
               </table>
             </div>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link href="/dashboard/student/reading/strategies" className="inline-flex items-center justify-center rounded-xl border border-[#0d1b35] px-6 py-2.5 text-sm font-bold text-[#0d1b35] transition-colors hover:bg-[#0d1b35] hover:text-white">
+              <Link href={`${base}/reading/strategies`} className="inline-flex items-center justify-center rounded-xl border border-[#0d1b35] px-6 py-2.5 text-sm font-bold text-[#0d1b35] transition-colors hover:bg-[#0d1b35] hover:text-white">
                 View Strategies
               </Link>
-              <Link href="/dashboard/student/reading/tracker" className="inline-flex items-center justify-center rounded-xl border border-[#0d1b35] px-6 py-2.5 text-sm font-bold text-[#0d1b35] transition-colors hover:bg-[#0d1b35] hover:text-white">
+              <Link href={`${base}/reading/tracker`} className="inline-flex items-center justify-center rounded-xl border border-[#0d1b35] px-6 py-2.5 text-sm font-bold text-[#0d1b35] transition-colors hover:bg-[#0d1b35] hover:text-white">
                 View Full Tracker
               </Link>
             </div>

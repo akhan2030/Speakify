@@ -18,7 +18,7 @@ export function getOfficialInstructionParts(
   options?: { chooseCount?: number }
 ): InstructionPart[] {
   const type = normalizeType(questionType);
-  const choose = options?.chooseCount ?? 2;
+  const choose = options?.chooseCount ?? 1;
 
   const twoWords: InstructionPart[] = [
     { text: "NO MORE THAN TWO WORDS AND/OR A NUMBER", emphasis: "limit" },

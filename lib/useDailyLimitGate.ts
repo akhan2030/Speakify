@@ -95,6 +95,26 @@ export async function initDailyLimit(
   return { limits, allowed: canTake };
 }
 
+export type PracticePassage = {
+  passageId: string;
+  slug: string;
+  name: string;
+  title: string;
+  difficulty?: string;
+  instructions?: string;
+  paragraphs: { id: string; label: string; text: string }[];
+  questions: Array<{
+    id: string;
+    kind: string;
+    text: string;
+    options?: { key: string; label: string }[];
+    headings?: { key: string; label: string }[];
+    paragraphId?: string;
+    correct?: string;
+  }>;
+  headings?: { key: string; label: string }[];
+};
+
 export async function fetchPassage(
   studentId: string,
   questionType: string,
@@ -108,7 +128,7 @@ export async function fetchPassage(
     throw new Error(data?.error ?? "Failed to load passage");
   }
   return data as {
-    passage: ReturnType<typeof import("./passageContentAdapter").bankPassageToPracticeContent>;
+    passage: PracticePassage;
     correctAnswers: Record<string, string>;
   };
 }

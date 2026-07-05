@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
+import { READING_INCOMPLETE_UI_TYPES } from "@/lib/readingQuestionContent.js";
 
 const QUESTION_TYPES = [
   { slug: "multiple-choice", name: "Multiple Choice", difficulty: "Medium" },
@@ -55,11 +56,13 @@ export default function ReadingPracticeIndexPage() {
             <p className="mt-2 text-sm text-slate-500">Choose a question type to practice with timed feedback</p>
           </header>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {QUESTION_TYPES.map((type) => (
+            {QUESTION_TYPES.map((type) => {
+              const comingSoon = READING_INCOMPLETE_UI_TYPES.has(type.slug);
+              return (
               <Link
                 key={type.slug}
                 href={`${base}/reading/practice/${type.slug}`}
-                className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-[#c9972c]/20"
+                className={`flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-[#c9972c]/20 ${comingSoon ? "opacity-80" : ""}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="font-bold text-[#0d1b35]">{type.name}</h2>
@@ -67,9 +70,17 @@ export default function ReadingPracticeIndexPage() {
                     {type.difficulty}
                   </span>
                 </div>
-                <span className="mt-4 text-sm font-bold text-[#c9972c]">Start Practice →</span>
+                {comingSoon ? (
+                  <p className="mt-2 text-xs font-semibold text-amber-700">
+                    Coming soon — dedicated UI not ready yet
+                  </p>
+                ) : null}
+                <span className="mt-4 text-sm font-bold text-[#c9972c]">
+                  {comingSoon ? "Preview →" : "Start Practice →"}
+                </span>
               </Link>
-            ))}
+            );
+            })}
           </div>
         </div>
       </main>

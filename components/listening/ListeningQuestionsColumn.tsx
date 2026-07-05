@@ -6,6 +6,7 @@ import ListeningQuestions, {
   type ListeningQuestion,
 } from "@/components/ListeningQuestions";
 import { getGlobalQuestionRange } from "@/lib/listeningIeltsInstructions";
+import { getMcqChooseCountForQuestions } from "@/lib/listeningQuestionContent.js";
 import type { QuestionGroup } from "@/lib/listeningQuestionGroups";
 
 export function ListeningQuestionsColumn({
@@ -78,7 +79,14 @@ export function ListeningQuestionsColumn({
             QUESTIONS {group.start}–{group.end}
           </h3>
           {!hideInstructionBlock ? (
-            <ListeningIeltsInstruction questionType={group.type} />
+            <ListeningIeltsInstruction
+              questionType={group.type}
+              chooseCount={
+                group.type === "multiple-choice"
+                  ? getMcqChooseCountForQuestions(group.questions)
+                  : undefined
+              }
+            />
           ) : null}
           <div className="w-full">
             <ListeningQuestions

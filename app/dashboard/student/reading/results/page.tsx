@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import MidnightCountdown from "@/components/MidnightCountdown";
 import { formatTimeTaken, loadTestResults } from "@/lib/readingTestUtils";
 import { accuracyColorClass, bandColorClass } from "@/lib/readingScorer";
@@ -61,6 +62,7 @@ function ResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status } = useSession();
+  const { base, usesProgramShell } = usePathwayStudentContext();
 
   const testType = searchParams.get("testType");
   const legacyScore = searchParams.get("score");
@@ -114,8 +116,8 @@ function ResultsContent() {
 
   return (
     <div className="flex min-h-screen bg-white">
-      <StudentSidebar activePage="reading" />
-      <main className="ml-[200px] flex-1 bg-slate-50 p-8">
+      {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
+      <main className={`flex-1 bg-slate-50 p-8 ${usesProgramShell ? "" : "ml-[200px]"}`}>
         <div className="mx-auto max-w-3xl">
           <h1 className="text-2xl font-bold text-[#0d1b35]">
             {isFullTest
@@ -233,14 +235,14 @@ function ResultsContent() {
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             {weakestType ? (
               <Link
-                href={`/dashboard/student/reading/practice/${weakestType}`}
+                href={`${base}/reading/practice/${weakestType}`}
                 className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#c9972c] px-6 py-3 text-sm font-bold text-[#0d1b35] hover:bg-[#b8862b]"
               >
                 Practice Weak Areas
               </Link>
             ) : null}
             <Link
-              href="/dashboard/student/reading"
+              href={`${base}/reading`}
               className="inline-flex flex-1 items-center justify-center rounded-xl border border-[#0d1b35] px-6 py-3 text-sm font-bold text-[#0d1b35] hover:bg-[#0d1b35] hover:text-white"
             >
               Back to Reading Home

@@ -12,6 +12,8 @@ import { isValidQuestionType, normalizeQuestionType } from "@/lib/readingPassage
 import { initDailyLimit, fetchPassage } from "@/lib/useDailyLimitGate";
 import type { DailyLimitState } from "@/lib/useDailyLimitGate";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import MatchingHeadingsPanel from "@/components/reading/MatchingHeadingsPanel";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 
 const PRACTICE_DURATION_SECONDS = 1200;
 
@@ -34,6 +36,7 @@ type PracticeContent = {
   title: string;
   paragraphs: { id: string; label: string; text: string }[];
   questions: PracticeQuestion[];
+  headings?: { key: string; label: string }[];
 };
 
 const DIFFICULTY_CLASS: Record<Difficulty, string> = {
@@ -53,6 +56,22 @@ function QuestionInputs({
   answers: Record<string, string>;
   onChange: (id: string, value: string) => void;
 }) {
+  const sharedHeadings =
+    content.headings ??
+    content.questions.find((q) => q.headings?.length)?.headings ??
+    [];
+
+  if (content.slug === "matching-headings" && sharedHeadings.length > 0) {
+    return (
+      <MatchingHeadingsPanel
+        headings={sharedHeadings}
+        questions={content.questions}
+        answers={answers}
+        onChange={onChange}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {content.questions.map((question, index) => (
@@ -157,6 +176,7 @@ export default function ReadingPracticePage() {
   const router = useRouter();
   const params = useParams();
   const { data: session, status } = useSession();
+  const { base, usesProgramShell } = usePathwayStudentContext();
 
   const slug = normalizeQuestionType(String(params?.questionType ?? ""));
   const studentId = (session?.user as { id?: string })?.id ?? "";
@@ -323,12 +343,12 @@ export default function ReadingPracticePage() {
   if (!isValidQuestionType(slug)) {
     return (
       <div className="min-h-screen flex bg-white">
-        <StudentSidebar activePage="reading" />
-        <main className="ml-[200px] flex-1 bg-slate-50 p-8">
+        {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
+        <main className={`flex-1 bg-slate-50 p-8 ${usesProgramShell ? "" : "ml-[200px]"}`}>
           <div className="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <h1 className="text-xl font-bold text-[#0d1b35]">Question type not found</h1>
             <Link
-              href="/dashboard/student/reading/practice"
+              href={`${base}/reading/practice`}
               className="mt-6 inline-flex rounded-xl bg-[#0d1b35] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#152a4d]"
             >
               Choose a Question Type
@@ -360,8 +380,8 @@ export default function ReadingPracticePage() {
   if (loadError) {
     return (
       <div className="min-h-screen flex bg-white">
-        <StudentSidebar activePage="reading" />
-        <main className="ml-[200px] flex-1 bg-slate-50 p-8">
+        {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
+        <main className={`flex-1 bg-slate-50 p-8 ${usesProgramShell ? "" : "ml-[200px]"}`}>
           <div className="mx-auto max-w-lg rounded-xl border border-red-200 bg-white p-8 text-center">
             <p className="text-red-600">{loadError}</p>
             <button
@@ -379,7 +399,7 @@ export default function ReadingPracticePage() {
 
   return (
     <div className="min-h-screen flex bg-white">
-      <StudentSidebar activePage="reading" />
+      {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
 
       <ReadingTimer
         timeRemaining={timer.timeRemaining}
@@ -394,16 +414,16 @@ export default function ReadingPracticePage() {
         total={result?.total ?? null}
         onViewResults={() =>
           router.push(
-            `/dashboard/student/reading/results?score=${result?.score ?? 0}&total=${result?.total ?? 0}&type=${slug}`
+            `${base}/reading/results?score=${result?.score ?? 0}&total=${result?.total ?? 0}&type=${slug}`
           )
         }
       />
 
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50">
+      <main className={`min-h-screen flex-1 bg-slate-50 ${usesProgramShell ? "" : "ml-[200px]"}`}>
         <div className="border-b border-slate-200 bg-white px-6 py-4">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 pr-[180px]">
             <Link
-              href="/dashboard/student/reading"
+              href={`${base}/reading`}
               className="text-sm font-semibold text-[#0d1b35] hover:text-[#c9972c]"
             >
               ← Exit Practice

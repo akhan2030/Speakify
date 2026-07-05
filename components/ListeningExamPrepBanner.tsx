@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 function formatCountdown(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -19,18 +21,36 @@ export default function ListeningExamPrepBanner({
   secondsLeft: number;
   className?: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = message.length > 72;
+
   return (
     <div
-      className={`flex max-h-[70px] min-h-[52px] items-center gap-3 border-b-2 border-[#c9972c] bg-[#0d1b35] px-4 py-2 shadow-sm ${className}`}
+      className={`flex min-h-[52px] items-start gap-3 border-b-2 border-[#c9972c] bg-[#0d1b35] px-4 py-2 shadow-sm ${className}`}
       role="status"
       aria-live="polite"
     >
-      <span className="shrink-0 text-base leading-none" aria-hidden>
+      <span className="mt-0.5 shrink-0 text-base leading-none" aria-hidden>
         🔊
       </span>
-      <p className="min-w-0 flex-1 truncate text-sm font-medium leading-snug text-white">
-        {message}
-      </p>
+      <div className="min-w-0 flex-1">
+        <p
+          className={`text-sm font-medium leading-snug text-white ${
+            expanded ? "whitespace-pre-wrap" : "line-clamp-2"
+          }`}
+        >
+          {message}
+        </p>
+        {isLong ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-1 text-xs font-semibold text-[#c9972c] hover:underline"
+          >
+            {expanded ? "Show less" : "Show full instructions"}
+          </button>
+        ) : null}
+      </div>
       <span className="shrink-0 font-mono text-lg font-bold tabular-nums text-[#c9972c]">
         {formatCountdown(secondsLeft)}
       </span>

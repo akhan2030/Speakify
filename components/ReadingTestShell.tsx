@@ -142,6 +142,7 @@ export default function ReadingTestShell({
   dailyTestsMax = 10,
 }: ReadingTestShellProps) {
   const router = useRouter();
+  const resultsHref = `${exitHref.replace(/\/$/, "")}/results?${resultsQuery}`;
   const correctAnswers = useMemo(
     () => buildMockCorrectAnswers(config),
     [config]
@@ -235,7 +236,7 @@ export default function ReadingTestShell({
           if (timedOut) {
             setShowScreenLock(true);
           } else {
-            router.push(`/dashboard/student/reading/results?${resultsQuery}`);
+            router.push(resultsHref);
           }
         } else {
           submittedRef.current = false;
@@ -246,7 +247,7 @@ export default function ReadingTestShell({
         setSubmitting(false);
       }
     },
-    [config, correctAnswers, resultsQuery, router]
+    [config, correctAnswers, resultsHref, router]
   );
 
   const handleTimeUp = useCallback(() => {
@@ -310,9 +311,7 @@ export default function ReadingTestShell({
         isVisible={showScreenLock}
         score={submitResult?.score ?? null}
         total={submitResult?.total ?? null}
-        onViewResults={() =>
-          router.push(`/dashboard/student/reading/results?${resultsQuery}`)
-        }
+        onViewResults={() => router.push(resultsHref)}
       />
 
       {/* Top bar */}

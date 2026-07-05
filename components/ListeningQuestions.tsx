@@ -6,6 +6,7 @@ export type ListeningQuestion = {
   type: string;
   text: string;
   options?: { label: string; text: string }[];
+  chooseCount?: number;
   answer?: string;
   wordLimit?: string;
   explanation?: string;
@@ -147,6 +148,36 @@ function FormCompletionQuestions(props: ListeningQuestionsProps) {
   );
 }
 
+function displayOptionText(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value).trim();
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["text", "label", "value", "content", "option", "choice"]) {
+      const nested = displayOptionText(record[key]);
+      if (nested && nested !== "[object Object]") return nested;
+    }
+  }
+  const direct = String(value).trim();
+  return direct === "[object Object]" ? "" : direct;
+}
+
+function parseSelectedLetters(value: string): Set<string> {
+  return new Set(
+    String(value ?? "")
+      .split(/[,;\s]+/)
+      .map((part) => part.trim().toUpperCase())
+      .filter(Boolean)
+  );
+}
+
+function formatSelectedLetters(selected: Set<string>): string {
+  return [...selected].sort().join(",");
+}
+
 function MultipleChoiceQuestions(props: ListeningQuestionsProps) {
   const {
     questions,
@@ -160,12 +191,29 @@ function MultipleChoiceQuestions(props: ListeningQuestionsProps) {
     <div className="space-y-4">
       {questions.map((q, i) => {
         const result = results?.[i];
-        const selected = answers[q.id] ?? "";
+        const chooseCount = Math.max(1, Number(q.chooseCount ?? 1));
+        const isMultiSelect = chooseCount > 1;
+        const rawSelected = answers[q.id] ?? "";
+        const selectedLetters = isMultiSelect
+          ? parseSelectedLetters(rawSelected)
+          : new Set(rawSelected ? [rawSelected.toUpperCase()] : []);
+        const options = q.options ?? [];
+
+        const toggleMulti = (letter: string) => {
+          const next = new Set(selectedLetters);
+          if (next.has(letter)) {
+            next.delete(letter);
+          } else if (next.size < chooseCount) {
+            next.add(letter);
+          }
+          onChange(q.id, formatSelectedLetters(next));
+        };
+
         return (
           <div
             key={q.id}
             className={`rounded-xl border bg-white p-4 shadow-sm ${
-              selected ? "border-[#c9972c]" : "border-slate-200"
+              rawSelected ? "border-[#c9972c]" : "border-slate-200"
             } ${showResults && result?.correct ? "border-green-400 bg-green-50/30" : ""} ${
               showResults && result && !result.correct ? "border-red-400 bg-red-50/30" : ""
             } ${answeredWrapClass(q.id, props)}`}
@@ -173,30 +221,50 @@ function MultipleChoiceQuestions(props: ListeningQuestionsProps) {
             <p className="font-bold text-[#0d1b35]">
               {q.questionNumber}. {q.text}
             </p>
+            {isMultiSelect ? (
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Select {chooseCount} answers
+              </p>
+            ) : null}
             <div className="mt-3 space-y-2">
-              {(q.options ?? []).map((opt) => (
-                <label
-                  key={opt.label}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
-                    selected === opt.label
-                      ? "border-[#c9972c] bg-[#c9972c]/10"
-                      : "border-slate-200"
-                  } ${disabled ? "pointer-events-none opacity-60" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    name={`q-${q.id}`}
-                    value={opt.label}
-                    checked={selected === opt.label}
-                    disabled={disabled}
-                    onChange={() => onChange(q.id, opt.label)}
-                    className="accent-[#c9972c]"
-                  />
-                  <span>
-                    <strong>{opt.label}.</strong> {opt.text}
-                  </span>
-                </label>
-              ))}
+              {options.map((opt) => {
+                const letter = String(opt.label ?? "").trim().toUpperCase();
+                const optionText = displayOptionText(opt.text);
+                const isSelected = selectedLetters.has(letter);
+                return (
+                  <label
+                    key={`${q.id}-${letter || optionText}`}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
+                      isSelected
+                        ? "border-[#c9972c] bg-[#c9972c]/10"
+                        : "border-slate-200"
+                    } ${disabled ? "pointer-events-none opacity-60" : ""}`}
+                  >
+                    <input
+                      type={isMultiSelect ? "checkbox" : "radio"}
+                      name={isMultiSelect ? undefined : `q-${q.id}`}
+                      value={letter}
+                      checked={isSelected}
+                      disabled={disabled}
+                      onChange={() =>
+                        isMultiSelect
+                          ? toggleMulti(letter)
+                          : onChange(q.id, letter)
+                      }
+                      className="accent-[#c9972c]"
+                    />
+                    <span>
+                      {letter ? (
+                        <>
+                          <strong>{letter}.</strong> {optionText}
+                        </>
+                      ) : (
+                        optionText
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
           </div>
         );

@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getReadingStrategy } from "@/lib/readingStrategyContent";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 
 type Difficulty = "Easy" | "Medium" | "Hard";
 
@@ -59,7 +60,7 @@ function bandDisplayClass(band: number | null | undefined): string {
   return "text-red-600";
 }
 
-function StrategyComingSoon({ slug }: { slug: string }) {
+function StrategyComingSoon({ slug, base }: { slug: string; base: string }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
       <h1 className="text-2xl font-bold text-[#0d1b35]">Strategy coming soon</h1>
@@ -71,7 +72,7 @@ function StrategyComingSoon({ slug }: { slug: string }) {
         .
       </p>
       <Link
-        href="/dashboard/student/reading/strategies"
+        href={`${base}/reading/strategies`}
         className="mt-6 inline-flex rounded-xl border border-[#0d1b35] px-6 py-2.5 text-sm font-bold text-[#0d1b35] hover:bg-[#0d1b35] hover:text-white"
       >
         Back to All Strategies
@@ -83,9 +84,11 @@ function StrategyComingSoon({ slug }: { slug: string }) {
 function StrategyPageContent({
   strategy,
   band,
+  base,
 }: {
   strategy: StrategyContent;
   band: number | null;
+  base: string;
 }) {
   const bandLabel =
     band !== null && Number.isFinite(band) ? formatBand(band) : "Not attempted";
@@ -205,7 +208,7 @@ function StrategyPageContent({
 
       {/* 6. Practice button */}
       <Link
-        href={`/dashboard/student/reading/practice/${strategy.slug}`}
+        href={`${base}/reading/practice/${strategy.slug}`}
         className="block w-full rounded-xl bg-[#c9972c] py-4 text-center text-base font-bold text-[#0d1b35] shadow-sm transition-colors hover:bg-[#b8862b]"
       >
         Practice {strategy.name} Now →
@@ -218,6 +221,7 @@ export default function ReadingStrategyDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { status } = useSession();
+  const { base, usesProgramShell } = usePathwayStudentContext();
   const [band, setBand] = useState<number | null>(null);
 
   const slug = normalizeSlug(String(params?.slug ?? ""));
@@ -262,12 +266,12 @@ export default function ReadingStrategyDetailPage() {
 
   return (
     <div className="min-h-screen flex bg-white">
-      <StudentSidebar activePage="reading" />
+      {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
 
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50">
+      <main className={`min-h-screen flex-1 bg-slate-50 ${usesProgramShell ? "" : "ml-[200px]"}`}>
         <div className="mx-auto max-w-3xl px-6 py-8">
           <Link
-            href="/dashboard/student/reading/strategies"
+            href={`${base}/reading/strategies`}
             className="text-sm font-medium text-[#0d1b35] hover:text-[#c9972c]"
           >
             ← All Strategies
@@ -275,9 +279,9 @@ export default function ReadingStrategyDetailPage() {
 
           <div className="mt-4">
             {strategy ? (
-              <StrategyPageContent strategy={strategy} band={band} />
+              <StrategyPageContent strategy={strategy} band={band} base={base} />
             ) : (
-              <StrategyComingSoon slug={slug} />
+              <StrategyComingSoon slug={slug} base={base} />
             )}
           </div>
         </div>

@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import ReadingTestShell from "@/components/ReadingTestShell";
 import DailyLimitReached from "@/components/DailyLimitReached";
 import { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { isValidQuestionType, normalizeQuestionType } from "@/lib/readingPassageTypes";
 import { initDailyLimit, fetchPassage } from "@/lib/useDailyLimitGate";
 import type { DailyLimitState } from "@/lib/useDailyLimitGate";
@@ -17,6 +18,7 @@ export default function SinglePassageTestPage() {
   const router = useRouter();
   const params = useParams();
   const { data: session, status } = useSession();
+  const { base } = usePathwayStudentContext();
 
   const questionType = normalizeQuestionType(String(params?.id ?? ""));
   const studentId = (session?.user as { id?: string })?.id ?? "";
@@ -131,7 +133,7 @@ export default function SinglePassageTestPage() {
             Choose a question type from the Reading home page.
           </p>
           <Link
-            href="/dashboard/student/reading"
+            href={`${base}/reading`}
             className="mt-6 inline-flex rounded-xl bg-[#0d1b35] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#152a4d]"
           >
             Back to Reading Home
@@ -178,7 +180,7 @@ export default function SinglePassageTestPage() {
   return (
     <ReadingTestShell
       config={testConfig as Parameters<typeof ReadingTestShell>[0]["config"]}
-      exitHref="/dashboard/student/reading"
+      exitHref={`${base}/reading`}
       resultsQuery={`testType=passage&questionType=${questionType}`}
       dailyTestsUsed={limits?.unlimited ? null : limits?.passageTestsUsed ?? null}
       dailyTestsMax={limits?.passageTestsMax ?? 15}

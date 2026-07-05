@@ -9,6 +9,7 @@ import ReadingTestShell, {
 import DailyLimitReached from "@/components/DailyLimitReached";
 import { buildMockTestConfigFromPassages } from "@/lib/passageContentAdapter";
 import { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { initDailyLimit, fetchPassage } from "@/lib/useDailyLimitGate";
 import type { DailyLimitState } from "@/lib/useDailyLimitGate";
 
@@ -22,6 +23,7 @@ const MOCK_PASSAGE_TYPES = [
 export default function FullReadingMockTestPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { base } = usePathwayStudentContext();
   const [limits, setLimits] = useState<DailyLimitState | null>(null);
   const [limitLoading, setLimitLoading] = useState(true);
   const [passageLoading, setPassageLoading] = useState(false);
@@ -133,7 +135,7 @@ export default function FullReadingMockTestPage() {
   return (
     <ReadingTestShell
       config={testConfig}
-      exitHref="/dashboard/student/reading"
+      exitHref={`${base}/reading`}
       resultsQuery="testType=full"
       dailyTestsUsed={limits?.unlimited ? null : limits?.mockTestsUsed ?? null}
       dailyTestsMax={limits?.mockTestsMax ?? 10}

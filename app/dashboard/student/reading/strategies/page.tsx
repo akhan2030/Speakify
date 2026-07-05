@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 
 type Difficulty = "Easy" | "Medium" | "Hard";
 
@@ -123,9 +124,11 @@ function bandDisplayClass(band: number | null | undefined): string {
 function StrategyCard({
   type,
   band,
+  base,
 }: {
   type: StrategyType;
   band: number | null;
+  base: string;
 }) {
   const bandLabel =
     band !== null && Number.isFinite(band) ? formatBand(band) : "Not attempted";
@@ -153,13 +156,13 @@ function StrategyCard({
 
       <div className="mt-5 flex flex-col gap-2 sm:flex-row">
         <Link
-          href={`/dashboard/student/reading/strategies/${type.slug}`}
+          href={`${base}/reading/strategies/${type.slug}`}
           className="flex-1 rounded-lg border border-[#0d1b35] py-2.5 text-center text-sm font-bold text-[#0d1b35] transition-colors hover:bg-[#0d1b35] hover:text-white"
         >
           Learn Strategy
         </Link>
         <Link
-          href={`/dashboard/student/reading/practice/${type.slug}`}
+          href={`${base}/reading/practice/${type.slug}`}
           className="flex-1 rounded-lg bg-[#c9972c] py-2.5 text-center text-sm font-bold text-[#0d1b35] transition-colors hover:bg-[#b8862b]"
         >
           Practice Now
@@ -172,6 +175,7 @@ function StrategyCard({
 export default function ReadingStrategiesPage() {
   const router = useRouter();
   const { status } = useSession();
+  const { base, usesProgramShell, dashboardHref } = usePathwayStudentContext();
   const [trackerRows, setTrackerRows] = useState<TrackerRow[]>([]);
 
   const bandBySlug = useMemo(() => {
@@ -220,23 +224,23 @@ export default function ReadingStrategiesPage() {
 
   return (
     <div className="flex min-h-screen bg-white">
-      <StudentSidebar activePage="reading" />
+      {!usesProgramShell ? <StudentSidebar activePage="reading" /> : null}
 
-      <main className="ml-[200px] min-h-screen flex-1 bg-slate-50">
+      <main className={`min-h-screen flex-1 bg-slate-50 ${usesProgramShell ? "" : "ml-[200px]"}`}>
         <div className="mx-auto max-w-6xl px-6 py-8">
           <Link
-            href="/dashboard/student/reading"
+            href={`${base}/reading`}
             className="text-sm font-semibold text-[#0d1b35] hover:text-[#c9972c]"
           >
             ← Back to Reading
           </Link>
 
           <nav className="mt-4 flex flex-wrap items-center gap-1 text-sm text-slate-500">
-            <Link href="/dashboard/student" className="hover:text-[#c9972c]">
+            <Link href={dashboardHref} className="hover:text-[#c9972c]">
               Dashboard
             </Link>
             <span>&gt;</span>
-            <Link href="/dashboard/student/reading" className="hover:text-[#c9972c]">
+            <Link href={`${base}/reading`} className="hover:text-[#c9972c]">
               Reading
             </Link>
             <span>&gt;</span>
@@ -258,6 +262,7 @@ export default function ReadingStrategiesPage() {
                 key={type.slug}
                 type={type}
                 band={bandBySlug.get(type.slug) ?? null}
+                base={base}
               />
             ))}
           </div>

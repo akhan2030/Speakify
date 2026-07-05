@@ -32,6 +32,10 @@ import {
 } from "@/lib/listeningIeltsInstructions";
 import { buildQuestionGroups, type QuestionGroup } from "@/lib/listeningQuestionGroups";
 import { getSectionPlan } from "@/lib/listeningSectionTypes";
+import {
+  getMcqChooseCountForQuestions,
+  sectionHasPlaceholderQuestions,
+} from "@/lib/listeningQuestionContent.js";
 
 type SectionData = {
   title: string;
@@ -93,7 +97,7 @@ function LoadingScreen({ sectionNumber }: { sectionNumber: number }) {
       <main className={`min-h-screen flex-1 bg-slate-50 ${usesProgramShell ? "" : "ml-[200px]"}`}>
         <div className="sticky top-0 z-30 flex min-h-[52px] items-center gap-3 border-b-2 border-[#c9972c] bg-[#0d1b35] px-4 py-2">
           <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-[#c9972c]/30 border-t-[#c9972c]" />
-          <p className="truncate text-sm font-medium text-white">
+          <p className="line-clamp-2 text-sm font-medium text-white">
             Preparing Section {sectionNumber}… {LOADING_MESSAGES[msgIndex]}
           </p>
         </div>
@@ -152,7 +156,14 @@ function QuestionsColumn({
             QUESTIONS {group.start}–{group.end}
           </h3>
           {!hideInstructionBlock ? (
-            <ListeningIeltsInstruction questionType={group.type} />
+            <ListeningIeltsInstruction
+              questionType={group.type}
+              chooseCount={
+                group.type === "multiple-choice"
+                  ? getMcqChooseCountForQuestions(group.questions)
+                  : undefined
+              }
+            />
           ) : null}
           <ListeningQuestions
             questions={group.questions}
@@ -332,6 +343,12 @@ function ListeningSectionExam() {
 
       if (!res.ok || !data?.success) {
         throw new Error(data?.error ?? "Failed to load section");
+      }
+
+      if (sectionHasPlaceholderQuestions(data.questions)) {
+        throw new Error(
+          "Listening content for this section is unavailable — question labels were not generated correctly. Please try again."
+        );
       }
 
       setSectionData(data as SectionData);
