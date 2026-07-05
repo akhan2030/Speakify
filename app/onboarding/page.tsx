@@ -360,10 +360,12 @@ export default function OnboardingPage() {
       <Shell step={1} wide>
         <h1 className="text-2xl font-bold text-[#0d1b35]">Welcome to Speakify</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Choose your programme and we will place you at exactly the right level.
+          Choose from all 8 Speakify programmes — we will place you at exactly the right level.
         </p>
-        <p className="mt-6 text-sm font-semibold text-[#0d1b35]">What are you here for?</p>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <p className="mt-6 text-sm font-semibold text-[#0d1b35]">
+          What are you here for? <span className="font-normal text-slate-500">(8 options)</span>
+        </p>
+        <div className="mt-4 grid max-h-[min(70vh,520px)] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-4 lg:max-h-none lg:overflow-visible">
           {ONBOARDING_PROGRAMME_OPTIONS.map((p) => (
             <button
               key={p.id}
