@@ -54,7 +54,7 @@ function buildLetterTypeAccuracy(rows: Array<{ letter_type?: string; accuracy?: 
         : row.band_score != null
           ? (Number(row.band_score) / 9) * 100
           : null;
-    if (Number.isFinite(score)) buckets[type].push(score);
+    if (score != null && Number.isFinite(score)) buckets[type].push(score);
   }
   return {
     formal: averageNumbers(buckets.formal),
