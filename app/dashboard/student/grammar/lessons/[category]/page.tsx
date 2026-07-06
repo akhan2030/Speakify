@@ -7,19 +7,22 @@ import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import {
-  getCategoryMeta,
+  getCategoryMetaForProgram,
   isGrammarCategorySlug,
   type GrammarExercise,
 } from "@/lib/grammar";
 import { getLessonContent } from "@/lib/grammarContent";
+import { useGrammarProgramme } from "@/components/grammar/useGrammarProgramme";
 
 function ExerciseBlock({
   exercise,
   category,
+  programme,
   onComplete,
 }: {
   exercise: GrammarExercise;
   category: string;
+  programme: "academic" | "general";
   onComplete: (id: string) => void;
 }) {
   const [answer, setAnswer] = useState("");
@@ -49,6 +52,7 @@ function ExerciseBlock({
           category,
           exerciseId: exercise.id,
           answer: answer.trim(),
+          programme,
         }),
       });
       const json = await res.json();
@@ -119,11 +123,14 @@ export default function GrammarLessonPage() {
   const router = useRouter();
   const { status } = useSession();
   const { base, usesProgramShell } = usePathwayStudentContext();
+  const grammarProgramme = useGrammarProgramme();
   const category = String(params?.category ?? "");
 
-  const meta = isGrammarCategorySlug(category) ? getCategoryMeta(category) : null;
+  const meta = isGrammarCategorySlug(category)
+    ? getCategoryMetaForProgram(category, grammarProgramme)
+    : null;
   const lesson = isGrammarCategorySlug(category)
-    ? getLessonContent(category)
+    ? getLessonContent(category, grammarProgramme)
     : null;
 
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -225,7 +232,11 @@ export default function GrammarLessonPage() {
 
           <section className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 className="font-bold text-[#0d1b35]">IELTS Writing</h3>
+              <h3 className="font-bold text-[#0d1b35]">
+                {grammarProgramme === "general"
+                  ? "GT Writing (Letter + Essay)"
+                  : "IELTS Writing"}
+              </h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-600">
                 {lesson.ieltsWritingExamples.map((ex) => (
                   <li key={ex} className="italic">
@@ -272,6 +283,7 @@ export default function GrammarLessonPage() {
                   key={ex.id}
                   exercise={ex}
                   category={category}
+                  programme={grammarProgramme}
                   onComplete={markExercise}
                 />
               ))}

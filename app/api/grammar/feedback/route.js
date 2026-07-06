@@ -19,7 +19,10 @@ export async function POST(request) {
       return NextResponse.json({ error: "Answer is required" }, { status: 400 });
     }
 
-    const lesson = getLessonContent(category);
+    const programme =
+      body?.programme === "general" ? "general" : "academic";
+
+    const lesson = getLessonContent(category, programme);
     const exercise = lesson.exercises.find((ex) => ex.id === exerciseId);
     if (!exercise) {
       return NextResponse.json({ error: "Exercise not found" }, { status: 404 });

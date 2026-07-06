@@ -47,14 +47,54 @@ import type {
   MockSection,
   NavigatorItem,
 } from "@/lib/mock-test/types";
-import { blockClipboard, countWords } from "@/lib/mock-test/utils";
+import { answersMatch, blockClipboard, countWords } from "@/lib/mock-test/utils";
 import { WRITING_TASK1, WRITING_TASK2 } from "@/lib/mock-test/writingContent";
+import {
+  GENERAL_EXAM_CONTENT,
+  getGeneralMockExamContent,
+  pickGeneralMockWritingTasks,
+} from "@/lib/ielts-general/mockExamContent";
+import { gtReadingRawToBand } from "@/lib/ielts-general/readingScore";
+import type { MockExamContent } from "@/lib/mock-test/types";
+import GeneralMockLetterPrompt from "@/components/ielts-general/mock/GeneralMockLetterPrompt";
 
 type ExamPhase = MockSection | "welcome" | "transition" | "submitting";
 type ListeningStep = "intro" | "prep" | "audio" | "break" | "check";
 
+function buildGtReadingSectionBreakdown(
+  examContent: MockExamContent,
+  answers: Record<string, string>
+) {
+  const sections: Record<string, { correct: number; total: number; band: number }> = {
+    A: { correct: 0, total: 0, band: 0 },
+    B: { correct: 0, total: 0, band: 0 },
+    C: { correct: 0, total: 0, band: 0 },
+  };
+
+  for (const passage of examContent.reading.passages) {
+    const secMatch = passage.difficulty.match(/Section ([ABC])/);
+    const sec = secMatch?.[1];
+    if (!sec || !sections[sec]) continue;
+    for (const q of passage.questions) {
+      sections[sec].total += 1;
+      if (answersMatch(answers[q.id] ?? "", q.correct ?? "")) {
+        sections[sec].correct += 1;
+      }
+    }
+  }
+
+  for (const key of ["A", "B", "C"]) {
+    const row = sections[key];
+    row.band = gtReadingRawToBand(row.correct, row.total || 1);
+  }
+
+  return sections;
+}
+
 type MockExamEngineProps = {
   sectionReady?: typeof EXAM_CONTENT;
+  variant?: "academic" | "general";
+  resultsPath?: string;
 };
 
 function ListeningQuestionField({
@@ -94,7 +134,10 @@ function ListeningQuestionField({
 
 export default function MockExamEngine({
   sectionReady = EXAM_CONTENT,
+  variant = "academic",
+  resultsPath,
 }: MockExamEngineProps) {
+  const isGeneral = variant === "general";
   const router = useRouter();
   const { data: session } = useSession();
   const [attemptId] = useState(() => {
@@ -102,7 +145,25 @@ export default function MockExamEngine({
     const stored = sessionStorage.getItem("mock_test_attempt_id");
     return stored?.trim() || `local_${crypto.randomUUID()}`;
   });
-  const examContent = useMemo(() => getStaticExamContent(), []);
+  const examContent = useMemo(
+    () => (isGeneral ? getGeneralMockExamContent() : getStaticExamContent()),
+    [isGeneral]
+  );
+  const writingTasks = useMemo(() => {
+    if (!isGeneral) {
+      return { task1: WRITING_TASK1, task2: WRITING_TASK2 };
+    }
+    let mockNumber = 1;
+    try {
+      const raw = sessionStorage.getItem("mock_test_number");
+      if (raw) mockNumber = Number(raw) || 1;
+    } catch {
+      /* ignore */
+    }
+    const picked = pickGeneralMockWritingTasks(mockNumber);
+    return { task1: picked.task1, task2: picked.task2 };
+  }, [isGeneral]);
+  const readyFlags = isGeneral ? GENERAL_EXAM_CONTENT : sectionReady;
   const [phase, setPhase] = useState<ExamPhase>("welcome");
   const [transitionFrom, setTransitionFrom] = useState<MockSection>("listening");
   const [transitionTo, setTransitionTo] = useState<MockSection>("reading");
@@ -290,6 +351,15 @@ export default function MockExamEngine({
       transcripts: transcriptsRef.current,
       sectionScores,
       overallBand,
+      examVariant: variant,
+      writingMeta: isGeneral
+        ? {
+            letterType: (writingTasks.task1 as { letter?: { letterType?: string } }).letter
+              ?.letterType,
+            letterPrompt: writingTasks.task1.prompt,
+            essayPrompt: writingTasks.task2.prompt,
+          }
+        : undefined,
     };
 
     const id = attemptId ?? `local_${crypto.randomUUID()}`;
@@ -299,7 +369,30 @@ export default function MockExamEngine({
       /* ignore */
     }
 
-    if (attemptId && !attemptId.startsWith("local_")) {
+    if (isGeneral) {
+      let mockNumber = 1;
+      try {
+        const raw = sessionStorage.getItem("mock_test_number");
+        if (raw) mockNumber = Number(raw) || 1;
+      } catch {
+        /* ignore */
+      }
+      await fetch("/api/ielts-general/mock-exam/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attemptId: id,
+          mockNumber,
+          sectionScores,
+          overallBand,
+          readingSectionBreakdown: isGeneral
+            ? buildGtReadingSectionBreakdown(examContent, answersRef.current)
+            : undefined,
+        }),
+      }).catch(() => null);
+    }
+
+    if (attemptId && !attemptId.startsWith("local_") && !isGeneral) {
       await fetch("/api/mock-test/session", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -308,8 +401,13 @@ export default function MockExamEngine({
     }
 
     await new Promise((r) => setTimeout(r, 2500));
-    router.replace(`/mock-test/results/${id}`);
-  }, [attemptId, readingAnswerKey, router]);
+    const destination =
+      resultsPath ??
+      (isGeneral
+        ? `/dashboard/ielts-general/student/mock-exam/results?attemptId=${encodeURIComponent(id)}`
+        : `/mock-test/results/${id}`);
+    router.replace(destination);
+  }, [attemptId, examContent, router, variant, isGeneral, writingTasks, resultsPath]);
 
   const handleSectionTimeUp = useCallback(() => {
     if (phase === "listening") startTransition("listening");
@@ -466,8 +564,18 @@ export default function MockExamEngine({
     }
     if (phase === "writing") {
       return [
-        { id: WRITING_TASK1.id, label: "T1", answered: countWords(answers[WRITING_TASK1.id] ?? "") >= 50, flagged: flagged.has(WRITING_TASK1.id) },
-        { id: WRITING_TASK2.id, label: "T2", answered: countWords(answers[WRITING_TASK2.id] ?? "") >= 50, flagged: flagged.has(WRITING_TASK2.id) },
+        {
+          id: writingTasks.task1.id,
+          label: "T1",
+          answered: countWords(answers[writingTasks.task1.id] ?? "") >= 50,
+          flagged: flagged.has(writingTasks.task1.id),
+        },
+        {
+          id: writingTasks.task2.id,
+          label: "T2",
+          answered: countWords(answers[writingTasks.task2.id] ?? "") >= 50,
+          flagged: flagged.has(writingTasks.task2.id),
+        },
       ];
     }
     if (phase === "speaking") {
@@ -485,7 +593,7 @@ export default function MockExamEngine({
       return items;
     }
     return [];
-  }, [phase, answers, flagged, recordedKeys, allListeningQuestions, allReadingQuestions]);
+  }, [phase, answers, flagged, recordedKeys, allListeningQuestions, allReadingQuestions, writingTasks]);
 
   const activeNavIndex = useMemo(() => {
     if (phase === "listening") return activeListeningQ;
@@ -594,9 +702,10 @@ export default function MockExamEngine({
       : `speaking-p${speakingPart.part}-q${speakingQIdx}`;
 
   const taskWords = countWords(
-    answers[writingTask === 1 ? WRITING_TASK1.id : WRITING_TASK2.id] ?? ""
+    answers[writingTask === 1 ? writingTasks.task1.id : writingTasks.task2.id] ?? ""
   );
-  const taskMin = writingTask === 1 ? WRITING_TASK1.minWords : WRITING_TASK2.minWords;
+  const taskMin =
+    writingTask === 1 ? writingTasks.task1.minWords : writingTasks.task2.minWords;
 
   return (
     <>
@@ -611,7 +720,7 @@ export default function MockExamEngine({
       isFlagged={flagged.has(activeQuestionId)}
       banner={listeningBanner}
     >
-      {phase === "listening" && sectionReady.listening.ready && (
+      {phase === "listening" && readyFlags.listening.ready && (
         <div className="h-full overflow-y-auto p-4">
           {listeningStep === "intro" && (
             <div className="mx-auto max-w-2xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -674,7 +783,7 @@ export default function MockExamEngine({
         </div>
       )}
 
-      {phase === "reading" && sectionReady.reading.ready && passage && (
+      {phase === "reading" && readyFlags.reading.ready && passage && (
         <div className="flex h-full min-h-0">
           <div className="flex min-w-0 flex-1 flex-col border-r border-slate-200 bg-white">
             <div className="flex gap-1 border-b border-slate-200 px-3 py-2">
@@ -687,7 +796,7 @@ export default function MockExamEngine({
                     i === readingPassageIdx ? "bg-[#0d1b35] text-white" : "bg-slate-100 text-slate-600"
                   }`}
                 >
-                  Passage {p.index}
+                  {isGeneral ? `Text ${p.index}` : `Passage ${p.index}`}
                 </button>
               ))}
             </div>
@@ -791,26 +900,48 @@ export default function MockExamEngine({
         </div>
       )}
 
-      {phase === "writing" && sectionReady.writing.ready && (
+      {phase === "writing" && readyFlags.writing.ready && (
         <div className="h-full overflow-y-auto p-4">
           <div className="mx-auto max-w-3xl space-y-4">
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <p className="text-sm font-bold">
-                {writingTask === 1 ? "Task 1 — 20 minutes" : "Task 2 — 40 minutes"}
+                {writingTask === 1
+                  ? isGeneral
+                    ? "Task 1 — Letter (20 minutes)"
+                    : "Task 1 — 20 minutes"
+                  : isGeneral
+                    ? "Task 2 — Essay (40 minutes)"
+                    : "Task 2 — 40 minutes"}
               </p>
               <p className={`text-sm font-mono font-bold ${taskWords < taskMin ? "text-red-600" : "text-[#c9972c]"}`}>
                 {taskWords} words {taskWords < taskMin && `(minimum ${taskMin})`}
               </p>
             </div>
-            {writingTask === 1 && <MockWritingChart data={WRITING_TASK1.chartData} />}
+            {writingTask === 1 && !isGeneral && (
+              <MockWritingChart data={WRITING_TASK1.chartData} />
+            )}
+            {writingTask === 1 && isGeneral && (
+              <GeneralMockLetterPrompt
+                task={
+                  writingTasks.task1 as import("@/lib/ielts-general/mockExamContent").GeneralMockWritingTask1
+                }
+              />
+            )}
             <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="whitespace-pre-wrap text-sm text-slate-700">
-                {writingTask === 1 ? WRITING_TASK1.prompt : WRITING_TASK2.prompt}
-              </p>
+              {(!isGeneral || writingTask !== 1) && (
+                <p className="whitespace-pre-wrap text-sm text-slate-700">
+                  {writingTask === 1 ? writingTasks.task1.prompt : writingTasks.task2.prompt}
+                </p>
+              )}
               <textarea
-                value={answers[writingTask === 1 ? WRITING_TASK1.id : WRITING_TASK2.id] ?? ""}
+                value={
+                  answers[writingTask === 1 ? writingTasks.task1.id : writingTasks.task2.id] ?? ""
+                }
                 onChange={(e) =>
-                  setAnswer(writingTask === 1 ? WRITING_TASK1.id : WRITING_TASK2.id, e.target.value)
+                  setAnswer(
+                    writingTask === 1 ? writingTasks.task1.id : writingTasks.task2.id,
+                    e.target.value
+                  )
                 }
                 {...blockClipboard}
                 rows={16}
@@ -841,7 +972,7 @@ export default function MockExamEngine({
         </div>
       )}
 
-      {phase === "speaking" && sectionReady.speaking.ready && (
+      {phase === "speaking" && readyFlags.speaking.ready && (
         <div className="h-full overflow-y-auto p-4">
           <div className="mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-6">
             <p className="text-xs font-bold uppercase text-[#c9972c]">

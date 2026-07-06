@@ -2,21 +2,28 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
-  GRAMMAR_PRACTICE_POOL,
   answersMatch,
+  getPracticePool,
   pickPracticeQuestions,
 } from "@/lib/grammarContent";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+function parseProgramme(value) {
+  return value === "general" ? "general" : "academic";
+}
+
+export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const questions = pickPracticeQuestions(10).map((q) => ({
+    const { searchParams } = new URL(request.url);
+    const programme = parseProgramme(searchParams.get("programme"));
+
+    const questions = pickPracticeQuestions(10, programme).map((q) => ({
       id: `${q.category}-${q.id}`,
       exerciseId: q.id,
       category: q.category,
@@ -44,10 +51,11 @@ export async function POST(request) {
     }
 
     const body = await request.json().catch(() => ({}));
+    const programme = parseProgramme(body?.programme);
     const submissions = Array.isArray(body?.answers) ? body.answers : [];
 
     const poolById = new Map(
-      GRAMMAR_PRACTICE_POOL.map((q) => [`${q.category}-${q.id}`, q])
+      getPracticePool(programme).map((q) => [`${q.category}-${q.id}`, q])
     );
 
     let correct = 0;

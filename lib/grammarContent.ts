@@ -1,4 +1,5 @@
 import type { GrammarCategorySlug, GrammarExercise } from "@/lib/grammar";
+import { GRAMMAR_LESSONS_GT } from "@/lib/ielts-general/grammarContent";
 
 export type GrammarLessonContent = {
   rules: string[];
@@ -301,31 +302,62 @@ export type GrammarPracticeQuestion = GrammarExercise & {
   categoryName: string;
 };
 
-export const GRAMMAR_PRACTICE_POOL: GrammarPracticeQuestion[] = Object.entries(
+export const GRAMMAR_PRACTICE_POOL: GrammarPracticeQuestion[] = buildPracticePool(
   GRAMMAR_LESSONS
-).flatMap(([slug, lesson]) => {
-  const meta = slug as GrammarCategorySlug;
-  const name =
-    slug === "passive-voice"
-      ? "Passive Voice"
-      : slug === "relative-clauses"
-        ? "Relative Clauses"
-        : slug === "academic-structures"
-          ? "Academic Structures"
-          : slug.charAt(0).toUpperCase() + slug.slice(1);
-  return lesson.exercises.map((ex) => ({
-    ...ex,
-    category: meta,
-    categoryName: name,
-  }));
-});
+);
 
-export function getLessonContent(slug: GrammarCategorySlug) {
+export const GRAMMAR_PRACTICE_POOL_GT: GrammarPracticeQuestion[] = buildPracticePool(
+  GRAMMAR_LESSONS_GT,
+  "general"
+);
+
+function buildPracticePool(
+  lessons: Record<GrammarCategorySlug, GrammarLessonContent>,
+  programme: "academic" | "general" = "academic"
+): GrammarPracticeQuestion[] {
+  return Object.entries(lessons).flatMap(([slug, lesson]) => {
+    const meta = slug as GrammarCategorySlug;
+    const name = practiceCategoryName(meta, programme);
+    return lesson.exercises.map((ex) => ({
+      ...ex,
+      category: meta,
+      categoryName: name,
+    }));
+  });
+}
+
+function practiceCategoryName(
+  slug: GrammarCategorySlug,
+  programme: "academic" | "general"
+): string {
+  if (programme === "general" && slug === "academic-structures") {
+    return "Formal Letter Structures";
+  }
+  if (slug === "passive-voice") return "Passive Voice";
+  if (slug === "relative-clauses") return "Relative Clauses";
+  if (slug === "academic-structures") return "Academic Structures";
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
+}
+
+export function getPracticePool(programme: "academic" | "general" = "academic") {
+  return programme === "general" ? GRAMMAR_PRACTICE_POOL_GT : GRAMMAR_PRACTICE_POOL;
+}
+
+export function getLessonContent(
+  slug: GrammarCategorySlug,
+  programme: "academic" | "general" = "academic"
+) {
+  if (programme === "general") {
+    return GRAMMAR_LESSONS_GT[slug];
+  }
   return GRAMMAR_LESSONS[slug];
 }
 
-export function pickPracticeQuestions(count = 10) {
-  const pool = [...GRAMMAR_PRACTICE_POOL];
+export function pickPracticeQuestions(
+  count = 10,
+  programme: "academic" | "general" = "academic"
+) {
+  const pool = [...getPracticePool(programme)];
   for (let i = pool.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];

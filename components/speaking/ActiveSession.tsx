@@ -745,7 +745,11 @@ export default function ActiveSession({
           sessionId,
           cueCard: cueCardPayload(cueCard),
           part2Transcript,
-          testType: "ielts_academic",
+          testType:
+            typeof window !== "undefined" &&
+            sessionStorage.getItem("speakify_programme") === "ielts_general"
+              ? "ielts_general_training"
+              : "ielts_academic",
         });
         setPart3Questions(questions);
         return questions;

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
+import { useGrammarProgramme } from "@/components/grammar/useGrammarProgramme";
 
 type Question = {
   id: string;
@@ -36,6 +37,7 @@ export default function GrammarPracticePage() {
   const router = useRouter();
   const { status } = useSession();
   const { base, usesProgramShell } = usePathwayStudentContext();
+  const grammarProgramme = useGrammarProgramme();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -60,7 +62,9 @@ export default function GrammarPracticePage() {
     setAnswer("");
     setFeedback(null);
     try {
-      const res = await fetch("/api/grammar/practice");
+      const res = await fetch(
+        `/api/grammar/practice?programme=${grammarProgramme}`
+      );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setQuestions(json.questions ?? []);
@@ -69,7 +73,7 @@ export default function GrammarPracticePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [grammarProgramme]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -89,6 +93,7 @@ export default function GrammarPracticePage() {
           category: current.category,
           exerciseId: current.exerciseId,
           answer: answer.trim(),
+          programme: grammarProgramme,
         }),
       });
       const json = await res.json();
@@ -107,7 +112,10 @@ export default function GrammarPracticePage() {
         const scoreRes = await fetch("/api/grammar/practice", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answers: nextAnswers }),
+          body: JSON.stringify({
+            answers: nextAnswers,
+            programme: grammarProgramme,
+          }),
         });
         const scoreJson = await scoreRes.json();
         if (scoreRes.ok) setFinished(scoreJson);

@@ -1,1 +1,1 @@
-export { default } from "@/app/dashboard/student/speaking/part2/page";
+export { default } from "@/app/dashboard/ielts/student/speaking/page";

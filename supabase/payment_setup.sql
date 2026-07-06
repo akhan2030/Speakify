@@ -15,7 +15,7 @@ WHERE checkout_track IS NULL
 
 CREATE TABLE IF NOT EXISTS payment_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  student_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   moyasar_payment_id TEXT NOT NULL UNIQUE,
   track TEXT NOT NULL,
   amount_halalas INTEGER NOT NULL,

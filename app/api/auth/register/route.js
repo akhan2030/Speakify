@@ -97,6 +97,7 @@ export async function POST(request) {
     const cefrLevel = englishLevel ? englishLevelToCefr(englishLevel) : null;
 
     const isStepRegistration = registrationSlug === "step-test";
+    const isIeltsGeneralRegistration = registrationSlug === "ielts-general";
     const isIeltsRegistration =
       programType === "ielts" ||
       registrationSlug === "ielts" ||
@@ -112,12 +113,16 @@ export async function POST(request) {
       program_type: isIeltsRegistration ? "ielts" : programType,
       ...(isStepRegistration
         ? { step_enrolled: true, enrolled_programs: ["step"] }
-        : isIeltsRegistration
-          ? {
-              enrolled_programs: ["ielts"],
-              ...(purchasedTrack ? { checkout_track: purchasedTrack, payment_status: "unpaid" } : {}),
-            }
-          : {}),
+        : isIeltsGeneralRegistration
+          ? { enrolled_programs: ["ielts_general"] }
+          : isIeltsRegistration
+            ? {
+                enrolled_programs: ["ielts"],
+                ...(purchasedTrack
+                  ? { checkout_track: purchasedTrack, payment_status: "unpaid" }
+                  : {}),
+              }
+            : {}),
       ...(englishLevel ? { english_level: englishLevel } : {}),
       ...(targetBand ? { target_band: targetBand } : {}),
       ...(studyReason ? { study_reason: studyReason } : {}),
@@ -158,7 +163,7 @@ export async function POST(request) {
       );
     }
 
-    if (isIeltsRegistration && purchasedTrack) {
+    if (isIeltsRegistration && !isIeltsGeneralRegistration && purchasedTrack) {
       const { error: trackUpdateError } = await supabase
         .from("users")
         .update({ checkout_track: purchasedTrack, payment_status: "unpaid" })

@@ -270,6 +270,9 @@ export default function GeneralStudentDashboard() {
       ? Math.round((data.today.completedCount / data.today.totalCount) * 100)
       : 0;
 
+  const firstOpenTask = data.today.tasks.find((t) => !t.completed);
+  const continueHref = firstOpenTask?.href ?? `${BASE}/writing`;
+
   return (
     <main className="min-h-screen flex-1 bg-slate-50 p-4 pb-24 md:p-6 md:pb-6">
       <div className="mb-4">
@@ -342,12 +345,9 @@ export default function GeneralStudentDashboard() {
             <p className="mt-2 text-slate-600">
               Come back tomorrow for {data.today.tomorrowDay}&apos;s tasks
             </p>
-            <Link
-              href="/dashboard/ielts-general/student/today"
-              className="mt-4 inline-block text-sm font-semibold text-[#0d9488] hover:underline"
-            >
-              Start tomorrow&apos;s tasks early →
-            </Link>
+            <p className="mt-4 text-sm text-slate-500">
+              Tomorrow&apos;s tasks unlock on {data.today.tomorrowDay}.
+            </p>
           </div>
         ) : (
           <>
@@ -392,7 +392,7 @@ export default function GeneralStudentDashboard() {
             </div>
 
             <Link
-              href="/dashboard/ielts-general/student/today"
+              href={continueHref}
               className="mt-5 inline-block w-full rounded-xl bg-[#c9972c] px-6 py-3 text-center text-sm font-bold text-[#0d1b35] hover:opacity-95 sm:w-auto"
             >
               Continue Today&apos;s Study →
@@ -470,12 +470,15 @@ export default function GeneralStudentDashboard() {
                 </div>
               ))}
             </div>
-            <Link
-              href="/dashboard/ielts-general/student/readiness"
-              className="mt-4 inline-block text-sm font-semibold text-[#0d9488] hover:underline"
-            >
-              View my progress →
-            </Link>
+            <p className="mt-4 text-sm text-slate-500">
+              Full progress view —{" "}
+              <Link
+                href={`${BASE}/readiness`}
+                className="font-semibold text-[#0d9488] hover:underline"
+              >
+                IELTS Readiness →
+              </Link>
+            </p>
           </div>
 
           {/* Band trend chart */}
@@ -665,18 +668,12 @@ export default function GeneralStudentDashboard() {
             ) : (
               <p className="mt-3 text-sm text-slate-500">No mocks completed yet</p>
             )}
-            <Link
-              href="/dashboard/ielts-general/student/mock-exam"
-              className="mt-4 block rounded-lg bg-[#0d1b35] px-4 py-2 text-center text-sm font-bold text-white hover:bg-[#152a4d]"
-            >
-              Schedule Mock #{data.mock.nextNumber} →
-            </Link>
-            <Link
-              href="/dashboard/ielts-general/student/mock-exam"
-              className="mt-2 block text-center text-xs font-semibold text-[#0d9488] hover:underline"
-            >
-              Start now instead →
-            </Link>
+            <p className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-center text-sm font-semibold text-slate-500">
+              Mock exams —{" "}
+              <Link href={`${BASE}/mock-exam`} className="text-[#0d9488] hover:underline">
+                start GT mock →
+              </Link>
+            </p>
           </div>
         </div>
       </div>
@@ -742,12 +739,7 @@ export default function GeneralStudentDashboard() {
           <ProgressBar percent={data.track.progressPercent} className="bg-[#0d9488]" />
         </div>
 
-        <Link
-          href="/dashboard/ielts-general/student/accelerator"
-          className="mt-4 inline-block text-sm font-semibold text-[#c9972c] hover:underline"
-        >
-          View full week plan →
-        </Link>
+        <p className="mt-4 text-sm text-slate-500">Full week plan view coming soon.</p>
       </section>
     </main>
   );

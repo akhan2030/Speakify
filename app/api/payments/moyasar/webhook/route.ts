@@ -109,6 +109,20 @@ export async function POST(request: Request) {
       });
     }
 
+    const { data: existingStudent } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", studentId)
+      .maybeSingle();
+
+    if (!existingStudent) {
+      return NextResponse.json({
+        ok: true,
+        acknowledged: true,
+        reason: "student_not_found",
+      });
+    }
+
     const result = await grantPaidAccess(supabase, {
       studentId,
       track: trackRaw,

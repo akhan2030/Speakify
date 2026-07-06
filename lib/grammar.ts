@@ -1,3 +1,5 @@
+import { GT_GRAMMAR_CATEGORY_LABELS } from "@/lib/ielts-general/grammarContent";
+
 export const GRAMMAR_CATEGORY_SLUGS = [
   "tenses",
   "conditionals",
@@ -87,6 +89,28 @@ export function isGrammarCategorySlug(
 
 export function getCategoryMeta(slug: string): GrammarCategoryMeta | null {
   return GRAMMAR_CATEGORIES.find((c) => c.slug === slug) ?? null;
+}
+
+export function getCategoryMetaForProgram(
+  slug: string,
+  programme: "academic" | "general" = "academic"
+): GrammarCategoryMeta | null {
+  const base = getCategoryMeta(slug);
+  if (!base || programme === "academic") return base;
+  const overrides = GT_GRAMMAR_CATEGORY_LABELS[slug as GrammarCategorySlug];
+  if (!overrides) return base;
+  return { ...base, ...overrides };
+}
+
+export function getGrammarCategories(
+  programme: "academic" | "general" = "academic"
+): GrammarCategoryMeta[] {
+  if (programme === "academic") return GRAMMAR_CATEGORIES;
+  return GRAMMAR_CATEGORIES.map((cat) => {
+    const overrides = GT_GRAMMAR_CATEGORY_LABELS[cat.slug];
+    if (!overrides) return cat;
+    return { ...cat, ...overrides };
+  });
 }
 
 export function percentComplete(completed: number, total: number) {

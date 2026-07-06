@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
-import { GRAMMAR_CATEGORIES, grammarLessonHref } from "@/lib/grammar";
+import { getGrammarCategories, grammarLessonHref } from "@/lib/grammar";
 import { GENERAL_GRAMMAR_TIPS } from "@/lib/ielts-general/grammarTips";
+import { useGrammarProgramme } from "@/components/grammar/useGrammarProgramme";
 
 type ProgressRow = {
   category: string;
@@ -36,6 +37,8 @@ export default function GrammarHomePage() {
   const { status } = useSession();
   const { isPathway, isIeltsGeneralProgram, base, usesProgramShell } =
     usePathwayStudentContext();
+  const grammarProgramme = useGrammarProgramme();
+  const grammarCategories = getGrammarCategories(grammarProgramme);
   const [tab, setTab] = useState<"lessons" | "ielts">("lessons");
   const [progress, setProgress] = useState<Record<string, ProgressRow>>({});
   const [loading, setLoading] = useState(true);
@@ -170,7 +173,7 @@ export default function GrammarHomePage() {
                 <p className="mt-8 text-slate-500">Loading progress…</p>
               ) : (
                 <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {GRAMMAR_CATEGORIES.map((cat) => {
+                  {grammarCategories.map((cat) => {
                     const row = progress[cat.slug];
                     const pct = row?.percentComplete ?? 0;
                     return (

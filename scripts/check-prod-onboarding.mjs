@@ -15,7 +15,7 @@ const REQUIRED = [
   "Kids English",
 ];
 
-const DEPLOY_MARKER = "onboarding-goal-grid-v8";
+const DEPLOY_MARKER = "Pathway · Business · Legal · Kids";
 
 async function collectChunks(startHtml) {
   const found = new Set();
