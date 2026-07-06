@@ -74,7 +74,11 @@ export async function GET() {
   const recommendations = buildRecommendations(profile);
   const readiness = computeReadinessMeter(profile, recommendations);
 
-  let letterTypeAccuracy = { formal: null, semiFormal: null, informal: null };
+  let letterTypeAccuracy: {
+    formal: number | null;
+    semiFormal: number | null;
+    informal: number | null;
+  } = { formal: null, semiFormal: null, informal: null };
   let readingSections = {
     A: { band: null as number | null, accuracy: null as number | null },
     B: { band: null as number | null, accuracy: null as number | null },
