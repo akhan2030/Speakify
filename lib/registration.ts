@@ -70,7 +70,7 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
   "ielts-general": {
     slug: "ielts-general",
     programType: "ielts",
-    label: "IELTS General",
+    label: "IELTS General Accelerator",
     tagline: "General Training · Letters & essays",
     description:
       "Full IELTS General Training preparation with letter writing, everyday essays, GT reading, and AI band feedback.",
