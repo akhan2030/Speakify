@@ -25,7 +25,7 @@ export default function WritingPracticePanel({
   const [evaluation, setEvaluation] = useState<string | null>(null);
   const [overallBand, setOverallBand] = useState<number | null>(null);
 
-  const fullModeLabel = "Full Report Mode";
+  const fullModeLabel = taskType === "task1" ? "Full Report Mode" : "Full Essay Mode";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
