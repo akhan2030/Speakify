@@ -11,6 +11,8 @@ export type WritingLesson = {
   title: string;
   minutes: number;
   desc: string;
+  /** Which writing task this lesson primarily supports */
+  taskFocus: "task1" | "task2" | "shared";
   sections: WritingLessonSection[];
   practice: {
     title: string;
@@ -25,6 +27,7 @@ export const GT_WRITING_LESSONS: WritingLesson[] = [
     number: 1,
     title: "Formal Letter Structure",
     minutes: 12,
+    taskFocus: "task1",
     desc: "Opening, purpose, bullet points, and appropriate closing for formal letters.",
     sections: [
       {
@@ -95,6 +98,7 @@ export const GT_WRITING_LESSONS: WritingLesson[] = [
     number: 2,
     title: "Semi-formal & Informal Tone",
     minutes: 10,
+    taskFocus: "task1",
     desc: "When to use Dear + first name, contractions, and friendly closings.",
     sections: [
       {
@@ -146,9 +150,10 @@ export const GT_WRITING_LESSONS: WritingLesson[] = [
   },
   {
     slug: "gt-task2-structure",
-    number: 3,
+    number: 1,
     title: "General Task 2 Essay Structure",
     minutes: 15,
+    taskFocus: "task2",
     desc: "Clear position, balanced paragraphs, and practical examples.",
     sections: [
       {
@@ -211,9 +216,10 @@ export const GT_WRITING_LESSONS: WritingLesson[] = [
   },
   {
     slug: "gt-vocabulary",
-    number: 4,
+    number: 1,
     title: "Everyday Vocabulary for GT Writing",
     minutes: 10,
+    taskFocus: "shared",
     desc: "Useful phrases for letters about work, housing, travel, and friends.",
     sections: [
       {
@@ -273,6 +279,59 @@ export const GT_WRITING_LESSONS: WritingLesson[] = [
 ];
 
 export const GT_WRITING_LESSON_COUNT = GT_WRITING_LESSONS.length;
+
+export type GtWritingLessonTrack = "task1" | "task2";
+
+export const GT_WRITING_LESSON_TRACKS: {
+  id: GtWritingLessonTrack;
+  label: string;
+  headline: string;
+  description: string;
+  criterion: string;
+  criterionFull: string;
+  accent: string;
+  accentSoft: string;
+}[] = [
+  {
+    id: "task1",
+    label: "Task 1",
+    headline: "Letter",
+    description:
+      "Write a formal, semi-formal, or informal letter in 150+ words. Scored on Task Achievement (TA).",
+    criterion: "TA",
+    criterionFull: "Task Achievement",
+    accent: "#0d9488",
+    accentSoft: "rgba(13, 148, 136, 0.1)",
+  },
+  {
+    id: "task2",
+    label: "Task 2",
+    headline: "Essay",
+    description:
+      "Develop a clear position on an everyday topic in 250+ words. Scored on Task Response (TR).",
+    criterion: "TR",
+    criterionFull: "Task Response",
+    accent: "#c9972c",
+    accentSoft: "rgba(201, 151, 44, 0.12)",
+  },
+];
+
+export function gtLessonsForTrack(track: GtWritingLessonTrack): WritingLesson[] {
+  return GT_WRITING_LESSONS.filter((l) => l.taskFocus === track);
+}
+
+export function gtSharedWritingLessons(): WritingLesson[] {
+  return GT_WRITING_LESSONS.filter((l) => l.taskFocus === "shared");
+}
+
+export function gtTrackProgress(
+  track: GtWritingLessonTrack,
+  completedSlugs: string[]
+): { done: number; total: number } {
+  const all = [...gtLessonsForTrack(track), ...gtSharedWritingLessons()];
+  const done = all.filter((l) => completedSlugs.includes(l.slug)).length;
+  return { done, total: all.length };
+}
 
 export function getWritingLesson(slug: string): WritingLesson | undefined {
   return GT_WRITING_LESSONS.find((l) => l.slug === slug);

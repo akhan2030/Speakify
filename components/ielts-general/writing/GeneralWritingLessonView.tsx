@@ -4,36 +4,75 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  GT_WRITING_LESSON_COUNT,
+  GT_WRITING_LESSON_TRACKS,
   markLessonComplete,
   type WritingLesson,
 } from "@/lib/ielts-general/writingLessons";
 
-const WRITING_LESSONS_HREF = "/dashboard/ielts-general/student/writing?tab=lessons";
+function lessonsBackHref(lesson: WritingLesson): string {
+  const track = lesson.taskFocus === "task2" ? "task2" : "task1";
+  return `/dashboard/ielts-general/student/writing?tab=lessons&track=${track}`;
+}
+
+function taskFocusBadge(lesson: WritingLesson): {
+  label: string;
+  color: string;
+  bg: string;
+} {
+  if (lesson.taskFocus === "task2") {
+    const t = GT_WRITING_LESSON_TRACKS[1];
+    return { label: `Task 2 · Essay · ${t.criterion}`, color: t.accent, bg: t.accentSoft };
+  }
+  if (lesson.taskFocus === "task1") {
+    const t = GT_WRITING_LESSON_TRACKS[0];
+    return { label: `Task 1 · Letter · ${t.criterion}`, color: t.accent, bg: t.accentSoft };
+  }
+  return {
+    label: "Both tasks · vocabulary & linkers",
+    color: "#0d1b35",
+    bg: "rgba(13, 27, 53, 0.08)",
+  };
+}
 
 export default function GeneralWritingLessonView({ lesson }: { lesson: WritingLesson }) {
   const router = useRouter();
   const [practiceText, setPracticeText] = useState("");
   const [completed, setCompleted] = useState(false);
 
+  const focus = taskFocusBadge(lesson);
+  const backHref = lessonsBackHref(lesson);
+  const backLabel =
+    lesson.taskFocus === "task2"
+      ? "Task 2 lessons"
+      : lesson.taskFocus === "task1"
+        ? "Task 1 lessons"
+        : "Writing lessons";
+
   function handleMarkComplete() {
     markLessonComplete(lesson.slug);
     setCompleted(true);
-    router.push(WRITING_LESSONS_HREF);
+    router.push(backHref);
   }
 
   return (
     <main className="min-h-screen flex-1 bg-slate-50 p-4 pb-24 md:p-6 md:pb-6">
       <div className="mx-auto max-w-3xl">
         <Link
-          href={WRITING_LESSONS_HREF}
+          href={backHref}
           className="text-sm font-semibold text-[#0d9488] hover:underline"
         >
-          ← Back to Writing Lessons
+          ← Back to {backLabel}
         </Link>
 
-        <div className="mt-4 rounded-xl border border-[#0d9488]/30 bg-[#0d9488]/5 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[#0d9488]">
-          Lesson {lesson.number} of {GT_WRITING_LESSON_COUNT}
+        <div
+          className="mt-4 inline-block rounded-xl border px-4 py-2 text-xs font-semibold uppercase tracking-wide"
+          style={{
+            borderColor: `${focus.color}55`,
+            backgroundColor: focus.bg,
+            color: focus.color,
+          }}
+        >
+          {focus.label}
         </div>
 
         <header className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
