@@ -10,6 +10,20 @@ const bcrypt = require("bcryptjs");
 
 const BCRYPT_ROUNDS = 10;
 
+// Local-dev convenience password for throwaway @test.com accounts. These are
+// never created in production. Real demo/admin accounts read from env vars
+// (see resolveDemoPassword) so no live password is ever hardcoded in the repo.
+const LOCAL_TEST_PASSWORD = "123456";
+
+/**
+ * Resolve a demo/admin account password from an env var. Returns null when the
+ * var is unset so the account is skipped instead of seeded with a known secret.
+ */
+function resolveDemoPassword(envKey) {
+  const value = process.env[envKey];
+  return value && value.trim() ? value.trim() : null;
+}
+
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")
     .replace(/\/rest\/v1\/?$/i, "")
@@ -25,10 +39,13 @@ const IELTS_DEMO_PROFILE = {
   placement_test_completed: true,
 };
 
+// Demo/admin accounts (may exist in production) take their password from env
+// vars. When the var is unset the account is skipped rather than seeded with a
+// known password. Rotate live passwords with scripts/rotate-demo-passwords.mjs.
 const TEST_USERS = [
   {
     email: "student@test.com",
-    password: "123456",
+    password: LOCAL_TEST_PASSWORD,
     role: "student",
     name: "Test Student",
     programType: "ielts",
@@ -36,7 +53,7 @@ const TEST_USERS = [
   },
   {
     email: "pathway@test.com",
-    password: "123456",
+    password: LOCAL_TEST_PASSWORD,
     role: "student",
     name: "Pathway Student",
     programType: "pathway",
@@ -44,21 +61,21 @@ const TEST_USERS = [
   },
   {
     email: "teacher@test.com",
-    password: "123456",
+    password: LOCAL_TEST_PASSWORD,
     role: "teacher",
     name: "Test Teacher",
     forcePassword: false,
   },
   {
     email: "admin@speakify.com",
-    password: "Speakify2026!",
+    password: resolveDemoPassword("DEMO_ADMIN_PASSWORD"),
     role: "teacher",
     name: "Speakify Admin",
     forcePassword: true,
   },
   {
     email: "student@speakify.com",
-    password: "Speakify2026!",
+    password: resolveDemoPassword("DEMO_STUDENT_PASSWORD"),
     role: "student",
     name: "Speakify Student",
     programType: "ielts",
@@ -67,7 +84,7 @@ const TEST_USERS = [
   },
   {
     email: "ismail.ammar.hamido@speakify.test",
-    password: "Speakify@2026",
+    password: resolveDemoPassword("DEMO_STUDENT_PASSWORD"),
     role: "student",
     name: "Ismail Ammar Hamido",
     programType: "ielts",
@@ -76,7 +93,7 @@ const TEST_USERS = [
   },
   {
     email: "abdurehman.khan@speakify.test",
-    password: "Speakify@2026",
+    password: resolveDemoPassword("DEMO_STUDENT_PASSWORD"),
     role: "student",
     name: "Abdurehman Khan",
     programType: "ielts",
@@ -85,7 +102,7 @@ const TEST_USERS = [
   },
   {
     email: "business@test.com",
-    password: "123456",
+    password: LOCAL_TEST_PASSWORD,
     role: "student",
     name: "Business English Student",
     programType: "business_english",
@@ -93,7 +110,7 @@ const TEST_USERS = [
   },
   {
     email: "legal@test.com",
-    password: "123456",
+    password: LOCAL_TEST_PASSWORD,
     role: "student",
     name: "Legal English Student",
     programType: "legal_english",
@@ -101,7 +118,7 @@ const TEST_USERS = [
   },
   {
     email: "kids@test.com",
-    password: "123456",
+    password: LOCAL_TEST_PASSWORD,
     role: "student",
     name: "Kids English Student",
     programType: "kids_english",
@@ -132,7 +149,16 @@ async function main() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  const skipped = [];
+
   for (const user of TEST_USERS) {
+    if (!user.password) {
+      skipped.push(user.email);
+      console.log(
+        `Skipped ${user.email} — set its env var (DEMO_ADMIN_PASSWORD / DEMO_STUDENT_PASSWORD) to seed it.`
+      );
+      continue;
+    }
     const passwordHash = await hashPassword(user.password);
 
     const { data: existing, error: lookupError } = await supabase
@@ -189,7 +215,7 @@ async function main() {
     /\/$/,
     ""
   );
-  console.log("\nTest logins (password shown once — change in production):");
+  console.log("\nLocal test logins (dev only — never seeded in production):");
   console.log(`  Login page: ${base}/login`);
   console.log("  student@test.com / 123456  -> IELTS student dashboard");
   console.log("  pathway@test.com / 123456  -> English Pathway student dashboard");
@@ -197,11 +223,16 @@ async function main() {
   console.log("  legal@test.com / 123456    -> Legal English dashboard");
   console.log("  kids@test.com / 123456     -> Kids English dashboard");
   console.log("  teacher@test.com / 123456  -> teacher dashboard");
-  console.log("  admin@speakify.com / Speakify2026!  -> teacher dashboard (demo admin)");
-  console.log("  student@speakify.com / Speakify2026!  -> IELTS student dashboard (demo)");
-  console.log("  ismail.ammar.hamido@speakify.test / Speakify@2026 -> IELTS student dashboard");
-  console.log("  abdurehman.khan@speakify.test / Speakify@2026 -> IELTS student dashboard");
-  console.log(`  Placement test: ${base}/placement-test`);
+  console.log(
+    "\nDemo/admin accounts use env-var passwords (DEMO_ADMIN_PASSWORD, DEMO_STUDENT_PASSWORD)."
+  );
+  console.log(
+    "Rotate live passwords with: node scripts/rotate-demo-passwords.mjs"
+  );
+  if (skipped.length) {
+    console.log(`\nSkipped (env var unset): ${skipped.join(", ")}`);
+  }
+  console.log(`\n  Placement test: ${base}/placement-test`);
 }
 
 main().catch((err) => {

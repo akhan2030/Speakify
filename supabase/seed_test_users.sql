@@ -1,5 +1,12 @@
--- Test accounts for local development (plain-text password matches lib/auth.ts)
--- Run in Supabase SQL Editor, or: npm run seed:users
+-- Local development test accounts only. Do NOT run against production.
+--
+-- Prefer the env-driven Node seeder, which bcrypt-hashes passwords and reads
+-- demo/admin passwords from env vars:
+--
+--   npm run seed:users
+--
+-- The plain-text password below is a throwaway local-dev convenience and must
+-- never be used for an account that exists in production.
 
 INSERT INTO public.users (id, name, email, password, role)
 VALUES (
