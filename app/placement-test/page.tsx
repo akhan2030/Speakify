@@ -15,7 +15,7 @@ import {
   skipInvalidQuestion,
 } from "@/lib/placement/adaptiveEngine";
 import { isValidQuestion, mcqOptionsRecord } from "@/lib/placement/isValidQuestion";
-import { countWords, formatFillBlankAnswer, formatMmSs, sectionLabel } from "@/lib/placement/format";
+import { countWords, formatMmSs, sectionLabel } from "@/lib/placement/format";
 import { generateStudyPlan, roundToHalfBand } from "@/lib/placement/scoring";
 import type { PlacementOnboarding } from "@/lib/placement/onboarding";
 import type { Answer, Question, SpeakingScore, TestState } from "@/lib/placement/types";
@@ -26,13 +26,6 @@ import { getWritingTaskLabel } from "@/lib/placement/bank/writing";
 
 const GUEST_KEY = "speakify_placement_guest_id";
 const RESULT_KEY = "speakify_placement_result";
-
-type Feedback = {
-  correct: boolean;
-  message: string;
-  explanation: string;
-  saudiTrap?: string;
-};
 
 type Phase = "onboarding" | "test" | "speaking" | "finishing" | "locked";
 
@@ -50,7 +43,7 @@ const FINISHING_MESSAGES = [
   "Calculating your IELTS band score...",
 ];
 
-const MIN_FEEDBACK_MS = 6000;
+const ADVANCE_MS = 450;
 
 function getGuestId(): string {
   if (typeof window === "undefined") return "";
@@ -217,14 +210,12 @@ export default function PlacementTestPage() {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [answerInput, setAnswerInput] = useState("");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [advancing, setAdvancing] = useState(false);
   const [checking, setChecking] = useState(false);
   const [displayBand, setDisplayBand] = useState(5.0);
   const [elapsed, setElapsed] = useState(0);
   const [milestone, setMilestone] = useState<string | null>(null);
   const [encouragement, setEncouragement] = useState<string | null>(null);
-  const [pendingNextState, setPendingNextState] = useState<TestState | null>(null);
-  const [canGoNext, setCanGoNext] = useState(false);
   const questionStart = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -276,20 +267,8 @@ export default function PlacementTestPage() {
     questionStart.current = Date.now();
     setAnswerInput("");
     setSelectedOption(null);
-    setFeedback(null);
-    setPendingNextState(null);
-    setCanGoNext(false);
+    setAdvancing(false);
   }, [currentQuestion?.id, phase]);
-
-  useEffect(() => {
-    if (!feedback) {
-      setCanGoNext(false);
-      return;
-    }
-    setCanGoNext(false);
-    const t = setTimeout(() => setCanGoNext(true), MIN_FEEDBACK_MS);
-    return () => clearTimeout(t);
-  }, [feedback]);
 
   useEffect(() => {
     if (phase !== "test" && phase !== "speaking") {
@@ -400,16 +379,6 @@ export default function PlacementTestPage() {
     }
   }, [phase, testState, currentQuestion, continueAfterState]);
 
-  const goToNextQuestion = useCallback(() => {
-    if (!pendingNextState || !canGoNext) return;
-
-    const nextState = pendingNextState;
-    setFeedback(null);
-    setPendingNextState(null);
-    setCanGoNext(false);
-    continueAfterState(nextState);
-  }, [pendingNextState, canGoNext, continueAfterState]);
-
   const handleSpeakingComplete = useCallback(
     async (score: SpeakingScore, timeTaken: number) => {
       if (!testState) return;
@@ -448,12 +417,8 @@ export default function PlacementTestPage() {
     setTimeout(() => setEncouragement(null), 5000);
   };
 
-  const submitAnswer = async (
-    studentAnswer: string,
-    correct: boolean,
-    extraFeedback?: string
-  ) => {
-    if (!testState || !currentQuestion) return;
+  const submitAnswer = async (studentAnswer: string, correct: boolean) => {
+    if (!testState || !currentQuestion || advancing) return;
 
     const timeTaken = Math.max(
       1,
@@ -471,26 +436,23 @@ export default function PlacementTestPage() {
     const nextState = processAnswer(testState, answer);
     await saveAnswer(answer, studentAnswer);
 
-    setFeedback({
-      correct,
-      message: correct
-        ? "✓ Correct!"
-        : currentQuestion.type === "fill_blank"
-          ? `✗ The blank answer is "${currentQuestion.correct}" → ${formatFillBlankAnswer(currentQuestion.question, currentQuestion.correct)}`
-          : `✗ The answer is ${currentQuestion.correct}`,
-      explanation: extraFeedback || currentQuestion.explanation,
-      saudiTrap: currentQuestion.saudiTrap,
-    });
-
     showEncouragement(nextState.questionsAsked, nextState.currentBand);
-    setPendingNextState(nextState);
+    setDisplayBand(roundToHalfBand(nextState.currentBand));
+    setAdvancing(true);
+
+    window.setTimeout(() => {
+      setSelectedOption(null);
+      setAnswerInput("");
+      setAdvancing(false);
+      continueAfterState(nextState);
+    }, ADVANCE_MS);
   };
 
   const handleMcq = (option: string) => {
-    if (feedback || checking) return;
+    if (advancing || checking) return;
     setSelectedOption(option);
     const correct = gradeObjectiveAnswer(currentQuestion!, option);
-    submitAnswer(option, correct);
+    void submitAnswer(option, correct);
   };
 
   const handleFillBlank = async () => {
@@ -516,8 +478,7 @@ export default function PlacementTestPage() {
       const json = await res.json();
       await submitAnswer(
         answerInput,
-        Boolean(json.correct),
-        json.feedback || currentQuestion.explanation
+        Boolean(json.correct)
       );
     } finally {
       setChecking(false);
@@ -539,10 +500,7 @@ export default function PlacementTestPage() {
       });
       const json = await res.json();
       const correct = Number(json.overallBand) >= currentQuestion.band - 0.5;
-      const msg = json.feedback
-        ? `${json.feedback} (Overall: ${json.overallBand})`
-        : currentQuestion.explanation;
-      await submitAnswer(answerInput, correct, msg);
+      await submitAnswer(answerInput, correct);
     } finally {
       setChecking(false);
     }
@@ -600,27 +558,29 @@ export default function PlacementTestPage() {
             const optionText = opts[letter];
             if (!optionText || optionText.trim().length === 0) return null;
             const selected = selectedOption === optionText;
-            const showResult = feedback && selected;
             return (
               <button
                 key={`${q.id}-${letter}`}
                 type="button"
-                disabled={Boolean(feedback) || checking}
+                disabled={advancing || checking}
                 onClick={() => handleMcq(optionText)}
                 className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
-                  showResult
-                    ? feedback?.correct
-                      ? "border-green-500 bg-green-50 text-green-900"
-                      : "border-red-500 bg-red-50 text-red-900"
-                    : selected
-                      ? "border-[#c9972c] bg-[#c9972c]/10 text-[#0d1b35]"
+                  selected
+                    ? "border-[#c9972c] bg-[#c9972c]/10 text-[#0d1b35]"
+                    : advancing
+                      ? "border-slate-200 opacity-60"
                       : "border-slate-200 bg-white text-[#0d1b35] hover:border-[#c9972c]/50"
                 }`}
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c9972c] text-sm font-bold text-[#0d1b35]">
                   {letter}
                 </span>
-                <span className="pt-0.5">{optionText}</span>
+                <span className="flex-1 pt-0.5">{optionText}</span>
+                {selected ? (
+                  <span className="pt-0.5 text-sm font-bold text-[#c9972c]" aria-hidden>
+                    ✓
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -635,14 +595,14 @@ export default function PlacementTestPage() {
             type="text"
             value={answerInput}
             onChange={(e) => setAnswerInput(e.target.value)}
-            disabled={Boolean(feedback) || checking}
+            disabled={advancing || checking}
             className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[#0d1b35] focus:border-[#c9972c] focus:outline-none focus:ring-1 focus:ring-[#c9972c]"
             placeholder="Type your answer…"
           />
           <button
             type="button"
             onClick={handleFillBlank}
-            disabled={!answerInput.trim() || Boolean(feedback) || checking}
+            disabled={!answerInput.trim() || advancing || checking}
             className="mt-4 rounded-xl bg-[#0d1b35] px-6 py-2.5 text-sm font-bold text-white disabled:opacity-50"
           >
             {checking ? "Checking…" : "Submit"}
@@ -658,14 +618,14 @@ export default function PlacementTestPage() {
             value={answerInput}
             onChange={(e) => setAnswerInput(e.target.value)}
             rows={4}
-            disabled={Boolean(feedback) || checking}
+            disabled={advancing || checking}
             className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
             placeholder="Write the corrected sentence…"
           />
           <button
             type="button"
             onClick={handleErrorCorrection}
-            disabled={!answerInput.trim() || Boolean(feedback) || checking}
+            disabled={!answerInput.trim() || advancing || checking}
             className="mt-4 rounded-xl bg-[#c9972c] px-6 py-2.5 text-sm font-bold text-[#0d1b35] disabled:opacity-50"
           >
             {checking ? "AI checking…" : "Submit for AI check"}
@@ -683,7 +643,7 @@ export default function PlacementTestPage() {
             value={answerInput}
             onChange={(e) => setAnswerInput(e.target.value)}
             rows={5}
-            disabled={Boolean(feedback) || checking}
+            disabled={advancing || checking}
             className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
             placeholder="Write 2–3 sentences (40–50 words)…"
           />
@@ -693,7 +653,7 @@ export default function PlacementTestPage() {
           <button
             type="button"
             onClick={handleWriting}
-            disabled={words < minWords || Boolean(feedback) || checking}
+            disabled={words < minWords || advancing || checking}
             className="mt-4 rounded-xl bg-[#c9972c] px-6 py-2.5 text-sm font-bold text-[#0d1b35] disabled:opacity-50"
           >
             {checking ? "Scoring with AI…" : "Submit for AI Scoring"}
@@ -706,7 +666,7 @@ export default function PlacementTestPage() {
   }, [
     currentQuestion,
     answerInput,
-    feedback,
+    advancing,
     checking,
     selectedOption,
     handleMcq,
@@ -840,33 +800,10 @@ export default function PlacementTestPage() {
             {currentQuestion?.question}
           </p>
           {questionCard}
+          {advancing ? (
+            <p className="mt-4 text-center text-xs text-slate-500">Loading next question…</p>
+          ) : null}
         </article>
-
-        {feedback && (
-          <div
-            className={`mt-6 rounded-xl px-5 py-4 text-sm ${
-              feedback.correct
-                ? "border border-green-200 bg-green-50 text-green-900"
-                : "border border-red-200 bg-red-50 text-red-900"
-            }`}
-          >
-            <p className="font-bold">{feedback.message}</p>
-            <p className="mt-2 leading-relaxed">{feedback.explanation}</p>
-            {!feedback.correct && feedback.saudiTrap ? (
-              <p className="mt-2 text-xs font-medium text-amber-800">
-                Saudi learner tip: {feedback.saudiTrap}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={goToNextQuestion}
-              disabled={!canGoNext}
-              className="mt-5 w-full rounded-xl bg-[#0d1b35] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#152a4d] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
-            >
-              {canGoNext ? "Next Question →" : "Next Question → (read feedback…)"}
-            </button>
-          </div>
-        )}
       </main>
     </div>
   );

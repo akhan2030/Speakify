@@ -173,7 +173,8 @@ export default function OnboardingPage() {
   const [programme, setProgramme] = useState<GatewayProgramme | null>(null);
   const [testState, setTestState] = useState(() => initGatewayState());
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [advancing, setAdvancing] = useState(false);
   const [assessmentDone, setAssessmentDone] = useState(false);
   const [placementBand, setPlacementBand] = useState<number | null>(null);
   const [recommendation, setRecommendation] = useState<GatewayRecommendation | null>(null);
@@ -277,17 +278,19 @@ export default function OnboardingPage() {
 
   const handleAnswer = useCallback(
     (selected: string) => {
-      if (!currentQuestion || feedback || !selected.trim()) return;
-      const { state: nextState, correct } = submitGatewayAnswer(
+      if (!currentQuestion || advancing || !selected.trim()) return;
+      setSelectedAnswer(selected);
+      setAdvancing(true);
+      const { state: nextState } = submitGatewayAnswer(
         testState,
         currentQuestion,
         selected
       );
-      setFeedback(correct ? "correct" : "incorrect");
       setTestState(nextState);
 
       window.setTimeout(() => {
-        setFeedback(null);
+        setSelectedAnswer(null);
+        setAdvancing(false);
         if (nextState.questionsAsked >= GATEWAY_QUESTION_COUNT) {
           const band = gatewayEstimatedBand(nextState);
           setPlacementBand(band);
@@ -299,9 +302,9 @@ export default function OnboardingPage() {
           return;
         }
         setCurrentQuestion(selectGatewayQuestion(nextState));
-      }, 800);
+      }, 400);
     },
-    [currentQuestion, feedback, programme, testState]
+    [currentQuestion, advancing, programme, testState]
   );
 
   const cefrLevel = useMemo(
@@ -465,27 +468,28 @@ export default function OnboardingPage() {
             {letters.map((letter) => {
               const opt = opts[letter];
               if (!opt || opt.trim().length === 0) return null;
-              const isCorrect =
-                feedback &&
-                opt.toLowerCase() === String(currentQuestion.correct).toLowerCase();
+              const isSelected = selectedAnswer === opt;
               return (
                 <button
                   key={letter}
                   type="button"
-                  disabled={Boolean(feedback)}
+                  disabled={advancing}
                   onClick={() => handleAnswer(opt)}
-                  className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
-                    feedback === "correct" && isCorrect
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                      : feedback === "incorrect" && !isCorrect
+                  className={`flex items-center gap-2 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
+                    isSelected
+                      ? "border-[#c9972c] bg-[#c9972c]/10 text-[#0d1b35]"
+                      : advancing
                         ? "border-slate-200 opacity-60"
-                        : feedback === "incorrect" && isCorrect
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                          : "border-slate-200 hover:border-[#c9972c] hover:bg-[#c9972c]/5"
+                        : "border-slate-200 hover:border-[#c9972c] hover:bg-[#c9972c]/5"
                   }`}
                 >
-                  <span className="mr-2 font-bold text-[#c9972c]">{letter}.</span>
-                  {opt}
+                  <span className="font-bold text-[#c9972c]">{letter}.</span>
+                  <span className="flex-1">{opt}</span>
+                  {isSelected ? (
+                    <span className="text-sm font-bold text-[#c9972c]" aria-hidden>
+                      ✓
+                    </span>
+                  ) : null}
                 </button>
               );
             })}

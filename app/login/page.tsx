@@ -11,6 +11,7 @@ import {
   loginProgramLabel,
 } from "@/lib/courses/loginPaths";
 import LoginWelcomePanel from "@/components/login/LoginWelcomePanel";
+import { isDemoLoginEnabled } from "@/lib/auth/demoLogin";
 
 function Spinner() {
   return (
@@ -105,6 +106,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const showDemoLogin = isDemoLoginEnabled();
 
   const handleLogin = async (
     e?: React.FormEvent<HTMLFormElement>,
@@ -278,40 +280,35 @@ function LoginForm() {
             </Link>
           </p>
 
-          <div className="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Quick demo sign-in
-            </p>
-            <div className="mt-3 flex flex-col gap-2">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() =>
-                  handleLogin(undefined, "admin@speakify.com", "Speakify2026!")
-                }
-                className="rounded-lg border border-[#c9972c]/50 bg-white px-3 py-2.5 text-left text-xs font-semibold text-[#0d1b35] hover:bg-[#c9972c]/10 disabled:opacity-50"
-              >
-                Sign in as Admin (teacher dashboard) →
-              </button>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() =>
-                  handleLogin(
-                    undefined,
-                    "student@speakify.com",
-                    "Speakify2026!"
-                  )
-                }
-                className="rounded-lg border border-[#0d9488]/50 bg-white px-3 py-2.5 text-left text-xs font-semibold text-[#0d1b35] hover:bg-[#0d9488]/10 disabled:opacity-50"
-              >
-                Sign in as IELTS Student (demo) →
-              </button>
+          {showDemoLogin ? (
+            <div className="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Quick demo sign-in (local dev only)
+              </p>
+              <div className="mt-3 flex flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() =>
+                    handleLogin(undefined, "admin@speakify.com", "Speakify2026!")
+                  }
+                  className="rounded-lg border border-[#c9972c]/50 bg-white px-3 py-2.5 text-left text-xs font-semibold text-[#0d1b35] hover:bg-[#c9972c]/10 disabled:opacity-50"
+                >
+                  Sign in as Admin (teacher dashboard) →
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() =>
+                    handleLogin(undefined, "student@speakify.com", "Speakify2026!")
+                  }
+                  className="rounded-lg border border-[#0d9488]/50 bg-white px-3 py-2.5 text-left text-xs font-semibold text-[#0d1b35] hover:bg-[#0d9488]/10 disabled:opacity-50"
+                >
+                  Sign in as IELTS Student (demo) →
+                </button>
+              </div>
             </div>
-            <p className="mt-2 text-[0.65rem] text-slate-400">
-              Password: Speakify2026!
-            </p>
-          </div>
+          ) : null}
         </form>
       </div>
       <div className="mt-6 w-full max-w-md lg:hidden">
