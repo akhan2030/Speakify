@@ -14,24 +14,36 @@ export function normalizePaymentStatus(value: unknown): PaymentStatus {
   return "unpaid";
 }
 
-/** Phase 1: only IELTS Academic students require payment after onboarding. */
-export function requiresIeltsAcademicPayment(user: PaymentAccessUser): boolean {
+/** Programmes that require a one-time payment after onboarding. */
+export const PAID_PROGRAMMES = ["ielts", "ielts_general"] as const;
+
+/**
+ * Whether the student must pay before accessing their dashboard.
+ * Both IELTS Academic and IELTS General Training are paid programmes.
+ */
+export function requiresProgrammePayment(user: PaymentAccessUser): boolean {
   if (user.role === "admin" || user.role === "teacher") return false;
 
   const programs = Array.isArray(user.enrolledPrograms)
     ? user.enrolledPrograms.map((p) => String(p).trim().toLowerCase())
     : [];
 
-  if (programs.includes("ielts_general")) return false;
-  if (programs.includes("ielts")) return true;
-  if (user.programSelected === "ielts") return true;
+  if (programs.some((p) => (PAID_PROGRAMMES as readonly string[]).includes(p))) {
+    return true;
+  }
+
+  const selected = String(user.programSelected ?? "").trim().toLowerCase();
+  if ((PAID_PROGRAMMES as readonly string[]).includes(selected)) return true;
 
   return false;
 }
 
+/** @deprecated Use requiresProgrammePayment. Kept for back-compat. */
+export const requiresIeltsAcademicPayment = requiresProgrammePayment;
+
 export function hasDashboardAccess(user: PaymentAccessUser): boolean {
   if (user.role === "admin" || user.role === "teacher") return true;
-  if (!requiresIeltsAcademicPayment(user)) return true;
+  if (!requiresProgrammePayment(user)) return true;
 
   const status = normalizePaymentStatus(user.paymentStatus);
 

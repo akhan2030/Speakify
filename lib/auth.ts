@@ -30,7 +30,7 @@ import {
 
 } from "@/lib/studentLoginRedirect";
 
-import { hasDashboardAccess, requiresIeltsAcademicPayment } from "@/lib/payments/access";
+import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
 
 
 
@@ -272,6 +272,8 @@ export function dashboardPathForSessionUser(user: {
   enrolledPrograms?: unknown;
 
   stepEnrolled?: boolean;
+
+  programSelected?: string | null;
 
 }): string {
 
@@ -536,7 +538,7 @@ export const authOptions: NextAuthOptions = {
             programSelected: dbUser.programSelected,
           });
 
-          (token as any).requiresPayment = requiresIeltsAcademicPayment({
+          (token as any).requiresPayment = requiresProgrammePayment({
             role: dbUser.role,
             enrolledPrograms: dbUser.enrolledPrograms,
             programSelected: dbUser.programSelected,
@@ -630,6 +632,9 @@ export const authOptions: NextAuthOptions = {
 
       (session.user as any).requiresPayment = (token as any).requiresPayment === true;
 
+      (session.user as any).programSelected =
+        (token as any).programSelected ?? null;
+
       if ((token as any).email) {
 
         session.user.email = (token as any).email as string;
@@ -683,6 +688,8 @@ export async function getDashboardPathForEmail(email: string) {
     enrolledPrograms: dbUser.enrolledPrograms,
 
     stepEnrolled: dbUser.stepEnrolled,
+
+    programSelected: dbUser.programSelected,
 
   });
 

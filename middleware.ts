@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
 import { dashboardPathForStudentUser, normalizeEnrolledPrograms } from "@/lib/studentLoginRedirect";
 import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
-import { hasDashboardAccess, requiresIeltsAcademicPayment } from "@/lib/payments/access";
+import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
 import { normalizeProgramType } from "@/lib/programType";
 
 function paymentContextFromToken(token: {
@@ -25,7 +25,7 @@ function paymentContextFromToken(token: {
     programSelected: token.programSelected,
   };
   return {
-    requiresPayment: requiresIeltsAcademicPayment(accessUser),
+    requiresPayment: requiresProgrammePayment(accessUser),
     hasDashboardAccess: hasDashboardAccess(accessUser),
   };
 }
@@ -67,6 +67,7 @@ export default withAuth(
           programType: token?.programType,
           enrolledPrograms: token?.enrolledPrograms,
           stepEnrolled: token?.stepEnrolled,
+          programSelected: token?.programSelected,
         });
         return NextResponse.redirect(new URL(home, req.url));
       }
@@ -90,6 +91,7 @@ export default withAuth(
           programType: token?.programType,
           enrolledPrograms: token?.enrolledPrograms,
           stepEnrolled: token?.stepEnrolled,
+          programSelected: token?.programSelected,
         });
         return NextResponse.redirect(new URL(home, req.url));
       }

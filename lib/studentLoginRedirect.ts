@@ -84,11 +84,22 @@ export function resolveStudentDashboardPath(input: {
   programType?: unknown;
   enrolledPrograms?: unknown;
   stepEnrolled?: boolean;
+  programSelected?: unknown;
 }): string {
   const programType = normalizeProgramType(input.programType);
   const programs = normalizeEnrolledPrograms(input.enrolledPrograms, programType);
   const raw = parseRawEnrolledPrograms(input.enrolledPrograms);
   const stepEnrolled = input.stepEnrolled === true;
+
+  // IELTS General Training is normalized away by normalizeProgramType (there is
+  // no "ielts_general" ProgramType), so detect it from the raw enrolment slugs
+  // or the explicit program_selected value and route to the GT dashboard.
+  const rawProgramSelected = String(input.programSelected ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  const isGeneralTraining =
+    raw.includes("ielts_general") || rawProgramSelected === "ielts_general";
 
   // Stale step_enrolled flag with IELTS-only enrollment → IELTS dashboard (not STEP diagnostic)
   if (
@@ -114,6 +125,8 @@ export function resolveStudentDashboardPath(input: {
     return STEP_ROUTES.home;
   }
 
+  if (isGeneralTraining) return "/dashboard/ielts-general/student";
+
   if (programs.length > 1) return "/dashboard/home";
   return studentDashboardPath(programs[0] ?? programType);
 }
@@ -123,6 +136,7 @@ export function dashboardPathForStudentUser(user: {
   programType?: unknown;
   enrolledPrograms?: unknown;
   stepEnrolled?: boolean;
+  programSelected?: unknown;
 }): string {
   const role = normalizeRole(user.role);
   if (role === "teacher") return "/dashboard/teacher";
@@ -133,5 +147,6 @@ export function dashboardPathForStudentUser(user: {
     programType: user.programType,
     enrolledPrograms: user.enrolledPrograms,
     stepEnrolled: user.stepEnrolled,
+    programSelected: user.programSelected,
   });
 }

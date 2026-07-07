@@ -11,7 +11,12 @@ import {
 } from "@/lib/accelerator/tracks";
 import { createMoyasarPayment, isMoyasarMockMode } from "@/lib/payments/moyasar";
 import { getAppBaseUrl } from "@/lib/appUrl";
-import { requiresIeltsAcademicPayment, hasDashboardAccess } from "@/lib/payments/access";
+import { requiresProgrammePayment, hasDashboardAccess } from "@/lib/payments/access";
+import {
+  checkoutPaymentDescription,
+  checkoutTrackLabel,
+  resolvePaidProgramme,
+} from "@/lib/payments/checkoutLabels";
 
 export const runtime = "nodejs";
 
@@ -63,13 +68,18 @@ export async function POST() {
       programSelected: user.program_selected,
     };
 
-    if (!requiresIeltsAcademicPayment(accessUser)) {
+    if (!requiresProgrammePayment(accessUser)) {
       return NextResponse.json({ error: "Payment not required for this programme" }, { status: 400 });
     }
 
     if (hasDashboardAccess(accessUser)) {
       return NextResponse.json({ error: "Already has access" }, { status: 400 });
     }
+
+    const programme = resolvePaidProgramme({
+      enrolledPrograms: user.enrolled_programs,
+      programSelected: user.program_selected,
+    });
 
     const track = resolveAcceleratorTrack({
       checkoutTrack: user.checkout_track,
@@ -87,6 +97,7 @@ export async function POST() {
     const payment = await createMoyasarPayment({
       studentId,
       track,
+      programme,
       studentEmail: String(user.email ?? session.user?.email ?? ""),
       studentName: String(user.name ?? "Student"),
       callbackUrl,
@@ -121,6 +132,8 @@ export async function POST() {
     );
 
     const meta = ACCELERATOR_TRACKS[track];
+    const trackLabel = checkoutTrackLabel(programme, track);
+    const description = checkoutPaymentDescription(programme, track);
 
     return NextResponse.json({
       ok: true,
@@ -128,12 +141,13 @@ export async function POST() {
       paymentId,
       studentId,
       track,
-      trackLabel: `IELTS ${meta.name}`,
+      programme,
+      trackLabel,
       price: meta.price,
       amountHalalas: payment.amountHalalas,
       duration: meta.duration,
       target: meta.target,
-      description: `Speakify IELTS ${meta.name}`,
+      description,
       publishableKey: payment.mode === "live" ? payment.publishableKey : null,
       mockMode: isMoyasarMockMode(),
       callbackUrl,

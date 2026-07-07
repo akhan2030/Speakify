@@ -11,7 +11,11 @@ import {
 } from "@/lib/accelerator/tracks";
 import { grantPaidAccess } from "@/lib/payments/grantAccess";
 import { isMoyasarMockMode, trackPriceHalalas } from "@/lib/payments/moyasar";
-import { hasDashboardAccess, requiresIeltsAcademicPayment } from "@/lib/payments/access";
+import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
+import {
+  checkoutTrackLabel,
+  resolvePaidProgramme,
+} from "@/lib/payments/checkoutLabels";
 import { dashboardPathForStudentUser } from "@/lib/studentLoginRedirect";
 
 export const runtime = "nodejs";
@@ -77,7 +81,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    const dashboardPath = dashboardPathForStudentUser(session?.user ?? {});
+    const dashboardPath = dashboardPathForStudentUser({
+      role,
+      programType: session?.user?.programType,
+      enrolledPrograms: user?.enrolled_programs,
+      programSelected: user?.program_selected,
+    });
 
     return NextResponse.json({
       ok: true,
@@ -124,20 +133,26 @@ export async function GET() {
     const trackRaw = String(user?.checkout_track ?? user?.accelerator_track ?? "").toLowerCase();
     const track = isValidTrack(trackRaw) ? trackRaw : null;
     const meta = track ? ACCELERATOR_TRACKS[track] : null;
+    const programme = resolvePaidProgramme({
+      enrolledPrograms: user?.enrolled_programs,
+      programSelected: user?.program_selected,
+    });
 
     return NextResponse.json({
       paymentStatus: user?.payment_status ?? "unpaid",
       hasAccess: hasDashboardAccess(accessUser),
-      requiresPayment: requiresIeltsAcademicPayment(accessUser),
+      requiresPayment: requiresProgrammePayment(accessUser),
       onboardingCompleted: user?.onboarding_completed === true,
+      programme,
       track,
-      trackLabel: meta ? `IELTS ${meta.name}` : null,
+      trackLabel: track ? checkoutTrackLabel(programme, track) : null,
       price: meta?.price ?? null,
       mockMode: isMoyasarMockMode(),
       dashboardPath: dashboardPathForStudentUser({
         role,
         programType: session?.user?.programType,
         enrolledPrograms: user?.enrolled_programs,
+        programSelected: user?.program_selected,
       }),
     });
   } catch (err) {

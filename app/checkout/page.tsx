@@ -49,7 +49,7 @@ export default function CheckoutPage() {
         return;
       }
       if (!statusData.requiresPayment) {
-        router.replace("/dashboard/ielts/student");
+        router.replace(statusData.dashboardPath ?? "/dashboard/ielts/student");
         return;
       }
 
@@ -141,7 +141,7 @@ export default function CheckoutPage() {
           <h1 className="text-xl font-bold text-[#0d1b35]">Complete your enrollment</h1>
           {reason === "payment_required" ? (
             <p className="mt-2 text-sm text-amber-700">
-              Payment is required to access your IELTS dashboard.
+              Payment is required to access your dashboard.
             </p>
           ) : (
             <p className="mt-2 text-sm text-slate-600">

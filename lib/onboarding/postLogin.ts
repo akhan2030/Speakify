@@ -1,6 +1,6 @@
 import { dashboardPathForStudentUser } from "@/lib/studentLoginRedirect";
 import { normalizeRole } from "@/lib/roles";
-import { hasDashboardAccess, requiresIeltsAcademicPayment } from "@/lib/payments/access";
+import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
 
 export function shouldSkipGateway(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
@@ -39,7 +39,7 @@ export function resolvePostLoginPath(user: {
   };
 
   if (
-    requiresIeltsAcademicPayment(accessUser) &&
+    requiresProgrammePayment(accessUser) &&
     !hasDashboardAccess(accessUser) &&
     user.hasDashboardAccess !== true
   ) {

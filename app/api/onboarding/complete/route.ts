@@ -22,7 +22,7 @@ import {
   targetBandNumericFromTrack,
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
-import { hasDashboardAccess, requiresIeltsAcademicPayment } from "@/lib/payments/access";
+import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
 
 export const runtime = "nodejs";
 
@@ -107,8 +107,8 @@ export async function POST(request: Request) {
     let checkoutTrack: AcceleratorTrackId | null = purchasedTrack;
 
     if (
-      programme === "ielts" &&
-      recommendation.kind === "ielts" &&
+      (programme === "ielts" || programme === "ielts_general") &&
+      recommendation.kind === programme &&
       !checkoutTrack
     ) {
       checkoutTrack = recommendation.track;
@@ -152,8 +152,8 @@ export async function POST(request: Request) {
     }
 
     const needsPayment =
-      programme === "ielts" &&
-      requiresIeltsAcademicPayment({
+      (programme === "ielts" || programme === "ielts_general") &&
+      requiresProgrammePayment({
         role,
         enrolledPrograms: enrolledProgramsForGateway(programme),
         programSelected: programme,

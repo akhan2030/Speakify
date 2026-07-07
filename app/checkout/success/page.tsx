@@ -35,7 +35,13 @@ export default function CheckoutSuccessPage() {
             paymentStatus: "paid",
             hasDashboardAccess: true,
           });
-          const path = dashboardPathForStudentUser(session?.user ?? {});
+          const path =
+            data.dashboardPath ??
+            dashboardPathForStudentUser({
+              role: (session?.user as { role?: string })?.role,
+              programType: (session?.user as { programType?: string })?.programType,
+              programSelected: (session?.user as { programSelected?: string })?.programSelected,
+            });
           setMessage("Payment confirmed! Redirecting to your dashboard…");
           window.setTimeout(() => {
             router.replace(path);

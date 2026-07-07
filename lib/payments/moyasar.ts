@@ -1,4 +1,8 @@
 import { ACCELERATOR_TRACKS, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
+import {
+  checkoutPaymentDescription,
+  type PaidProgramme,
+} from "@/lib/payments/checkoutLabels";
 
 export function isMoyasarMockMode(): boolean {
   if (process.env.MOYASAR_MOCK === "true") return true;
@@ -36,12 +40,14 @@ export type MoyasarCreatePaymentResult =
 export async function createMoyasarPayment(options: {
   studentId: string;
   track: AcceleratorTrackId;
+  programme?: PaidProgramme;
   studentEmail: string;
   studentName: string;
   callbackUrl: string;
 }): Promise<MoyasarCreatePaymentResult | { error: string }> {
   const amountHalalas = trackPriceHalalas(options.track);
-  const description = `Speakify IELTS ${ACCELERATOR_TRACKS[options.track].name}`;
+  const programme = options.programme ?? "ielts";
+  const description = checkoutPaymentDescription(programme, options.track);
 
   if (isMoyasarMockMode()) {
     const mockPaymentId = `mock_${options.studentId}_${Date.now()}`;
