@@ -454,7 +454,6 @@ function ListeningSectionExam() {
 
   useEffect(() => {
     if (!TIMED_PHASES.includes(phase as ExamFlowPhase)) return;
-    if (phase === "prep" && sectionNumber === 4) return;
 
     if (timerSeconds <= 0) {
       advanceFromTimer();
