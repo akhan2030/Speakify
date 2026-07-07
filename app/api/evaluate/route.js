@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { createClient } from "@supabase/supabase-js";
+import { authOptions } from "@/lib/auth";
 import { evaluateEssay } from "../../../lib/assistant.js";
 import {
   combineGuidedParagraphs,
@@ -6,6 +9,48 @@ import {
 } from "../../../lib/ielts/writingParagraphEval.js";
 
 export const runtime = "nodejs";
+
+function getSupabase() {
+  const url = (process.env.SUPABASE_URL || "")
+    .replace(/\/rest\/v1\/?$/i, "")
+    .replace(/\/$/, "");
+  if (!url || !process.env.SUPABASE_SERVICE_KEY) return null;
+  return createClient(url, process.env.SUPABASE_SERVICE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/**
+ * Best-effort persistence of a completed Academic writing attempt.
+ * Never throws — a save failure must not break the evaluation response.
+ */
+async function persistWritingAttempt({ studentId, taskType, essay, evaluation, bands }) {
+  if (!studentId) return;
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    const { error } = await supabase.from("writing_attempts").insert({
+      student_id: studentId,
+      task_type: taskType,
+      essay_text: essay,
+      evaluation_text: evaluation,
+      band_overall: bands?.overall ?? null,
+      band_ta: bands?.ta ?? null,
+      band_cc: bands?.cc ?? null,
+      band_lr: bands?.lr ?? null,
+      band_gra: bands?.gra ?? null,
+    });
+    if (error) {
+      console.warn("[/api/evaluate] writing_attempts insert failed:", error.message);
+    }
+  } catch (err) {
+    console.warn(
+      "[/api/evaluate] writing_attempts insert threw:",
+      err instanceof Error ? err.message : err
+    );
+  }
+}
 
 export async function POST(request) {
   try {
@@ -77,6 +122,16 @@ export async function POST(request) {
       }
 
       const { evaluation, bands } = await evaluateEssay(essay, taskType);
+
+      const session = await getServerSession(authOptions);
+      await persistWritingAttempt({
+        studentId: session?.user?.id,
+        taskType,
+        essay,
+        evaluation,
+        bands,
+      });
+
       return NextResponse.json(
         { evaluation, bands, success: true, guided: true },
         { status: 200 }
@@ -92,6 +147,16 @@ export async function POST(request) {
     }
 
     const { evaluation, bands } = await evaluateEssay(essay, taskType);
+
+    const session = await getServerSession(authOptions);
+    await persistWritingAttempt({
+      studentId: session?.user?.id,
+      taskType,
+      essay,
+      evaluation,
+      bands,
+    });
+
     return NextResponse.json({ evaluation, bands, success: true }, { status: 200 });
   } catch (err) {
     console.error("[/api/evaluate] Error:", err?.message || err);
