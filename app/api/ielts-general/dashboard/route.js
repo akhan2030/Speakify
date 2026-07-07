@@ -14,6 +14,7 @@ import {
   getGeneralWeakestSkillActions,
   estimateGeneralBandImprovement,
 } from "@/lib/ielts-general/missionTasks";
+import { gtAttemptSkill } from "@/lib/ielts-general/attemptRows.js";
 import {
   getStudyDay,
   getDaySubtitle,
@@ -276,14 +277,14 @@ async function mergeGeneralBandData(supabase, studentId, profileBands) {
   const [historyRes, attemptsRes, letterRes] = await Promise.all([
     supabase
       .from("ielts_general_student_history")
-      .select("skill, band_score, recorded_at")
+      .select("skill, task_type, band_score, recorded_at, overall_band, completed_at")
       .eq("student_id", studentId)
       .in("skill", ["writing", "speaking", "reading", "listening", "overall"])
       .order("recorded_at", { ascending: true })
       .limit(50),
     supabase
       .from("ielts_general_attempts")
-      .select("skill, band_score, completed_at, letter_type, accuracy")
+      .select("skill, task_type, band_score, completed_at, letter_type, accuracy")
       .eq("student_id", studentId)
       .order("completed_at", { ascending: false })
       .limit(40),
@@ -308,7 +309,11 @@ async function mergeGeneralBandData(supabase, studentId, profileBands) {
   if (historyRows.length) {
     const latest = new Map();
     for (const row of historyRows) {
-      latest.set(row.skill, Number(row.band_score));
+      const skill = gtAttemptSkill(row);
+      const band = row.band_score ?? row.overall_band;
+      if (skill && Number.isFinite(Number(band))) {
+        latest.set(skill, Number(band));
+      }
     }
     for (const skill of ["writing", "speaking", "reading", "listening"]) {
       if (latest.has(skill) && Number.isFinite(latest.get(skill))) {
@@ -321,7 +326,8 @@ async function mergeGeneralBandData(supabase, studentId, profileBands) {
   if (attempts.length) {
     const latestBySkill = new Map();
     for (const row of attempts) {
-      const skill = String(row.skill ?? "").toLowerCase();
+      const skill = gtAttemptSkill(row);
+      if (!skill) continue;
       if (!latestBySkill.has(skill) && Number.isFinite(Number(row.band_score))) {
         latestBySkill.set(skill, Number(row.band_score));
       }
@@ -492,12 +498,10 @@ export async function GET() {
         safeQuery(
           supabase
             .from("ielts_general_attempts")
-            .select("id, band_score, completed_at, status, mock_number, skill")
+            .select("id, band_score, completed_at, mock_number, skill, task_type, status")
             .eq("student_id", studentId)
-            .eq("status", "completed")
-            .eq("skill", "mock")
             .order("completed_at", { ascending: false })
-            .limit(10)
+            .limit(30)
         ),
       ]);
 
@@ -506,7 +510,9 @@ export async function GET() {
       completionsToday = completionsTodayRes ?? [];
       allCompletions = allCompletionsRes ?? [];
       achievements = achievementsRes ?? [];
-      mockAttempts = mockRes ?? [];
+      mockAttempts = (mockRes ?? []).filter(
+        (row) => gtAttemptSkill(row) === "mock"
+      );
       lastMock = mockAttempts[0] ?? null;
     }
 

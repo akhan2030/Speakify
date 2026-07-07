@@ -4,6 +4,10 @@ import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { scoreGtReadingAnswers, gtReadingRawToBand } from "@/lib/ielts-general/readingScore";
 import type { GtReadingQuestion } from "@/lib/ielts-general/readingContent";
+import {
+  gtAttemptInsertRow,
+  gtHistoryInsertRow,
+} from "@/lib/ielts-general/attemptRows.js";
 
 export const runtime = "nodejs";
 
@@ -50,14 +54,13 @@ export async function POST(request: Request) {
   if (process.env.SUPABASE_SERVICE_KEY) {
     const supabase = getSupabase();
     const completedAt = new Date().toISOString();
-    const row = {
-      student_id: studentId,
+    const row = gtAttemptInsertRow({
+      studentId,
       skill: "reading",
-      band_score: result.estimatedBand,
+      bandScore: result.estimatedBand,
       accuracy: result.accuracy / 100,
-      completed_at: completedAt,
-      status: "completed",
-    };
+      completedAt,
+    });
 
     if (sectionBreakdown || result.sectionBreakdown) {
       const breakdown = sectionBreakdown ?? result.sectionBreakdown;
@@ -65,14 +68,15 @@ export async function POST(request: Request) {
         for (const sec of ["A", "B", "C"] as const) {
           const row = breakdown[sec];
           if (!row?.total) continue;
-          await supabase.from("ielts_general_attempts").insert({
-            student_id: studentId,
-            skill: `reading_section_${sec.toLowerCase()}`,
-            band_score: gtReadingRawToBand(row.correct, row.total),
-            accuracy: row.correct / row.total,
-            completed_at: completedAt,
-            status: "completed",
-          });
+          await supabase.from("ielts_general_attempts").insert(
+            gtAttemptInsertRow({
+              studentId,
+              skill: `reading_section_${sec.toLowerCase()}`,
+              bandScore: gtReadingRawToBand(row.correct, row.total),
+              accuracy: row.correct / row.total,
+              completedAt,
+            })
+          );
         }
       }
     }
@@ -82,12 +86,12 @@ export async function POST(request: Request) {
       console.warn("[ielts-general/reading/attempt]", error.message);
     }
 
-    const historyRow = {
-      student_id: studentId,
+    const historyRow = gtHistoryInsertRow({
+      studentId,
       skill: "reading",
-      band_score: result.estimatedBand,
-      recorded_at: completedAt,
-    };
+      bandScore: result.estimatedBand,
+      recordedAt: completedAt,
+    });
     const historyRes = await supabase.from("ielts_general_student_history").insert(historyRow);
     if (historyRes.error && !historyRes.error.message?.includes("does not exist")) {
       console.warn("[ielts-general/reading/attempt] history", historyRes.error.message);

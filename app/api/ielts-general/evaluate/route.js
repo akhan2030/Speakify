@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { evaluateGeneralWriting } from "@/lib/ielts-general/writingEval.js";
+import {
+  gtAttemptInsertRow,
+  gtHistoryInsertRow,
+} from "@/lib/ielts-general/attemptRows.js";
 
 export const runtime = "nodejs";
 
@@ -38,14 +42,17 @@ async function persistGeneralWritingAttempt({
   const completedAt = new Date().toISOString();
 
   try {
-    const { error } = await supabase.from("ielts_general_attempts").insert({
-      student_id: studentId,
-      skill: "writing",
-      band_score: Number(overall),
-      letter_type: taskType === "task1" ? letterType ?? null : null,
-      completed_at: completedAt,
-      status: "completed",
-    });
+    const { error } = await supabase
+      .from("ielts_general_attempts")
+      .insert(
+        gtAttemptInsertRow({
+          studentId,
+          skill: "writing",
+          bandScore: Number(overall),
+          letterType: taskType === "task1" ? letterType ?? null : null,
+          completedAt,
+        })
+      );
     if (error && !error.message?.includes("does not exist")) {
       console.warn("[ielts-general/evaluate] attempt insert:", error.message);
     }
@@ -59,12 +66,14 @@ async function persistGeneralWritingAttempt({
   try {
     const { error } = await supabase
       .from("ielts_general_student_history")
-      .insert({
-        student_id: studentId,
-        skill: "writing",
-        band_score: Number(overall),
-        recorded_at: completedAt,
-      });
+      .insert(
+        gtHistoryInsertRow({
+          studentId,
+          skill: "writing",
+          bandScore: Number(overall),
+          recordedAt: completedAt,
+        })
+      );
     if (error && !error.message?.includes("does not exist")) {
       console.warn("[ielts-general/evaluate] history insert:", error.message);
     }

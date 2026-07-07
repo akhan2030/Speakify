@@ -8,7 +8,7 @@ import { parseRawEnrolledPrograms } from "@/lib/studentLoginRedirect";
 
 /** GT grammar when on GT routes, enrolled as GT-only, or GT session marker. */
 export function useGrammarProgramme(): "academic" | "general" {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const { isIeltsGeneralProgram } = usePathwayStudentContext();
   const { data: session } = useSession();
   const [storageGeneral, setStorageGeneral] = useState(false);
@@ -19,7 +19,12 @@ export function useGrammarProgramme(): "academic" | "general" {
     );
   }, [pathname]);
 
-  if (isIeltsGeneralProgram) return "general";
+  if (
+    pathname.startsWith("/dashboard/ielts-general/student") ||
+    isIeltsGeneralProgram
+  ) {
+    return "general";
+  }
 
   const enrolled = parseRawEnrolledPrograms(
     (session?.user as { enrolledPrograms?: unknown } | undefined)?.enrolledPrograms

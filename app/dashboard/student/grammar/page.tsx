@@ -35,9 +35,9 @@ const IELTS_GRAMMAR_TIPS = [
 export default function GrammarHomePage() {
   const router = useRouter();
   const { status } = useSession();
-  const { isPathway, isIeltsGeneralProgram, base, usesProgramShell } =
-    usePathwayStudentContext();
+  const { isPathway, base, usesProgramShell } = usePathwayStudentContext();
   const grammarProgramme = useGrammarProgramme();
+  const isGeneralGrammar = grammarProgramme === "general";
   const grammarCategories = getGrammarCategories(grammarProgramme);
   const [tab, setTab] = useState<"lessons" | "ielts">("lessons");
   const [progress, setProgress] = useState<Record<string, ProgressRow>>({});
@@ -84,14 +84,14 @@ export default function GrammarHomePage() {
             <h1 className="text-2xl font-bold text-[#0d1b35] sm:text-3xl">
               {isPathway
                 ? "Grammar"
-                : isIeltsGeneralProgram
+                : isGeneralGrammar
                   ? "Grammar for General Training"
                   : "Grammar for IELTS"}
             </h1>
             <p className="mt-2 text-sm text-slate-600 sm:text-base">
               {isPathway
                 ? "Build accurate English grammar step by step at your CEFR level"
-                : isIeltsGeneralProgram
+                : isGeneralGrammar
                   ? "Grammar for letters, essays, and everyday English — not Academic graph reports"
                   : "Master the grammar structures that boost your band score"}
             </p>
@@ -126,14 +126,14 @@ export default function GrammarHomePage() {
                   : "text-slate-500 hover:text-[#0d1b35]"
               }`}
             >
-              Grammar in {isIeltsGeneralProgram ? "General Training" : "IELTS"}
+              Grammar in {isGeneralGrammar ? "General Training" : "IELTS"}
             </button>
             ) : null}
           </div>
 
           {!isPathway && tab === "ielts" ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              {(isIeltsGeneralProgram ? GENERAL_GRAMMAR_TIPS : IELTS_GRAMMAR_TIPS).map(
+              {(isGeneralGrammar ? GENERAL_GRAMMAR_TIPS : IELTS_GRAMMAR_TIPS).map(
                 (tip) => (
                 <div
                   key={tip.title}

@@ -6,6 +6,7 @@ import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 import { buildRecommendations } from "@/lib/course/recommendationEngine";
 import { computeReadinessMeter } from "@/lib/course/readinessMeter";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
+import { gtAttemptSkill } from "@/lib/ielts-general/attemptRows.js";
 
 export const runtime = "nodejs";
 
@@ -96,7 +97,7 @@ export async function GET() {
     const supabase = getSupabase();
     const { data: attempts } = await supabase
       .from("ielts_general_attempts")
-      .select("skill, band_score, accuracy, letter_type, completed_at")
+      .select("skill, task_type, band_score, accuracy, letter_type, completed_at")
       .eq("student_id", studentId)
       .order("completed_at", { ascending: false })
       .limit(60);
@@ -108,7 +109,8 @@ export async function GET() {
 
     const latestBySkill = new Map<string, (typeof rows)[0]>();
     for (const row of rows) {
-      const skill = String(row.skill ?? "").toLowerCase();
+      const skill = gtAttemptSkill(row);
+      if (!skill) continue;
       if (!latestBySkill.has(skill)) latestBySkill.set(skill, row);
     }
 

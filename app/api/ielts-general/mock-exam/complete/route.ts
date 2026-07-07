@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { gtReadingRawToBand } from "@/lib/ielts-general/readingScore";
+import { gtAttemptInsertRow } from "@/lib/ielts-general/attemptRows.js";
 
 export const runtime = "nodejs";
 
@@ -42,54 +43,58 @@ export async function POST(request: Request) {
   const readingBand = sectionScores?.reading?.band;
 
   if (Number.isFinite(listeningBand)) {
-    rows.push({
-      student_id: studentId,
-      skill: "listening",
-      band_score: listeningBand,
-      accuracy: sectionScores.listening?.accuracy ?? null,
-      completed_at: completedAt,
-      status: "completed",
-      mock_number: mockNumber,
-    });
+    rows.push(
+      gtAttemptInsertRow({
+        studentId,
+        skill: "listening",
+        bandScore: listeningBand,
+        accuracy: sectionScores.listening?.accuracy ?? null,
+        mockNumber,
+        completedAt,
+      })
+    );
   }
 
   if (Number.isFinite(readingBand)) {
-    rows.push({
-      student_id: studentId,
-      skill: "reading",
-      band_score: readingBand,
-      accuracy: sectionScores.reading?.accuracy ?? null,
-      completed_at: completedAt,
-      status: "completed",
-      mock_number: mockNumber,
-    });
+    rows.push(
+      gtAttemptInsertRow({
+        studentId,
+        skill: "reading",
+        bandScore: readingBand,
+        accuracy: sectionScores.reading?.accuracy ?? null,
+        mockNumber,
+        completedAt,
+      })
+    );
   }
 
   if (readingSectionBreakdown) {
     for (const sec of ["A", "B", "C"] as const) {
       const row = readingSectionBreakdown[sec];
       if (!row?.total) continue;
-      rows.push({
-        student_id: studentId,
-        skill: `reading_section_${sec.toLowerCase()}`,
-        band_score: row.band ?? gtReadingRawToBand(row.correct, row.total),
-        accuracy: row.total ? row.correct / row.total : null,
-        completed_at: completedAt,
-        status: "completed",
-        mock_number: mockNumber,
-      });
+      rows.push(
+        gtAttemptInsertRow({
+          studentId,
+          skill: `reading_section_${sec.toLowerCase()}`,
+          bandScore: row.band ?? gtReadingRawToBand(row.correct, row.total),
+          accuracy: row.total ? row.correct / row.total : null,
+          mockNumber,
+          completedAt,
+        })
+      );
     }
   }
 
   if (Number.isFinite(overallBand)) {
-    rows.push({
-      student_id: studentId,
-      skill: "mock",
-      band_score: overallBand,
-      completed_at: completedAt,
-      status: "completed",
-      mock_number: mockNumber,
-    });
+    rows.push(
+      gtAttemptInsertRow({
+        studentId,
+        skill: "mock",
+        bandScore: overallBand,
+        mockNumber,
+        completedAt,
+      })
+    );
   }
 
   if (rows.length) {

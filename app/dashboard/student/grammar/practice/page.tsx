@@ -38,6 +38,7 @@ export default function GrammarPracticePage() {
   const { status } = useSession();
   const { base, usesProgramShell } = usePathwayStudentContext();
   const grammarProgramme = useGrammarProgramme();
+  const isGeneralGrammar = grammarProgramme === "general";
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -150,9 +151,13 @@ export default function GrammarPracticePage() {
           </Link>
 
           <header className="mt-4">
-            <h1 className="text-2xl font-bold text-[#0d1b35]">Grammar Practice</h1>
+            <h1 className="text-2xl font-bold text-[#0d1b35]">
+              {isGeneralGrammar ? "GT Grammar Practice" : "Grammar Practice"}
+            </h1>
             <p className="mt-1 text-sm text-slate-600">
-              Mixed questions from all categories — 10 per session
+              {isGeneralGrammar
+                ? "Mixed letter & essay grammar — 10 questions per session"
+                : "Mixed questions from all categories — 10 per session"}
             </p>
           </header>
 
