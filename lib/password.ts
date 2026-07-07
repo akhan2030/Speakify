@@ -6,14 +6,12 @@ export async function hashPassword(plainPassword: string): Promise<string> {
   return bcrypt.hash(plainPassword, BCRYPT_ROUNDS);
 }
 
-/** Supports bcrypt hashes and legacy plaintext rows (e.g. old test seeds). */
+/** Only bcrypt-hashed passwords are accepted. Plaintext rows are rejected. */
 export async function verifyPassword(
   plainPassword: string,
   storedPassword: string | null | undefined
 ): Promise<boolean> {
   if (!storedPassword) return false;
-  if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$")) {
-    return bcrypt.compare(plainPassword, storedPassword);
-  }
-  return plainPassword === storedPassword;
+  if (!/^\$2[aby]\$/.test(storedPassword)) return false;
+  return bcrypt.compare(plainPassword, storedPassword);
 }

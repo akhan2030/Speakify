@@ -439,7 +439,9 @@ export default function OnboardingPage() {
     return (
       <Shell step={2}>
         <h1 className="text-xl font-bold text-[#0d1b35]">
-          {programme ? placementAssessmentTitle(programme) : "Quick Level Check — 15 questions"}
+          {programme
+            ? placementAssessmentTitle(programme)
+            : `Quick Level Check — ${GATEWAY_QUESTION_COUNT} questions`}
         </h1>
         <p className="mt-1 text-sm text-slate-600">
           This takes about 8 minutes and places you at exactly the right level.

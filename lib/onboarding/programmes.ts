@@ -1,4 +1,5 @@
 import type { GatewayProgramme } from "@/lib/onboarding/types";
+import { GATEWAY_QUESTION_COUNT } from "@/lib/onboarding/gatewayEngine";
 
 export type OnboardingProgrammeOption = {
   id: GatewayProgramme;
@@ -74,8 +75,9 @@ export const GATEWAY_PROGRAMME_IDS: GatewayProgramme[] = ONBOARDING_PROGRAMME_OP
 
 export function placementAssessmentTitle(programme: GatewayProgramme): string {
   const meta = ONBOARDING_PROGRAMME_OPTIONS.find((p) => p.id === programme);
-  if (!meta) return "Quick Level Check — 15 questions";
-  return `${meta.assessmentLabel} — 15 questions`;
+  const countLabel = `${GATEWAY_QUESTION_COUNT} questions`;
+  if (!meta) return `Quick Level Check — ${countLabel}`;
+  return `${meta.assessmentLabel} — ${countLabel}`;
 }
 
 export function enrolledProgramsForGateway(programme: GatewayProgramme): string[] {

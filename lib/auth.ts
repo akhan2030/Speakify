@@ -404,13 +404,16 @@ export const authOptions: NextAuthOptions = {
 
 
 
-          const isValid =
+          // Only bcrypt-hashed passwords are ever accepted. Plaintext (or any
+          // non-bcrypt) stored password is rejected by design so a misseeded
+          // account can never authenticate with a cleartext value.
+          const storedHash = data.password ?? "";
 
-            data.password?.startsWith("$2a$") || data.password?.startsWith("$2b$")
+          const isBcryptHash = /^\$2[aby]\$/.test(storedHash);
 
-              ? await compare(password, data.password)
-
-              : password === data.password;
+          const isValid = isBcryptHash
+            ? await compare(password, storedHash)
+            : false;
 
 
 
