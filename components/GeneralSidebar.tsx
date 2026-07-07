@@ -8,6 +8,7 @@ import { getInitials } from "@/components/StudentSidebar";
 
 export type GeneralActivePage =
   | "dashboard"
+  | "practice"
   | "writing"
   | "letter-practice"
   | "speaking"
@@ -35,12 +36,6 @@ type NavItem = {
   icon: string;
 };
 
-type ComingSoonItem = {
-  id: string;
-  label: string;
-  icon: string;
-};
-
 type NavGroup = {
   label: string;
   items: NavItem[];
@@ -57,6 +52,12 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Dashboard",
         href: BASE,
         icon: "🏠",
+      },
+      {
+        id: "practice",
+        label: "Daily Practice",
+        href: `${BASE}/practice`,
+        icon: "⚡",
       },
     ],
   },
@@ -118,10 +119,6 @@ const NAV_GROUPS: NavGroup[] = [
       },
     ],
   },
-];
-
-const COMING_SOON: ComingSoonItem[] = [
-  { id: "practice", label: "Daily Practice", icon: "⚡" },
 ];
 
 const MOBILE_NAV: { id: GeneralActivePage; label: string; href: string; icon: string }[] = [
@@ -198,24 +195,6 @@ function NavLink({
   );
 }
 
-function ComingSoonLink({ item }: { item: ComingSoonItem }) {
-  return (
-    <div
-      className="flex cursor-not-allowed items-center justify-between gap-2 rounded-lg border-l-2 border-l-transparent px-3 py-2 text-sm text-slate-500 opacity-60"
-      aria-disabled="true"
-      title="Coming soon"
-    >
-      <span className="flex items-center gap-2 truncate">
-        <span className="shrink-0">{item.icon}</span>
-        <span className="truncate">{item.label}</span>
-      </span>
-      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
-        soon
-      </span>
-    </div>
-  );
-}
-
 export default function GeneralSidebar({
   activePage,
 }: {
@@ -281,17 +260,6 @@ export default function GeneralSidebar({
               </div>
             </div>
           ))}
-
-          <div>
-            <p className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
-              Coming soon
-            </p>
-            <div className="space-y-0.5">
-              {COMING_SOON.map((item) => (
-                <ComingSoonLink key={item.id} item={item} />
-              ))}
-            </div>
-          </div>
         </nav>
 
         <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
