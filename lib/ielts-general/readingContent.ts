@@ -1,3 +1,5 @@
+import { normalizeGtOptions } from "./readingQuestionView";
+
 export type GtReadingSectionKey = "A" | "B" | "C";
 
 export type GtReadingQuestionType =
@@ -731,7 +733,7 @@ export function mergeBankPassage(raw: unknown): GtReadingPassage | null {
       question: String(item.question ?? ""),
       answer: String(item.answer ?? ""),
       explanation: String(item.explanation ?? ""),
-      options: Array.isArray(item.options) ? item.options.map(String) : undefined,
+      options: item.options ? normalizeGtOptions(item.options) : undefined,
     };
   });
 

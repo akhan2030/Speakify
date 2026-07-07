@@ -6,6 +6,12 @@ import { PageSpinner } from "@/components/StudentSidebar";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
 import type { GtReadingPassage, GtReadingQuestion } from "@/lib/ielts-general/readingContent";
 import type { GtReadingScoreResult } from "@/lib/ielts-general/readingScore";
+import {
+  gtQuestionPrompt,
+  gtUsesDropdown,
+  gtUsesOptionPicker,
+  normalizeGtOptions,
+} from "@/lib/ielts-general/readingQuestionView";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
@@ -47,14 +53,31 @@ function QuestionField({
     );
   }
 
-  if (
-    (question.type === "multiple_choice" || question.type === "matching_features") &&
-    question.options?.length
-  ) {
+  const options = normalizeGtOptions(question.options);
+
+  if (gtUsesOptionPicker(question.type) && options.length) {
+    if (gtUsesDropdown(question.type)) {
+      return (
+        <select
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+          className="mt-2 w-full rounded border border-slate-200 px-2 py-1 text-xs"
+        >
+          <option value="">Select…</option>
+          {options.map((opt, i) => (
+            <option key={`${question.id}-opt-${i}`} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
     return (
       <div className="mt-2 space-y-1">
-        {question.options.map((opt) => (
-          <label key={opt} className="flex items-center gap-2 text-xs">
+        {options.map((opt, i) => (
+          <label key={`${question.id}-opt-${i}`} className="flex items-center gap-2 text-xs">
             <input
               type="radio"
               name={question.id}
@@ -319,7 +342,7 @@ export default function GeneralReadingTimedTest() {
                   className="rounded-lg border border-slate-100 bg-slate-50 p-3"
                 >
                   <p className="text-sm font-medium text-[#0d1b35]">
-                    {q.number}. {q.question}
+                    {q.number}. {gtQuestionPrompt(q)}
                   </p>
                   <QuestionField
                     question={q}

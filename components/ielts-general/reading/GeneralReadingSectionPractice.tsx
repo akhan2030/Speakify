@@ -6,6 +6,12 @@ import { PageSpinner } from "@/components/StudentSidebar";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
 import type { GtReadingPassage, GtReadingQuestion } from "@/lib/ielts-general/readingContent";
 import type { GtReadingScoreResult } from "@/lib/ielts-general/readingScore";
+import {
+  gtQuestionPrompt,
+  gtUsesDropdown,
+  gtUsesOptionPicker,
+  normalizeGtOptions,
+} from "@/lib/ielts-general/readingQuestionView";
 
 const NAVY = "#0d1b35";
 const TEAL = "#0d9488";
@@ -54,13 +60,32 @@ function QuestionInput({
     );
   }
 
-  if (question.type === "multiple_choice" || question.type === "matching_features") {
-    const options = question.options ?? [];
+  const options = normalizeGtOptions(question.options);
+
+  if (gtUsesOptionPicker(question.type) && options.length) {
+    if (gtUsesDropdown(question.type)) {
+      return (
+        <select
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+          className="mt-2 w-full max-w-md rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50"
+        >
+          <option value="">Select an option…</option>
+          {options.map((opt, i) => (
+            <option key={`${question.id}-opt-${i}`} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
     return (
       <div className="mt-2 space-y-2">
-        {options.map((opt) => (
+        {options.map((opt, i) => (
           <label
-            key={opt}
+            key={`${question.id}-opt-${i}`}
             className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
               value === opt ? "border-[#0d9488] bg-[#0d9488]/10" : "border-slate-200"
             } ${disabled ? "opacity-70" : ""}`}
@@ -279,7 +304,7 @@ export default function GeneralReadingSectionPractice({
                   className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
                 >
                   <p className="text-sm font-semibold text-[#0d1b35]">
-                    {q.number}. {q.question}
+                    {q.number}. {gtQuestionPrompt(q)}
                   </p>
                   <QuestionInput
                     question={q}
