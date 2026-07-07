@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { PageSpinner } from "@/components/StudentSidebar";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
 import ActiveSession from "@/components/speaking/ActiveSession";
@@ -25,7 +25,18 @@ type CueCard = {
 function SpeakingPartnerContent() {
   const { data: session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const studentId = session?.user?.id;
+
+  // Shared component: the GT speaking route re-exports this page. Tag the
+  // session and home redirect by programme so GT data never lands in Academic.
+  const isGeneralTraining = (pathname ?? "").startsWith(
+    "/dashboard/ielts-general"
+  );
+  const programme = isGeneralTraining ? "ielts_general" : "ielts";
+  const dashboardHome = isGeneralTraining
+    ? "/dashboard/ielts-general/student"
+    : "/dashboard/ielts/student";
 
   const [mode, setMode] = useState<Mode>("home");
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -84,7 +95,7 @@ function SpeakingPartnerContent() {
         body: JSON.stringify({
           studentId,
           sessionType: type,
-          programme: "ielts",
+          programme,
         }),
       });
       const data = await res.json();
@@ -241,7 +252,7 @@ function SpeakingPartnerContent() {
           onReturnHome={() => {
             setFeedback(null);
             resetSessionState();
-            router.push("/dashboard/ielts/student");
+            router.push(dashboardHome);
           }}
         />
       </>
@@ -490,7 +501,7 @@ function SpeakingPartnerContent() {
 
       <button
         type="button"
-        onClick={() => router.push("/dashboard/ielts/student")}
+        onClick={() => router.push(dashboardHome)}
         style={{
           marginTop: "1.5rem",
           background: "none",
