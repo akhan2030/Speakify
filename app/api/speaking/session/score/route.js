@@ -396,6 +396,39 @@ export async function POST(req) {
       { onConflict: "student_id" }
     );
 
+    // Also record a speaking_attempts row so profile/progress/teacher views —
+    // which read speaking_attempts, not speaking_sessions — see this session.
+    try {
+      const { error: attemptError } = await supabase
+        .from("speaking_attempts")
+        .insert({
+          student_id: studentId,
+          part: "1-3",
+          task_type: session.session_type || "practice",
+          question_text: session.part2_cue_card?.title ?? null,
+          transcript: studentTranscript,
+          duration_seconds: Math.round(speechSeconds),
+          topic: session.part2_cue_card?.title ?? null,
+          band_fc: sessionScore.fluency.band,
+          band_lr: sessionScore.lexical.band,
+          band_gra: sessionScore.grammar.band,
+          band_p: sessionScore.pronunciation.band,
+          band_overall: sessionScore.overall_band,
+          created_at: completedAt.toISOString(),
+        });
+      if (attemptError) {
+        console.warn(
+          "[speaking/session/score] speaking_attempts insert:",
+          attemptError.message
+        );
+      }
+    } catch (attemptErr) {
+      console.warn(
+        "[speaking/session/score] speaking_attempts threw:",
+        attemptErr instanceof Error ? attemptErr.message : attemptErr
+      );
+    }
+
     if (feedback.vocabularyChallenge?.length > 0) {
       const rows = feedback.vocabularyChallenge.map((word) => ({
         student_id: studentId,
