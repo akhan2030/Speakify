@@ -1,7 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { criteriaSummaryForTask } from "@/lib/ielts/writingCriteria";
+import {
+  lessonsForTrack,
+  sharedWritingLessons,
+} from "@/lib/ielts/writingLessons";
 import WritingPracticeForm from "@/components/writing/WritingPracticeForm";
 import GuidedWritingMode from "@/components/writing/GuidedWritingMode";
 
@@ -77,6 +82,23 @@ export default function WritingPracticePanel({
 
   return (
     <div className="space-y-6">
+      <Link
+        href={`/dashboard/ielts/student/writing?tab=lessons&track=${taskType}`}
+        className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm transition-colors hover:border-[#c9972c]/40 hover:bg-[#c9972c]/5"
+      >
+        <span className="text-slate-700">
+          <span className="font-bold text-[#0d1b35]">
+            {taskType === "task1" ? "Task 1 lessons" : "Task 2 lessons"}
+          </span>
+          <span className="hidden sm:inline">
+            {" "}
+            — {lessonsForTrack(taskType).length} core +{" "}
+            {sharedWritingLessons().length} shared skills
+          </span>
+        </span>
+        <span className="shrink-0 text-xs font-bold text-[#c9972c]">Open →</span>
+      </Link>
+
       <div className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
         <button
           type="button"

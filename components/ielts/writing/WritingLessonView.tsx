@@ -4,12 +4,40 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  ACADEMIC_WRITING_LESSON_COUNT,
   markAcademicLessonComplete,
+  WRITING_LESSON_TRACKS,
   type AcademicWritingLesson,
 } from "@/lib/ielts/writingLessons";
 
-const WRITING_LESSONS_HREF = "/dashboard/ielts/student/writing?tab=lessons";
+function lessonsBackHref(lesson: AcademicWritingLesson): string {
+  const track =
+    lesson.taskFocus === "task1"
+      ? "task1"
+      : lesson.taskFocus === "task2"
+        ? "task2"
+        : "task2";
+  return `/dashboard/ielts/student/writing?tab=lessons&track=${track}`;
+}
+
+function taskFocusLabel(lesson: AcademicWritingLesson): {
+  label: string;
+  color: string;
+  bg: string;
+} {
+  if (lesson.taskFocus === "task1") {
+    const t = WRITING_LESSON_TRACKS[0];
+    return { label: `Task 1 · ${t.criterion}`, color: t.accent, bg: t.accentSoft };
+  }
+  if (lesson.taskFocus === "task2") {
+    const t = WRITING_LESSON_TRACKS[1];
+    return { label: `Task 2 · ${t.criterion}`, color: t.accent, bg: t.accentSoft };
+  }
+  return {
+    label: "Both tasks · CC, LR, GRA",
+    color: "#0d1b35",
+    bg: "rgba(13, 27, 53, 0.08)",
+  };
+}
 
 export default function WritingLessonView({
   lesson,
@@ -20,24 +48,34 @@ export default function WritingLessonView({
   const [practiceText, setPracticeText] = useState("");
   const [completed, setCompleted] = useState(false);
 
+  const focus = taskFocusLabel(lesson);
+  const backHref = lessonsBackHref(lesson);
+
   function handleMarkComplete() {
     markAcademicLessonComplete(lesson.slug);
     setCompleted(true);
-    router.push(WRITING_LESSONS_HREF);
+    router.push(backHref);
   }
 
   return (
     <main className="min-h-screen flex-1 bg-slate-50 p-4 pb-24 md:p-6 md:pb-6">
       <div className="mx-auto max-w-3xl">
         <Link
-          href={WRITING_LESSONS_HREF}
+          href={backHref}
           className="text-sm font-semibold text-[#0d9488] hover:underline"
         >
-          ← Back to Writing Lessons
+          ← Back to {lesson.taskFocus === "task1" ? "Task 1" : lesson.taskFocus === "task2" ? "Task 2" : "Writing"} lessons
         </Link>
 
-        <div className="mt-4 inline-block rounded-xl border border-[#c9972c]/40 bg-[#c9972c]/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[#c9972c]">
-          Lesson {lesson.number} of {ACADEMIC_WRITING_LESSON_COUNT}
+        <div
+          className="mt-4 inline-block rounded-xl border px-4 py-2 text-xs font-semibold uppercase tracking-wide"
+          style={{
+            borderColor: `${focus.color}55`,
+            backgroundColor: focus.bg,
+            color: focus.color,
+          }}
+        >
+          {focus.label}
         </div>
 
         <header className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

@@ -11,6 +11,8 @@ export type AcademicWritingLesson = {
   title: string;
   minutes: number;
   desc: string;
+  /** Which writing task this lesson primarily supports */
+  taskFocus: "task1" | "task2" | "shared";
   sections: AcademicWritingLessonSection[];
   practice: {
     title: string;
@@ -25,6 +27,7 @@ export const ACADEMIC_WRITING_LESSONS: AcademicWritingLesson[] = [
     number: 1,
     title: "Essay structure for Band 6+",
     minutes: 12,
+    taskFocus: "task2",
     desc: "Introduction → body paragraphs → conclusion with clear thesis.",
     sections: [
       {
@@ -86,9 +89,10 @@ export const ACADEMIC_WRITING_LESSONS: AcademicWritingLesson[] = [
   },
   {
     slug: "task1-describing-trends",
-    number: 2,
-    title: "Task 1: describing trends",
+    number: 1,
+    title: "Describing trends & data",
     minutes: 15,
+    taskFocus: "task1",
     desc: "Overview sentence, comparisons, and accurate data language.",
     sections: [
       {
@@ -158,9 +162,10 @@ export const ACADEMIC_WRITING_LESSONS: AcademicWritingLesson[] = [
   },
   {
     slug: "cohesion-linking-words",
-    number: 3,
+    number: 1,
     title: "Cohesion & linking words",
     minutes: 10,
+    taskFocus: "shared",
     desc: "However, furthermore, in contrast — avoid overusing firstly/secondly.",
     sections: [
       {
@@ -223,9 +228,10 @@ export const ACADEMIC_WRITING_LESSONS: AcademicWritingLesson[] = [
   },
   {
     slug: "saudi-common-errors",
-    number: 4,
+    number: 2,
     title: "Saudi common errors",
     minutes: 10,
+    taskFocus: "shared",
     desc: "Articles (a/the), subject-verb agreement, and word order fixes.",
     sections: [
       {
@@ -300,6 +306,61 @@ export const ACADEMIC_WRITING_LESSONS: AcademicWritingLesson[] = [
 ];
 
 export const ACADEMIC_WRITING_LESSON_COUNT = ACADEMIC_WRITING_LESSONS.length;
+
+export type WritingLessonTrack = "task1" | "task2";
+
+export const WRITING_LESSON_TRACKS: {
+  id: WritingLessonTrack;
+  label: string;
+  headline: string;
+  description: string;
+  criterion: string;
+  criterionFull: string;
+  accent: string;
+  accentSoft: string;
+}[] = [
+  {
+    id: "task1",
+    label: "Task 1",
+    headline: "Academic Report",
+    description:
+      "Describe charts, graphs, tables, maps, or processes in 150+ words. Scored on Task Achievement (TA).",
+    criterion: "TA",
+    criterionFull: "Task Achievement",
+    accent: "#0d9488",
+    accentSoft: "rgba(13, 148, 136, 0.1)",
+  },
+  {
+    id: "task2",
+    label: "Task 2",
+    headline: "Opinion Essay",
+    description:
+      "Develop a clear position on a topic in 250+ words. Scored on Task Response (TR).",
+    criterion: "TR",
+    criterionFull: "Task Response",
+    accent: "#c9972c",
+    accentSoft: "rgba(201, 151, 44, 0.12)",
+  },
+];
+
+export function lessonsForTrack(track: WritingLessonTrack): AcademicWritingLesson[] {
+  return ACADEMIC_WRITING_LESSONS.filter((l) => l.taskFocus === track);
+}
+
+export function sharedWritingLessons(): AcademicWritingLesson[] {
+  return ACADEMIC_WRITING_LESSONS.filter((l) => l.taskFocus === "shared");
+}
+
+export function trackProgress(
+  track: WritingLessonTrack,
+  completedSlugs: string[]
+): { done: number; total: number } {
+  const primary = lessonsForTrack(track);
+  const shared = sharedWritingLessons();
+  const all = [...primary, ...shared];
+  const done = all.filter((l) => completedSlugs.includes(l.slug)).length;
+  return { done, total: all.length };
+}
 
 export function getAcademicWritingLesson(
   slug: string
