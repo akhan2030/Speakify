@@ -6,7 +6,7 @@ import { evaluateGeneralWriting } from "@/lib/ielts-general/writingEval.js";
 import {
   gtAttemptInsertRow,
   gtHistoryInsertRow,
-} from "@/lib/ielts-general/attemptRows.js";
+} from "@/lib/ielts-general/attemptRows";
 
 export const runtime = "nodejs";
 

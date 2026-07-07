@@ -3,9 +3,23 @@
  * Prod may use task_type (legacy) or skill (app); reads accept both.
  */
 
-export function gtAttemptSkill(row) {
+export function gtAttemptSkill(row: {
+  skill?: string | null;
+  task_type?: string | null;
+}): string {
   return String(row?.skill ?? row?.task_type ?? "").toLowerCase();
 }
+
+type GtAttemptInsertArgs = {
+  studentId: string;
+  skill: string;
+  bandScore: number;
+  letterType?: string | null;
+  accuracy?: number | null;
+  status?: string;
+  mockNumber?: number | null;
+  completedAt?: string;
+};
 
 export function gtAttemptInsertRow({
   studentId,
@@ -16,7 +30,7 @@ export function gtAttemptInsertRow({
   status = "completed",
   mockNumber = null,
   completedAt,
-}) {
+}: GtAttemptInsertArgs) {
   const at = completedAt ?? new Date().toISOString();
   return {
     student_id: studentId,
@@ -31,12 +45,19 @@ export function gtAttemptInsertRow({
   };
 }
 
+type GtHistoryInsertArgs = {
+  studentId: string;
+  skill: string;
+  bandScore: number;
+  recordedAt?: string;
+};
+
 export function gtHistoryInsertRow({
   studentId,
   skill,
   bandScore,
   recordedAt,
-}) {
+}: GtHistoryInsertArgs) {
   const at = recordedAt ?? new Date().toISOString();
   return {
     student_id: studentId,

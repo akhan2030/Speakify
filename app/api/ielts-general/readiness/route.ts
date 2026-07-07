@@ -6,7 +6,7 @@ import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 import { buildRecommendations } from "@/lib/course/recommendationEngine";
 import { computeReadinessMeter } from "@/lib/course/readinessMeter";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
-import { gtAttemptSkill } from "@/lib/ielts-general/attemptRows.js";
+import { gtAttemptSkill } from "@/lib/ielts-general/attemptRows";
 
 export const runtime = "nodejs";
 

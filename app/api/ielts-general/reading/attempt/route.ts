@@ -7,7 +7,7 @@ import type { GtReadingQuestion } from "@/lib/ielts-general/readingContent";
 import {
   gtAttemptInsertRow,
   gtHistoryInsertRow,
-} from "@/lib/ielts-general/attemptRows.js";
+} from "@/lib/ielts-general/attemptRows";
 
 export const runtime = "nodejs";
 

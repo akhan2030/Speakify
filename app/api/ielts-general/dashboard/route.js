@@ -14,7 +14,7 @@ import {
   getGeneralWeakestSkillActions,
   estimateGeneralBandImprovement,
 } from "@/lib/ielts-general/missionTasks";
-import { gtAttemptSkill } from "@/lib/ielts-general/attemptRows.js";
+import { gtAttemptSkill } from "@/lib/ielts-general/attemptRows";
 import {
   getStudyDay,
   getDaySubtitle,

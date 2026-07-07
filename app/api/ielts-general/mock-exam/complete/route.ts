@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { gtReadingRawToBand } from "@/lib/ielts-general/readingScore";
-import { gtAttemptInsertRow } from "@/lib/ielts-general/attemptRows.js";
+import { gtAttemptInsertRow } from "@/lib/ielts-general/attemptRows";
 
 export const runtime = "nodejs";
 
