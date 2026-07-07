@@ -335,7 +335,7 @@ export default function GuidedWritingMode({ taskType }: Props) {
           onTask2Select={handleTask2Select}
         />
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <ParagraphFeedbackCard data={finalFeedback} />
+          <ParagraphFeedbackCard data={finalFeedback} taskType={taskType} />
         </div>
         <button
           type="button"
@@ -368,7 +368,7 @@ export default function GuidedWritingMode({ taskType }: Props) {
       {phase === "feedback" && pendingFeedback ? (
         <div className="space-y-4">
           <div className="rounded-xl border border-[#0d9488]/30 bg-white p-5 shadow-sm">
-            <ParagraphFeedbackCard data={pendingFeedback} />
+            <ParagraphFeedbackCard data={pendingFeedback} taskType={taskType} />
           </div>
 
           {error ? <p className="text-sm text-[#E24B4A]">{error}</p> : null}
@@ -432,7 +432,7 @@ export default function GuidedWritingMode({ taskType }: Props) {
                     key={`${fb.paragraphNumber}-${fb.stepLabel}`}
                     className="rounded-lg border border-slate-200 bg-white p-4"
                   >
-                    <ParagraphFeedbackCard data={fb} />
+                    <ParagraphFeedbackCard data={fb} taskType={taskType} />
                   </div>
                 ))}
               </div>

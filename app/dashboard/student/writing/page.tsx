@@ -5,6 +5,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import WritingPracticeForm from "@/components/writing/WritingPracticeForm";
+import {
+  getFirstWritingCriterion,
+  type WritingTaskType,
+} from "@/lib/ielts/writingCriteria";
 
 function clampBand(n: number) {
   return Math.max(0, Math.min(9, n));
@@ -35,9 +39,11 @@ function calculateOverall(
   return Math.round(avg * 2) / 2;
 }
 
-function parseBands(evaluation: string) {
+function parseBands(evaluation: string, taskType: WritingTaskType = "task2") {
   const text = evaluation || "";
-  const ta = parseCriterionScore(text, "TA");
+  const first = getFirstWritingCriterion(taskType);
+  const ta =
+    parseCriterionScore(text, first.abbrev) ?? parseCriterionScore(text, "TA");
   const cc = parseCriterionScore(text, "CC");
   const lr = parseCriterionScore(text, "LR");
   const gra = parseCriterionScore(text, "GRA");
@@ -84,53 +90,77 @@ type CriteriaStyle = {
   color: string;
 };
 
-const CRITERIA_STYLES: CriteriaStyle[] = [
-  { label: "Task Achievement", pillLabel: "Task Achievement", color: "#c9972c" },
-  {
-    label: "Coherence & Cohesion",
-    pillLabel: "Coherence & Cohesion",
-    color: "#0d9488",
-  },
-  { label: "Lexical Resource", pillLabel: "Lexical Resource", color: "#7c3aed" },
-  {
-    label: "Grammatical Range & Accuracy",
-    pillLabel: "GRA",
-    color: "#1d4ed8",
-  },
+const CRITERIA_STYLES_BASE: Omit<CriteriaStyle, "label" | "pillLabel">[] = [
+  { color: "#c9972c" },
+  { color: "#0d9488" },
+  { color: "#7c3aed" },
+  { color: "#1d4ed8" },
 ];
 
-const IMPROVEMENT_CRITERIA_BY_INDEX = [
-  "Task Achievement",
-  "Lexical Resource",
-  "Grammatical Range and Accuracy",
-];
+function getCriteriaStyles(taskType: WritingTaskType): CriteriaStyle[] {
+  const first = getFirstWritingCriterion(taskType);
+  return [
+    {
+      label: first.label,
+      pillLabel: first.label,
+      color: CRITERIA_STYLES_BASE[0].color,
+    },
+    {
+      label: "Coherence & Cohesion",
+      pillLabel: "Coherence & Cohesion",
+      color: CRITERIA_STYLES_BASE[1].color,
+    },
+    {
+      label: "Lexical Resource",
+      pillLabel: "Lexical Resource",
+      color: CRITERIA_STYLES_BASE[2].color,
+    },
+    {
+      label: "Grammatical Range & Accuracy",
+      pillLabel: "GRA",
+      color: CRITERIA_STYLES_BASE[3].color,
+    },
+  ];
+}
 
-const FULL_EVAL_CRITERIA = [
-  {
-    title: "Task Achievement (25%)",
-    feedbackKey: "taskAchievement" as const,
-    color: "#c9972c",
-    bandKey: "ta" as const,
-  },
-  {
-    title: "Coherence & Cohesion (25%)",
-    feedbackKey: "coherence" as const,
-    color: "#0d9488",
-    bandKey: "cc" as const,
-  },
-  {
-    title: "Lexical Resource / Vocabulary (25%)",
-    feedbackKey: "lexical" as const,
-    color: "#7c3aed",
-    bandKey: "lr" as const,
-  },
-  {
-    title: "Grammatical Range & Accuracy (25%)",
-    feedbackKey: "grammar" as const,
-    color: "#1d4ed8",
-    bandKey: "gra" as const,
-  },
-];
+function getImprovementCriteria(taskType: WritingTaskType): string[] {
+  const first = getFirstWritingCriterion(taskType);
+  return [first.label, "Lexical Resource", "Grammatical Range and Accuracy"];
+}
+
+function getFullEvalCriteria(taskType: WritingTaskType) {
+  const first = getFirstWritingCriterion(taskType);
+  return [
+    {
+      title: `${first.label} (25%)`,
+      feedbackKey: "taskAchievement" as const,
+      color: "#c9972c",
+      bandKey: "ta" as const,
+      displayAbbrev: first.abbrev,
+    },
+    {
+      title: "Coherence & Cohesion (25%)",
+      feedbackKey: "coherence" as const,
+      color: "#0d9488",
+      bandKey: "cc" as const,
+      displayAbbrev: "CC",
+    },
+    {
+      title: "Lexical Resource / Vocabulary (25%)",
+      feedbackKey: "lexical" as const,
+      color: "#7c3aed",
+      bandKey: "lr" as const,
+      displayAbbrev: "LR",
+    },
+    {
+      title: "Grammatical Range & Accuracy (25%)",
+      feedbackKey: "grammar" as const,
+      color: "#1d4ed8",
+      bandKey: "gra" as const,
+      displayAbbrev: "GRA",
+    },
+  ];
+}
 
 function feedbackToBullets(text: string, max = 3): string[] {
   if (!text.trim()) return [];
@@ -166,7 +196,8 @@ function cleanImprovementText(text: string): string {
 }
 
 
-function getCriteriaStyle(criteria: string): CriteriaStyle {
+function getCriteriaStyle(criteria: string, taskType: WritingTaskType): CriteriaStyle {
+  const styles = getCriteriaStyles(taskType);
   const key = normalizeCriteriaKey(criteria);
 
   if (
@@ -174,23 +205,28 @@ function getCriteriaStyle(criteria: string): CriteriaStyle {
     key === "cc" ||
     key.includes("cohesion")
   ) {
-    return CRITERIA_STYLES[1];
+    return styles[1];
   }
   if (key.includes("lexical") || key === "lr") {
-    return CRITERIA_STYLES[2];
+    return styles[2];
   }
   if (
     key.includes("grammatical") ||
     key.includes("accuracy") ||
     key === "gra"
   ) {
-    return CRITERIA_STYLES[3];
+    return styles[3];
   }
-  if (key.includes("task achievement") || key === "ta") {
-    return CRITERIA_STYLES[0];
+  if (
+    key.includes("task achievement") ||
+    key.includes("task response") ||
+    key === "ta" ||
+    key === "tr"
+  ) {
+    return styles[0];
   }
 
-  return CRITERIA_STYLES[0];
+  return styles[0];
 }
 
 type ParsedEvaluation = {
@@ -229,7 +265,11 @@ function parseSpellingErrors(text: string): Map<string, string> {
   return map;
 }
 
-function parsePriorityImprovements(block: string): PriorityImprovement[] {
+function parsePriorityImprovements(
+  block: string,
+  taskType: WritingTaskType
+): PriorityImprovement[] {
+  const improvementCriteria = getImprovementCriteria(taskType);
   return block
     .split("\n")
     .map((line) => line.replace(/^\d+\.\s*/, "").trim())
@@ -237,11 +277,11 @@ function parsePriorityImprovements(block: string): PriorityImprovement[] {
     .slice(0, 3)
     .map((line, index) => {
       const parts = line.split("|").map((p) => p.trim());
-      const criteria = IMPROVEMENT_CRITERIA_BY_INDEX[index] ?? "";
+      const criteria = improvementCriteria[index] ?? "";
 
       if (parts.length >= 3) {
         return {
-          criteria,
+          criteria: parts[0] || criteria,
           title: cleanImprovementText(parts[1]),
           description: cleanImprovementText(parts.slice(2).join(" | ")),
         };
@@ -258,10 +298,14 @@ function parsePriorityImprovements(block: string): PriorityImprovement[] {
     .filter((item) => item.title || item.description);
 }
 
-function parseEvaluationSections(evaluation: string): ParsedEvaluation {
+function parseEvaluationSections(
+  evaluation: string,
+  taskType: WritingTaskType = "task2"
+): ParsedEvaluation {
   const text = stripMarkdown(evaluation);
+  const first = getFirstWritingCriterion(taskType);
 
-  const taskAchievement = extractSection(text, "Task Achievement", [
+  const taskAchievement = extractSection(text, first.sectionHeading, [
     "Coherence and Cohesion",
     "Coherence & Cohesion",
   ]);
@@ -281,7 +325,7 @@ function parseEvaluationSections(evaluation: string): ParsedEvaluation {
   const improvementsBlock = extractSection(text, "Priority Improvements", [
     "Corrected Sentences",
   ]);
-  const improvements = parsePriorityImprovements(improvementsBlock);
+  const improvements = parsePriorityImprovements(improvementsBlock, taskType);
 
   const correctionsBlock = extractSection(text, "Corrected Sentences", []);
   const corrections: ParsedEvaluation["corrections"] = [];
@@ -309,8 +353,10 @@ function parseEvaluationSections(evaluation: string): ParsedEvaluation {
 
 function PriorityImprovementsSection({
   improvements,
+  taskType,
 }: {
   improvements: PriorityImprovement[];
+  taskType: WritingTaskType;
 }) {
   if (improvements.length === 0) return null;
 
@@ -325,7 +371,7 @@ function PriorityImprovementsSection({
 
       <div className="mt-6 space-y-4">
         {improvements.map((item, i) => {
-          const style = getCriteriaStyle(item.criteria);
+          const style = getCriteriaStyle(item.criteria, taskType);
           const displayTitle = cleanImprovementText(item.title);
           const displayDescription = cleanImprovementText(item.description);
 
@@ -747,6 +793,7 @@ function CriterionFeedbackCard({
 function EvaluationDisplay({
   parsed,
   bands,
+  taskType,
 }: {
   parsed: ParsedEvaluation;
   bands: {
@@ -755,14 +802,17 @@ function EvaluationDisplay({
     lr: number | null;
     gra: number | null;
   };
+  taskType: WritingTaskType;
 }) {
+  const fullEvalCriteria = getFullEvalCriteria(taskType);
+
   return (
     <div className="space-y-6">
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-base font-bold text-[#0d1b35]">Full Evaluation</h2>
 
       <div className="mt-4">
-        {FULL_EVAL_CRITERIA.map((criterion) => (
+        {fullEvalCriteria.map((criterion) => (
           <CriterionFeedbackCard
             key={criterion.bandKey}
             title={criterion.title}
@@ -776,7 +826,10 @@ function EvaluationDisplay({
 
       <SpellingReviewCard spellingMap={parsed.spellingMap} />
 
-      <PriorityImprovementsSection improvements={parsed.improvements} />
+      <PriorityImprovementsSection
+        improvements={parsed.improvements}
+        taskType={taskType}
+      />
 
       <ConsultationBanner />
 
@@ -822,11 +875,15 @@ export default function StudentWritingPage() {
   const [error, setError] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<string | null>(null);
 
-  const bands = useMemo(() => parseBands(evaluation ?? ""), [evaluation]);
-  const parsedEvaluation = useMemo(
-    () => (evaluation ? parseEvaluationSections(evaluation) : null),
-    [evaluation]
+  const bands = useMemo(
+    () => parseBands(evaluation ?? "", taskType),
+    [evaluation, taskType]
   );
+  const parsedEvaluation = useMemo(
+    () => (evaluation ? parseEvaluationSections(evaluation, taskType) : null),
+    [evaluation, taskType]
+  );
+  const firstCriterion = getFirstWritingCriterion(taskType);
 
   function handleTaskTypeChange(next: "task1" | "task2") {
     if (next !== taskType) {
@@ -927,12 +984,16 @@ export default function StudentWritingPage() {
                 </div>
                 <p className="mt-2 text-sm text-slate-500">Overall Estimated Band</p>
                 <p className="mt-1 text-xs text-slate-400">
-                  Calculated from TA, CC, LR, and GRA (average rounded to 0.5)
+                  Calculated from {firstCriterion.abbrev}, CC, LR, and GRA (average
+                  rounded to 0.5)
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <CriterionCard title="Task Achievement (TA)" score={bands.ta} />
+                <CriterionCard
+                  title={`${firstCriterion.label} (${firstCriterion.abbrev})`}
+                  score={bands.ta}
+                />
                 <CriterionCard title="Coherence & Cohesion (CC)" score={bands.cc} />
                 <CriterionCard title="Lexical Resource (LR)" score={bands.lr} />
                 <CriterionCard
@@ -942,7 +1003,11 @@ export default function StudentWritingPage() {
               </div>
 
               {parsedEvaluation ? (
-                <EvaluationDisplay parsed={parsedEvaluation} bands={bands} />
+                <EvaluationDisplay
+                  parsed={parsedEvaluation}
+                  bands={bands}
+                  taskType={taskType}
+                />
               ) : null}
 
               <button

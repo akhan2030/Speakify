@@ -67,6 +67,32 @@ overallBand = (ta + cc + lr + gra) ÷ 4 rounded to nearest 0.5 using IELTS rules
 - decimal 0.25–0.75 → nearest 0.5
 - decimal ≥ 0.75 → round up to whole`;
 
+export const TASK2_JSON_RESPONSE_P4_INSTRUCTION = `Return ONLY valid JSON (no markdown). Score the FULL combined essay (all paragraphs) for TR, CC, LR, GRA. The "ta" key stores the TR band score. paragraphBand scores only the current (final) paragraph.
+
+Required JSON keys:
+{
+  "ta": number,
+  "cc": number,
+  "lr": number,
+  "gra": number,
+  "paragraphBand": number,
+  "overallBand": number,
+  "taskAchievement": "string (Task Response feedback)",
+  "coherenceCohesion": "string",
+  "lexicalResource": "string",
+  "grammaticalRange": "string",
+  "strengths": "string",
+  "priorityFix": "string",
+  "modelSentence": "string",
+  "fullResponseSummary": "string",
+  "nextSteps": "string"
+}
+
+overallBand = (ta + cc + lr + gra) ÷ 4 rounded to nearest 0.5 using IELTS rules:
+- decimal ≤ 0.25 → round down to whole
+- decimal 0.25–0.75 → nearest 0.5
+- decimal ≥ 0.75 → round up to whole`;
+
 const SAUDI_CONTEXT =
   "Student is a Saudi Arabic speaker. Note article errors, calque, tense, and word-order issues only when they affect clarity.";
 
@@ -152,7 +178,7 @@ This paragraph must: paraphrase the question and state a clear thesis/position i
 Student paragraph:
 {studentText}
 
-Score ONLY TA and CC for this introduction.
+Score ONLY Task Response (TR) and Coherence & Cohesion (CC) for this introduction.
 ${SAUDI_CONTEXT}
 
 ${JSON_RESPONSE_INSTRUCTION}`,
@@ -170,7 +196,7 @@ This paragraph must: one clear topic sentence, explanation, and example supporti
 Student paragraph (Body 1):
 {studentText}
 
-Score TA, CC, LR, and GRA for this body paragraph.
+Score TR, CC, LR, and GRA for this body paragraph.
 ${SAUDI_CONTEXT}
 
 ${JSON_RESPONSE_INSTRUCTION}`,
@@ -188,7 +214,7 @@ This paragraph must: second main idea with topic sentence, development, and exam
 Student paragraph (Body 2):
 {studentText}
 
-Score TA, CC, LR, and GRA for this body paragraph.
+Score TR, CC, LR, and GRA for this body paragraph.
 ${SAUDI_CONTEXT}
 
 ${JSON_RESPONSE_INSTRUCTION}`,
@@ -204,13 +230,13 @@ P2 Body 1: {p2Text}
 P3 Body 2: {p3Text}
 P4 Conclusion (current): {studentText}
 
-Evaluate the conclusion for paragraphBand (TA, CC focus).
-Then score the ENTIRE essay (P1–P4) for ta, cc, lr, gra and calculate overallBand.
+Evaluate the conclusion for paragraphBand (TR, CC focus).
+Then score the ENTIRE essay (P1–P4) for ta (TR band), cc, lr, gra and calculate overallBand.
 
-Minimum 250 words total expected. Penalise TA if under 250 words combined.
+Minimum 250 words total expected. Penalise TR if under 250 words combined.
 ${SAUDI_CONTEXT}
 
-${JSON_RESPONSE_P4_INSTRUCTION}`,
+${TASK2_JSON_RESPONSE_P4_INSTRUCTION}`,
 };
 
 export function substitutePromptVariables(

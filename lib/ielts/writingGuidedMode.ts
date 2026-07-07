@@ -12,8 +12,8 @@ export type GuidedStep = {
   description: string;
   wordTargetMin: number;
   wordTargetMax: number;
-  /** IELTS criteria to score for this paragraph */
-  focusCriteria: ("TA" | "CC" | "LR" | "GRA")[];
+  /** IELTS criteria to score for this paragraph (TA for Task 1, TR for Task 2) */
+  focusCriteria: ("TA" | "TR" | "CC" | "LR" | "GRA")[];
   placeholder: string;
 };
 
@@ -77,7 +77,7 @@ export const TASK2_GUIDED_STEPS: GuidedStep[] = [
       "Paraphrase the question and state your clear position or thesis in the final sentence.",
     wordTargetMin: 35,
     wordTargetMax: 60,
-    focusCriteria: ["TA", "CC"],
+    focusCriteria: ["TR", "CC"],
     placeholder:
       "It is often argued that… / In recent years… + clear thesis: I believe… / This essay agrees that…",
   },
@@ -89,7 +89,7 @@ export const TASK2_GUIDED_STEPS: GuidedStep[] = [
       "First main idea with a topic sentence, explanation, and example. Stay focused on one reason.",
     wordTargetMin: 70,
     wordTargetMax: 110,
-    focusCriteria: ["TA", "CC", "LR", "GRA"],
+    focusCriteria: ["TR", "CC", "LR", "GRA"],
     placeholder:
       "One reason for this is… / Firstly… (topic sentence → explain → example)",
   },
@@ -101,7 +101,7 @@ export const TASK2_GUIDED_STEPS: GuidedStep[] = [
       "Second main idea with the same structure. Use cohesive links back to your thesis.",
     wordTargetMin: 70,
     wordTargetMax: 110,
-    focusCriteria: ["TA", "CC", "LR", "GRA"],
+    focusCriteria: ["TR", "CC", "LR", "GRA"],
     placeholder:
       "Furthermore… / Another key factor… (second main point with support)",
   },
@@ -113,7 +113,7 @@ export const TASK2_GUIDED_STEPS: GuidedStep[] = [
       "Summarise your main points and restate your position. Do not introduce new ideas.",
     wordTargetMin: 25,
     wordTargetMax: 50,
-    focusCriteria: ["TA", "CC"],
+    focusCriteria: ["TR", "CC"],
     placeholder:
       "In conclusion… / To sum up… (restate thesis + brief summary of body points)",
   },

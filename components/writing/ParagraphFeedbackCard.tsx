@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  getFirstWritingCriterion,
+  type WritingTaskType,
+} from "@/lib/ielts/writingCriteria";
+
 export type ParagraphFeedbackData = {
   stepLabel: string;
   paragraphNumber: number;
@@ -57,8 +62,15 @@ function FeedbackSection({ label, text }: { label: string; text: string }) {
   );
 }
 
-export default function ParagraphFeedbackCard({ data }: { data: ParagraphFeedbackData }) {
+export default function ParagraphFeedbackCard({
+  data,
+  taskType = "task1",
+}: {
+  data: ParagraphFeedbackData;
+  taskType?: WritingTaskType;
+}) {
   const { feedback, bands, paragraphBand, isFinal } = data;
+  const firstCriterion = getFirstWritingCriterion(taskType);
 
   return (
     <div className="space-y-4">
@@ -77,7 +89,7 @@ export default function ParagraphFeedbackCard({ data }: { data: ParagraphFeedbac
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <ScorePill label="TA" score={bands.ta} />
+        <ScorePill label={firstCriterion.abbrev} score={bands.ta} />
         <ScorePill label="CC" score={bands.cc} />
         <ScorePill label="LR" score={bands.lr} />
         <ScorePill label="GRA" score={bands.gra} />
@@ -92,13 +104,16 @@ export default function ParagraphFeedbackCard({ data }: { data: ParagraphFeedbac
             {formatBand(bands.overall)}
           </p>
           <p className="mt-1 text-xs text-slate-600">
-            (TA + CC + LR + GRA) ÷ 4 — official IELTS rounding
+            ({firstCriterion.abbrev} + CC + LR + GRA) ÷ 4 — official IELTS rounding
           </p>
         </div>
       ) : null}
 
       <div className="space-y-2">
-        <FeedbackSection label="Task Achievement" text={feedback.taskAchievement} />
+        <FeedbackSection
+          label={firstCriterion.label}
+          text={feedback.taskAchievement}
+        />
         <FeedbackSection label="Coherence & Cohesion" text={feedback.coherenceCohesion} />
         <FeedbackSection label="Lexical Resource" text={feedback.lexicalResource} />
         <FeedbackSection label="Grammatical Range & Accuracy" text={feedback.grammaticalRange} />

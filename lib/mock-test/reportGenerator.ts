@@ -305,8 +305,8 @@ export async function generateMockTestReport(
   const speakingTranscript = combineSpeakingTranscript(transcripts);
 
   const [task1Score, task2Score, speakingScore] = await Promise.all([
-    scoreWriting(WRITING_TASK1.prompt, task1Text, listening.band),
-    scoreWriting(WRITING_TASK2.prompt, task2Text, reading.band),
+    scoreWriting(WRITING_TASK1.prompt, task1Text, listening.band, "task1"),
+    scoreWriting(WRITING_TASK2.prompt, task2Text, reading.band, "task2"),
     scoreSpeaking(speakingTranscript, Math.min(listening.band, reading.band)),
   ]);
 

@@ -20,7 +20,8 @@ function averageRounded(...scores: number[]): number {
 export async function scoreWriting(
   prompt: string,
   studentAnswer: string,
-  targetBand: number
+  targetBand: number,
+  taskType: "task1" | "task2" = "task2"
 ): Promise<WritingScore> {
   const fallback: WritingScore = {
     taskAchievement: targetBand,
@@ -39,6 +40,11 @@ export async function scoreWriting(
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+  const firstCriterion =
+    taskType === "task1" ? "Task Achievement (TA)" : "Task Response (TR)";
+  const jsonFirstKey =
+    taskType === "task1" ? "taskAchievement" : "taskResponse";
+
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -47,12 +53,14 @@ export async function scoreWriting(
         {
           role: "system",
           content: `You are an expert IELTS examiner with 15 years experience.
-Score this writing response strictly on IELTS band descriptors.
+Score this IELTS Writing ${taskType === "task1" ? "Task 1" : "Task 2"} response strictly on official band descriptors.
+First criterion: ${firstCriterion}. The other three are Coherence and Cohesion, Lexical Resource, Grammatical Range and Accuracy.
 Return ONLY valid JSON, no markdown, no explanation outside JSON.
 Saudi Arabic speaker context: watch for article omission,
 direct translation, tense consistency, pronoun errors.
 Target band context: ${targetBand}.
-Return JSON keys: taskAchievement, coherenceCohesion, lexicalResource, grammaticalRange, overallBand, feedback, saudiSpecificErrors, improvedSentence (optional string).`,
+Return JSON keys: ${jsonFirstKey}, coherenceCohesion, lexicalResource, grammaticalRange, overallBand, feedback, saudiSpecificErrors, improvedSentence (optional string).
+For Task 2 you may also include taskAchievement as an alias for taskResponse.`,
         },
         {
           role: "user",
@@ -65,7 +73,11 @@ Return JSON keys: taskAchievement, coherenceCohesion, lexicalResource, grammatic
     const raw = completion.choices[0]?.message?.content ?? "{}";
     const parsed = parseJson<Partial<WritingScore>>(raw, {});
 
-    const taskAchievement = Number(parsed.taskAchievement) || targetBand;
+    const taskAchievement =
+      Number(
+        (parsed as { taskResponse?: number }).taskResponse ??
+          parsed.taskAchievement
+      ) || targetBand;
     const coherenceCohesion = Number(parsed.coherenceCohesion) || targetBand;
     const lexicalResource = Number(parsed.lexicalResource) || targetBand;
     const grammaticalRange = Number(parsed.grammaticalRange) || targetBand;

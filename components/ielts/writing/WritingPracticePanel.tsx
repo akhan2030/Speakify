@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { criteriaSummaryForTask } from "@/lib/ielts/writingCriteria";
 import WritingPracticeForm from "@/components/writing/WritingPracticeForm";
 import GuidedWritingMode from "@/components/writing/GuidedWritingMode";
 
@@ -137,7 +138,7 @@ export default function WritingPracticePanel({
           onSubmit={onSubmit}
           hideTaskToggle
           formClassName="space-y-6"
-          submitLabel="Submit for AI score (TA/CC/LR/GRA)"
+          submitLabel={`Submit for AI score (${criteriaSummaryForTask(taskType)})`}
         />
       )}
     </div>

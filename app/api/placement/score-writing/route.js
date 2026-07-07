@@ -17,7 +17,12 @@ export async function POST(request) {
       );
     }
 
-    const result = await scoreWriting(prompt, studentAnswer, targetBand);
+    const taskType =
+      body.taskType === "task1" || body.taskType === "task2"
+        ? body.taskType
+        : "task2";
+
+    const result = await scoreWriting(prompt, studentAnswer, targetBand, taskType);
 
     return NextResponse.json(result);
   } catch (err) {

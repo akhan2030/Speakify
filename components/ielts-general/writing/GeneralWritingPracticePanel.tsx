@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { criteriaSummaryForTask } from "@/lib/ielts/writingCriteria";
 import GeneralWritingPracticeForm from "@/components/ielts-general/writing/GeneralWritingPracticeForm";
 import type { LetterType } from "@/lib/ielts-general/writingTaskData";
 
@@ -122,7 +123,7 @@ export default function GeneralWritingPracticePanel({
       error={error}
       onSubmit={onSubmit}
       formClassName="space-y-6"
-      submitLabel="Submit for AI score (TA/CC/LR/GRA)"
+      submitLabel={`Submit for AI score (${criteriaSummaryForTask(lockTaskType)})`}
       onQuestionChange={handleQuestionChange}
     />
   );

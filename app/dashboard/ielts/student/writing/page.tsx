@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
+import { dualTaskWritingCriteriaSubtitle } from "@/lib/ielts/writingCriteria";
 import SkillTabs from "@/components/ielts/SkillTabs";
 import WritingPracticePanel from "@/components/ielts/writing/WritingPracticePanel";
 import SubmissionHistory from "@/components/ielts/SubmissionHistory";
@@ -69,7 +70,7 @@ export default function IeltsWritingPage() {
       <SkillBandHeader
         skill="writing"
         title="Writing"
-        subtitle="Task 1 & 2 practice with AI scoring — TA, CC, LR, GRA"
+        subtitle={dualTaskWritingCriteriaSubtitle()}
       />
       <Suspense fallback={<PageSpinner />}>
         <WritingContent />

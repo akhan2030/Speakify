@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
+import { dualTaskWritingCriteriaSubtitle } from "@/lib/ielts/writingCriteria";
 import GeneralWritingPracticePanel from "@/components/ielts-general/writing/GeneralWritingPracticePanel";
 import { PageSpinner } from "@/components/StudentSidebar";
 import {
@@ -43,7 +44,7 @@ function WritingPageContent() {
       <GeneralSkillBandHeader
         skill="writing"
         title="Writing — Letter + Essay"
-        subtitle="IELTS General Training only — Task 1 letters (no charts) and Task 2 essays"
+        subtitle={`IELTS General Training — ${dualTaskWritingCriteriaSubtitle()}`}
       />
 
       <div className="mb-4 rounded-xl border border-[#0d9488]/30 bg-[#0d9488]/5 px-4 py-3 text-sm text-[#0d1b35]">

@@ -526,7 +526,7 @@ export default function OnboardingPage() {
 
         <p className="mt-6 text-sm leading-relaxed text-slate-600">
           {purchasedMeta
-            ? `Your placement check is complete. We will personalise your study plan to your current level while you follow your purchased ${purchasedMeta.name} programme.`
+            ? `Your placement check is complete. We will personalise your study plan to your current level while you follow the ${purchasedMeta.name} track we recommend for you.`
             : `You understand English well and can communicate in most everyday situations. You are ready to start focused ${goal} preparation.`}
         </p>
 
@@ -534,7 +534,7 @@ export default function OnboardingPage() {
           {purchasedMeta && programme === "ielts" ? (
             <>
               <p className="text-xs font-bold uppercase tracking-wide text-[#c9972c]">
-                Your purchased plan
+                Speakify recommends
               </p>
               <p className="mt-2 text-lg font-bold text-[#0d1b35]">
                 IELTS {purchasedMeta.name}
@@ -577,7 +577,7 @@ export default function OnboardingPage() {
           {saving
             ? "Saving…"
             : purchasedMeta
-              ? `Continue with my ${purchasedMeta.name} plan →`
+              ? `Continue with recommended ${purchasedMeta.name} →`
               : programme === "ielts"
                 ? "Confirm & continue →"
                 : "Confirm my track →"}
