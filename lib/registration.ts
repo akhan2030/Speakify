@@ -54,7 +54,7 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
   ielts: {
     slug: "ielts",
     programType: "ielts",
-    label: "IELTS Accelerator",
+    label: "IELTS Academic Accelerator",
     tagline: "IELTS Academic · Band scores",
     description:
       "Full IELTS Academic preparation with mock exams, band tracking, and AI-powered feedback.",
