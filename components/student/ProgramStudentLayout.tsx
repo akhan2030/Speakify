@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PageSpinner } from "@/components/StudentSidebar";
-import { normalizeProgramType, studentDashboardPath, type ProgramType } from "@/lib/programType";
+import { studentDashboardPath, canAccessStudentDashboard, resolveStudentProgramType, type ProgramType } from "@/lib/programType";
 import { normalizeRole } from "@/lib/roles";
 
 export default function ProgramStudentLayout({
@@ -17,9 +17,14 @@ export default function ProgramStudentLayout({
   const router = useRouter();
   const { status, data: session } = useSession();
   const role = normalizeRole((session?.user as { role?: string })?.role);
-  const programType = normalizeProgramType(
-    (session?.user as { programType?: string })?.programType
-  );
+  const programType = resolveStudentProgramType({
+    programType: (session?.user as { programType?: string })?.programType,
+    enrolledPrograms: (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms,
+    programSelected: (session?.user as { programSelected?: string })?.programSelected,
+  });
+  const enrolledPrograms = (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms;
+  const rawProgramType = (session?.user as { programType?: string })?.programType;
+  const programSelected = (session?.user as { programSelected?: string })?.programSelected;
   const [teacherStudentAccess, setTeacherStudentAccess] = useState<boolean | null>(
     null
   );
@@ -52,10 +57,15 @@ export default function ProgramStudentLayout({
 
   useEffect(() => {
     if (status !== "authenticated" || role !== "student") return;
-    if (programType !== expectedProgram) {
+    const allowed = canAccessStudentDashboard(expectedProgram, {
+      programType: rawProgramType,
+      enrolledPrograms,
+      programSelected,
+    });
+    if (!allowed) {
       router.replace(studentDashboardPath(programType));
     }
-  }, [status, role, programType, expectedProgram, router]);
+  }, [status, role, programType, expectedProgram, rawProgramType, enrolledPrograms, programSelected, router]);
 
   if (status === "loading" || status === "unauthenticated") {
     return <PageSpinner />;

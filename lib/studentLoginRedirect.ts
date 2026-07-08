@@ -1,6 +1,7 @@
 import {
   normalizeProgramType,
   studentDashboardPath,
+  resolveStudentProgramType,
   type ProgramType,
 } from "@/lib/programType";
 import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
@@ -8,6 +9,7 @@ import { STEP_ROUTES } from "@/lib/step/paths";
 
 const KNOWN_PROGRAMS: ProgramType[] = [
   "ielts",
+  "ielts_general",
   "pathway",
   "business_english",
   "legal_english",
@@ -86,20 +88,22 @@ export function resolveStudentDashboardPath(input: {
   stepEnrolled?: boolean;
   programSelected?: unknown;
 }): string {
-  const programType = normalizeProgramType(input.programType);
+  const programType = resolveStudentProgramType({
+    programType: input.programType,
+    enrolledPrograms: input.enrolledPrograms,
+    programSelected: input.programSelected,
+  });
   const programs = normalizeEnrolledPrograms(input.enrolledPrograms, programType);
   const raw = parseRawEnrolledPrograms(input.enrolledPrograms);
   const stepEnrolled = input.stepEnrolled === true;
 
-  // IELTS General Training is normalized away by normalizeProgramType (there is
-  // no "ielts_general" ProgramType), so detect it from the raw enrolment slugs
-  // or the explicit program_selected value and route to the GT dashboard.
-  const rawProgramSelected = String(input.programSelected ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/-/g, "_");
   const isGeneralTraining =
-    raw.includes("ielts_general") || rawProgramSelected === "ielts_general";
+    programType === "ielts_general" ||
+    raw.includes("ielts_general") ||
+    String(input.programSelected ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/-/g, "_") === "ielts_general";
 
   // Stale step_enrolled flag with IELTS-only enrollment → IELTS dashboard (not STEP diagnostic)
   if (

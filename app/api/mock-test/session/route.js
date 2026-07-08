@@ -37,6 +37,10 @@ export async function POST(request) {
     const studentId = await resolveStudentId(body.studentId);
     const planId = String(body.planId ?? "").trim() || null;
     const mockNumber = Number(body.mockNumber) || null;
+    const examVariant =
+      String(body.examVariant ?? "").trim().toLowerCase() === "general"
+        ? "general"
+        : "academic";
     const generatedMockTestId =
       body.generatedMockTestId != null && body.generatedMockTestId !== ""
         ? Number(body.generatedMockTestId) || null
@@ -55,14 +59,17 @@ export async function POST(request) {
 
     const { data: inProgress } = await supabase
       .from("mock_test_attempts")
-      .select("id, mock_number, created_at")
+      .select("id, mock_number, created_at, exam_content")
       .eq("student_id", studentId)
       .eq("status", "in_progress")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (inProgress?.id) {
+    const inProgressVariant =
+      inProgress?.exam_content?.examVariant === "general" ? "general" : "academic";
+
+    if (inProgress?.id && inProgressVariant === examVariant) {
       return NextResponse.json({
         attemptId: inProgress.id,
         studentId,
@@ -72,7 +79,7 @@ export async function POST(request) {
       });
     }
 
-    let examContent = {};
+    let examContent = { examVariant, mockNumber };
     if (generatedMockTestId) {
       const { data: mockRow } = await supabase
         .from("generated_mock_tests")
@@ -81,12 +88,13 @@ export async function POST(request) {
         .maybeSingle();
       if (mockRow) {
         examContent = {
+          ...examContent,
           listening: mockRow.listening,
           reading: mockRow.reading,
           writing: mockRow.writing,
           speaking: mockRow.speaking,
           topic: mockRow.topic,
-          mockNumber: mockRow.mock_number,
+          mockNumber: mockRow.mock_number ?? mockNumber,
         };
       }
     }

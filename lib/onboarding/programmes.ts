@@ -113,9 +113,10 @@ export function programTypeForGateway(programme: GatewayProgramme): string {
       return "legal_english";
     case "kids_english":
       return "kids_english";
+    case "ielts_general":
+      return "ielts_general";
     case "step":
     case "ielts":
-    case "ielts_general":
     case "toefl":
     default:
       return "ielts";

@@ -110,7 +110,11 @@ export async function POST(request) {
       password: passwordHash,
       role: "student",
       phone,
-      program_type: isIeltsRegistration ? "ielts" : programType,
+      program_type: isIeltsGeneralRegistration
+        ? "ielts_general"
+        : isIeltsRegistration
+          ? "ielts"
+          : programType,
       ...(isStepRegistration
         ? { step_enrolled: true, enrolled_programs: ["step"] }
         : isIeltsGeneralRegistration

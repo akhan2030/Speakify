@@ -688,9 +688,29 @@ export function getSectionPracticeBundle(
 
 /** Full 60-minute mock: A (3 texts), B (2 texts), C (1 text) with global numbering. */
 export function getFullGtReadingTest(): GtReadingTestBundle {
-  const sectionA = getBuiltinPassages("A").slice(0, 3);
-  const sectionB = getBuiltinPassages("B").slice(0, 2);
-  const sectionC = getBuiltinPassages("C").slice(0, 1);
+  return getFullGtReadingTestForMock(1);
+}
+
+function rotateTake<T>(items: T[], count: number, mockNumber: number): T[] {
+  if (!items.length || count <= 0) return [];
+  const slots = Math.min(count, items.length);
+  const offset = (Math.max(1, Math.floor(mockNumber)) - 1) % items.length;
+  const picked: T[] = [];
+  for (let i = 0; i < slots; i++) {
+    picked.push(items[(offset + i) % items.length]);
+  }
+  return picked;
+}
+
+/**
+ * Build a full GT reading mock for the given mock number.
+ * Rotates passage order within each section so mocks 1–6 feel distinct
+ * (writing prompts already rotate separately).
+ */
+export function getFullGtReadingTestForMock(mockNumber = 1): GtReadingTestBundle {
+  const sectionA = rotateTake(getBuiltinPassages("A"), 3, mockNumber);
+  const sectionB = rotateTake(getBuiltinPassages("B"), 2, mockNumber + 1);
+  const sectionC = rotateTake(getBuiltinPassages("C"), 1, mockNumber + 2);
 
   const a = renumberQuestions(sectionA, 1);
   const b = renumberQuestions(sectionB, a.next);

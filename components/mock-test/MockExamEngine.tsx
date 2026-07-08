@@ -36,6 +36,7 @@ import {
   EXAM_CONTENT,
   getStaticExamContent,
 } from "@/lib/mock-test/staticExamContent";
+import { resolveAcademicExamContent } from "@/lib/mock-test/resolveGeneratedContent";
 import {
   LISTENING_EXAM_PARTS,
   getAllListeningExamQuestions,
@@ -54,7 +55,12 @@ import {
   getGeneralMockExamContent,
   pickGeneralMockWritingTasks,
 } from "@/lib/ielts-general/mockExamContent";
-import { gtReadingRawToBand } from "@/lib/ielts-general/readingScore";
+import {
+  checkGtReadingAnswer,
+  gtReadingKindToType,
+  gtReadingRawToBand,
+  scoreGtReadingFromMockContent,
+} from "@/lib/ielts-general/readingScore";
 import type { MockExamContent } from "@/lib/mock-test/types";
 import GeneralMockLetterPrompt from "@/components/ielts-general/mock/GeneralMockLetterPrompt";
 
@@ -77,7 +83,8 @@ function buildGtReadingSectionBreakdown(
     if (!sec || !sections[sec]) continue;
     for (const q of passage.questions) {
       sections[sec].total += 1;
-      if (answersMatch(answers[q.id] ?? "", q.correct ?? "")) {
+      const gtType = gtReadingKindToType(q.kind);
+      if (checkGtReadingAnswer(answers[q.id] ?? "", q.correct ?? "", gtType)) {
         sections[sec].correct += 1;
       }
     }
@@ -145,24 +152,28 @@ export default function MockExamEngine({
     const stored = sessionStorage.getItem("mock_test_attempt_id");
     return stored?.trim() || `local_${crypto.randomUUID()}`;
   });
-  const examContent = useMemo(
-    () => (isGeneral ? getGeneralMockExamContent() : getStaticExamContent()),
-    [isGeneral]
-  );
+  const mockNumber = useMemo(() => {
+    if (typeof window === "undefined") return 1;
+    try {
+      const raw = sessionStorage.getItem("mock_test_number");
+      return Math.max(1, Number(raw) || 1);
+    } catch {
+      return 1;
+    }
+  }, []);
+  const [generatedAcademicContent, setGeneratedAcademicContent] =
+    useState<MockExamContent | null>(null);
+  const examContent = useMemo(() => {
+    if (isGeneral) return getGeneralMockExamContent(mockNumber);
+    return generatedAcademicContent ?? getStaticExamContent();
+  }, [isGeneral, mockNumber, generatedAcademicContent]);
   const writingTasks = useMemo(() => {
     if (!isGeneral) {
       return { task1: WRITING_TASK1, task2: WRITING_TASK2 };
     }
-    let mockNumber = 1;
-    try {
-      const raw = sessionStorage.getItem("mock_test_number");
-      if (raw) mockNumber = Number(raw) || 1;
-    } catch {
-      /* ignore */
-    }
     const picked = pickGeneralMockWritingTasks(mockNumber);
     return { task1: picked.task1, task2: picked.task2 };
-  }, [isGeneral]);
+  }, [isGeneral, mockNumber]);
   const readyFlags = isGeneral ? GENERAL_EXAM_CONTENT : sectionReady;
   const [phase, setPhase] = useState<ExamPhase>("welcome");
   const [transitionFrom, setTransitionFrom] = useState<MockSection>("listening");
@@ -218,6 +229,24 @@ export default function MockExamEngine({
       setPackName("Single Mock");
     }
   }, []);
+
+  useEffect(() => {
+    if (isGeneral || !attemptId || attemptId.startsWith("local_")) return;
+    let cancelled = false;
+    fetch(`/api/mock-test/session/${encodeURIComponent(attemptId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.attempt?.exam_content) return;
+        const resolved = resolveAcademicExamContent(
+          data.attempt.exam_content as Record<string, unknown>
+        );
+        setGeneratedAcademicContent(resolved);
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, [attemptId, isGeneral]);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -335,7 +364,9 @@ export default function MockExamEngine({
     setPhase("submitting");
 
     const listening = scoreListening(answersRef.current);
-    const reading = scoreReading(answersRef.current, examContent);
+    const reading = isGeneral
+      ? scoreGtReadingFromMockContent(answersRef.current, examContent)
+      : scoreReading(answersRef.current, examContent);
     const sectionScores = {
       listening,
       reading,
@@ -345,6 +376,10 @@ export default function MockExamEngine({
       reading: reading.band,
     });
 
+    const readingSectionBreakdown = isGeneral
+      ? buildGtReadingSectionBreakdown(examContent, answersRef.current)
+      : undefined;
+
     const payload = {
       answers: answersRef.current,
       flagged: Array.from(flaggedRef.current),
@@ -352,12 +387,16 @@ export default function MockExamEngine({
       sectionScores,
       overallBand,
       examVariant: variant,
+      mockNumber,
+      readingSectionBreakdown,
       writingMeta: isGeneral
         ? {
             letterType: (writingTasks.task1 as { letter?: { letterType?: string } }).letter
               ?.letterType,
             letterPrompt: writingTasks.task1.prompt,
             essayPrompt: writingTasks.task2.prompt,
+            task1Id: writingTasks.task1.id,
+            task2Id: writingTasks.task2.id,
           }
         : undefined,
     };
@@ -370,13 +409,6 @@ export default function MockExamEngine({
     }
 
     if (isGeneral) {
-      let mockNumber = 1;
-      try {
-        const raw = sessionStorage.getItem("mock_test_number");
-        if (raw) mockNumber = Number(raw) || 1;
-      } catch {
-        /* ignore */
-      }
       await fetch("/api/ielts-general/mock-exam/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -385,14 +417,12 @@ export default function MockExamEngine({
           mockNumber,
           sectionScores,
           overallBand,
-          readingSectionBreakdown: isGeneral
-            ? buildGtReadingSectionBreakdown(examContent, answersRef.current)
-            : undefined,
+          readingSectionBreakdown,
         }),
       }).catch(() => null);
     }
 
-    if (attemptId && !attemptId.startsWith("local_") && !isGeneral) {
+    if (attemptId && !attemptId.startsWith("local_")) {
       await fetch("/api/mock-test/session", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -407,7 +437,7 @@ export default function MockExamEngine({
         ? `/dashboard/ielts-general/student/mock-exam/results?attemptId=${encodeURIComponent(id)}`
         : `/mock-test/results/${id}`);
     router.replace(destination);
-  }, [attemptId, examContent, router, variant, isGeneral, writingTasks, resultsPath]);
+  }, [attemptId, examContent, router, variant, isGeneral, writingTasks, resultsPath, mockNumber]);
 
   const handleSectionTimeUp = useCallback(() => {
     if (phase === "listening") startTransition("listening");

@@ -1,4 +1,5 @@
-import { getFullGtReadingTest, type GtReadingPassage, type GtReadingQuestion } from "./readingContent";
+import { getFullGtReadingTestForMock, type GtReadingPassage, type GtReadingQuestion } from "./readingContent";
+import { normalizeGtOptions } from "./readingQuestionView";
 import {
   GENERAL_LETTER_QUESTIONS,
   GENERAL_TASK2_QUESTIONS,
@@ -17,7 +18,10 @@ export const GENERAL_EXAM_CONTENT = {
 
 function mapQuestionKind(type: string): string {
   if (type === "true_false_not_given") return "true-false-not-given";
-  if (type === "multiple_choice" || type === "matching_features") return "multiple-choice";
+  if (type === "multiple_choice" || type === "matching_features" || type === "matching") {
+    return "multiple-choice";
+  }
+  if (type === "matching_headings") return "matching-headings";
   return "short-answer";
 }
 
@@ -37,7 +41,15 @@ function toReadingQuestion(q: GtReadingQuestion): ReadingQuestion {
   };
 
   if (kind === "multiple-choice" && q.options?.length) {
-    base.options = q.options.map((opt) => ({ key: opt, label: opt }));
+    base.options = normalizeGtOptions(q.options).map((opt) => ({ key: opt, label: opt }));
+  }
+
+  if (kind === "matching-headings" && q.options?.length) {
+    const headings = normalizeGtOptions(q.options);
+    base.headings = headings.map((label, index) => ({
+      key: String.fromCharCode(65 + index),
+      label,
+    }));
   }
 
   if (kind === "true-false-not-given") {
@@ -71,8 +83,8 @@ function passageToReadingPassage(
   };
 }
 
-export function getGeneralMockExamContent(): MockExamContent {
-  const bundle = getFullGtReadingTest();
+export function getGeneralMockExamContent(mockNumber = 1): MockExamContent {
+  const bundle = getFullGtReadingTestForMock(mockNumber);
   let idx = 0;
   const passages: ReadingPassage[] = bundle.passages.map((p) => {
     const start = p.questions[0]?.number ?? idx + 1;

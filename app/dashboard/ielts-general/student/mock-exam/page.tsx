@@ -21,21 +21,43 @@ export default function GtMockExamLobbyPage() {
   const router = useRouter();
   const { status } = useSession();
   const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const [mockNumber, setMockNumber] = useState(1);
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
   }, [status, router]);
 
-  function startMock() {
+  async function startMock() {
     setStarting(true);
-    const attemptId = `local_${crypto.randomUUID()}`;
-    sessionStorage.setItem("mock_test_attempt_id", attemptId);
-    sessionStorage.setItem("mock_test_number", String(mockNumber));
-    sessionStorage.setItem("speakify_programme", "ielts_general");
-    router.push(
-      `${GENERAL_STUDENT_BASE}/mock-exam/exam?mock=${mockNumber}&attemptId=${encodeURIComponent(attemptId)}`
-    );
+    setStartError(null);
+    try {
+      const res = await fetch("/api/mock-test/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mockNumber,
+          examVariant: "general",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? "Failed to start mock exam");
+      }
+
+      const attemptId =
+        data.attemptId ?? `local_${crypto.randomUUID()}`;
+
+      sessionStorage.setItem("mock_test_attempt_id", String(attemptId));
+      sessionStorage.setItem("mock_test_number", String(mockNumber));
+      sessionStorage.setItem("speakify_programme", "ielts_general");
+      router.push(
+        `${GENERAL_STUDENT_BASE}/mock-exam/exam?mock=${mockNumber}&attemptId=${encodeURIComponent(attemptId)}`
+      );
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : "Could not start mock exam");
+      setStarting(false);
+    }
   }
 
   if (status === "loading" || status === "unauthenticated") {
@@ -70,9 +92,15 @@ export default function GtMockExamLobbyPage() {
           </ul>
           <p className="mt-4 text-xs text-slate-500">
             Allow ~3 hours uninterrupted. Listening & Speaking use the same engine as Academic;
-            Reading uses genuine GT passages.
+            Reading passages and writing prompts rotate per mock number.
           </p>
         </div>
+
+        {startError ? (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {startError}
+          </p>
+        ) : null}
 
         <div className="mt-6 flex flex-wrap items-end gap-4">
           <label className="text-sm">

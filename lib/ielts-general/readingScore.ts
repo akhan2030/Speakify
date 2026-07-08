@@ -1,4 +1,12 @@
 import type { GtReadingQuestion } from "./readingContent";
+import type { MockExamContent } from "@/lib/mock-test/types";
+
+export function gtReadingKindToType(kind: string): string | undefined {
+  if (kind === "true-false-not-given") return "true_false_not_given";
+  if (kind === "multiple-choice") return "multiple_choice";
+  if (kind === "matching-headings") return "matching_headings";
+  return undefined;
+}
 
 function normalizeAnswer(value: string): string {
   return String(value ?? "")
@@ -131,5 +139,61 @@ export function scoreGtReadingAnswers(
     estimatedBand: gtReadingRawToBand(correct, total),
     breakdown,
     sectionBreakdown,
+  };
+}
+
+export type GtMockReadingScore = {
+  correct: number;
+  total: number;
+  accuracy: number;
+  band: number;
+  passageBreakdown: Array<{
+    label: string;
+    correct: number;
+    total: number;
+    accuracy: number;
+    band: number;
+  }>;
+};
+
+/** Score GT reading inside the shared mock exam engine using GT band tables. */
+export function scoreGtReadingFromMockContent(
+  answers: Record<string, string>,
+  examContent: MockExamContent
+): GtMockReadingScore {
+  const passages = examContent.reading.passages;
+  let correct = 0;
+  let total = 0;
+
+  const passageBreakdown = passages.map((passage) => {
+    let passageCorrect = 0;
+    let passageTotal = 0;
+    for (const q of passage.questions) {
+      passageTotal += 1;
+      total += 1;
+      const gtType = gtReadingKindToType(q.kind);
+      if (
+        checkGtReadingAnswer(answers[q.id] ?? "", q.correct ?? "", gtType)
+      ) {
+        passageCorrect += 1;
+        correct += 1;
+      }
+    }
+    const accuracy = passageTotal ? passageCorrect / passageTotal : 0;
+    return {
+      label: passage.title || `Passage ${passage.index}`,
+      correct: passageCorrect,
+      total: passageTotal,
+      accuracy,
+      band: gtReadingRawToBand(passageCorrect, passageTotal || 1),
+    };
+  });
+
+  return {
+    correct,
+    total: total || 40,
+    accuracy: total ? correct / total : 0,
+    band: gtReadingRawToBand(correct, total || 40),
+    passageBreakdown,
   };
 }

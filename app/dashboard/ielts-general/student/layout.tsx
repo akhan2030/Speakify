@@ -8,7 +8,7 @@ export default function IeltsGeneralStudentLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProgramStudentLayout expectedProgram="ielts">
+    <ProgramStudentLayout expectedProgram="ielts_general">
       <GeneralProgrammeMarker />
       <div className="program-student-layout flex min-h-screen bg-white">
         <GeneralSidebar />
