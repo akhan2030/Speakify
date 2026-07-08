@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import ListeningIeltsInstruction from "@/components/ListeningIeltsInstruction";
+import { ExamHighlightSection } from "@/components/exam/ExamHighlightSection";
+import type { TextHighlight } from "@/lib/examHighlight";
 import ListeningQuestions, {
   type ListeningQuestion,
 } from "@/components/ListeningQuestions";
@@ -19,6 +21,8 @@ export function ListeningQuestionsColumn({
   hideInstructionBlock = false,
   sectionTitle,
   answerKey = "id",
+  highlights = [],
+  onHighlightsChange,
 }: {
   groups: QuestionGroup[];
   answers: Record<string | number, string>;
@@ -30,6 +34,8 @@ export function ListeningQuestionsColumn({
   sectionTitle?: string;
   /** Use "questionNumber" for full mock (global Q1–40 keys) */
   answerKey?: "id" | "questionNumber";
+  highlights?: TextHighlight[];
+  onHighlightsChange?: (next: TextHighlight[]) => void;
 }) {
   const answeredIds = useMemo(() => {
     const ids = new Set<number | string>();
@@ -64,7 +70,14 @@ export function ListeningQuestionsColumn({
   };
 
   return (
-    <div className="space-y-8">
+    <ExamHighlightSection
+      sectionId={`listening-section-${sectionNumber}`}
+      highlights={highlights}
+      onHighlightsChange={onHighlightsChange ?? (() => {})}
+      showToolbar={Boolean(onHighlightsChange)}
+      className="space-y-8"
+      toolbarClassName="mb-2"
+    >
       <div>
         <h2 className="text-lg font-bold text-[#0d1b35]">
           Questions {globalRange.label}
@@ -106,6 +119,6 @@ export function ListeningQuestionsColumn({
           </div>
         </div>
       ))}
-    </div>
+    </ExamHighlightSection>
   );
 }

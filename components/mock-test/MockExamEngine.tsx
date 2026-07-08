@@ -16,6 +16,12 @@ import MockExamWelcome, {
 } from "@/components/mock-test/MockExamWelcome";
 import MockListeningAudio from "@/components/mock-test/MockListeningAudio";
 import MockReadingQuestionInput from "@/components/mock-test/MockReadingQuestionInput";
+import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import {
+  ExamHighlightSection,
+  HighlightableInlineText,
+} from "@/components/exam/ExamHighlightSection";
+import type { TextHighlight } from "@/lib/examHighlight";
 import MockWritingChart from "@/components/mock-test/MockWritingChart";
 import StickySubmitBar from "@/components/accelerator/StickySubmitBar";
 import SectionTransition, {
@@ -201,7 +207,14 @@ export default function MockExamEngine({
   const [readingQIdx, setReadingQIdx] = useState(0);
   const [notesOpen, setNotesOpen] = useState(true);
   const [passageNotes, setPassageNotes] = useState<Record<string, string>>({});
-  const [highlights, setHighlights] = useState<Record<string, string[]>>({});
+  const [readingHighlights, setReadingHighlights] = useState<
+    Record<string, TextHighlight[]>
+  >({});
+  const [listeningHighlights, setListeningHighlights] = useState<TextHighlight[]>([]);
+
+  useEffect(() => {
+    setListeningHighlights([]);
+  }, [listeningPartIdx]);
 
   const [writingTask, setWritingTask] = useState<1 | 2>(1);
   const [writingTaskTimeLeft, setWritingTaskTimeLeft] = useState(WRITING_TASK1_SECONDS);
@@ -788,7 +801,13 @@ export default function MockExamEngine({
           )}
 
           {["prep", "break", "audio", "check"].includes(listeningStep) && (
-            <div className="mx-auto max-w-2xl space-y-3">
+            <ExamHighlightSection
+              sectionId={`mock-listening-part-${listeningPartIdx}`}
+              highlights={listeningHighlights}
+              onHighlightsChange={setListeningHighlights}
+              className="mx-auto max-w-2xl space-y-3"
+              toolbarClassName="mb-3"
+            >
               {visibleListeningQuestions.map((q) => (
                 <div
                   key={q.id}
@@ -800,7 +819,12 @@ export default function MockExamEngine({
                   }`}
                 >
                   <p className="text-xs font-bold text-[#c9972c]">Question {q.number}</p>
-                  <p className="mt-1 text-sm text-[#0d1b35]">{q.prompt}</p>
+                  <p className="mt-1 text-sm text-[#0d1b35]">
+                    <HighlightableInlineText
+                      blockId={`mock-lq-${q.id}`}
+                      text={q.prompt}
+                    />
+                  </p>
                   <ListeningQuestionField
                     q={q}
                     value={answers[q.id] ?? ""}
@@ -808,7 +832,7 @@ export default function MockExamEngine({
                   />
                 </div>
               ))}
-            </div>
+            </ExamHighlightSection>
           )}
         </div>
       )}
@@ -830,35 +854,22 @@ export default function MockExamEngine({
                 </button>
               ))}
             </div>
-            <div
-              className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed selection:bg-yellow-200"
-              onMouseUp={() => {
-                const sel = window.getSelection()?.toString().trim();
-                if (sel && sel.length > 2) {
-                  setHighlights((h) => ({
-                    ...h,
-                    [passage.id]: [...(h[passage.id] ?? []), sel].slice(-20),
-                  }));
-                }
-              }}
-            >
+            <div className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed">
               <h2 className="mb-1 text-lg font-bold text-[#0d1b35]">{passage.title}</h2>
               <p className="mb-4 text-xs text-slate-500">{passage.difficulty}</p>
-              {passage.paragraphs.map((para) => (
-                <p key={para.id} className="mb-3 text-slate-800">
-                  <strong>{para.label}</strong> {para.text}
-                </p>
-              ))}
-              {(highlights[passage.id] ?? []).length > 0 && (
-                <div className="mt-4 rounded-lg bg-yellow-50 p-3 text-xs">
-                  <p className="font-bold text-[#0d1b35]">Highlights</p>
-                  {(highlights[passage.id] ?? []).map((h, i) => (
-                    <p key={i} className="mt-1 text-slate-600">
-                      • {h}
-                    </p>
-                  ))}
-                </div>
-              )}
+              <ExamTextHighlighter
+                sectionId={passage.id}
+                blocks={passage.paragraphs.map((para) => ({
+                  id: para.id,
+                  text: para.label ? `${para.label} ${para.text}` : para.text,
+                }))}
+                highlights={readingHighlights[passage.id] ?? []}
+                onHighlightsChange={(next) =>
+                  setReadingHighlights((prev) => ({ ...prev, [passage.id]: next }))
+                }
+                textClassName="text-sm leading-relaxed text-slate-800"
+                blockClassName="mb-3"
+              />
             </div>
           </div>
           <div className="flex w-full max-w-md flex-col bg-[#f8f9fa]">

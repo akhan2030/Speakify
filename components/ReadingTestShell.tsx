@@ -11,6 +11,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReadingTimer from "@/components/ReadingTimer";
 import ScreenLock from "@/components/ScreenLock";
+import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import type { TextHighlight } from "@/lib/examHighlight";
 import { useReadingTimer } from "@/lib/readingTimer";
 import {
   buildMockCorrectAnswers,
@@ -157,6 +159,9 @@ export default function ReadingTestShell({
     score: number;
     total: number;
   } | null>(null);
+  const [highlightsByPassage, setHighlightsByPassage] = useState<
+    Record<string, TextHighlight[]>
+  >({});
 
   const answersRef = useRef(answers);
   const submittedRef = useRef(false);
@@ -402,18 +407,25 @@ export default function ReadingTestShell({
           <h2 className="text-xl font-bold text-[#0d1b35]">
             {activePassage?.title}
           </h2>
-          <div className="mt-5 space-y-5">
-            {activePassage?.paragraphs.map((paragraph) => (
-              <div key={paragraph.id} className="scroll-mt-4">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#0d1b35] text-xs font-bold text-white">
-                  {paragraph.label}
-                </span>
-                <p className="mt-2 text-base leading-relaxed text-slate-700">
-                  {paragraph.text}
-                </p>
-              </div>
-            ))}
-          </div>
+          {activePassage ? (
+            <div className="mt-5">
+              <ExamTextHighlighter
+                sectionId={activePassage.id}
+                blocks={activePassage.paragraphs.map((paragraph) => ({
+                  id: paragraph.id,
+                  label: paragraph.label,
+                  text: paragraph.text,
+                }))}
+                highlights={highlightsByPassage[activePassage.id] ?? []}
+                onHighlightsChange={(next) =>
+                  setHighlightsByPassage((prev) => ({
+                    ...prev,
+                    [activePassage.id]: next,
+                  }))
+                }
+              />
+            </div>
+          ) : null}
         </div>
 
         {/* Questions panel — scrollable */}

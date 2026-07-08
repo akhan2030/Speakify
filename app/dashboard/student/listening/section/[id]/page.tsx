@@ -8,11 +8,8 @@ import ListeningAudioPlayer from "@/components/listening/ListeningAudioPlayer";
 import DailyLimitReached from "@/components/DailyLimitReached";
 import ListeningExamPrepBanner from "@/components/ListeningExamPrepBanner";
 import ListeningSectionAnnouncer from "@/components/ListeningSectionAnnouncer";
-import ListeningIeltsInstruction from "@/components/ListeningIeltsInstruction";
-import ListeningQuestions, {
-  type ListeningQuestion,
-  type QuestionResult,
-} from "@/components/ListeningQuestions";
+import { ListeningQuestionsColumn } from "@/components/listening/ListeningQuestionsColumn";
+import type { TextHighlight } from "@/lib/examHighlight";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import StickySubmitBar from "@/components/accelerator/StickySubmitBar";
@@ -32,10 +29,24 @@ import {
 } from "@/lib/listeningIeltsInstructions";
 import { buildQuestionGroups, type QuestionGroup } from "@/lib/listeningQuestionGroups";
 import { getSectionPlan } from "@/lib/listeningSectionTypes";
-import {
-  getMcqChooseCountForQuestions,
-  sectionHasPlaceholderQuestions,
-} from "@/lib/listeningQuestionContent.js";
+import { sectionHasPlaceholderQuestions } from "@/lib/listeningQuestionContent.js";
+
+type ListeningQuestion = {
+  id: number;
+  questionNumber: number;
+  type: string;
+  text: string;
+  options?: { label: string; text: string }[];
+  chooseCount?: number;
+  answer?: string;
+  wordLimit?: string;
+};
+
+type QuestionResult = {
+  correct: boolean;
+  studentAnswer: string;
+  correctAnswer: string;
+};
 
 type SectionData = {
   title: string;
@@ -109,77 +120,6 @@ function LoadingScreen({ sectionNumber }: { sectionNumber: number }) {
   );
 }
 
-function QuestionsColumn({
-  groups,
-  answers,
-  onChange,
-  disabled,
-  highlightAnswered,
-  sectionNumber,
-  hideInstructionBlock = false,
-  sectionTitle,
-}: {
-  groups: QuestionGroup[];
-  answers: Record<string | number, string>;
-  onChange: (id: number | string, value: string) => void;
-  disabled: boolean;
-  highlightAnswered: boolean;
-  sectionNumber: number;
-  hideInstructionBlock?: boolean;
-  sectionTitle?: string;
-}) {
-  const answeredIds = useMemo(() => {
-    const ids = new Set<number | string>();
-    for (const group of groups) {
-      for (const q of group.questions) {
-        if (String(answers[q.id] ?? "").trim()) ids.add(q.id);
-      }
-    }
-    return ids;
-  }, [answers, groups]);
-
-  const globalRange = getGlobalQuestionRange(sectionNumber);
-
-  return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-lg font-bold text-[#0d1b35]">
-          Questions {globalRange.label}
-        </h2>
-      </div>
-      {groups.map((group) => (
-        <div key={`${group.type}-${group.start}`} className="space-y-4">
-          {group.type === "form-completion" && sectionTitle ? (
-            <h3 className="text-base font-bold text-[#0d1b35]">{sectionTitle}</h3>
-          ) : null}
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[#c9972c]">
-            QUESTIONS {group.start}–{group.end}
-          </h3>
-          {!hideInstructionBlock ? (
-            <ListeningIeltsInstruction
-              questionType={group.type}
-              chooseCount={
-                group.type === "multiple-choice"
-                  ? getMcqChooseCountForQuestions(group.questions)
-                  : undefined
-              }
-            />
-          ) : null}
-          <ListeningQuestions
-            questions={group.questions}
-            answers={answers}
-            onChange={onChange}
-            disabled={disabled}
-            questionType={group.type}
-            highlightAnswered={highlightAnswered}
-            answeredIds={answeredIds}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function ListeningSectionExam() {
   const router = useRouter();
   const params = useParams();
@@ -197,6 +137,7 @@ function ListeningSectionExam() {
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [sectionData, setSectionData] = useState<SectionData | null>(null);
   const [answers, setAnswers] = useState<Record<string | number, string>>({});
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const [results, setResults] = useState<SubmitResult | null>(null);
   const [limitBlocked, setLimitBlocked] = useState(false);
   const [limitChecked, setLimitChecked] = useState(false);
@@ -325,6 +266,7 @@ function ListeningSectionExam() {
     setPhase("loading");
     setLoadError(null);
     setAnswers({});
+    setHighlights([]);
     setResults(null);
     submittedRef.current = false;
 
@@ -752,7 +694,7 @@ function ListeningSectionExam() {
               ) : null}
 
               <div className="mt-6">
-                <QuestionsColumn
+                <ListeningQuestionsColumn
                   groups={visibleQuestionGroups}
                   answers={answers}
                   onChange={handleAnswerChange}
@@ -760,6 +702,8 @@ function ListeningSectionExam() {
                   highlightAnswered={highlightAnswered}
                   sectionNumber={sectionNumber}
                   sectionTitle={sectionData.title}
+                  highlights={highlights}
+                  onHighlightsChange={setHighlights}
                 />
 
               </div>

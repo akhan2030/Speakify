@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
+import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import { plainTextToBlocks, type TextHighlight } from "@/lib/examHighlight";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
 import type { GtReadingPassage, GtReadingQuestion } from "@/lib/ielts-general/readingContent";
 import type { GtReadingScoreResult } from "@/lib/ielts-general/readingScore";
@@ -109,6 +111,9 @@ export default function GeneralReadingTimedTest() {
   const [passages, setPassages] = useState<GtReadingPassage[]>([]);
   const [questions, setQuestions] = useState<GtReadingQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [highlightsByPassage, setHighlightsByPassage] = useState<
+    Record<string, TextHighlight[]>
+  >({});
   const [secondsLeft, setSecondsLeft] = useState(TEST_SECONDS);
   const [started, setStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -330,9 +335,20 @@ export default function GeneralReadingTimedTest() {
 
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <h3 className="font-bold text-[#0d1b35]">{passage.title}</h3>
-              <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">
-                {passage.text}
-              </pre>
+              <div className="mt-3 max-h-64 overflow-y-auto">
+                <ExamTextHighlighter
+                  sectionId={passage.id}
+                  blocks={plainTextToBlocks(passage.text, passage.id)}
+                  highlights={highlightsByPassage[passage.id] ?? []}
+                  onHighlightsChange={(next) =>
+                    setHighlightsByPassage((prev) => ({
+                      ...prev,
+                      [passage.id]: next,
+                    }))
+                  }
+                  textClassName="text-sm leading-relaxed text-slate-700"
+                />
+              </div>
             </div>
 
             <div className="space-y-3">

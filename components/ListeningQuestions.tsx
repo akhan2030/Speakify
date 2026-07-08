@@ -1,5 +1,7 @@
 "use client";
 
+import { HighlightableInlineText } from "@/components/exam/ExamHighlightSection";
+
 export type ListeningQuestion = {
   id: number;
   questionNumber: number;
@@ -33,6 +35,21 @@ export type ListeningQuestionsProps = {
   highlightAnswered?: boolean;
   answeredIds?: Set<number | string>;
 };
+
+function QuestionPromptText({
+  q,
+  className = "",
+}: {
+  q: ListeningQuestion;
+  className?: string;
+}) {
+  return (
+    <span className={className}>
+      <span className="font-bold">{q.questionNumber}.</span>{" "}
+      <HighlightableInlineText blockId={`lq-${q.id}`} text={q.text} />
+    </span>
+  );
+}
 
 function answeredWrapClass(
   qId: number | string,
@@ -129,7 +146,7 @@ function FormCompletionQuestions(props: ListeningQuestionsProps) {
             className={answeredWrapClass(q.id, props, ANSWER_ROW)}
           >
             <label className="text-sm font-medium leading-snug text-[#0d1b35]">
-              <span className="font-bold">{q.questionNumber}.</span> {q.text}
+              <QuestionPromptText q={q} />
             </label>
             <div className="w-full min-w-0 sm:max-w-[14rem]">
             <TextInput
@@ -219,7 +236,7 @@ function MultipleChoiceQuestions(props: ListeningQuestionsProps) {
             } ${answeredWrapClass(q.id, props)}`}
           >
             <p className="font-bold text-[#0d1b35]">
-              {q.questionNumber}. {q.text}
+              <QuestionPromptText q={q} />
             </p>
             {isMultiSelect ? (
               <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -295,7 +312,7 @@ function MatchingQuestions(props: ListeningQuestionsProps) {
             } ${showResults && result && !result.correct ? "border-red-400 bg-red-50/40" : ""} ${answeredWrapClass(q.id, props, ANSWER_ROW_MATCHING)}`}
           >
             <span className="text-sm leading-snug text-slate-700">
-              {q.questionNumber}. {q.text}
+              <QuestionPromptText q={q} />
             </span>
             <select
               value={answers[q.id] ?? ""}
@@ -349,7 +366,13 @@ function NoteStyleQuestions(props: ListeningQuestionsProps) {
             {parts.map((part, idx) => {
               const isGap = /\[_{3,}\]|_{3,}|\[\s*\]/.test(part);
               if (!isGap) {
-                return <span key={idx}>{part}</span>;
+                return (
+                  <HighlightableInlineText
+                    key={idx}
+                    blockId={`lq-${q.id}-p-${idx}`}
+                    text={part}
+                  />
+                );
               }
               gapIndex += 1;
               const gapId = `${q.id}-${gapIndex}`;
@@ -422,7 +445,9 @@ function TableCompletionQuestions(props: ListeningQuestionsProps) {
                 key={q.id}
                 className={`border-b border-slate-100 ${answeredWrapClass(q.id, props)}`}
               >
-                <td className="px-4 py-3 text-slate-600">{q.questionNumber}. {q.text}</td>
+                <td className="px-4 py-3 text-slate-600">
+                  <QuestionPromptText q={q} />
+                </td>
                 <td className="px-4 py-3" colSpan={Math.max(1, headers.length - 1)}>
                   <input
                     type="text"
@@ -476,7 +501,9 @@ function FlowchartQuestions(props: ListeningQuestionsProps) {
                 {q.questionNumber}.
               </p>
               {q.text && !q.text.includes("___") ? (
-                <p className="text-slate-700">{q.text}</p>
+                <p className="text-slate-700">
+                  <HighlightableInlineText blockId={`lq-${q.id}`} text={q.text} />
+                </p>
               ) : (
                 <input
                   type="text"
@@ -524,7 +551,7 @@ function SentenceOrShortQuestions(props: ListeningQuestionsProps) {
             } ${showResults && result && !result.correct ? "bg-red-50/40" : ""} ${answeredWrapClass(q.id, props, ANSWER_ROW)}`}
           >
             <p className="text-sm font-medium leading-snug text-[#0d1b35]">
-              {q.questionNumber}. {q.text}
+              <QuestionPromptText q={q} />
             </p>
             <div className="w-full min-w-0 sm:max-w-[14rem]">
               <TextInput

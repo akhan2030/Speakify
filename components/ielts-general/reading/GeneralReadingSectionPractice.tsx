@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
+import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import { plainTextToBlocks, type TextHighlight } from "@/lib/examHighlight";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
 import type { GtReadingPassage, GtReadingQuestion } from "@/lib/ielts-general/readingContent";
 import type { GtReadingScoreResult } from "@/lib/ielts-general/readingScore";
@@ -176,6 +178,7 @@ export default function GeneralReadingSectionPractice({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<GtReadingScoreResult | null>(null);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -189,6 +192,7 @@ export default function GeneralReadingSectionPractice({
       setMeta(json.meta);
       setPassage(json.passage);
       setAnswers({});
+      setHighlights([]);
       setResult(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Load failed");
@@ -288,9 +292,15 @@ export default function GeneralReadingSectionPractice({
           style={{ borderTopWidth: 4, borderTopColor: accent }}
         >
           <h2 className="text-lg font-bold text-[#0d1b35]">{passage.title}</h2>
-          <pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">
-            {passage.text}
-          </pre>
+          <div className="mt-4">
+            <ExamTextHighlighter
+              sectionId={passage.id}
+              blocks={plainTextToBlocks(passage.text, passage.id)}
+              highlights={highlights}
+              onHighlightsChange={setHighlights}
+              textClassName="text-sm leading-relaxed text-slate-700"
+            />
+          </div>
         </div>
 
         <div>

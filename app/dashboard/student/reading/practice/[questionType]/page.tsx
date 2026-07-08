@@ -14,6 +14,8 @@ import { initDailyLimit, fetchPassage } from "@/lib/useDailyLimitGate";
 import type { DailyLimitState } from "@/lib/useDailyLimitGate";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import MatchingHeadingsPanel from "@/components/reading/MatchingHeadingsPanel";
+import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import type { TextHighlight } from "@/lib/examHighlight";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 
 const PRACTICE_DURATION_SECONDS = 1200;
@@ -191,7 +193,7 @@ export default function ReadingPracticePage() {
   const [correctAnswers, setCorrectAnswers] = useState<Record<string, string>>({});
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [hoveredParagraph, setHoveredParagraph] = useState<string | null>(null);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{
     score: number;
@@ -227,6 +229,7 @@ export default function ReadingPracticePage() {
       setLoadError(null);
       setContent(null);
       setAnswers({});
+      setHighlights([]);
       setResult(null);
       setShowScreenLock(false);
       submittedRef.current = false;
@@ -468,26 +471,23 @@ export default function ReadingPracticePage() {
           <div className="lg:col-span-3">
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-bold text-[#0d1b35]">{content.title}</h2>
-              <div className="mt-4 space-y-4">
-                {content.paragraphs.map((paragraph) => (
-                  <div
-                    key={paragraph.id}
-                    onMouseEnter={() => setHoveredParagraph(paragraph.id)}
-                    onMouseLeave={() => setHoveredParagraph(null)}
-                    className={`rounded-lg border px-4 py-3 transition-colors ${
-                      hoveredParagraph === paragraph.id
-                        ? "border-[#c9972c] bg-[#c9972c]/5"
-                        : "border-transparent bg-slate-50"
-                    }`}
-                  >
+              <div className="mt-4">
+                <ExamTextHighlighter
+                  sectionId={content.passageId}
+                  blocks={content.paragraphs.map((p) => ({
+                    id: p.id,
+                    label: p.label,
+                    text: p.text,
+                  }))}
+                  highlights={highlights}
+                  onHighlightsChange={setHighlights}
+                  textClassName="text-sm leading-relaxed text-slate-700"
+                  renderBlockLabel={(block) => (
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      {paragraph.label}
+                      {block.label}
                     </p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-700">
-                      {paragraph.text}
-                    </p>
-                  </div>
-                ))}
+                  )}
+                />
               </div>
             </div>
           </div>

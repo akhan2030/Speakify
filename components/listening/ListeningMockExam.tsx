@@ -9,6 +9,7 @@ import DailyLimitReached from "@/components/DailyLimitReached";
 import ListeningExamPrepBanner from "@/components/ListeningExamPrepBanner";
 import ListeningSectionAnnouncer from "@/components/ListeningSectionAnnouncer";
 import { ListeningQuestionsColumn } from "@/components/listening/ListeningQuestionsColumn";
+import type { TextHighlight } from "@/lib/examHighlight";
 import {
   LISTENING_SECTION_META,
   MOCK_TARGET_SECONDS,
@@ -68,6 +69,9 @@ export default function ListeningMockExam() {
     Record<number, ListeningSectionData>
   >({});
   const [answers, setAnswers] = useState<Record<string | number, string>>({});
+  const [highlightsBySection, setHighlightsBySection] = useState<
+    Record<number, TextHighlight[]>
+  >({});
   const [timerSeconds, setTimerSeconds] = useState(PREP_SECONDS);
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -287,6 +291,7 @@ export default function ListeningMockExam() {
     setBankSetupRequired(false);
     setBankTestId(null);
     setAnswers({});
+    setHighlightsBySection({});
     setSectionsData({});
     setCurrentSection(1);
     setActiveGroupIndex(0);
@@ -712,6 +717,13 @@ export default function ListeningMockExam() {
                   sectionNumber={currentSection}
                   sectionTitle={sectionData.title}
                   answerKey="questionNumber"
+                  highlights={highlightsBySection[currentSection] ?? []}
+                  onHighlightsChange={(next) =>
+                    setHighlightsBySection((prev) => ({
+                      ...prev,
+                      [currentSection]: next,
+                    }))
+                  }
                 />
 
               </div>
