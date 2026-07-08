@@ -29,7 +29,7 @@ export const PROGRAM_TERMINOLOGY: Record<ProgramKind, ProgramTerminology> = {
     trackLabel: "My Pathway",
   },
   ielts: {
-    programName: "IELTS Accelerator",
+    programName: "IELTS Academic Accelerator",
     currentLevelLabel: "Current Track",
     progressLabel: "Band Estimate",
     readinessLabel: "IELTS Readiness",

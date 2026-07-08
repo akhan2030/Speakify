@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import {
+  resolveIeltsProgramDisplay,
+} from "@/lib/programs/ieltsProgramIdentity";
 import { getInitials } from "@/components/StudentSidebar";
 
 export type IeltsActivePage =
@@ -287,6 +290,22 @@ export default function IELTSSidebar({
   const [badges, setBadges] = useState<SidebarBadges | null>(null);
   const [trackName, setTrackName] = useState("Plus");
 
+  const sessionUser = session?.user as
+    | {
+        programType?: string | null;
+        enrolledPrograms?: unknown;
+        programSelected?: string | null;
+      }
+    | undefined;
+
+  const programDisplay = resolveIeltsProgramDisplay({
+    programType: sessionUser?.programType,
+    enrolledPrograms: sessionUser?.enrolledPrograms,
+    programSelected: sessionUser?.programSelected,
+    pathFallback: "ielts",
+    trackName,
+  });
+
   useEffect(() => {
     fetch("/api/student/ielts-dashboard")
       .then((r) => r.json())
@@ -309,7 +328,9 @@ export default function IELTSSidebar({
         <div className="flex flex-col items-center text-center">
           <div className="h-10 w-10 rounded-full bg-[#c9972c]" />
           <div className="mt-2 text-sm font-bold text-white">Speakify</div>
-          <div className="text-[10px] text-[#c9972c]">IELTS Accelerator</div>
+          <div className="px-1 text-[10px] leading-snug text-[#c9972c]">
+            {programDisplay.programLine}
+          </div>
         </div>
 
         <div className="mt-6 flex flex-col items-center text-center">
@@ -318,7 +339,7 @@ export default function IELTSSidebar({
           </div>
           <div className="mt-2 line-clamp-2 text-sm font-medium text-white">{name}</div>
           <div className="mt-1 rounded-full bg-[#c9972c]/20 px-2 py-0.5 text-[10px] font-semibold text-[#c9972c]">
-            {trackName} track
+            {programDisplay.trackBadge}
           </div>
         </div>
 

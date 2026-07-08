@@ -8,6 +8,7 @@ import {
   resolveAcceleratorTrack,
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
+import { resolvePaidProgramme, checkoutTrackLabel } from "@/lib/payments/checkoutLabels";
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,7 @@ export async function GET() {
     const { data: user } = await supabase
       .from("users")
       .select(
-        "checkout_track, accelerator_track, payment_status, placement_band, program_type, enrolled_programs"
+        "checkout_track, accelerator_track, payment_status, placement_band, program_type, program_selected, enrolled_programs"
       )
       .eq("id", studentId)
       .maybeSingle();
@@ -57,9 +58,17 @@ export async function GET() {
     }
 
     const meta = ACCELERATOR_TRACKS[purchasedTrack];
+    const programme = resolvePaidProgramme({
+      enrolledPrograms: user?.enrolled_programs,
+      programSelected: user?.program_selected ?? user?.program_type,
+    });
     return NextResponse.json({
       purchasedTrack,
-      trackLabel: `IELTS ${meta.name}`,
+      programme,
+      trackLabel: checkoutTrackLabel(programme, purchasedTrack),
+      programLine: programme === "ielts_general"
+        ? "IELTS General Training Accelerator"
+        : "IELTS Academic Accelerator",
       target: meta.target,
       weeks: meta.weekCount,
       duration: meta.duration,
