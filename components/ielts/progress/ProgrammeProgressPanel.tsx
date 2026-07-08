@@ -62,15 +62,27 @@ function WeekTimeline({ weeks }: { weeks: TrackWeek[] }) {
 
 export default function ProgrammeProgressPanel({
   onOpenWeeklyPlan,
+  apiPath = "/api/student/ielts-mission",
+  todayHref = "/dashboard/ielts/student/today",
+  mockExamHref = "/dashboard/ielts/student/mock-exam",
+  programmeLabel = "Accelerator programme",
+  weeklyPlanHref = "/dashboard/ielts/student/progress?tab=programme&view=weekly",
+  todayButtonLabel = "Start today's tasks →",
 }: {
   onOpenWeeklyPlan?: () => void;
+  apiPath?: string;
+  todayHref?: string;
+  mockExamHref?: string;
+  programmeLabel?: string;
+  weeklyPlanHref?: string;
+  todayButtonLabel?: string;
 }) {
   const [data, setData] = useState<TrackData | null>(null);
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/student/ielts-mission")
+    fetch(apiPath)
       .then((r) => r.json())
       .then((json) => {
         if (!json.error) {
@@ -79,7 +91,7 @@ export default function ProgrammeProgressPanel({
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [apiPath]);
 
   if (loading || !data) {
     return (
@@ -95,7 +107,7 @@ export default function ProgrammeProgressPanel({
   return (
     <div className="space-y-6">
       <header className="rounded-xl bg-[#0d1b35] p-6 text-white">
-        <p className="text-xs uppercase tracking-wide text-[#c9972c]">Accelerator programme</p>
+        <p className="text-xs uppercase tracking-wide text-[#c9972c]">{programmeLabel}</p>
         <h2 className="mt-1 text-xl font-bold md:text-2xl">
           {track.name} — Week {track.currentWeek} of {track.weekCount}
         </h2>
@@ -176,10 +188,10 @@ export default function ProgrammeProgressPanel({
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">
                     <Link
-                      href="/dashboard/ielts/student/today"
+                      href={todayHref}
                       className="rounded-lg bg-[#c9972c] px-4 py-2 text-sm font-bold text-[#0d1b35] hover:opacity-95"
                     >
-                      Start today&apos;s tasks →
+                      {todayButtonLabel}
                     </Link>
                     {onOpenWeeklyPlan ? (
                       <button
@@ -191,7 +203,7 @@ export default function ProgrammeProgressPanel({
                       </button>
                     ) : (
                       <Link
-                        href="/dashboard/ielts/student/progress?tab=weekly"
+                        href={weeklyPlanHref}
                         className="rounded-lg border border-[#0d9488] px-4 py-2 text-sm font-semibold text-[#0d9488] hover:bg-[#0d9488]/10"
                       >
                         Weekly plan →
@@ -227,7 +239,7 @@ export default function ProgrammeProgressPanel({
             You finished the {track.name} programme. Keep practising with mock exams.
           </p>
           <Link
-            href="/dashboard/ielts/student/mock-exam"
+            href={mockExamHref}
             className="mt-4 inline-flex rounded-xl bg-[#0d1b35] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#152a4d]"
           >
             Take a mock exam →

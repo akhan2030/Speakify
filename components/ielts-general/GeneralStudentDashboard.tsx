@@ -472,10 +472,16 @@ export default function GeneralStudentDashboard() {
             </div>
             <div className="mt-4 flex flex-wrap gap-4 text-sm">
               <Link
-                href={`${BASE}/progress?tab=readiness`}
+                href={`${BASE}/progress?tab=programme`}
                 className="font-semibold text-[#0d9488] hover:underline"
               >
-                My Progress →
+                Programme roadmap
+              </Link>
+              <Link
+                href={`${BASE}/progress?tab=readiness`}
+                className="font-semibold text-slate-500 hover:text-[#0d9488] hover:underline"
+              >
+                Readiness
               </Link>
               <Link
                 href={`${BASE}/progress?tab=history`}
@@ -758,10 +764,10 @@ export default function GeneralStudentDashboard() {
         </div>
 
         <Link
-          href={`${BASE}/progress?tab=readiness`}
+          href={`${BASE}/progress?tab=programme`}
           className="mt-4 inline-block text-sm font-semibold text-[#c9972c] hover:underline"
         >
-          Open My Progress →
+          Open programme roadmap →
         </Link>
       </section>
     </main>

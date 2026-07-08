@@ -74,10 +74,16 @@ function WeekSection({
   title,
   days,
   defaultOpenToday,
+  todayHref = "/dashboard/ielts/student/today",
+  todayLinkLabel = "Do today →",
+  todayButtonLabel = "Continue today's mission →",
 }: {
   title: string;
   days: WeekDay[];
   defaultOpenToday?: boolean;
+  todayHref?: string;
+  todayLinkLabel?: string;
+  todayButtonLabel?: string;
 }) {
   const [expanded, setExpanded] = useState<string | null>(() => {
     if (defaultOpenToday) {
@@ -144,10 +150,10 @@ function WeekSection({
                           <span className="text-xs text-slate-400">{task.minutes}m</span>
                           {d.canComplete && !task.completed ? (
                             <Link
-                              href="/dashboard/ielts/student/today"
+                              href={todayHref}
                               className="text-xs font-semibold text-[#0d9488] hover:underline"
                             >
-                              Do today →
+                              {todayLinkLabel}
                             </Link>
                           ) : (
                             <Link
@@ -163,10 +169,10 @@ function WeekSection({
                   </ul>
                   {d.isToday ? (
                     <Link
-                      href="/dashboard/ielts/student/today"
+                      href={todayHref}
                       className="mt-4 inline-block rounded-lg bg-[#c9972c] px-4 py-2 text-sm font-bold text-[#0d1b35] hover:opacity-95"
                     >
-                      Continue today&apos;s mission →
+                      {todayButtonLabel}
                     </Link>
                   ) : null}
                 </div>
@@ -179,18 +185,28 @@ function WeekSection({
   );
 }
 
-export default function WeeklyPlanPanel() {
+export default function WeeklyPlanPanel({
+  apiPath = "/api/student/ielts-mission",
+  todayHref = "/dashboard/ielts/student/today",
+  todayLinkLabel = "Do today →",
+  todayButtonLabel = "Continue today's mission →",
+}: {
+  apiPath?: string;
+  todayHref?: string;
+  todayLinkLabel?: string;
+  todayButtonLabel?: string;
+}) {
   const [data, setData] = useState<MissionPlan | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/student/ielts-mission")
+    fetch(apiPath)
       .then((r) => r.json())
       .then((json) => {
         if (!json.error) setData(json);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [apiPath]);
 
   if (loading || !data) {
     return (
@@ -206,8 +222,21 @@ export default function WeeklyPlanPanel() {
         {data.track.name} track · Week {data.track.currentWeek} of {data.track.weekCount} ·
         Sunday → Saturday
       </p>
-      <WeekSection title="This week" days={data.weeklyPlan.thisWeek} defaultOpenToday />
-      <WeekSection title="Next week" days={data.weeklyPlan.nextWeek} />
+      <WeekSection
+        title="This week"
+        days={data.weeklyPlan.thisWeek}
+        defaultOpenToday
+        todayHref={todayHref}
+        todayLinkLabel={todayLinkLabel}
+        todayButtonLabel={todayButtonLabel}
+      />
+      <WeekSection
+        title="Next week"
+        days={data.weeklyPlan.nextWeek}
+        todayHref={todayHref}
+        todayLinkLabel={todayLinkLabel}
+        todayButtonLabel={todayButtonLabel}
+      />
     </div>
   );
 }

@@ -203,7 +203,7 @@ const DAY_TASKS: Record<StudyDay, GeneralMissionTask[]> = {
       id: "plan-sunday",
       title: "Preview Sunday's mission",
       minutes: 5,
-      href: BASE,
+      href: `${BASE}/progress?tab=programme&view=weekly`,
       taskType: "planning",
     },
     {
