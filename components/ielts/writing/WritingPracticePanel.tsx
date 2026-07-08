@@ -7,8 +7,16 @@ import {
   lessonsForTrack,
   sharedWritingLessons,
 } from "@/lib/ielts/writingLessons";
+import {
+  setTask1QuestionById,
+  setTask2QuestionById,
+  type Task1Question,
+  type Task2Question,
+} from "@/lib/ielts/writingTaskData";
+import { recordPromptAttempt } from "@/lib/ielts/writingPromptAttempts";
 import WritingPracticeForm from "@/components/writing/WritingPracticeForm";
 import GuidedWritingMode from "@/components/writing/GuidedWritingMode";
+import WritingPromptPicker from "@/components/ielts/writing/WritingPromptPicker";
 
 type PracticeMode = "full" | "guided";
 
@@ -18,14 +26,44 @@ export default function WritingPracticePanel({
   defaultTaskType?: "task1" | "task2";
 }) {
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("full");
-  const [taskType, setTaskType] = useState<"task1" | "task2">(defaultTaskType);
+  const [taskType] = useState<"task1" | "task2">(defaultTaskType);
+  const [selectedTask1, setSelectedTask1] = useState<Task1Question | null>(null);
+  const [selectedTask2, setSelectedTask2] = useState<Task2Question | null>(null);
   const [essay, setEssay] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<string | null>(null);
   const [overallBand, setOverallBand] = useState<number | null>(null);
 
+  const selectedPrompt = taskType === "task1" ? selectedTask1 : selectedTask2;
+  const promptId = selectedPrompt?.id;
+
   const fullModeLabel = taskType === "task1" ? "Full Report Mode" : "Full Essay Mode";
+
+  function handleSelectPrompt(prompt: Task1Question | Task2Question) {
+    if (taskType === "task1") {
+      const t1 = prompt as Task1Question;
+      setSelectedTask1(t1);
+      setTask1QuestionById(t1.id);
+    } else {
+      const t2 = prompt as Task2Question;
+      setSelectedTask2(t2);
+      setTask2QuestionById(t2.id);
+    }
+    setEssay("");
+    setEvaluation(null);
+    setOverallBand(null);
+    setError(null);
+  }
+
+  function handleChangePrompt() {
+    if (taskType === "task1") setSelectedTask1(null);
+    else setSelectedTask2(null);
+    setEssay("");
+    setEvaluation(null);
+    setOverallBand(null);
+    setError(null);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,13 +87,19 @@ export default function WritingPracticePanel({
       const res = await fetch("/api/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ essay, taskType, mode: "full" }),
+        body: JSON.stringify({
+          essay,
+          taskType,
+          mode: "full",
+          promptId,
+        }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.success) {
         setError(data?.error || "Evaluation failed. Try again.");
         return;
       }
+      if (promptId) recordPromptAttempt(promptId);
       setEvaluation(String(data.evaluation || ""));
       if (data.bands?.overall != null) {
         setOverallBand(Number(data.bands.overall));
@@ -80,8 +124,27 @@ export default function WritingPracticePanel({
     setError(null);
   }
 
+  if (!selectedPrompt) {
+    return <WritingPromptPicker taskType={taskType} onSelectPrompt={handleSelectPrompt} />;
+  }
+
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={handleChangePrompt}
+          className="text-sm font-semibold text-[#0d9488] hover:underline"
+        >
+          ← Choose a different prompt
+        </button>
+        <span className="text-xs text-slate-500">
+          {taskType === "task1"
+            ? (selectedPrompt as Task1Question).title
+            : (selectedPrompt as Task2Question).title}
+        </span>
+      </div>
+
       <Link
         href={`/dashboard/ielts/student/writing?tab=lessons&track=${taskType}`}
         className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm transition-colors hover:border-[#c9972c]/40 hover:bg-[#c9972c]/5"
@@ -125,7 +188,13 @@ export default function WritingPracticePanel({
       </div>
 
       {practiceMode === "guided" ? (
-        <GuidedWritingMode taskType={taskType} />
+        <GuidedWritingMode
+          taskType={taskType}
+          task1Question={selectedTask1 ?? undefined}
+          task2Question={selectedTask2 ?? undefined}
+          promptId={promptId}
+          hidePromptPicker
+        />
       ) : evaluation ? (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           {overallBand != null ? (
@@ -152,13 +221,16 @@ export default function WritingPracticePanel({
       ) : (
         <WritingPracticeForm
           taskType={taskType}
-          onTaskTypeChange={setTaskType}
+          onTaskTypeChange={() => {}}
           essay={essay}
           onEssayChange={setEssay}
           loading={loading}
           error={error}
           onSubmit={onSubmit}
           hideTaskToggle
+          hidePromptPicker
+          task1Question={selectedTask1 ?? undefined}
+          task2Question={selectedTask2 ?? undefined}
           formClassName="space-y-6"
           submitLabel={`Submit for AI score (${criteriaSummaryForTask(taskType)})`}
         />

@@ -24,13 +24,13 @@ function getSupabase() {
  * Best-effort persistence of a completed Academic writing attempt.
  * Never throws — a save failure must not break the evaluation response.
  */
-async function persistWritingAttempt({ studentId, taskType, essay, evaluation, bands }) {
+async function persistWritingAttempt({ studentId, taskType, essay, evaluation, bands, promptId }) {
   if (!studentId) return;
   const supabase = getSupabase();
   if (!supabase) return;
 
   try {
-    const { error } = await supabase.from("writing_attempts").insert({
+    const row = {
       student_id: studentId,
       task_type: taskType,
       essay_text: essay,
@@ -40,7 +40,12 @@ async function persistWritingAttempt({ studentId, taskType, essay, evaluation, b
       band_cc: bands?.cc ?? null,
       band_lr: bands?.lr ?? null,
       band_gra: bands?.gra ?? null,
-    });
+    };
+    if (typeof promptId === "string" && promptId.trim()) {
+      row.prompt_id = promptId.trim();
+    }
+
+    const { error } = await supabase.from("writing_attempts").insert(row);
     if (error) {
       console.warn("[/api/evaluate] writing_attempts insert failed:", error.message);
     }
@@ -124,12 +129,14 @@ export async function POST(request) {
       const { evaluation, bands } = await evaluateEssay(essay, taskType);
 
       const session = await getServerSession(authOptions);
+      const promptId = typeof body?.promptId === "string" ? body.promptId : null;
       await persistWritingAttempt({
         studentId: session?.user?.id,
         taskType,
         essay,
         evaluation,
         bands,
+        promptId,
       });
 
       return NextResponse.json(
@@ -146,6 +153,8 @@ export async function POST(request) {
       );
     }
 
+    const promptId = typeof body?.promptId === "string" ? body.promptId : null;
+
     const { evaluation, bands } = await evaluateEssay(essay, taskType);
 
     const session = await getServerSession(authOptions);
@@ -155,6 +164,7 @@ export async function POST(request) {
       essay,
       evaluation,
       bands,
+      promptId,
     });
 
     return NextResponse.json({ evaluation, bands, success: true }, { status: 200 });

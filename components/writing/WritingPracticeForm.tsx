@@ -35,6 +35,9 @@ type Props = {
   error: string | null;
   onSubmit: (e: React.FormEvent) => void;
   hideTaskToggle?: boolean;
+  hidePromptPicker?: boolean;
+  task1Question?: Task1Question;
+  task2Question?: Task2Question;
   formClassName?: string;
   submitLabel?: string;
 };
@@ -48,16 +51,25 @@ export default function WritingPracticeForm({
   error,
   onSubmit,
   hideTaskToggle = false,
+  hidePromptPicker = false,
+  task1Question: task1QuestionProp,
+  task2Question: task2QuestionProp,
   formClassName = "mt-8 space-y-6",
   submitLabel = "Get Band Score",
 }: Props) {
-  const [task1Question, setTask1Question] = useState<Task1Question | null>(null);
-  const [task2Question, setTask2Question] = useState<Task2Question | null>(null);
+  const [task1Question, setTask1Question] = useState<Task1Question | null>(
+    task1QuestionProp ?? null
+  );
+  const [task2Question, setTask2Question] = useState<Task2Question | null>(
+    task2QuestionProp ?? null
+  );
 
   useEffect(() => {
-    setTask1Question(getSessionTask1Question());
-    setTask2Question(getSessionTask2Question());
-  }, []);
+    if (task1QuestionProp) setTask1Question(task1QuestionProp);
+    else setTask1Question(getSessionTask1Question());
+    if (task2QuestionProp) setTask2Question(task2QuestionProp);
+    else setTask2Question(getSessionTask2Question());
+  }, [task1QuestionProp, task2QuestionProp]);
 
   const words = useMemo(() => countWords(essay), [essay]);
   const minWords = taskType === "task1" ? 150 : 250;
@@ -125,38 +137,48 @@ export default function WritingPracticeForm({
           <span className="rounded-full bg-[#0d1b35] px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
             IELTS Academic — Writing {taskType === "task1" ? "Task 1" : "Task 2"}
           </span>
-          {taskType === "task1" ? (
-            <label className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-medium">Visual type:</span>
-              <select
-                value={TASK1_QUESTIONS.findIndex((q) => q.id === task1Question.id)}
-                onChange={(e) => handleTask1Select(Number(e.target.value))}
-                disabled={loading}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
-              >
-                {TASK1_QUESTIONS.map((q, i) => (
-                  <option key={q.id} value={i}>
-                    {VISUAL_TYPE_LABELS[q.visualType]}
-                  </option>
-                ))}
-              </select>
-            </label>
+          {!hidePromptPicker ? (
+            taskType === "task1" ? (
+              <label className="flex items-center gap-2 text-xs text-slate-600">
+                <span className="font-medium">Visual type:</span>
+                <select
+                  value={TASK1_QUESTIONS.findIndex((q) => q.id === task1Question.id)}
+                  onChange={(e) => handleTask1Select(Number(e.target.value))}
+                  disabled={loading}
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
+                >
+                  {TASK1_QUESTIONS.map((q, i) => (
+                    <option key={q.id} value={i}>
+                      {VISUAL_TYPE_LABELS[q.visualType]} — {q.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label className="flex items-center gap-2 text-xs text-slate-600">
+                <span className="font-medium">Essay type:</span>
+                <select
+                  value={TASK2_QUESTIONS.findIndex((q) => q.id === task2Question.id)}
+                  onChange={(e) => handleTask2Select(Number(e.target.value))}
+                  disabled={loading}
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
+                >
+                  {TASK2_QUESTIONS.map((q, i) => (
+                    <option key={q.id} value={i}>
+                      {q.label} — {q.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )
+          ) : taskType === "task1" ? (
+            <span className="rounded-full bg-[#0d9488]/10 px-2.5 py-1 text-xs font-semibold text-[#0d9488]">
+              {VISUAL_TYPE_LABELS[task1Question.visualType]}
+            </span>
           ) : (
-            <label className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-medium">Essay type:</span>
-              <select
-                value={TASK2_QUESTIONS.findIndex((q) => q.id === task2Question.id)}
-                onChange={(e) => handleTask2Select(Number(e.target.value))}
-                disabled={loading}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
-              >
-                {TASK2_QUESTIONS.map((q, i) => (
-                  <option key={q.id} value={i}>
-                    {q.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <span className="rounded-full bg-[#0d9488]/10 px-2.5 py-1 text-xs font-semibold text-[#0d9488]">
+              {task2Question.label}
+            </span>
           )}
         </div>
 

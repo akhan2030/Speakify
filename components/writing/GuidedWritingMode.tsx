@@ -13,6 +13,7 @@ import {
 } from "@/lib/ielts/writingTaskData";
 import WritingTaskVisual from "@/components/writing/WritingTaskVisual";
 import { getGuidedSteps, type GuidedStep } from "@/lib/ielts/writingGuidedMode";
+import { recordPromptAttempt } from "@/lib/ielts/writingPromptAttempts";
 import ParagraphFeedbackCard, {
   type ParagraphFeedbackData,
 } from "@/components/writing/ParagraphFeedbackCard";
@@ -32,6 +33,10 @@ const VISUAL_TYPE_LABELS: Record<Task1Question["visualType"], string> = {
 
 type Props = {
   taskType: "task1" | "task2";
+  task1Question?: Task1Question;
+  task2Question?: Task2Question;
+  promptId?: string;
+  hidePromptPicker?: boolean;
 };
 
 function StepProgressBar({
@@ -89,6 +94,7 @@ function QuestionPanel({
   loading,
   onTask1Select,
   onTask2Select,
+  hidePromptPicker = false,
 }: {
   taskType: "task1" | "task2";
   task1Question: Task1Question;
@@ -96,6 +102,7 @@ function QuestionPanel({
   loading: boolean;
   onTask1Select: (index: number) => void;
   onTask2Select: (index: number) => void;
+  hidePromptPicker?: boolean;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 shadow-sm">
@@ -104,22 +111,28 @@ function QuestionPanel({
           IELTS Academic — Writing {taskType === "task1" ? "Task 1" : "Task 2"}
         </span>
         {taskType === "task1" ? (
-          <label className="flex items-center gap-2 text-xs text-slate-600">
-            <span className="font-medium">Visual type:</span>
-            <select
-              value={TASK1_QUESTIONS.findIndex((q) => q.id === task1Question.id)}
-              onChange={(e) => onTask1Select(Number(e.target.value))}
-              disabled={loading}
-              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
-            >
-              {TASK1_QUESTIONS.map((q, i) => (
-                <option key={q.id} value={i}>
-                  {VISUAL_TYPE_LABELS[q.visualType]}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
+          !hidePromptPicker ? (
+            <label className="flex items-center gap-2 text-xs text-slate-600">
+              <span className="font-medium">Visual type:</span>
+              <select
+                value={TASK1_QUESTIONS.findIndex((q) => q.id === task1Question.id)}
+                onChange={(e) => onTask1Select(Number(e.target.value))}
+                disabled={loading}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
+              >
+                {TASK1_QUESTIONS.map((q, i) => (
+                  <option key={q.id} value={i}>
+                    {VISUAL_TYPE_LABELS[q.visualType]} — {q.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <span className="rounded-full bg-[#0d9488]/10 px-2.5 py-1 text-xs font-semibold text-[#0d9488]">
+              {VISUAL_TYPE_LABELS[task1Question.visualType]}
+            </span>
+          )
+        ) : !hidePromptPicker ? (
           <label className="flex items-center gap-2 text-xs text-slate-600">
             <span className="font-medium">Essay type:</span>
             <select
@@ -130,11 +143,15 @@ function QuestionPanel({
             >
               {TASK2_QUESTIONS.map((q, i) => (
                 <option key={q.id} value={i}>
-                  {q.label}
+                  {q.label} — {q.title}
                 </option>
               ))}
             </select>
           </label>
+        ) : (
+          <span className="rounded-full bg-[#0d9488]/10 px-2.5 py-1 text-xs font-semibold text-[#0d9488]">
+            {task2Question.label}
+          </span>
         )}
       </div>
 
@@ -158,10 +175,16 @@ function QuestionPanel({
   );
 }
 
-export default function GuidedWritingMode({ taskType }: Props) {
+export default function GuidedWritingMode({
+  taskType,
+  task1Question: task1Prop,
+  task2Question: task2Prop,
+  promptId,
+  hidePromptPicker = false,
+}: Props) {
   const steps = useMemo(() => getGuidedSteps(taskType), [taskType]);
-  const [task1Question, setTask1Question] = useState<Task1Question | null>(null);
-  const [task2Question, setTask2Question] = useState<Task2Question | null>(null);
+  const [task1Question, setTask1Question] = useState<Task1Question | null>(task1Prop ?? null);
+  const [task2Question, setTask2Question] = useState<Task2Question | null>(task2Prop ?? null);
   const [stepIndex, setStepIndex] = useState(0);
   const [p1Text, setP1Text] = useState("");
   const [p2Text, setP2Text] = useState("");
@@ -183,9 +206,11 @@ export default function GuidedWritingMode({ taskType }: Props) {
   const essayType = task2Question?.essayType ?? task2Question?.label;
 
   useEffect(() => {
-    setTask1Question(getSessionTask1Question());
-    setTask2Question(getSessionTask2Question());
-  }, []);
+    if (task1Prop) setTask1Question(task1Prop);
+    else setTask1Question(getSessionTask1Question());
+    if (task2Prop) setTask2Question(task2Prop);
+    else setTask2Question(getSessionTask2Question());
+  }, [task1Prop, task2Prop]);
 
   useEffect(() => {
     resetSession();
@@ -306,6 +331,7 @@ export default function GuidedWritingMode({ taskType }: Props) {
     setError(null);
 
     if (pendingFeedback.isFinal) {
+      if (promptId) recordPromptAttempt(promptId);
       setPhase("complete");
       return;
     }
@@ -333,6 +359,7 @@ export default function GuidedWritingMode({ taskType }: Props) {
           loading
           onTask1Select={handleTask1Select}
           onTask2Select={handleTask2Select}
+          hidePromptPicker={hidePromptPicker}
         />
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <ParagraphFeedbackCard data={finalFeedback} taskType={taskType} />
@@ -357,6 +384,7 @@ export default function GuidedWritingMode({ taskType }: Props) {
         loading={loading}
         onTask1Select={handleTask1Select}
         onTask2Select={handleTask2Select}
+        hidePromptPicker={hidePromptPicker}
       />
 
       <StepProgressBar
