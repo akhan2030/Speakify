@@ -71,23 +71,14 @@ const PRE_MOCK_TIPS = [
 
 
 type MockItem = {
-
   id: number | null;
-
   mockNumber: number;
-
   topic: string;
-
   generationDate: string | null;
-
   status: "available" | "completed";
-
   overallBand: number | null;
-
   attemptId: string | null;
-
   isCurrent: boolean;
-
 };
 
 
@@ -233,21 +224,15 @@ function TipsPanel({ className = "" }: { className?: string }) {
 
 
 function MockExamCard({
-
   mock,
-
+  displayNumber,
   onStart,
-
   loadingMockId,
-
 }: {
-
   mock: MockItem;
-
+  displayNumber: number;
   onStart: (mock: MockItem) => void;
-
   loadingMockId: number | null;
-
 }) {
 
   const isCompleted = mock.status === "completed";
@@ -290,7 +275,7 @@ function MockExamCard({
 
       >
 
-        Mock Exam {formatMockNumber(mock.mockNumber)}
+        Mock Exam {formatMockNumber(displayNumber)}
 
       </span>
 
@@ -458,7 +443,7 @@ function MockExamCard({
               Starting…
             </span>
           ) : (
-            `Start Mock Exam ${formatMockNumber(mock.mockNumber)}`
+            `Start Mock Exam ${formatMockNumber(displayNumber)}`
           )}
 
         </button>
@@ -723,20 +708,14 @@ export default function IeltsMockExamPage() {
               </p>
             ) : null}
 
-            {mocks.map((mock) => (
-
+            {mocks.map((mock, index) => (
               <MockExamCard
-
                 key={mock.mockNumber}
-
                 mock={mock}
-
+                displayNumber={index + 1}
                 onStart={handleStartMock}
-
                 loadingMockId={loadingMockId}
-
               />
-
             ))}
 
           </div>
