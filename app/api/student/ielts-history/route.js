@@ -40,7 +40,7 @@ export async function GET() {
 
     if (process.env.SUPABASE_SERVICE_KEY) {
       const supabase = getSupabase();
-      const [completionsRes, bandRes] = await Promise.all([
+      const [completionsRes, bandRes, gtHistoryRes, gtAttemptsRes] = await Promise.all([
         supabase
           .from("daily_task_completions")
           .select("task_id, completed_at, task_type, time_spent_minutes")
@@ -53,20 +53,43 @@ export async function GET() {
           .eq("student_id", studentId)
           .order("recorded_at", { ascending: true })
           .limit(50),
+        supabase
+          .from("ielts_general_student_history")
+          .select("skill, band_score, recorded_at")
+          .eq("student_id", studentId)
+          .order("recorded_at", { ascending: true })
+          .limit(50),
+        supabase
+          .from("ielts_general_attempts")
+          .select("completed_at, time_spent_minutes, skill, task_type")
+          .eq("student_id", studentId)
+          .eq("status", "completed")
+          .gte("completed_at", `${rangeStart}T00:00:00`)
+          .order("completed_at", { ascending: true }),
       ]);
 
       const completions = completionsRes.data ?? [];
       const byDate = new Map();
 
-      for (const row of completions) {
-        const date = String(row.completed_at).slice(0, 10);
+      function addStudyEntry(date, taskType, minutes) {
         if (!byDate.has(date)) {
           byDate.set(date, { count: 0, types: new Set(), minutes: 0 });
         }
         const entry = byDate.get(date);
         entry.count += 1;
-        entry.types.add(row.task_type ?? "study");
-        entry.minutes += Number(row.time_spent_minutes) || 0;
+        entry.types.add(taskType ?? "study");
+        entry.minutes += Number(minutes) || 0;
+      }
+
+      for (const row of completions) {
+        const date = String(row.completed_at).slice(0, 10);
+        addStudyEntry(date, row.task_type, row.time_spent_minutes);
+      }
+
+      for (const row of gtAttemptsRes.data ?? []) {
+        const date = String(row.completed_at).slice(0, 10);
+        const skill = String(row.skill ?? row.task_type ?? "study").toLowerCase();
+        addStudyEntry(date, skill, row.time_spent_minutes);
       }
 
       for (let i = 56; i >= 0; i -= 1) {
@@ -84,7 +107,11 @@ export async function GET() {
         });
       }
 
-      bandTrend = buildBandTrendFromHistory(bandRes.data ?? [], profile.currentBand);
+      const bandRows = [
+        ...(bandRes.data ?? []),
+        ...(gtHistoryRes.data ?? []),
+      ];
+      bandTrend = buildBandTrendFromHistory(bandRows, profile.currentBand);
 
       const weekMap = new Map();
       for (const row of completions) {
@@ -92,6 +119,15 @@ export async function GET() {
         const d = new Date(`${date}T12:00:00`);
         const weekStart = addDays(date, -d.getDay());
         weekMap.set(weekStart, (weekMap.get(weekStart) ?? 0) + (Number(row.time_spent_minutes) || 15) / 60);
+      }
+      for (const row of gtAttemptsRes.data ?? []) {
+        const date = String(row.completed_at).slice(0, 10);
+        const d = new Date(`${date}T12:00:00`);
+        const weekStart = addDays(date, -d.getDay());
+        weekMap.set(
+          weekStart,
+          (weekMap.get(weekStart) ?? 0) + (Number(row.time_spent_minutes) || 15) / 60
+        );
       }
       weeklyHours = [...weekMap.entries()]
         .sort(([a], [b]) => a.localeCompare(b))

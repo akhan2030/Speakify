@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
 import BandTrendChart from "@/components/ielts/dashboard/BandTrendChart";
 import StudyHistoryCalendar from "@/components/ielts/StudyHistoryCalendar";
+import { HistoryEmptyState } from "@/components/ielts/progress/AchievementCard";
 
 type HistoryData = {
   days: Array<{
@@ -19,18 +20,28 @@ type HistoryData = {
   targetBand: number;
 };
 
-export default function HistoryProgressPanel() {
+const DEFAULT_API = "/api/student/ielts-history";
+
+export default function HistoryProgressPanel({
+  apiPath = DEFAULT_API,
+  todayHref = "/dashboard/ielts/student/today",
+  practiceHref = "/dashboard/ielts/student/practice",
+}: {
+  apiPath?: string;
+  todayHref?: string;
+  practiceHref?: string;
+}) {
   const [data, setData] = useState<HistoryData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/student/ielts-history")
+    fetch(apiPath)
       .then((r) => r.json())
       .then((json) => {
         if (!json.error) setData(json);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [apiPath]);
 
   if (loading || !data) {
     return (
@@ -40,15 +51,22 @@ export default function HistoryProgressPanel() {
     );
   }
 
+  const isEmpty = data.totalStudyDays === 0;
   const maxHours = Math.max(...data.weeklyHours.map((w) => w.hours), 1);
 
   return (
     <div>
       <p className="text-sm text-slate-600">
-        {data.totalStudyDays} study days in the last 8 weeks.
+        {isEmpty
+          ? "No study days logged yet in the last 8 weeks."
+          : `${data.totalStudyDays} study days in the last 8 weeks.`}
       </p>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      {isEmpty ? (
+        <HistoryEmptyState todayHref={todayHref} practiceHref={practiceHref} />
+      ) : null}
+
+      <div className={`grid gap-6 lg:grid-cols-2 ${isEmpty ? "mt-6" : "mt-6"}`}>
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="font-bold text-[#0d1b35]">Study calendar</h3>
           <p className="mt-1 text-xs text-slate-500">Last 8 weeks — tap a day for details</p>
@@ -61,7 +79,11 @@ export default function HistoryProgressPanel() {
           <h3 className="font-bold text-[#0d1b35]">Band score trend</h3>
           <p className="mt-1 text-xs text-slate-500">Overall estimate over time</p>
           <div className="mt-4">
-            <BandTrendChart points={data.bandTrend} target={data.targetBand} />
+            <BandTrendChart
+              points={data.bandTrend}
+              target={data.targetBand}
+              emptyCtaHref={todayHref}
+            />
           </div>
         </section>
       </div>

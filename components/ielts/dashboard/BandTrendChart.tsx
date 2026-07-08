@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 type TrendPoint = {
   date: string;
   label: string;
@@ -9,15 +11,27 @@ type TrendPoint = {
 export default function BandTrendChart({
   points,
   target,
+  emptyCtaHref,
 }: {
   points: TrendPoint[];
   target: number;
+  emptyCtaHref?: string;
 }) {
   if (!points.length) {
     return (
-      <p className="text-sm text-slate-500">
-        Complete a mock or skill practice to start tracking your band trend.
-      </p>
+      <div className="space-y-3">
+        <p className="text-sm text-slate-500">
+          Complete a mock or skill practice to start tracking your band trend.
+        </p>
+        {emptyCtaHref ? (
+          <Link
+            href={emptyCtaHref}
+            className="inline-flex rounded-lg bg-[#c9972c] px-4 py-2 text-sm font-bold text-[#0d1b35] hover:opacity-95"
+          >
+            Start your first study session →
+          </Link>
+        ) : null}
+      </div>
     );
   }
 

@@ -470,30 +470,48 @@ export default function GeneralStudentDashboard() {
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-sm text-slate-500">
-              Full progress view —{" "}
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
               <Link
-                href={`${BASE}/progress`}
+                href={`${BASE}/progress?tab=readiness`}
                 className="font-semibold text-[#0d9488] hover:underline"
               >
-                IELTS Readiness →
+                My Progress →
               </Link>
-            </p>
+              <Link
+                href={`${BASE}/progress?tab=history`}
+                className="font-semibold text-slate-500 hover:text-[#0d9488] hover:underline"
+              >
+                Study history
+              </Link>
+              <Link
+                href={`${BASE}/progress?tab=achievements`}
+                className="font-semibold text-slate-500 hover:text-[#0d9488] hover:underline"
+              >
+                Achievements
+              </Link>
+            </div>
           </div>
 
           {/* Band trend chart */}
-          {data.bandTrend?.length || data.projection ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-              <h3 className="font-bold text-[#0d1b35]">Band score trend</h3>
-              <p className="mt-1 text-xs text-slate-500">Progress over time vs your target</p>
-              <div className="mt-4">
-                <BandTrendChart
-                  points={data.bandTrend ?? []}
-                  target={data.bands.target}
-                />
-              </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+            <h3 className="font-bold text-[#0d1b35]">Band score trend</h3>
+            <p className="mt-1 text-xs text-slate-500">Progress over time vs your target</p>
+            <div className="mt-4">
+              <BandTrendChart
+                points={data.bandTrend ?? []}
+                target={data.bands.target}
+                emptyCtaHref={BASE}
+              />
             </div>
-          ) : null}
+            {!data.bandTrend?.length ? (
+              <Link
+                href={`${BASE}/progress?tab=history`}
+                className="mt-3 inline-block text-xs font-semibold text-[#0d9488] hover:underline"
+              >
+                Open study history →
+              </Link>
+            ) : null}
+          </div>
 
           {/* Weakest Skill Alert */}
           {data.weakestSkill.showAlert ? (
@@ -739,7 +757,12 @@ export default function GeneralStudentDashboard() {
           <ProgressBar percent={data.track.progressPercent} className="bg-[#0d9488]" />
         </div>
 
-        <p className="mt-4 text-sm text-slate-500">Full week plan view coming soon.</p>
+        <Link
+          href={`${BASE}/progress?tab=readiness`}
+          className="mt-4 inline-block text-sm font-semibold text-[#c9972c] hover:underline"
+        >
+          Open My Progress →
+        </Link>
       </section>
     </main>
   );

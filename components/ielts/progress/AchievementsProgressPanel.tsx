@@ -2,30 +2,44 @@
 
 import { useEffect, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
-import { IELTS_ACHIEVEMENTS } from "@/lib/ielts/achievements";
+import { IELTS_ACHIEVEMENTS, formatAchievementProgress } from "@/lib/ielts/achievements";
+import AchievementCard, { type AchievementCardData } from "@/components/ielts/progress/AchievementCard";
 
-type Achievement = {
-  id: string;
-  title: string;
-  icon: string;
-  desc: string;
-  earned: boolean;
-};
+const DEFAULT_API = "/api/student/ielts-achievements";
 
-export default function AchievementsProgressPanel() {
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+export default function AchievementsProgressPanel({
+  apiPath = DEFAULT_API,
+}: {
+  apiPath?: string;
+}) {
+  const [achievements, setAchievements] = useState<AchievementCardData[]>([]);
   const [earnedCount, setEarnedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/student/ielts-achievements")
+    fetch(apiPath)
       .then((r) => r.json())
       .then((json) => {
         if (json.error) {
           setError(json.error);
-          setAchievements(IELTS_ACHIEVEMENTS.map((a) => ({ ...a, earned: false })));
+          setAchievements(
+            IELTS_ACHIEVEMENTS.map((a) => ({
+              ...a,
+              earned: false,
+              progress: formatAchievementProgress(a.id, {
+                tasksCompleted: 0,
+                streak: 0,
+                mocksTaken: 0,
+                currentBand: null,
+                writingAttempts: 0,
+                wordsMastered: 0,
+                skillsAttempted: 0,
+                trackProgressPercent: 0,
+              }, false),
+            }))
+          );
           setTotalCount(IELTS_ACHIEVEMENTS.length);
           return;
         }
@@ -35,11 +49,26 @@ export default function AchievementsProgressPanel() {
       })
       .catch(() => {
         setError("Could not load achievements");
-        setAchievements(IELTS_ACHIEVEMENTS.map((a) => ({ ...a, earned: false })));
+        setAchievements(
+          IELTS_ACHIEVEMENTS.map((a) => ({
+            ...a,
+            earned: false,
+            progress: formatAchievementProgress(a.id, {
+              tasksCompleted: 0,
+              streak: 0,
+              mocksTaken: 0,
+              currentBand: null,
+              writingAttempts: 0,
+              wordsMastered: 0,
+              skillsAttempted: 0,
+              trackProgressPercent: 0,
+            }, false),
+          }))
+        );
         setTotalCount(IELTS_ACHIEVEMENTS.length);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [apiPath]);
 
   if (loading) {
     return (
@@ -50,12 +79,13 @@ export default function AchievementsProgressPanel() {
   }
 
   const earned = achievements.filter((a) => a.earned);
-  const locked = achievements.filter((a) => !a.earned);
+  const inProgress = achievements.filter((a) => !a.earned);
 
   return (
     <div>
       <p className="text-sm text-slate-600">
-        {earnedCount} of {totalCount} milestones unlocked on your IELTS journey.
+        {earnedCount} of {totalCount} milestones unlocked — all counts come from your logged study
+        activity, not defaults.
       </p>
 
       {error ? (
@@ -73,34 +103,20 @@ export default function AchievementsProgressPanel() {
           <h3 className="mt-8 text-sm font-bold uppercase tracking-wide text-slate-500">Earned</h3>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {earned.map((m) => (
-              <div
-                key={m.id}
-                className="rounded-xl border border-[#c9972c] bg-[#c9972c]/10 p-4"
-              >
-                <span className="text-2xl">{m.icon}</span>
-                <p className="mt-2 font-semibold text-[#0d1b35]">{m.title}</p>
-                <p className="mt-1 text-xs text-slate-600">{m.desc}</p>
-                <p className="mt-2 text-xs font-semibold text-green-700">Earned ✓</p>
-              </div>
+              <AchievementCard key={m.id} achievement={m} variant="earned" />
             ))}
           </div>
         </>
       ) : null}
 
-      {locked.length ? (
+      {inProgress.length ? (
         <>
-          <h3 className="mt-8 text-sm font-bold uppercase tracking-wide text-slate-500">Locked</h3>
+          <h3 className="mt-8 text-sm font-bold uppercase tracking-wide text-slate-500">
+            {earned.length ? "In progress" : "Milestones"}
+          </h3>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {locked.map((m) => (
-              <div
-                key={m.id}
-                className="rounded-xl border border-slate-200 bg-white p-4 opacity-70"
-              >
-                <span className="text-2xl grayscale">{m.icon}</span>
-                <p className="mt-2 font-semibold text-[#0d1b35]">{m.title}</p>
-                <p className="mt-1 text-xs text-slate-500">{m.desc}</p>
-                <p className="mt-2 text-xs text-slate-400">Locked</p>
-              </div>
+            {inProgress.map((m) => (
+              <AchievementCard key={m.id} achievement={m} variant="locked" />
             ))}
           </div>
         </>

@@ -449,27 +449,48 @@ export default function IeltsStudentDashboard() {
                 </div>
               ))}
             </div>
-            <Link
-              href="/dashboard/ielts/student/progress?tab=readiness"
-              className="mt-4 inline-block text-sm font-semibold text-[#0d9488] hover:underline"
-            >
-              View my progress →
-            </Link>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
+              <Link
+                href="/dashboard/ielts/student/progress?tab=readiness"
+                className="font-semibold text-[#0d9488] hover:underline"
+              >
+                My Progress →
+              </Link>
+              <Link
+                href="/dashboard/ielts/student/progress?tab=history"
+                className="font-semibold text-slate-500 hover:text-[#0d9488] hover:underline"
+              >
+                Study history
+              </Link>
+              <Link
+                href="/dashboard/ielts/student/progress?tab=achievements"
+                className="font-semibold text-slate-500 hover:text-[#0d9488] hover:underline"
+              >
+                Achievements
+              </Link>
+            </div>
           </div>
 
           {/* Band trend chart */}
-          {data.bandTrend?.length || data.projection ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-              <h3 className="font-bold text-[#0d1b35]">Band score trend</h3>
-              <p className="mt-1 text-xs text-slate-500">Progress over time vs your target</p>
-              <div className="mt-4">
-                <BandTrendChart
-                  points={data.bandTrend ?? []}
-                  target={data.bands.target}
-                />
-              </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+            <h3 className="font-bold text-[#0d1b35]">Band score trend</h3>
+            <p className="mt-1 text-xs text-slate-500">Progress over time vs your target</p>
+            <div className="mt-4">
+              <BandTrendChart
+                points={data.bandTrend ?? []}
+                target={data.bands.target}
+                emptyCtaHref="/dashboard/ielts/student/today"
+              />
             </div>
-          ) : null}
+            {!data.bandTrend?.length ? (
+              <Link
+                href="/dashboard/ielts/student/progress?tab=history"
+                className="mt-3 inline-block text-xs font-semibold text-[#0d9488] hover:underline"
+              >
+                Open study history →
+              </Link>
+            ) : null}
+          </div>
 
           {/* Weakest Skill Alert */}
           {data.weakestSkill.showAlert ? (
@@ -623,7 +644,7 @@ export default function IeltsStudentDashboard() {
           href="/dashboard/ielts/student/progress?tab=programme"
           className="mt-4 inline-block text-sm font-semibold text-[#c9972c] hover:underline"
         >
-          View full week plan →
+          Open programme roadmap →
         </Link>
       </section>
     </main>

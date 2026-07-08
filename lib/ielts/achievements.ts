@@ -10,6 +10,8 @@ export const IELTS_ACHIEVEMENTS = [
   { id: "graduate", title: "Track graduate", icon: "🏆", desc: "Complete your full accelerator track" },
 ] as const;
 
+export type AchievementId = (typeof IELTS_ACHIEVEMENTS)[number]["id"];
+
 export type AchievementContext = {
   tasksCompleted: number;
   streak: number;
@@ -19,6 +21,16 @@ export type AchievementContext = {
   wordsMastered: number;
   skillsAttempted: number;
   trackProgressPercent: number;
+};
+
+export type AchievementProgressKind = "count" | "percent" | "band" | "requirement";
+
+export type AchievementProgress = {
+  kind: AchievementProgressKind;
+  statusLabel: string;
+  current?: number;
+  target?: number;
+  progressPercent?: number;
 };
 
 export function evaluateAchievements(ctx: AchievementContext): string[] {
@@ -33,4 +45,88 @@ export function evaluateAchievements(ctx: AchievementContext): string[] {
   if (ctx.trackProgressPercent >= 50) earned.push("track-50");
   if (ctx.trackProgressPercent >= 100) earned.push("graduate");
   return earned;
+}
+
+function clampPercent(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function countProgressLabel(current: number, target: number, unit: string): AchievementProgress {
+  const progressPercent = clampPercent((current / target) * 100);
+  return {
+    kind: "count",
+    current,
+    target,
+    progressPercent,
+    statusLabel: `${current} of ${target} ${unit}`,
+  };
+}
+
+export function formatAchievementProgress(
+  achievementId: AchievementId,
+  ctx: AchievementContext,
+  earned: boolean
+): AchievementProgress {
+  if (earned) {
+    return { kind: "requirement", statusLabel: "Earned" };
+  }
+
+  switch (achievementId) {
+    case "writing-10":
+      return countProgressLabel(ctx.writingAttempts, 10, "tasks submitted");
+    case "streak-7":
+      return countProgressLabel(ctx.streak, 7, "days");
+    case "vocab-100":
+      return countProgressLabel(ctx.wordsMastered, 100, "words");
+    case "all-skills":
+      return countProgressLabel(ctx.skillsAttempted, 4, "skills practiced");
+    case "track-50":
+      return {
+        kind: "percent",
+        current: ctx.trackProgressPercent,
+        target: 50,
+        progressPercent: clampPercent((ctx.trackProgressPercent / 50) * 100),
+        statusLabel: `${ctx.trackProgressPercent}% of track (need 50%)`,
+      };
+    case "graduate":
+      return {
+        kind: "percent",
+        current: ctx.trackProgressPercent,
+        target: 100,
+        progressPercent: clampPercent(ctx.trackProgressPercent),
+        statusLabel: `${ctx.trackProgressPercent}% of track (need 100%)`,
+      };
+    case "band-6":
+      if (ctx.currentBand == null) {
+        return {
+          kind: "band",
+          statusLabel: "No band estimate yet — complete a mock or skill practice",
+        };
+      }
+      return {
+        kind: "band",
+        current: ctx.currentBand,
+        target: 6,
+        progressPercent: clampPercent((ctx.currentBand / 6) * 100),
+        statusLabel: `Band ${ctx.currentBand.toFixed(1)} (need 6.0)`,
+      };
+    case "first-lesson":
+      return {
+        kind: "requirement",
+        statusLabel:
+          ctx.tasksCompleted > 0
+            ? "Complete your first study task"
+            : "Not started — complete any task from Today's Mission",
+      };
+    case "first-mock":
+      return {
+        kind: "requirement",
+        statusLabel:
+          ctx.mocksTaken > 0
+            ? "Complete a full mock exam"
+            : "Not started — take a full mock exam",
+      };
+    default:
+      return { kind: "requirement", statusLabel: "In progress" };
+  }
 }

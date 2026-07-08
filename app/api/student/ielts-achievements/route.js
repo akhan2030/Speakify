@@ -6,7 +6,9 @@ import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 import {
   IELTS_ACHIEVEMENTS,
   evaluateAchievements,
+  formatAchievementProgress,
 } from "@/lib/ielts/achievements";
+import { fetchAchievementMetrics } from "@/lib/ielts/fetchAchievementMetrics";
 
 export const runtime = "nodejs";
 
@@ -17,19 +19,6 @@ function getSupabase() {
   return createClient(url, process.env.SUPABASE_SERVICE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-}
-
-async function safeCount(query) {
-  try {
-    const result = await query;
-    if (result.error) {
-      console.warn("[ielts-achievements]", result.error.message);
-      return 0;
-    }
-    return result.count ?? 0;
-  } catch {
-    return 0;
-  }
 }
 
 async function safeRows(query) {
@@ -45,19 +34,6 @@ async function safeRows(query) {
   }
 }
 
-async function safeSingle(query) {
-  try {
-    const result = await query;
-    if (result.error) {
-      console.warn("[ielts-achievements]", result.error.message);
-      return null;
-    }
-    return result.data ?? null;
-  } catch {
-    return null;
-  }
-}
-
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -69,89 +45,19 @@ export async function GET() {
     const profile = await fetchStudentProfile(studentId);
     const supabase = process.env.SUPABASE_SERVICE_KEY ? getSupabase() : null;
 
-    let tasksCompleted = 0;
-    let mocksTaken = 0;
-    let writingAttempts = 0;
-    let wordsMastered = 0;
-    let streak = profile.studyStreak ?? 0;
-    let trackProgressPercent = profile.courseProgressPercent ?? 0;
+    const metrics = await fetchAchievementMetrics(supabase, studentId, profile);
+
     let storedEarned = [];
-
     if (supabase) {
-      const [
-        completionsCount,
-        mocksCount,
-        writingCount,
-        vocabCount,
-        streakRow,
-        earnedRows,
-      ] = await Promise.all([
-        safeCount(
-          supabase
-            .from("daily_task_completions")
-            .select("id", { count: "exact", head: true })
-            .eq("student_id", studentId)
-        ),
-        safeCount(
-          supabase
-            .from("mock_test_attempts")
-            .select("id", { count: "exact", head: true })
-            .eq("student_id", studentId)
-            .eq("status", "completed")
-        ),
-        safeCount(
-          supabase
-            .from("writing_attempts")
-            .select("id", { count: "exact", head: true })
-            .eq("student_id", studentId)
-        ),
-        safeCount(
-          supabase
-            .from("student_vocab_progress")
-            .select("id", { count: "exact", head: true })
-            .eq("student_id", studentId)
-        ),
-        safeSingle(
-          supabase
-            .from("study_streaks")
-            .select("current_streak, total_tasks_completed")
-            .eq("student_id", studentId)
-            .maybeSingle()
-        ),
-        safeRows(
-          supabase
-            .from("student_achievements")
-            .select("achievement_id")
-            .eq("student_id", studentId)
-        ),
-      ]);
-
-      tasksCompleted = streakRow?.total_tasks_completed ?? completionsCount;
-      mocksTaken = mocksCount;
-      writingAttempts = writingCount;
-      wordsMastered = vocabCount;
-      streak = streakRow?.current_streak ?? streak;
-      storedEarned = earnedRows.map((r) => r.achievement_id);
+      storedEarned = await safeRows(
+        supabase
+          .from("student_achievements")
+          .select("achievement_id")
+          .eq("student_id", studentId)
+      ).then((rows) => rows.map((r) => r.achievement_id));
     }
 
-    const skillsAttempted = [
-      profile.skillBands.writing,
-      profile.skillBands.speaking,
-      profile.skillBands.reading,
-      profile.skillBands.listening,
-    ].filter((b) => b != null).length;
-
-    const computed = evaluateAchievements({
-      tasksCompleted,
-      streak,
-      mocksTaken,
-      currentBand: profile.currentBand,
-      writingAttempts,
-      wordsMastered,
-      skillsAttempted,
-      trackProgressPercent,
-    });
-
+    const computed = evaluateAchievements(metrics);
     const earnedSet = new Set([...storedEarned, ...computed]);
     const newlyEarned = computed.filter((id) => !storedEarned.includes(id));
 
@@ -169,15 +75,20 @@ export async function GET() {
       }
     }
 
-    const achievements = IELTS_ACHIEVEMENTS.map((a) => ({
-      ...a,
-      earned: earnedSet.has(a.id),
-    }));
+    const achievements = IELTS_ACHIEVEMENTS.map((a) => {
+      const earned = earnedSet.has(a.id);
+      return {
+        ...a,
+        earned,
+        progress: formatAchievementProgress(a.id, metrics, earned),
+      };
+    });
 
     return NextResponse.json({
       achievements,
       earnedCount: earnedSet.size,
       totalCount: IELTS_ACHIEVEMENTS.length,
+      metrics,
     });
   } catch (err) {
     console.error("[ielts-achievements]", err);
