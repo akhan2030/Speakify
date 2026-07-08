@@ -473,7 +473,7 @@ export default function GeneralStudentDashboard() {
             <p className="mt-4 text-sm text-slate-500">
               Full progress view —{" "}
               <Link
-                href={`${BASE}/readiness`}
+                href={`${BASE}/progress`}
                 className="font-semibold text-[#0d9488] hover:underline"
               >
                 IELTS Readiness →

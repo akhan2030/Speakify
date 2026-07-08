@@ -8,7 +8,7 @@ export default function IeltsAcceleratorTrackPage({
 }) {
   const track = String(params.track ?? "");
   if (!isValidTrack(track)) {
-    redirect("/dashboard/ielts/student/accelerator");
+    redirect("/dashboard/ielts/student/progress?tab=programme");
   }
   redirect(`/dashboard/ielts/student/accelerator/${track}/practice`);
 }

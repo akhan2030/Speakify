@@ -4,16 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import {
-  resolveIeltsProgramDisplay,
-} from "@/lib/programs/ieltsProgramIdentity";
+import { resolveIeltsProgramDisplay } from "@/lib/programs/ieltsProgramIdentity";
 import { getInitials } from "@/components/StudentSidebar";
 
 export type IeltsActivePage =
   | "dashboard"
   | "today"
-  | "accelerator"
-  | "weekly-plan"
+  | "progress"
   | "writing"
   | "speaking"
   | "speaking-history"
@@ -23,9 +20,6 @@ export type IeltsActivePage =
   | "vocabulary"
   | "grammar"
   | "mock-exam"
-  | "readiness"
-  | "history"
-  | "achievements"
   | "settings";
 
 type SidebarBadges = {
@@ -55,6 +49,8 @@ type NavGroup = {
   items: NavItem[];
 };
 
+const PROGRESS_HREF = "/dashboard/ielts/student/progress";
+
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "TODAY",
@@ -64,23 +60,6 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Today's Mission",
         href: "/dashboard/ielts/student/today",
         icon: "📋",
-      },
-    ],
-  },
-  {
-    label: "MY PROGRAMME",
-    items: [
-      {
-        id: "accelerator",
-        label: "My Track",
-        href: "/dashboard/ielts/student/accelerator",
-        icon: "🗺",
-      },
-      {
-        id: "weekly-plan",
-        label: "Weekly Plan",
-        href: "/dashboard/ielts/student/weekly-plan",
-        icon: "📅",
       },
     ],
   },
@@ -114,7 +93,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "PRACTICE",
+    label: "PRACTICE TOOLS",
     items: [
       {
         id: "practice",
@@ -124,49 +103,37 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         id: "vocabulary",
-        label: "Vocabulary Builder",
+        label: "Vocabulary",
         href: "/dashboard/ielts/student/vocabulary",
         icon: "📚",
       },
       {
         id: "grammar",
-        label: "Grammar Builder",
+        label: "Grammar",
         href: "/dashboard/ielts/student/grammar",
         icon: "🔤",
       },
     ],
   },
   {
-    label: "ASSESSMENT",
+    label: "MOCK EXAMS",
     items: [
       {
         id: "mock-exam",
-        label: "Mock Exams",
+        label: "Full Mock Exams",
         href: "/dashboard/ielts/student/mock-exam",
         icon: "📝",
-      },
-      {
-        id: "readiness",
-        label: "My IELTS Progress",
-        href: "/dashboard/ielts/student/readiness",
-        icon: "📊",
       },
     ],
   },
   {
-    label: "PROGRESS",
+    label: "MY PROGRESS",
     items: [
       {
-        id: "history",
-        label: "Study History",
-        href: "/dashboard/ielts/student/history",
-        icon: "📈",
-      },
-      {
-        id: "achievements",
-        label: "Achievements",
-        href: "/dashboard/ielts/student/achievements",
-        icon: "🏆",
+        id: "progress",
+        label: "My Progress",
+        href: PROGRESS_HREF,
+        icon: "📊",
       },
     ],
   },
@@ -177,10 +144,18 @@ const MOBILE_NAV: { id: IeltsActivePage; label: string; href: string; icon: stri
   { id: "writing", label: "Skills", href: "/dashboard/ielts/student/writing", icon: "✍" },
   { id: "practice", label: "Practice", href: "/dashboard/ielts/student/practice", icon: "⚡" },
   { id: "mock-exam", label: "Mock", href: "/dashboard/ielts/student/mock-exam", icon: "📝" },
-  { id: "readiness", label: "Progress", href: "/dashboard/ielts/student/readiness", icon: "📊" },
+  { id: "progress", label: "Progress", href: PROGRESS_HREF, icon: "📊" },
 ];
 
 const SPEAKING_HISTORY_HREF = "/dashboard/ielts/student/speaking/history";
+
+const LEGACY_PROGRESS_PREFIXES = [
+  "/dashboard/ielts/student/accelerator",
+  "/dashboard/ielts/student/weekly-plan",
+  "/dashboard/ielts/student/readiness",
+  "/dashboard/ielts/student/history",
+  "/dashboard/ielts/student/achievements",
+];
 
 const ALL_ITEMS = [
   ...NAV_GROUPS.flatMap((g) => g.items),
@@ -195,6 +170,10 @@ const ALL_ITEMS = [
 ];
 
 function activeFromPath(pathname: string): IeltsActivePage {
+  if (pathname.startsWith(PROGRESS_HREF)) return "progress";
+  if (LEGACY_PROGRESS_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    if (!pathname.includes("/accelerator/")) return "progress";
+  }
   if (pathname === "/dashboard/ielts/student") return "today";
   const match = [...ALL_ITEMS]
     .sort((a, b) => b.href.length - a.href.length)
@@ -209,32 +188,33 @@ function formatBand(band: number | null | undefined): string {
   return band.toFixed(1);
 }
 
+function shortenTrackBadge(badge: string): string {
+  return badge.replace(/^Week\s+/i, "Wk ");
+}
+
 function badgeForItem(item: NavItem, badges: SidebarBadges | null): string | undefined {
   if (!badges) return item.badge;
 
   switch (item.id) {
     case "today":
       return badges.todayMissionIncomplete ? "NEW" : undefined;
-    case "accelerator":
-      return badges.trackBadge;
-    case "weekly-plan":
-      return "Sun–Sat";
     case "writing":
-      return `Band: ${formatBand(badges.skillBands.writing)}`;
+      return formatBand(badges.skillBands.writing);
     case "speaking":
-      return `Band: ${formatBand(badges.skillBands.speaking)}`;
+      return formatBand(badges.skillBands.speaking);
     case "reading":
-      return `Band: ${formatBand(badges.skillBands.reading)}`;
+      return formatBand(badges.skillBands.reading);
     case "listening":
-      return `Band: ${formatBand(badges.skillBands.listening)}`;
+      return formatBand(badges.skillBands.listening);
     case "practice":
       return "NEW";
     case "mock-exam":
       return badges.mockReady;
-    case "readiness":
-      return `${badges.readinessPercent}%`;
-    case "achievements":
-      return badges.newAchievements > 0 ? `${badges.newAchievements} new` : "0";
+    case "progress": {
+      const parts: string[] = [`${badges.readinessPercent}%`];
+      if (badges.newAchievements > 0) parts.push(`${badges.newAchievements}🏆`);
+      return parts.join(" ");
+    }
     default:
       return item.badge;
   }
@@ -249,16 +229,19 @@ function NavLink({
   isActive: boolean;
   badge?: string;
 }) {
+  const title = badge ? `${item.label} · ${badge}` : item.label;
+
   return (
     <Link
       href={item.href}
+      title={title}
       className={`flex items-center justify-between gap-2 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors ${
         isActive
           ? "border-l-[#c9972c] bg-[#152a4d] font-semibold text-white"
           : "border-l-transparent text-slate-300 hover:bg-white/5 hover:text-white"
       }`}
     >
-      <span className="flex items-center gap-2 truncate">
+      <span className="flex min-w-0 items-center gap-2">
         <span className="shrink-0">{item.icon}</span>
         <span className="truncate">{item.label}</span>
       </span>
@@ -269,6 +252,7 @@ function NavLink({
               ? "bg-[#c9972c] text-[#0d1b35]"
               : "bg-white/10 text-[#c9972c]"
           }`}
+          title={badge}
         >
           {badge}
         </span>
@@ -313,6 +297,7 @@ export default function IELTSSidebar({
         if (!json.error && json.sidebar) {
           setBadges({
             ...json.sidebar,
+            trackBadge: shortenTrackBadge(json.sidebar.trackBadge ?? ""),
             todayMissionIncomplete: json.todayMissionIncomplete ?? false,
           });
           if (json.track?.name) setTrackName(json.track.name);
@@ -323,8 +308,7 @@ export default function IELTSSidebar({
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 z-20 hidden h-screen w-[220px] shrink-0 flex-col bg-[#0d1b35] px-3 py-6 md:flex">
+      <aside className="sticky top-0 z-20 hidden h-screen w-[240px] shrink-0 flex-col bg-[#0d1b35] px-3 py-6 md:flex">
         <div className="flex flex-col items-center text-center">
           <div className="h-10 w-10 rounded-full bg-[#c9972c]" />
           <div className="mt-2 text-sm font-bold text-white">Speakify</div>
@@ -337,8 +321,13 @@ export default function IELTSSidebar({
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c9972c] text-sm font-bold text-[#0d1b35]">
             {initials}
           </div>
-          <div className="mt-2 line-clamp-2 text-sm font-medium text-white">{name}</div>
-          <div className="mt-1 rounded-full bg-[#c9972c]/20 px-2 py-0.5 text-[10px] font-semibold text-[#c9972c]">
+          <div className="mt-2 line-clamp-2 text-sm font-medium text-white" title={name}>
+            {name}
+          </div>
+          <div
+            className="mt-1 rounded-full bg-[#c9972c]/20 px-2 py-0.5 text-[10px] font-semibold text-[#c9972c]"
+            title={programDisplay.trackBadge}
+          >
             {programDisplay.trackBadge}
           </div>
         </div>
@@ -360,7 +349,8 @@ export default function IELTSSidebar({
                     {item.id === "speaking" ? (
                       <Link
                         href={SPEAKING_HISTORY_HREF}
-                        className={`ml-8 mt-0.5 block rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                        title="Speaking session history"
+                        className={`ml-8 mt-0.5 block truncate rounded-lg px-3 py-1.5 text-xs transition-colors ${
                           current === "speaking-history"
                             ? "font-semibold text-[#c9972c]"
                             : "text-slate-400 hover:text-white"
@@ -379,6 +369,7 @@ export default function IELTSSidebar({
         <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
           <Link
             href="/dashboard/ielts/student/settings"
+            title="Settings"
             className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
               current === "settings"
                 ? "border-l-2 border-l-[#c9972c] bg-[#152a4d] font-semibold text-white"
@@ -389,6 +380,7 @@ export default function IELTSSidebar({
           </Link>
           <button
             type="button"
+            title="Logout"
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
           >
@@ -397,7 +389,6 @@ export default function IELTSSidebar({
         </div>
       </aside>
 
-      {/* Mobile bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-slate-200 bg-white md:hidden">
         {MOBILE_NAV.map((item) => {
           const isActive =
@@ -407,10 +398,9 @@ export default function IELTSSidebar({
             <Link
               key={item.id}
               href={item.href}
+              title={item.label}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] ${
-                isActive
-                  ? "font-bold text-[#0d1b35]"
-                  : "text-slate-500"
+                isActive ? "font-bold text-[#0d1b35]" : "text-slate-500"
               }`}
             >
               <span className="text-lg">{item.icon}</span>

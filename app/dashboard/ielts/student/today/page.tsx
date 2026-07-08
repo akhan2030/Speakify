@@ -168,7 +168,7 @@ export default function TodayMissionPage() {
           Total: {data.tomorrow.totalMinutes} minutes
         </p>
         <Link
-          href="/dashboard/ielts/student/weekly-plan"
+          href="/dashboard/ielts/student/progress?tab=programme&view=weekly"
           className="mt-4 inline-block text-sm font-semibold text-[#0d9488] hover:underline"
         >
           View full weekly plan →

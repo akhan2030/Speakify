@@ -133,7 +133,7 @@ export default function AcceleratorPracticePage() {
     return (
       <main className="p-6">
         <p className="text-red-600">Invalid track. Choose Foundation, Plus, or Elite.</p>
-        <Link href="/dashboard/ielts/student/accelerator" className="mt-4 inline-block text-[#c9972c]">
+        <Link href="/dashboard/ielts/student/progress?tab=programme" className="mt-4 inline-block text-[#c9972c]">
           ← Back to My Track
         </Link>
       </main>
@@ -161,7 +161,7 @@ export default function AcceleratorPracticePage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
-            href="/dashboard/ielts/student/accelerator"
+            href="/dashboard/ielts/student/progress?tab=programme"
             className="text-sm font-semibold text-[#0d9488] hover:underline"
           >
             ← All tracks

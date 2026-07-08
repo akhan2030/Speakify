@@ -17,11 +17,12 @@ export type GeneralActivePage =
   | "listening"
   | "grammar"
   | "mock-exam"
-  | "readiness"
+  | "progress"
   | "settings";
 
 type SidebarBadges = {
   trackBadge: string;
+  readinessPercent?: number;
   skillBands: {
     writing: number | null;
     speaking: number | null;
@@ -43,6 +44,7 @@ type NavGroup = {
 };
 
 const BASE = "/dashboard/ielts-general/student";
+const PROGRESS_HREF = `${BASE}/progress`;
 
 const NAV_GROUPS: NavGroup[] = [
   {
@@ -54,12 +56,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: BASE,
         icon: "🏠",
       },
-      {
-        id: "practice",
-        label: "Daily Practice",
-        href: `${BASE}/practice`,
-        icon: "⚡",
-      },
     ],
   },
   {
@@ -67,7 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       {
         id: "writing",
-        label: "Writing (Letter + Essay)",
+        label: "Writing",
         href: `${BASE}/writing`,
         icon: "✍",
       },
@@ -95,27 +91,43 @@ const NAV_GROUPS: NavGroup[] = [
         href: `${BASE}/listening`,
         icon: "🎧",
       },
+    ],
+  },
+  {
+    label: "PRACTICE TOOLS",
+    items: [
+      {
+        id: "practice",
+        label: "Daily Practice",
+        href: `${BASE}/practice`,
+        icon: "⚡",
+      },
       {
         id: "grammar",
-        label: "Grammar Builder",
+        label: "Grammar",
         href: `${BASE}/grammar`,
         icon: "📚",
       },
     ],
   },
   {
-    label: "ASSESSMENT",
+    label: "MOCK EXAMS",
     items: [
       {
         id: "mock-exam",
-        label: "Mock Exams",
+        label: "Full Mock Exams",
         href: `${BASE}/mock-exam`,
         icon: "📝",
       },
+    ],
+  },
+  {
+    label: "MY PROGRESS",
+    items: [
       {
-        id: "readiness",
-        label: "IELTS Readiness",
-        href: `${BASE}/readiness`,
+        id: "progress",
+        label: "My Progress",
+        href: PROGRESS_HREF,
         icon: "📊",
       },
     ],
@@ -126,7 +138,7 @@ const MOBILE_NAV: { id: GeneralActivePage; label: string; href: string; icon: st
   { id: "dashboard", label: "Home", href: BASE, icon: "🏠" },
   { id: "writing", label: "Writing", href: `${BASE}/writing`, icon: "✍" },
   { id: "mock-exam", label: "Mock", href: `${BASE}/mock-exam`, icon: "📝" },
-  { id: "readiness", label: "Progress", href: `${BASE}/readiness`, icon: "📊" },
+  { id: "progress", label: "Progress", href: PROGRESS_HREF, icon: "📊" },
   { id: "speaking", label: "Speaking", href: `${BASE}/speaking`, icon: "🎤" },
 ];
 
@@ -136,10 +148,13 @@ const ALL_ITEMS = [
 ];
 
 function activeFromPath(pathname: string): GeneralActivePage {
+  if (pathname.startsWith(PROGRESS_HREF) || pathname.startsWith(`${BASE}/readiness`)) {
+    return "progress";
+  }
   if (pathname === BASE) return "dashboard";
-  const match = ALL_ITEMS.find(
-    (item) => item.href !== BASE && pathname.startsWith(item.href)
-  );
+  const match = [...ALL_ITEMS]
+    .sort((a, b) => b.href.length - a.href.length)
+    .find((item) => item.href !== BASE && pathname.startsWith(item.href));
   return match?.id ?? "dashboard";
 }
 
@@ -153,13 +168,15 @@ function badgeForItem(item: NavItem, badges: SidebarBadges | null): string | und
 
   switch (item.id) {
     case "writing":
-      return `Band: ${formatBand(badges.skillBands.writing)}`;
+      return formatBand(badges.skillBands.writing);
     case "speaking":
-      return `Band: ${formatBand(badges.skillBands.speaking)}`;
+      return formatBand(badges.skillBands.speaking);
     case "reading":
-      return `Band: ${formatBand(badges.skillBands.reading)}`;
+      return formatBand(badges.skillBands.reading);
     case "listening":
-      return `Band: ${formatBand(badges.skillBands.listening)}`;
+      return formatBand(badges.skillBands.listening);
+    case "progress":
+      return badges.readinessPercent != null ? `${badges.readinessPercent}%` : undefined;
     default:
       return undefined;
   }
@@ -174,21 +191,27 @@ function NavLink({
   isActive: boolean;
   badge?: string;
 }) {
+  const title = badge ? `${item.label} · ${badge}` : item.label;
+
   return (
     <Link
       href={item.href}
+      title={title}
       className={`flex items-center justify-between gap-2 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors ${
         isActive
           ? "border-l-[#c9972c] bg-[#152a4d] font-semibold text-white"
           : "border-l-transparent text-slate-300 hover:bg-white/5 hover:text-white"
       }`}
     >
-      <span className="flex items-center gap-2 truncate">
+      <span className="flex min-w-0 items-center gap-2">
         <span className="shrink-0">{item.icon}</span>
         <span className="truncate">{item.label}</span>
       </span>
       {badge ? (
-        <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#c9972c]">
+        <span
+          className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#c9972c]"
+          title={badge}
+        >
           {badge}
         </span>
       ) : null}
@@ -233,6 +256,7 @@ export default function GeneralSidebar({
           setBadges({
             trackBadge: json.sidebar.trackBadge,
             skillBands: json.sidebar.skillBands,
+            readinessPercent: json.readinessPercent ?? json.sidebar.readinessPercent,
           });
           if (json.track?.name) setTrackName(json.track.name);
         }
@@ -242,7 +266,7 @@ export default function GeneralSidebar({
 
   return (
     <>
-      <aside className="sticky top-0 z-20 hidden h-screen w-[220px] shrink-0 flex-col bg-[#0d1b35] px-3 py-6 md:flex">
+      <aside className="sticky top-0 z-20 hidden h-screen w-[240px] shrink-0 flex-col bg-[#0d1b35] px-3 py-6 md:flex">
         <div className="flex flex-col items-center text-center">
           <div className="h-10 w-10 rounded-full bg-[#c9972c]" />
           <div className="mt-2 text-sm font-bold text-white">Speakify</div>
@@ -255,8 +279,13 @@ export default function GeneralSidebar({
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c9972c] text-sm font-bold text-[#0d1b35]">
             {initials}
           </div>
-          <div className="mt-2 line-clamp-2 text-sm font-medium text-white">{name}</div>
-          <div className="mt-1 rounded-full bg-[#c9972c]/20 px-2 py-0.5 text-[10px] font-semibold text-[#c9972c]">
+          <div className="mt-2 line-clamp-2 text-sm font-medium text-white" title={name}>
+            {name}
+          </div>
+          <div
+            className="mt-1 rounded-full bg-[#c9972c]/20 px-2 py-0.5 text-[10px] font-semibold text-[#c9972c]"
+            title={programDisplay.trackBadge}
+          >
             {programDisplay.trackBadge}
           </div>
         </div>
@@ -284,6 +313,7 @@ export default function GeneralSidebar({
         <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
           <Link
             href={`${BASE}/settings`}
+            title="Settings"
             className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
               current === "settings"
                 ? "border-l-2 border-l-[#c9972c] bg-[#152a4d] font-semibold text-white"
@@ -294,6 +324,7 @@ export default function GeneralSidebar({
           </Link>
           <button
             type="button"
+            title="Logout"
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
           >
@@ -309,6 +340,7 @@ export default function GeneralSidebar({
             <Link
               key={item.id}
               href={item.href}
+              title={item.label}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] ${
                 isActive ? "font-bold text-[#0d1b35]" : "text-slate-500"
               }`}

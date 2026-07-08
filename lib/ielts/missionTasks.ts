@@ -37,7 +37,7 @@ const FOUNDATION_DAY_TASKS: Record<StudyDay, MissionTask[]> = {
     { id: "vocab-review", title: "Vocabulary review", minutes: 10, href: `${BASE}/vocabulary/review`, taskType: "vocabulary" },
   ],
   thursday: [
-    { id: "weak-review", title: "Weak area review", minutes: 18, href: `${BASE}/readiness`, taskType: "review" },
+    { id: "weak-review", title: "Weak area review", minutes: 18, href: `${BASE}/progress?tab=readiness`, taskType: "review" },
     { id: "grammar-lesson", title: "Grammar lesson", minutes: 12, href: `${BASE}/grammar/lessons/tenses`, taskType: "grammar" },
     { id: "reading-short", title: "Short answer reading set", minutes: 15, href: `${BASE}/reading/practice/short-answer`, taskType: "reading" },
     { id: "listening-s2", title: "Listening Section 2 practice", minutes: 15, href: `${BASE}/listening/section/2`, taskType: "listening" },
@@ -48,9 +48,9 @@ const FOUNDATION_DAY_TASKS: Record<StudyDay, MissionTask[]> = {
     { id: "speaking-warmup", title: "Speaking warm-up", minutes: 10, href: `${BASE}/speaking`, taskType: "speaking" },
   ],
   saturday: [
-    { id: "week-review", title: "Review this week's progress", minutes: 15, href: `${BASE}/history`, taskType: "review" },
-    { id: "readiness-check", title: "IELTS readiness check", minutes: 10, href: `${BASE}/readiness`, taskType: "readiness" },
-    { id: "plan-sunday", title: "Preview Sunday's mission", minutes: 5, href: `${BASE}/weekly-plan`, taskType: "planning" },
+    { id: "week-review", title: "Review this week's progress", minutes: 15, href: `${BASE}/progress?tab=history`, taskType: "review" },
+    { id: "readiness-check", title: "IELTS readiness check", minutes: 10, href: `${BASE}/progress?tab=readiness`, taskType: "readiness" },
+    { id: "plan-sunday", title: "Preview Sunday's mission", minutes: 5, href: `${BASE}/progress?tab=programme&view=weekly`, taskType: "planning" },
     { id: "light-practice", title: "Light skill practice", minutes: 12, href: `${BASE}/practice`, taskType: "practice" },
   ],
 };
@@ -82,7 +82,7 @@ const PLUS_DAY_TASKS: Record<StudyDay, MissionTask[]> = {
     { id: "vocab-review", title: "Vocabulary review", minutes: 10, href: `${BASE}/vocabulary/review`, taskType: "vocabulary" },
   ],
   thursday: [
-    { id: "weak-skill-review", title: "Weak area review session", minutes: 20, href: `${BASE}/readiness`, taskType: "review" },
+    { id: "weak-skill-review", title: "Weak area review session", minutes: 20, href: `${BASE}/progress?tab=readiness`, taskType: "review" },
     { id: "vocab-booster", title: "Collocation & phrase bank", minutes: 15, href: `${BASE}/vocabulary/phrases`, taskType: "vocabulary" },
     { id: "grammar-fix", title: "Grammar error correction", minutes: 10, href: `${BASE}/grammar/practice`, taskType: "grammar" },
     { id: "reading-headings", title: "Matching headings drill", minutes: 15, href: `${BASE}/reading/practice/matching-headings`, taskType: "reading" },
@@ -93,9 +93,9 @@ const PLUS_DAY_TASKS: Record<StudyDay, MissionTask[]> = {
     { id: "vocab-quiz", title: "Vocabulary quiz", minutes: 10, href: `${BASE}/vocabulary/quiz`, taskType: "vocabulary" },
   ],
   saturday: [
-    { id: "week-review", title: "Review this week's progress", minutes: 15, href: `${BASE}/history`, taskType: "review" },
-    { id: "readiness-check", title: "IELTS readiness check", minutes: 10, href: `${BASE}/readiness`, taskType: "readiness" },
-    { id: "plan-sunday", title: "Preview Sunday's mission", minutes: 5, href: `${BASE}/weekly-plan`, taskType: "planning" },
+    { id: "week-review", title: "Review this week's progress", minutes: 15, href: `${BASE}/progress?tab=history`, taskType: "review" },
+    { id: "readiness-check", title: "IELTS readiness check", minutes: 10, href: `${BASE}/progress?tab=readiness`, taskType: "readiness" },
+    { id: "plan-sunday", title: "Preview Sunday's mission", minutes: 5, href: `${BASE}/progress?tab=programme&view=weekly`, taskType: "planning" },
     { id: "speaking-part3", title: "Speaking Part 3 discussion", minutes: 12, href: `${BASE}/speaking/part3`, taskType: "speaking" },
   ],
 };
@@ -126,7 +126,7 @@ const ELITE_DAY_TASKS: Record<StudyDay, MissionTask[]> = {
     { id: "vocab-review", title: "Advanced vocabulary review", minutes: 10, href: `${BASE}/vocabulary/review`, taskType: "vocabulary" },
   ],
   thursday: [
-    { id: "weak-skill-push", title: "High-band weak-area push", minutes: 22, href: `${BASE}/readiness`, taskType: "review" },
+    { id: "weak-skill-push", title: "High-band weak-area push", minutes: 22, href: `${BASE}/progress?tab=readiness`, taskType: "review" },
     { id: "reading-full-passage", title: "Full reading passage — 20 min", minutes: 20, href: `${BASE}/reading/test`, taskType: "reading" },
     { id: "listening-full", title: "Full listening test simulation", minutes: 30, href: `${BASE}/listening/test`, taskType: "listening" },
     { id: "vocab-booster", title: "Precision vocabulary booster", minutes: 12, href: `${BASE}/vocabulary/quiz`, taskType: "vocabulary" },
@@ -137,10 +137,10 @@ const ELITE_DAY_TASKS: Record<StudyDay, MissionTask[]> = {
     { id: "speaking-fluency", title: "Natural discourse & fluency drill", minutes: 15, href: `${BASE}/speaking/part3`, taskType: "speaking" },
   ],
   saturday: [
-    { id: "week-review", title: "Intensive week review", minutes: 15, href: `${BASE}/history`, taskType: "review" },
-    { id: "readiness-check", title: "Band 7+ readiness check", minutes: 12, href: `${BASE}/readiness`, taskType: "readiness" },
+    { id: "week-review", title: "Intensive week review", minutes: 15, href: `${BASE}/progress?tab=history`, taskType: "review" },
+    { id: "readiness-check", title: "Band 7+ readiness check", minutes: 12, href: `${BASE}/progress?tab=readiness`, taskType: "readiness" },
     { id: "mock-debrief", title: "Mock exam debrief", minutes: 15, href: `${BASE}/mock-exam`, taskType: "mock" },
-    { id: "plan-sunday", title: "Preview next week", minutes: 5, href: `${BASE}/weekly-plan`, taskType: "planning" },
+    { id: "plan-sunday", title: "Preview next week", minutes: 5, href: `${BASE}/progress?tab=programme&view=weekly`, taskType: "planning" },
   ],
 };
 
