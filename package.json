@@ -34,6 +34,7 @@
     "test:reading": "node scripts/reading-regression-check.mjs",
     "validate:writing-prompts": "node --experimental-strip-types scripts/validate-writing-prompts.ts",
     "validate:gt-writing-prompts": "node --experimental-strip-types scripts/validate-gt-writing-prompts.ts",
+    "test:exam-highlight": "node --experimental-strip-types scripts/test-exam-highlight.ts",
     "test:regression": "npm run test:speaking && npm run test:vocabulary && npm run test:reading && npm run test:listening",
     "test:content-usage": "node scripts/test-student-content-usage.mjs",
     "refresh:section1-speakers": "node scripts/refresh-section1-bank-speakers.mjs",

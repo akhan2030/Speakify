@@ -4,20 +4,16 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import {
-  addHighlights,
   buildHighlightSegments,
-  getSelectionRangesInContainer,
+  processHighlightInteraction,
   removeHighlight,
-  removeHighlightsInRange,
   type ExamHighlightMode,
-  type HighlightBlock,
   type TextHighlight,
 } from "@/lib/examHighlight";
 
@@ -26,10 +22,7 @@ type ExamHighlightContextValue = {
   setMode: (mode: ExamHighlightMode) => void;
   highlights: TextHighlight[];
   onHighlightsChange: (next: TextHighlight[]) => void;
-  registerBlock: (block: HighlightBlock) => void;
-  unregisterBlock: (blockId: string) => void;
-  handleContainerMouseUp: () => void;
-  handleMarkClick: (e: React.MouseEvent, highlightId: string) => void;
+  handleMarkPointerDown: (e: React.PointerEvent, highlightId: string) => void;
 };
 
 const ExamHighlightContext = createContext<ExamHighlightContextValue | null>(null);
@@ -144,66 +137,59 @@ export function ExamHighlightSection({
   children,
 }: SectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const modeRef = useRef<ExamHighlightMode>("highlight");
+  const highlightsRef = useRef(highlights);
   const [mode, setMode] = useState<ExamHighlightMode>("highlight");
-  const [blocks, setBlocks] = useState<HighlightBlock[]>([]);
 
-  const registerBlock = useCallback((block: HighlightBlock) => {
-    setBlocks((prev) => {
-      if (prev.some((b) => b.id === block.id)) {
-        return prev.map((b) => (b.id === block.id ? block : b));
+  highlightsRef.current = highlights;
+  modeRef.current = mode;
+
+  const applyInteraction = useCallback(
+    (target?: EventTarget | null, capturedRange?: Range | null) => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const next = processHighlightInteraction({
+        container,
+        highlights: highlightsRef.current,
+        mode: modeRef.current,
+        target,
+        range: capturedRange,
+      });
+
+      if (next) {
+        onHighlightsChange(next);
       }
-      return [...prev, block];
-    });
-  }, []);
-
-  const unregisterBlock = useCallback((blockId: string) => {
-    setBlocks((prev) => prev.filter((b) => b.id !== blockId));
-  }, []);
-
-  const handleContainerMouseUp = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const selection = window.getSelection();
-    const clickedMark = (selection?.anchorNode?.parentElement as HTMLElement | null)?.closest(
-      "[data-highlight-id]"
-    ) as HTMLElement | null;
-
-    if (selection?.isCollapsed && clickedMark) {
-      const id = clickedMark.dataset.highlightId;
-      if (id) onHighlightsChange(removeHighlight(highlights, id));
-      return;
-    }
-
-    const ranges = getSelectionRangesInContainer(container, blocks);
-    if (ranges.length === 0) return;
-
-    if (mode === "erase") {
-      let next = highlights;
-      for (const range of ranges) {
-        next = removeHighlightsInRange(
-          next,
-          range.blockId,
-          range.startOffset,
-          range.endOffset
-        );
-      }
-      onHighlightsChange(next);
-    } else {
-      onHighlightsChange(addHighlights(highlights, ranges));
-    }
-
-    selection?.removeAllRanges();
-  }, [blocks, highlights, mode, onHighlightsChange]);
-
-  const handleMarkClick = useCallback(
-    (e: React.MouseEvent, highlightId: string) => {
-      e.preventDefault();
-      e.stopPropagation();
-      onHighlightsChange(removeHighlight(highlights, highlightId));
       window.getSelection()?.removeAllRanges();
     },
-    [highlights, onHighlightsChange]
+    [onHighlightsChange]
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('[role="toolbar"]')) return;
+
+      const selection = window.getSelection();
+      const capturedRange =
+        selection && !selection.isCollapsed && selection.rangeCount > 0
+          ? selection.getRangeAt(0).cloneRange()
+          : null;
+
+      applyInteraction(e.target, capturedRange);
+    },
+    [applyInteraction]
+  );
+
+  const handleMarkPointerDown = useCallback(
+    (e: React.PointerEvent, highlightId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onHighlightsChange(removeHighlight(highlightsRef.current, highlightId));
+      window.getSelection()?.removeAllRanges();
+    },
+    [onHighlightsChange]
   );
 
   const value = useMemo(
@@ -212,20 +198,9 @@ export function ExamHighlightSection({
       setMode,
       highlights,
       onHighlightsChange,
-      registerBlock,
-      unregisterBlock,
-      handleContainerMouseUp,
-      handleMarkClick,
+      handleMarkPointerDown,
     }),
-    [
-      mode,
-      highlights,
-      onHighlightsChange,
-      registerBlock,
-      unregisterBlock,
-      handleContainerMouseUp,
-      handleMarkClick,
-    ]
+    [mode, highlights, onHighlightsChange, handleMarkPointerDown]
   );
 
   return (
@@ -234,23 +209,13 @@ export function ExamHighlightSection({
       <div
         ref={containerRef}
         data-highlight-section={sectionId}
-        onMouseUp={handleContainerMouseUp}
-        className={`${mode === "erase" ? "cursor-cell" : ""} ${className}`}
+        onPointerUp={handlePointerUp}
+        className={`select-text ${mode === "erase" ? "cursor-cell" : ""} ${className}`}
       >
         {children}
       </div>
     </ExamHighlightContext.Provider>
   );
-}
-
-function useHighlightBlock(blockId: string, text: string) {
-  const ctx = useContext(ExamHighlightContext);
-
-  useEffect(() => {
-    if (!ctx || !text) return;
-    ctx.registerBlock({ id: blockId, text });
-    return () => ctx.unregisterBlock(blockId);
-  }, [ctx, blockId, text]);
 }
 
 export function HighlightableInlineText({
@@ -263,7 +228,6 @@ export function HighlightableInlineText({
   className?: string;
 }) {
   const ctx = useContext(ExamHighlightContext);
-  useHighlightBlock(blockId, text);
 
   if (!ctx || !text) {
     return <span className={className}>{text}</span>;
@@ -273,14 +237,16 @@ export function HighlightableInlineText({
   const segments = buildHighlightSegments(text, blockHighlights);
 
   return (
-    <span className={className} data-highlight-block={blockId}>
+    <span className={`select-text ${className}`} data-highlight-block={blockId}>
       {segments.map((segment, idx) =>
         segment.highlighted ? (
           <mark
             key={`${blockId}-${idx}`}
             data-highlight-id={segment.highlightId}
-            onClick={(e) =>
-              segment.highlightId ? ctx.handleMarkClick(e, segment.highlightId) : undefined
+            onPointerDown={(e) =>
+              segment.highlightId
+                ? ctx.handleMarkPointerDown(e, segment.highlightId)
+                : undefined
             }
             className="cursor-pointer rounded-sm bg-[#ffff00] px-0.5 text-inherit"
             style={{ color: "inherit" }}
