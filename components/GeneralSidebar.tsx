@@ -23,6 +23,8 @@ export type GeneralActivePage =
 type SidebarBadges = {
   trackBadge: string;
   readinessPercent?: number;
+  mockReady?: string;
+  newAchievements?: number;
   skillBands: {
     writing: number | null;
     speaking: number | null;
@@ -163,6 +165,10 @@ function formatBand(band: number | null | undefined): string {
   return band.toFixed(1);
 }
 
+function shortenTrackBadge(badge: string): string {
+  return badge.replace(/^Week\s+/i, "Wk ");
+}
+
 function badgeForItem(item: NavItem, badges: SidebarBadges | null): string | undefined {
   if (!badges) return undefined;
 
@@ -175,8 +181,14 @@ function badgeForItem(item: NavItem, badges: SidebarBadges | null): string | und
       return formatBand(badges.skillBands.reading);
     case "listening":
       return formatBand(badges.skillBands.listening);
-    case "progress":
-      return badges.readinessPercent != null ? `${badges.readinessPercent}%` : undefined;
+    case "mock-exam":
+      return badges.mockReady;
+    case "progress": {
+      if (badges.readinessPercent == null) return undefined;
+      const parts: string[] = [`${badges.readinessPercent}%`];
+      if ((badges.newAchievements ?? 0) > 0) parts.push(`${badges.newAchievements}🏆`);
+      return parts.join(" ");
+    }
     default:
       return undefined;
   }
@@ -254,9 +266,11 @@ export default function GeneralSidebar({
       .then((json) => {
         if (!json.error && json.sidebar) {
           setBadges({
-            trackBadge: json.sidebar.trackBadge,
+            trackBadge: shortenTrackBadge(json.sidebar.trackBadge ?? ""),
             skillBands: json.sidebar.skillBands,
             readinessPercent: json.readinessPercent ?? json.sidebar.readinessPercent,
+            mockReady: json.sidebar.mockReady,
+            newAchievements: json.sidebar.newAchievements,
           });
           if (json.track?.name) setTrackName(json.track.name);
         }

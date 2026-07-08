@@ -136,7 +136,7 @@ const DAY_TASKS: Record<StudyDay, GeneralMissionTask[]> = {
       id: "weak-skill-review",
       title: "Weak area review session",
       minutes: 20,
-      href: `${BASE}/readiness`,
+      href: `${BASE}/progress?tab=readiness`,
       taskType: "review",
     },
     {
@@ -189,21 +189,21 @@ const DAY_TASKS: Record<StudyDay, GeneralMissionTask[]> = {
       id: "week-review",
       title: "Review this week's progress",
       minutes: 15,
-      href: `${BASE}/history`,
+      href: `${BASE}/progress?tab=history`,
       taskType: "review",
     },
     {
       id: "readiness-check",
       title: "General Training readiness check",
       minutes: 10,
-      href: `${BASE}/readiness`,
+      href: `${BASE}/progress?tab=readiness`,
       taskType: "readiness",
     },
     {
       id: "plan-sunday",
       title: "Preview Sunday's mission",
       minutes: 5,
-      href: `${BASE}/weekly-plan`,
+      href: BASE,
       taskType: "planning",
     },
     {

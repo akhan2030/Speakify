@@ -261,10 +261,10 @@ function ResultsInner() {
             Take another mock
           </Link>
           <Link
-            href={`${GENERAL_STUDENT_BASE}/progress`}
+            href={`${GENERAL_STUDENT_BASE}/progress?tab=readiness`}
             className="rounded-xl border border-slate-300 px-6 py-3 text-sm font-semibold text-[#0d1b35]"
           >
-            View GT readiness →
+            My Progress →
           </Link>
         </div>
       </div>
