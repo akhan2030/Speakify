@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  GENERAL_LETTER_QUESTIONS,
-  GENERAL_TASK2_QUESTIONS,
+  GT_LETTER_PROMPT_BANK,
+  GT_TASK2_PROMPT_BANK,
   LETTER_TYPE_LABELS,
   getSessionGeneralLetterQuestion,
   getSessionGeneralTask2Question,
-  setGeneralLetterQuestionIndex,
-  setGeneralTask2QuestionIndex,
+  setGeneralLetterById,
+  setGeneralTask2ById,
   type GeneralLetterQuestion,
   type GeneralTask2Question,
 } from "@/lib/ielts-general/writingTaskData";
@@ -26,6 +26,9 @@ type Props = {
   onSubmit: (e: React.FormEvent) => void;
   formClassName?: string;
   submitLabel?: string;
+  hidePromptPicker?: boolean;
+  letterQuestion?: GeneralLetterQuestion;
+  task2Question?: GeneralTask2Question;
   onQuestionChange?: (meta: {
     questionPrompt: string;
     letterType?: GeneralLetterQuestion["letterType"];
@@ -42,29 +45,35 @@ export default function GeneralWritingPracticeForm({
   onSubmit,
   formClassName = "mt-8 space-y-6",
   submitLabel = "Get Band Score",
+  hidePromptPicker = false,
+  letterQuestion: letterQuestionProp,
+  task2Question: task2QuestionProp,
   onQuestionChange,
 }: Props) {
-  const [letterQuestion, setLetterQuestion] = useState<GeneralLetterQuestion | null>(null);
-  const [task2Question, setTask2Question] = useState<GeneralTask2Question | null>(null);
+  const [letterQuestion, setLetterQuestion] = useState<GeneralLetterQuestion | null>(
+    letterQuestionProp ?? null
+  );
+  const [task2Question, setTask2Question] = useState<GeneralTask2Question | null>(
+    task2QuestionProp ?? null
+  );
 
   useEffect(() => {
     if (taskType === "task1") {
-      const letter = getSessionGeneralLetterQuestion();
+      const letter = letterQuestionProp ?? getSessionGeneralLetterQuestion();
       setLetterQuestion(letter);
       onQuestionChange?.({
         questionPrompt: letter.prompt,
         letterType: letter.letterType,
       });
     } else {
-      const task2 = getSessionGeneralTask2Question();
+      const task2 = task2QuestionProp ?? getSessionGeneralTask2Question();
       setTask2Question(task2);
       onQuestionChange?.({
         questionPrompt: task2.prompt,
         essayType: task2.essayType,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load prompt once per task type mount
-  }, [taskType]);
+  }, [taskType, letterQuestionProp, task2QuestionProp, onQuestionChange]);
 
   const words = useMemo(() => countWords(essay), [essay]);
   const minWords = taskType === "task1" ? 150 : 250;
@@ -75,8 +84,9 @@ export default function GeneralWritingPracticeForm({
     words === 0 ? "text-slate-500" : belowMinimum ? "text-[#E24B4A]" : "text-green-600";
 
   function handleLetterSelect(index: number) {
-    setGeneralLetterQuestionIndex(index);
-    const next = GENERAL_LETTER_QUESTIONS[index % GENERAL_LETTER_QUESTIONS.length];
+    const next = GT_LETTER_PROMPT_BANK[index % GT_LETTER_PROMPT_BANK.length];
+    if (!next) return;
+    setGeneralLetterById(next.id);
     setLetterQuestion(next);
     onEssayChange("");
     onQuestionChange?.({
@@ -86,8 +96,9 @@ export default function GeneralWritingPracticeForm({
   }
 
   function handleTask2Select(index: number) {
-    setGeneralTask2QuestionIndex(index);
-    const next = GENERAL_TASK2_QUESTIONS[index % GENERAL_TASK2_QUESTIONS.length];
+    const next = GT_TASK2_PROMPT_BANK[index % GT_TASK2_PROMPT_BANK.length];
+    if (!next) return;
+    setGeneralTask2ById(next.id);
     setTask2Question(next);
     onEssayChange("");
     onQuestionChange?.({
@@ -121,38 +132,48 @@ export default function GeneralWritingPracticeForm({
           <span className="rounded-full bg-[#0d1b35] px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
             IELTS General Training — {isLetter ? "Task 1: Letter" : "Task 2: Essay"}
           </span>
-          {isLetter ? (
-            <label className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-medium">Letter scenario:</span>
-              <select
-                value={GENERAL_LETTER_QUESTIONS.findIndex((q) => q.id === letterQuestion!.id)}
-                onChange={(e) => handleLetterSelect(Number(e.target.value))}
-                disabled={loading}
-                className="max-w-[220px] rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
-              >
-                {GENERAL_LETTER_QUESTIONS.map((q, i) => (
-                  <option key={q.id} value={i}>
-                    {LETTER_TYPE_LABELS[q.letterType]} — {q.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+          {!hidePromptPicker ? (
+            isLetter ? (
+              <label className="flex items-center gap-2 text-xs text-slate-600">
+                <span className="font-medium">Letter scenario:</span>
+                <select
+                  value={GT_LETTER_PROMPT_BANK.findIndex((q) => q.id === letterQuestion!.id)}
+                  onChange={(e) => handleLetterSelect(Number(e.target.value))}
+                  disabled={loading}
+                  className="max-w-[220px] rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
+                >
+                  {GT_LETTER_PROMPT_BANK.map((q, i) => (
+                    <option key={q.id} value={i}>
+                      {LETTER_TYPE_LABELS[q.letterType]} — {q.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label className="flex items-center gap-2 text-xs text-slate-600">
+                <span className="font-medium">Essay topic:</span>
+                <select
+                  value={GT_TASK2_PROMPT_BANK.findIndex((q) => q.id === task2Question!.id)}
+                  onChange={(e) => handleTask2Select(Number(e.target.value))}
+                  disabled={loading}
+                  className="max-w-[220px] rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
+                >
+                  {GT_TASK2_PROMPT_BANK.map((q, i) => (
+                    <option key={q.id} value={i}>
+                      {q.label} — {q.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )
+          ) : isLetter ? (
+            <span className="rounded-full bg-[#c9972c]/10 px-2.5 py-1 text-xs font-semibold text-[#c9972c]">
+              {LETTER_TYPE_LABELS[letterQuestion!.letterType]}
+            </span>
           ) : (
-            <label className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-medium">Essay topic:</span>
-              <select
-                value={GENERAL_TASK2_QUESTIONS.findIndex((q) => q.id === task2Question!.id)}
-                onChange={(e) => handleTask2Select(Number(e.target.value))}
-                disabled={loading}
-                className="max-w-[220px] rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-[#0d1b35] focus:border-[#c9972c] focus:outline-none"
-              >
-                {GENERAL_TASK2_QUESTIONS.map((q, i) => (
-                  <option key={q.id} value={i}>
-                    {q.label} — {q.prompt.slice(0, 48)}…
-                  </option>
-                ))}
-              </select>
-            </label>
+            <span className="rounded-full bg-[#0d9488]/10 px-2.5 py-1 text-xs font-semibold text-[#0d9488]">
+              {task2Question!.label}
+            </span>
           )}
         </div>
 
@@ -172,12 +193,18 @@ export default function GeneralWritingPracticeForm({
             </div>
             <p className="text-sm leading-relaxed text-[#0d1b35]">{letterQuestion!.situation}</p>
             <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">In your letter, you should:</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">
+                Write a letter to {letterQuestion!.writeTo}. In your letter, you should:
+              </p>
               <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-slate-700">
                 {letterQuestion!.bulletPoints.map((point) => (
                   <li key={point}>{point}</li>
                 ))}
               </ul>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              <p className="text-xs font-semibold uppercase text-slate-500">Begin your letter as follows:</p>
+              <p className="mt-1 font-medium text-[#0d1b35]">{letterQuestion!.beginAs}</p>
             </div>
           </div>
         ) : (
@@ -190,8 +217,9 @@ export default function GeneralWritingPracticeForm({
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Essay type
               </p>
-              <p className="mt-1 text-base font-bold text-[#0d9488]">{task2Question!.essayType}</p>
+              <p className="mt-1 text-base font-bold text-[#0d9488]">{task2Question!.label}</p>
             </div>
+            <p className="mt-1 text-sm font-semibold text-[#0d1b35]">{task2Question!.title}</p>
             <div className="mt-4 whitespace-pre-line text-sm leading-relaxed text-[#0d1b35]">
               {task2Question!.prompt}
             </div>

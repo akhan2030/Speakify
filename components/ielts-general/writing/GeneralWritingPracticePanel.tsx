@@ -2,20 +2,33 @@
 
 import { useCallback, useState } from "react";
 import { criteriaSummaryForTask } from "@/lib/ielts/writingCriteria";
+import {
+  setGeneralLetterById,
+  setGeneralTask2ById,
+  type GeneralLetterQuestion,
+  type GeneralTask2Question,
+} from "@/lib/ielts-general/writingTaskData";
+import { recordGtPromptAttempt } from "@/lib/ielts-general/writingPromptAttempts";
 import GeneralWritingPracticeForm from "@/components/ielts-general/writing/GeneralWritingPracticeForm";
+import GeneralWritingPromptPicker from "@/components/ielts-general/writing/GeneralWritingPromptPicker";
 import type { LetterType } from "@/lib/ielts-general/writingTaskData";
 
 export default function GeneralWritingPracticePanel({
   lockTaskType,
 }: {
-  /** When set, only letter (task1) or essay (task2) — never Academic graph reports. */
   lockTaskType: "task1" | "task2";
 }) {
+  const [selectedLetter, setSelectedLetter] = useState<GeneralLetterQuestion | null>(null);
+  const [selectedEssay, setSelectedEssay] = useState<GeneralTask2Question | null>(null);
   const [essay, setEssay] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<string | null>(null);
   const [overallBand, setOverallBand] = useState<number | null>(null);
+
+  const selectedPrompt = lockTaskType === "task1" ? selectedLetter : selectedEssay;
+  const promptId = selectedPrompt?.id;
+
   const [questionMeta, setQuestionMeta] = useState<{
     questionPrompt: string;
     letterType?: LetterType;
@@ -32,6 +45,42 @@ export default function GeneralWritingPracticePanel({
     },
     []
   );
+
+  function handleSelectLetter(letter: GeneralLetterQuestion) {
+    setSelectedLetter(letter);
+    setGeneralLetterById(letter.id);
+    setEssay("");
+    setEvaluation(null);
+    setOverallBand(null);
+    setError(null);
+    setQuestionMeta({
+      questionPrompt: letter.prompt,
+      letterType: letter.letterType,
+    });
+  }
+
+  function handleSelectEssay(task2: GeneralTask2Question) {
+    setSelectedEssay(task2);
+    setGeneralTask2ById(task2.id);
+    setEssay("");
+    setEvaluation(null);
+    setOverallBand(null);
+    setError(null);
+    setQuestionMeta({
+      questionPrompt: task2.prompt,
+      essayType: task2.essayType,
+    });
+  }
+
+  function handleChangePrompt() {
+    if (lockTaskType === "task1") setSelectedLetter(null);
+    else setSelectedEssay(null);
+    setEssay("");
+    setEvaluation(null);
+    setOverallBand(null);
+    setError(null);
+    setQuestionMeta({ questionPrompt: "" });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,6 +110,7 @@ export default function GeneralWritingPracticePanel({
           questionPrompt: questionMeta.questionPrompt,
           letterType: questionMeta.letterType,
           essayType: questionMeta.essayType,
+          promptId,
         }),
       });
       const data = await res.json().catch(() => null);
@@ -68,6 +118,7 @@ export default function GeneralWritingPracticePanel({
         setError(data?.error || "Evaluation failed. Try again.");
         return;
       }
+      if (promptId) recordGtPromptAttempt(promptId);
       setEvaluation(String(data.evaluation || ""));
       if (data.bands?.overall != null) {
         setOverallBand(Number(data.bands.overall));
@@ -82,6 +133,16 @@ export default function GeneralWritingPracticePanel({
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!selectedPrompt) {
+    return (
+      <GeneralWritingPromptPicker
+        taskType={lockTaskType}
+        onSelectLetter={handleSelectLetter}
+        onSelectEssay={handleSelectEssay}
+      />
+    );
   }
 
   if (evaluation) {
@@ -115,16 +176,32 @@ export default function GeneralWritingPracticePanel({
   }
 
   return (
-    <GeneralWritingPracticeForm
-      taskType={lockTaskType}
-      essay={essay}
-      onEssayChange={setEssay}
-      loading={loading}
-      error={error}
-      onSubmit={onSubmit}
-      formClassName="space-y-6"
-      submitLabel={`Submit for AI score (${criteriaSummaryForTask(lockTaskType)})`}
-      onQuestionChange={handleQuestionChange}
-    />
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={handleChangePrompt}
+          className="text-sm font-semibold text-[#0d9488] hover:underline"
+        >
+          ← Choose a different {lockTaskType === "task1" ? "letter" : "question"}
+        </button>
+        <span className="text-xs text-slate-500">{selectedPrompt.title}</span>
+      </div>
+
+      <GeneralWritingPracticeForm
+        taskType={lockTaskType}
+        essay={essay}
+        onEssayChange={setEssay}
+        loading={loading}
+        error={error}
+        onSubmit={onSubmit}
+        formClassName="space-y-6"
+        submitLabel={`Submit for AI score (${criteriaSummaryForTask(lockTaskType)})`}
+        onQuestionChange={handleQuestionChange}
+        hidePromptPicker
+        letterQuestion={selectedLetter ?? undefined}
+        task2Question={selectedEssay ?? undefined}
+      />
+    </div>
   );
 }
