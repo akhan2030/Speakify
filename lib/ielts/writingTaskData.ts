@@ -3,6 +3,7 @@ export type Task1VisualType = "bar" | "line" | "pie" | "table" | "map" | "proces
 export type Task2EssayType =
   | "Opinion"
   | "Discussion"
+  | "Cause & Effect"
   | "Problem & Solution"
   | "Advantages & Disadvantages"
   | "Two-Part Question";

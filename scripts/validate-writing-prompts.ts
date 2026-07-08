@@ -128,8 +128,7 @@ function validateTask1() {
 
   for (const cat of TASK1_CATEGORIES) {
     const count = TASK1_PROMPT_BANK.filter((q) => q.visualType === cat.id).length;
-    if (count < 4) add(cat.id, `Task 1 category "${cat.label}" has only ${count} prompts (target 4–6)`);
-    if (count > 6) add(cat.id, `Task 1 category "${cat.label}" has ${count} prompts (max 6)`);
+    if (count !== 6) add(cat.id, `Task 1 category "${cat.label}" has ${count} prompts (expected 6)`);
   }
 }
 
@@ -156,6 +155,11 @@ function validateTask2() {
           add(q.id, "Discussion prompt should ask to discuss both views");
         }
         break;
+      case "Cause & Effect":
+        if (!/causes?|effects?|reasons?|consequences|results?/i.test(p)) {
+          add(q.id, "Cause & Effect prompt should ask about causes and/or effects");
+        }
+        break;
       case "Problem & Solution":
         if (!/what|how|measures|solutions|problems|causes/i.test(p)) {
           add(q.id, "Problem-Solution prompt should ask about problems/causes and solutions");
@@ -176,8 +180,7 @@ function validateTask2() {
 
   for (const cat of TASK2_CATEGORIES) {
     const count = TASK2_PROMPT_BANK.filter((q) => q.essayType === cat.id).length;
-    if (count < 4) add(cat.id, `Task 2 category "${cat.label}" has only ${count} prompts (target 4–6)`);
-    if (count > 6) add(cat.id, `Task 2 category "${cat.label}" has ${count} prompts (max 6)`);
+    if (count !== 6) add(cat.id, `Task 2 category "${cat.label}" has ${count} prompts (expected 6)`);
   }
 }
 

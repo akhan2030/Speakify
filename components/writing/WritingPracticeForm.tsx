@@ -23,7 +23,7 @@ const VISUAL_TYPE_LABELS: Record<Task1Question["visualType"], string> = {
   pie: "Pie chart",
   table: "Table",
   map: "Map",
-  process: "Process diagram",
+  process: "Diagram",
 };
 
 type Props = {

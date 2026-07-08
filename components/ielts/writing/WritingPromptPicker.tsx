@@ -23,12 +23,13 @@ const VISUAL_ICONS: Record<Task1Question["visualType"], string> = {
   pie: "🥧",
   table: "📋",
   map: "🗺️",
-  process: "⚙️",
+  process: "📐",
 };
 
 const ESSAY_ICONS: Record<Task2Question["essayType"], string> = {
   Opinion: "💭",
   Discussion: "⚖️",
+  "Cause & Effect": "🔗",
   "Problem & Solution": "🔧",
   "Advantages & Disadvantages": "↔️",
   "Two-Part Question": "❓",

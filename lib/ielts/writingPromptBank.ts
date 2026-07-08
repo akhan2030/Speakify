@@ -29,17 +29,18 @@ export type Task2Category = {
 };
 
 export const TASK1_CATEGORIES: Task1Category[] = [
+  { id: "process", label: "Diagram", description: "How something works, is made, or cycles" },
   { id: "line", label: "Line Graph", description: "Trends over time" },
   { id: "bar", label: "Bar Chart", description: "Comparisons across categories" },
   { id: "pie", label: "Pie Chart", description: "Proportions of a whole" },
   { id: "table", label: "Table", description: "Multiple data sets side by side" },
-  { id: "process", label: "Process Diagram", description: "Stages in a sequence" },
   { id: "map", label: "Map", description: "Changes to a place over time" },
 ];
 
 export const TASK2_CATEGORIES: Task2Category[] = [
   { id: "Opinion", label: "Opinion Essay", description: "Agree / disagree with a statement" },
   { id: "Discussion", label: "Discussion", description: "Both views + your opinion" },
+  { id: "Cause & Effect", label: "Cause & Effect", description: "Reasons why + consequences" },
   { id: "Problem & Solution", label: "Problem-Solution", description: "Problems and how to fix them" },
   {
     id: "Advantages & Disadvantages",
@@ -135,8 +136,25 @@ export const TASK1_PROMPT_BANK: Task1Question[] = [
       ],
     },
   },
+  {
+    id: "tourism-employment",
+    visualType: "bar",
+    title: "Tourism employment",
+    summary: "Jobs in tourism sector by region (2010 vs 2022)",
+    chartTitle: "Employment in the tourism sector (thousands of jobs)",
+    prompt:
+      "The bar chart below shows the number of people employed in the tourism sector in four regions in 2010 and 2022.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    bar: {
+      categories: ["Coastal", "Mountain", "Urban", "Rural"],
+      yAxisLabel: "Thousands of jobs",
+      series: [
+        { name: "2010", color: "#0d9488", values: [420, 180, 560, 210] },
+        { name: "2022", color: "#c9972c", values: [580, 245, 720, 290] },
+      ],
+    },
+  },
 
-  // ── Line Graph (5) ─────────────────────────────────────────────────────────
+  // ── Line Graph (6) ─────────────────────────────────────────────────────────
   {
     id: "renewable-energy",
     visualType: "line",
@@ -226,8 +244,27 @@ export const TASK1_PROMPT_BANK: Task1Question[] = [
       ],
     },
   },
+  {
+    id: "mobile-phone-ownership",
+    visualType: "line",
+    title: "Mobile phone ownership",
+    summary: "Percentage of households with a mobile phone (1995–2020)",
+    chartTitle: "Household mobile phone ownership (%)",
+    prompt:
+      "The line graph below shows the percentage of households that owned at least one mobile phone in four countries between 1995 and 2020.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    line: {
+      years: ["1995", "2000", "2005", "2010", "2015", "2020"],
+      yAxisLabel: "Percentage (%)",
+      series: [
+        { name: "Sweden", color: "#0d9488", values: [18, 72, 88, 94, 97, 99] },
+        { name: "Italy", color: "#c9972c", values: [8, 58, 82, 91, 95, 98] },
+        { name: "India", color: "#0d1b35", values: [1, 4, 18, 52, 78, 92] },
+        { name: "Kenya", color: "#7c3aed", values: [0, 2, 12, 48, 82, 95] },
+      ],
+    },
+  },
 
-  // ── Pie Chart (5) ──────────────────────────────────────────────────────────
+  // ── Pie Chart (6) ──────────────────────────────────────────────────────────
   {
     id: "government-budget",
     visualType: "pie",
@@ -322,8 +359,26 @@ export const TASK1_PROMPT_BANK: Task1Question[] = [
       ],
     },
   },
+  {
+    id: "waste-disposal-methods",
+    visualType: "pie",
+    title: "Waste disposal",
+    summary: "How household waste is disposed of in a city (2023)",
+    chartTitle: "Household waste disposal methods (%)",
+    prompt:
+      "The pie chart below shows the methods used to dispose of household waste in a city in 2023.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    pie: {
+      segments: [
+        { name: "Recycling", value: 32, color: "#0d9488" },
+        { name: "Landfill", value: 28, color: "#c9972c" },
+        { name: "Composting", value: 18, color: "#0d1b35" },
+        { name: "Incineration", value: 14, color: "#7c3aed" },
+        { name: "Other", value: 8, color: "#94a3b8" },
+      ],
+    },
+  },
 
-  // ── Table (5) ──────────────────────────────────────────────────────────────
+  // ── Table (6) ──────────────────────────────────────────────────────────────
   {
     id: "international-students",
     visualType: "table",
@@ -426,8 +481,28 @@ export const TASK1_PROMPT_BANK: Task1Question[] = [
       ],
     },
   },
+  {
+    id: "school-enrolment-subjects",
+    visualType: "table",
+    title: "School enrolment",
+    summary: "Students enrolled in secondary subjects (2015 vs 2023)",
+    chartTitle: "Secondary school enrolment by subject area",
+    prompt:
+      "The table below shows the number of students enrolled in different subject areas at secondary schools in a country in 2015 and 2023.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    table: {
+      headers: ["Subject area", "2015", "2018", "2023"],
+      rows: [
+        ["Mathematics", "842,000", "856,000", "891,000"],
+        ["Sciences", "615,000", "638,000", "702,000"],
+        ["Languages", "528,000", "512,000", "498,000"],
+        ["Arts & design", "312,000", "325,000", "341,000"],
+        ["Technology", "284,000", "318,000", "412,000"],
+        ["Total", "2,581,000", "2,649,000", "2,844,000"],
+      ],
+    },
+  },
 
-  // ── Process Diagram (5) ────────────────────────────────────────────────────
+  // ── Diagram (6) ──────────────────────────────────────────────────────────────
   {
     id: "water-treatment",
     visualType: "process",
@@ -528,8 +603,28 @@ export const TASK1_PROMPT_BANK: Task1Question[] = [
       ],
     },
   },
+  {
+    id: "paper-production",
+    visualType: "process",
+    title: "Paper production",
+    summary: "How paper is made from raw wood to finished sheets",
+    chartTitle: "The process of paper production",
+    prompt:
+      "The diagram below shows how paper is produced from wood.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    process: {
+      steps: [
+        { label: "Trees cut down", detail: "Logs transported to the paper mill" },
+        { label: "Debarking", detail: "Outer bark removed from logs" },
+        { label: "Chipping", detail: "Wood cut into small chips" },
+        { label: "Pulping", detail: "Chips mixed with water and chemicals" },
+        { label: "Cleaning & bleaching", detail: "Pulp washed and whitened" },
+        { label: "Rolling", detail: "Pulp pressed and dried into sheets" },
+        { label: "Cutting & packaging", detail: "Paper cut to size and boxed" },
+      ],
+    },
+  },
 
-  // ── Map (5) ────────────────────────────────────────────────────────────────
+  // ── Map (6) ────────────────────────────────────────────────────────────────
   {
     id: "town-development",
     visualType: "map",
@@ -605,6 +700,21 @@ export const TASK1_PROMPT_BANK: Task1Question[] = [
       afterYear: "After",
     },
   },
+  {
+    id: "neighbourhood-redevelopment",
+    visualType: "map",
+    title: "Neighbourhood change",
+    summary: "Residential area before and after redevelopment",
+    chartTitle: "Redevelopment of a city neighbourhood (1990 vs 2020)",
+    prompt:
+      "The maps below show a residential neighbourhood in a city in 1990 and 2020.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    map: {
+      beforeLabel: "1990",
+      afterLabel: "2020",
+      beforeYear: "1990",
+      afterYear: "2020",
+    },
+  },
 ];
 
 export const TASK2_PROMPT_BANK: Task2Question[] = [
@@ -654,8 +764,17 @@ export const TASK2_PROMPT_BANK: Task2Question[] = [
     prompt:
       "Some people believe that zoos are cruel and should be closed. Others argue that zoos play an important role in education and conservation. To what extent do you agree or disagree that zoos should be banned?",
   },
+  {
+    id: "social-media-youth",
+    label: "Opinion Essay",
+    essayType: "Opinion",
+    title: "Social media",
+    summary: "Is social media harmful for young people?",
+    prompt:
+      "Some people believe that social media has a negative effect on young people. To what extent do you agree or disagree?",
+  },
 
-  // ── Discussion (5) ─────────────────────────────────────────────────────────
+  // ── Discussion (6) ─────────────────────────────────────────────────────────
   {
     id: "public-transport-roads",
     label: "Discussion Essay",
@@ -701,8 +820,73 @@ export const TASK2_PROMPT_BANK: Task2Question[] = [
     prompt:
       "Some people think that competitive sports should be a compulsory part of the school curriculum. Others believe that sport should be optional and that academic subjects are more important. Discuss both views and give your own opinion.",
   },
+  {
+    id: "homework-necessary",
+    label: "Discussion Essay",
+    essayType: "Discussion",
+    title: "Homework",
+    summary: "Should schools assign homework to students?",
+    prompt:
+      "Some people believe that homework is essential for students to succeed academically. Others argue that homework puts too much pressure on young people and should be reduced or abolished. Discuss both views and give your own opinion.",
+  },
 
-  // ── Problem & Solution (5) ─────────────────────────────────────────────────
+  // ── Cause & Effect (6) ───────────────────────────────────────────────────────
+  {
+    id: "childhood-obesity",
+    label: "Cause & Effect",
+    essayType: "Cause & Effect",
+    title: "Childhood obesity",
+    summary: "Causes and effects of rising childhood obesity",
+    prompt:
+      "In many countries, the number of children who are overweight or obese is increasing. What are the causes of this problem? What effects does it have on children and society?",
+  },
+  {
+    id: "ageing-population",
+    label: "Cause & Effect",
+    essayType: "Cause & Effect",
+    title: "Ageing population",
+    summary: "Why populations are ageing and the effects on society",
+    prompt:
+      "In many countries, the proportion of older people is steadily increasing. What are the causes of this trend? What effects does an ageing population have on society and the economy?",
+  },
+  {
+    id: "rising-living-costs",
+    label: "Cause & Effect",
+    essayType: "Cause & Effect",
+    title: "Rising living costs",
+    summary: "Why the cost of living is increasing and its effects on families",
+    prompt:
+      "The cost of living has risen sharply in many countries in recent years. What are the causes of this increase? What effects does it have on individuals and families?",
+  },
+  {
+    id: "smartphone-addiction-youth",
+    label: "Cause & Effect",
+    essayType: "Cause & Effect",
+    title: "Smartphone overuse",
+    summary: "Why young people overuse phones and the consequences",
+    prompt:
+      "Many young people spend several hours a day on their smartphones. What are the causes of this behaviour? What effects does excessive smartphone use have on young people?",
+  },
+  {
+    id: "climate-change-agriculture",
+    label: "Cause & Effect",
+    essayType: "Cause & Effect",
+    title: "Climate change & farming",
+    summary: "How climate change affects food production",
+    prompt:
+      "Climate change is having a significant impact on agriculture around the world. What are the causes of this problem? What effects does it have on farmers and food supplies?",
+  },
+  {
+    id: "rural-depopulation",
+    label: "Cause & Effect",
+    essayType: "Cause & Effect",
+    title: "Rural depopulation",
+    summary: "Why people leave countryside and effects on rural areas",
+    prompt:
+      "In many countries, young people are leaving rural areas to live in cities. What are the causes of this trend? What effects does rural depopulation have on villages and urban areas?",
+  },
+
+  // ── Problem & Solution (6) ─────────────────────────────────────────────────
   {
     id: "air-pollution-traffic",
     label: "Problem & Solution",
@@ -748,8 +932,17 @@ export const TASK2_PROMPT_BANK: Task2Question[] = [
     prompt:
       "In some areas, antisocial behaviour such as vandalism and noise disturbance is increasing. What problems does this cause for local communities? What solutions can help reduce antisocial behaviour?",
   },
+  {
+    id: "traffic-congestion",
+    label: "Problem & Solution",
+    essayType: "Problem & Solution",
+    title: "Traffic congestion",
+    summary: "Growing traffic jams in major cities",
+    prompt:
+      "Traffic congestion is a serious problem in many large cities. What are the causes of this problem? What measures could be taken to reduce traffic congestion?",
+  },
 
-  // ── Advantages & Disadvantages (5) ─────────────────────────────────────────
+  // ── Advantages & Disadvantages (6) ─────────────────────────────────────────
   {
     id: "work-from-home",
     label: "Advantages & Disadvantages",
@@ -795,16 +988,25 @@ export const TASK2_PROMPT_BANK: Task2Question[] = [
     prompt:
       "Online shopping has become increasingly popular and many traditional shops have closed. Do the advantages of online shopping outweigh the disadvantages for consumers and society?",
   },
-
-  // ── Two-Part Question (5) ──────────────────────────────────────────────────
   {
-    id: "childhood-obesity",
+    id: "living-alone",
+    label: "Advantages & Disadvantages",
+    essayType: "Advantages & Disadvantages",
+    title: "Living alone",
+    summary: "More people choosing to live on their own",
+    prompt:
+      "In many countries, an increasing number of people are choosing to live alone. Do the advantages of living alone outweigh the disadvantages?",
+  },
+
+  // ── Two-Part Question (6) ──────────────────────────────────────────────────
+  {
+    id: "sleep-deprivation",
     label: "Two-Part Question",
     essayType: "Two-Part Question",
-    title: "Childhood obesity",
-    summary: "Causes and effects of rising childhood obesity",
+    title: "Sleep deprivation",
+    summary: "Why people sleep less and the problems this causes",
     prompt:
-      "In many countries, the number of children who are overweight or obese is increasing. What are the causes of this problem? What effects does it have on children and society?",
+      "Many people today are getting less sleep than previous generations. Why is this happening? What problems can lack of sleep cause for individuals and society?",
   },
   {
     id: "globalisation-effects",
@@ -841,6 +1043,15 @@ export const TASK2_PROMPT_BANK: Task2Question[] = [
     summary: "Why fast food is popular and how to promote healthier eating",
     prompt:
       "Fast food restaurants are becoming more popular in many countries. Why is this trend occurring? How can governments encourage people to eat more healthily?",
+  },
+  {
+    id: "newspapers-role",
+    label: "Two-Part Question",
+    essayType: "Two-Part Question",
+    title: "Newspapers today",
+    summary: "Why people still read newspapers and how papers can survive",
+    prompt:
+      "Although many people get news online, newspapers remain popular in some countries. Why do people still read newspapers? What can newspapers do to remain relevant in the digital age?",
   },
 ];
 
