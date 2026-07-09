@@ -1,16 +1,25 @@
-type TwilioSendResult = { ok: boolean; mode: "twilio" | "console"; error?: string };
+import {
+  isMetaWhatsAppConfigured,
+  isTwilioSmsConfigured,
+  isTwilioWhatsAppConfigured,
+} from "@/lib/auth/messagingConfig";
+
+type SendResult = {
+  ok: boolean;
+  mode: "twilio" | "meta" | "console";
+  error?: string;
+};
 
 async function twilioSendMessage(input: {
   to: string;
   body: string;
   channel: "whatsapp" | "sms";
-}): Promise<TwilioSendResult> {
+}): Promise<SendResult> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
 
   if (!accountSid || !authToken) {
-    console.log(`[otp:${input.channel}] To ${input.to}: ${input.body}`);
-    return { ok: true, mode: "console" };
+    return { ok: false, mode: "console", error: "Twilio is not configured." };
   }
 
   const from =
@@ -19,8 +28,11 @@ async function twilioSendMessage(input: {
       : process.env.TWILIO_SMS_FROM?.trim() || process.env.TWILIO_PHONE_FROM?.trim();
 
   if (!from) {
-    console.log(`[otp:${input.channel}] Missing FROM env — logging message to ${input.to}: ${input.body}`);
-    return { ok: true, mode: "console" };
+    return {
+      ok: false,
+      mode: "console",
+      error: `Twilio ${input.channel} sender is not configured.`,
+    };
   }
 
   const fromFormatted =
@@ -65,6 +77,48 @@ async function twilioSendMessage(input: {
   }
 }
 
+async function metaWhatsAppSendMessage(phone: string, body: string): Promise<SendResult> {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
+
+  if (!accessToken || !phoneNumberId) {
+    return { ok: false, mode: "console", error: "Meta WhatsApp is not configured." };
+  }
+
+  const to = phone.replace(/\D/g, "");
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to,
+          type: "text",
+          text: { body },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("[meta:whatsapp]", text);
+      return { ok: false, mode: "meta", error: text || `Meta HTTP ${response.status}` };
+    }
+
+    return { ok: true, mode: "meta" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Meta WhatsApp send failed";
+    console.error("[meta:whatsapp]", message);
+    return { ok: false, mode: "meta", error: message };
+  }
+}
+
 export function buildOtpMessage(otp: string): string {
   return (
     `Your Speakify password reset code is: *${otp}*\n\n` +
@@ -73,15 +127,26 @@ export function buildOtpMessage(otp: string): string {
   );
 }
 
-export async function sendWhatsAppOtp(phone: string, otp: string) {
-  return twilioSendMessage({
-    to: phone,
-    body: buildOtpMessage(otp),
-    channel: "whatsapp",
-  });
+export async function sendWhatsAppOtp(phone: string, otp: string): Promise<SendResult> {
+  const body = buildOtpMessage(otp);
+
+  if (isMetaWhatsAppConfigured()) {
+    const metaResult = await metaWhatsAppSendMessage(phone, body);
+    if (metaResult.ok) return metaResult;
+  }
+
+  if (isTwilioWhatsAppConfigured()) {
+    return twilioSendMessage({ to: phone, body, channel: "whatsapp" });
+  }
+
+  return { ok: false, mode: "console", error: "WhatsApp delivery is not configured." };
 }
 
-export async function sendSmsOtp(phone: string, otp: string) {
+export async function sendSmsOtp(phone: string, otp: string): Promise<SendResult> {
+  if (!isTwilioSmsConfigured()) {
+    return { ok: false, mode: "console", error: "SMS delivery is not configured." };
+  }
+
   return twilioSendMessage({
     to: phone,
     body: `Speakify password reset code: ${otp}. Expires in 10 minutes.`,

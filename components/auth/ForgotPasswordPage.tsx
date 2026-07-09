@@ -34,6 +34,8 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resetToken, setResetToken] = useState("");
+  const [otpDelivery, setOtpDelivery] = useState<"whatsapp" | "sms" | "email">("whatsapp");
+  const [otpMaskedEmail, setOtpMaskedEmail] = useState("");
 
   const phoneE164 = phone.length === 9 ? `+966${phone}` : "";
 
@@ -56,6 +58,8 @@ export default function ForgotPasswordPage() {
       return;
     }
     setOtpChannel(channel);
+    setOtpDelivery(data.delivery === "email" ? "email" : channel);
+    setOtpMaskedEmail(typeof data.maskedEmail === "string" ? data.maskedEmail : "");
     setOtp("");
     setMethod("otp");
   }
@@ -299,10 +303,15 @@ export default function ForgotPasswordPage() {
   }
 
   if (method === "otp") {
+    const otpSubtitle =
+      otpDelivery === "email"
+        ? `We sent a 6-digit code to ${otpMaskedEmail || "your registered email"}. WhatsApp was unavailable, so check your inbox and spam folder. The code expires in 10 minutes.`
+        : `We sent a 6-digit code to ${otpChannel === "whatsapp" ? "WhatsApp" : "SMS"} number +966${phone}. It expires in 10 minutes.`;
+
     return (
       <AuthCardShell
         title="Enter your code"
-        subtitle={`We sent a 6-digit code to ${otpChannel === "whatsapp" ? "WhatsApp" : "SMS"} number +966${phone}. It expires in 10 minutes.`}
+        subtitle={otpSubtitle}
       >
         <div className="mb-6">
           <OtpInput value={otp} onChange={setOtp} />
