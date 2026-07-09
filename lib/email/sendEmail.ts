@@ -34,6 +34,9 @@ export function resolveEmailFrom(): string {
 function formatResendError(body: string): string {
   try {
     const parsed = JSON.parse(body) as { message?: string };
+    if (parsed.message?.includes("only send testing emails")) {
+      return "Email delivery is limited in test mode. Use email reset with your registered address, or contact Speakify support.";
+    }
     if (parsed.message?.includes("Invalid `from` field")) {
       return "Email sender is misconfigured. Please contact Speakify support.";
     }

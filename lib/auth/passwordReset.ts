@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hashPassword } from "@/lib/password";
-import { phoneLookupVariants } from "@/lib/auth/phone";
+import { normalizeSaudiPhone, phoneLookupVariants } from "@/lib/auth/phone";
 
 export type ResetMethod = "whatsapp" | "sms" | "email" | "verified";
 
@@ -38,29 +38,58 @@ export async function findUserByEmail(supabase: SupabaseClient, email: string) {
 }
 
 export async function findUserByPhone(supabase: SupabaseClient, e164Phone: string) {
-  const variants = phoneLookupVariants(e164Phone);
-  for (const variant of variants) {
-    const { data } = await supabase
-      .from("users")
-      .select("id, name, email, phone")
-      .eq("phone", variant)
-      .maybeSingle();
-    if (data) return data;
-  }
+  const normalizedTarget = e164Phone.replace(/\D/g, "");
+  const targetLocal = normalizedTarget.startsWith("966")
+    ? normalizedTarget.slice(3)
+    : normalizedTarget;
 
-  const digitsOnly = e164Phone.replace(/\D/g, "");
   const { data: rows } = await supabase
     .from("users")
     .select("id, name, email, phone")
-    .not("phone", "is", null)
-    .limit(500);
+    .not("phone", "is", null);
 
-  const match = (rows ?? []).find((row) => {
-    const stored = String(row.phone ?? "").replace(/\D/g, "");
-    return stored === digitsOnly || stored.endsWith(digitsOnly.slice(-9));
+  const matches = (rows ?? []).filter((row) => {
+    const storedDigits = String(row.phone ?? "").replace(/\D/g, "");
+    if (!storedDigits) return false;
+
+    const storedLocal = storedDigits.startsWith("966")
+      ? storedDigits.slice(3)
+      : storedDigits.startsWith("0")
+        ? storedDigits.slice(1)
+        : storedDigits;
+
+    return (
+      storedDigits === normalizedTarget ||
+      storedLocal === targetLocal ||
+      storedDigits.endsWith(targetLocal)
+    );
   });
 
-  return match ?? null;
+  if (matches.length === 0) return null;
+
+  const exactNormalized = matches.filter(
+    (row) => normalizeSaudiPhone(String(row.phone ?? "")) === e164Phone
+  );
+
+  const pool = exactNormalized.length > 0 ? exactNormalized : matches;
+
+  if (pool.length > 1) {
+    const distinctEmails = new Set(pool.map((row) => String(row.email ?? "").toLowerCase()));
+    if (distinctEmails.size > 1) {
+      const international = pool.find((row) =>
+        String(row.phone ?? "").trim().startsWith("+966")
+      );
+      if (international) return international;
+      return null;
+    }
+  }
+
+  const preferred =
+    pool.find((row) => String(row.phone ?? "").includes("+966")) ??
+    pool.find((row) => String(row.email ?? "").includes("@")) ??
+    pool[0];
+
+  return preferred ?? null;
 }
 
 export async function upsertPasswordResetToken(
