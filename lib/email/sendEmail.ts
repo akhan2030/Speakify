@@ -11,10 +11,42 @@ export type SendEmailResult = {
   error?: string;
 };
 
+const DEFAULT_FROM = "Speakify LMS <onboarding@resend.dev>";
+
+/** Strip accidental trailing env junk and validate Resend `from` format. */
+export function resolveEmailFrom(): string {
+  const raw = process.env.EMAIL_FROM?.trim();
+  if (!raw) return DEFAULT_FROM;
+
+  const named = raw.match(/^([^<]+?)\s*<([^>\s]+@[^>\s]+\.[^>\s]+)>/);
+  if (named) {
+    return `${named[1].trim()} <${named[2].trim()}>`;
+  }
+
+  const plain = raw.match(/([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/);
+  if (plain) {
+    return `Speakify LMS <${plain[1]}>`;
+  }
+
+  return DEFAULT_FROM;
+}
+
+function formatResendError(body: string): string {
+  try {
+    const parsed = JSON.parse(body) as { message?: string };
+    if (parsed.message?.includes("Invalid `from` field")) {
+      return "Email sender is misconfigured. Please contact Speakify support.";
+    }
+    if (parsed.message) return parsed.message;
+  } catch {
+    // keep raw body fallback
+  }
+  return body || "Email send failed";
+}
+
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   const resendKey = process.env.RESEND_API_KEY?.trim();
-  const from =
-    process.env.EMAIL_FROM?.trim() || "Speakify LMS <noreply@speakify.com>";
+  const from = resolveEmailFrom();
 
   if (resendKey) {
     try {
@@ -38,7 +70,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         return {
           ok: false,
           mode: "resend",
-          error: body || `Resend HTTP ${response.status}`,
+          error: formatResendError(body),
         };
       }
 
