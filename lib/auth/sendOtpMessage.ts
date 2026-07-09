@@ -127,6 +127,23 @@ export function buildOtpMessage(otp: string): string {
   );
 }
 
+export async function sendSmsText(phone: string, body: string): Promise<SendResult> {
+  if (!isTwilioSmsConfigured()) {
+    return { ok: false, mode: "console", error: "SMS delivery is not configured." };
+  }
+  return twilioSendMessage({ to: phone, body, channel: "sms" });
+}
+
+export async function sendWhatsAppText(phone: string, body: string): Promise<SendResult> {
+  if (isMetaWhatsAppConfigured()) {
+    return metaWhatsAppSendMessage(phone, body);
+  }
+  if (isTwilioWhatsAppConfigured()) {
+    return twilioSendMessage({ to: phone, body, channel: "whatsapp" });
+  }
+  return { ok: false, mode: "console", error: "WhatsApp delivery is not configured." };
+}
+
 export async function sendWhatsAppOtp(phone: string, otp: string): Promise<SendResult> {
   const body = buildOtpMessage(otp);
 

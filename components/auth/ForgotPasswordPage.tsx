@@ -17,6 +17,7 @@ type Method =
   | "sms"
   | "email"
   | "otp"
+  | "code_sent"
   | "email_sent"
   | "new_password"
   | "success";
@@ -34,10 +35,10 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resetToken, setResetToken] = useState("");
-  const [otpDelivery, setOtpDelivery] = useState<"whatsapp" | "sms" | "email">("whatsapp");
-  const [otpMaskedEmail, setOtpMaskedEmail] = useState("");
 
   const phoneE164 = phone.length === 9 ? `+966${phone}` : "";
+  const genericResetMessage =
+    "If an account exists with a verified contact method on file, we have sent reset instructions.";
 
   async function sendOtp(channel: OtpChannel) {
     if (phone.length < 9) {
@@ -53,15 +54,14 @@ export default function ForgotPasswordPage() {
     });
     const data = await res.json().catch(() => ({}));
     setLoading(false);
-    if (data.error) {
-      setError(data.error);
+    if (!res.ok && res.status === 400) {
+      setError(data.error ?? "Please enter a valid phone number.");
       return;
     }
     setOtpChannel(channel);
-    setOtpDelivery(data.delivery === "email" ? "email" : channel);
-    setOtpMaskedEmail(typeof data.maskedEmail === "string" ? data.maskedEmail : "");
     setOtp("");
-    setMethod("otp");
+    setError("");
+    setMethod("code_sent");
   }
 
   async function verifyOtp() {
@@ -254,10 +254,11 @@ export default function ForgotPasswordPage() {
               });
               const data = await res.json().catch(() => ({}));
               setLoading(false);
-              if (data.error) {
-                setError(data.error);
+              if (!res.ok && res.status === 400) {
+                setError(data.error ?? "Please enter a valid email address.");
                 return;
               }
+              setError("");
               setMethod("email_sent");
             }}
           >
@@ -276,8 +277,8 @@ export default function ForgotPasswordPage() {
             📧
           </div>
           <p className="text-sm leading-relaxed text-slate-600">
-            If an account exists for <strong>{email}</strong>, we sent a password reset link.
-            The link expires in 1 hour.
+            {genericResetMessage} Check your verified email, WhatsApp, or SMS. Codes expire in 10
+            minutes; email links expire in 15 minutes.
           </p>
           <p className="mt-3 text-xs text-slate-500">
             Did not receive it? Check spam, or try WhatsApp reset instead.
@@ -302,16 +303,38 @@ export default function ForgotPasswordPage() {
     );
   }
 
-  if (method === "otp") {
-    const otpSubtitle =
-      otpDelivery === "email"
-        ? `We sent a 6-digit code to ${otpMaskedEmail || "your registered email"}. WhatsApp was unavailable, so check your inbox and spam folder. The code expires in 10 minutes.`
-        : `We sent a 6-digit code to ${otpChannel === "whatsapp" ? "WhatsApp" : "SMS"} number +966${phone}. It expires in 10 minutes.`;
+  if (method === "code_sent") {
+    return (
+      <AuthCardShell title="Check your messages" subtitle={genericResetMessage}>
+        <p className="mb-4 text-sm text-slate-600">
+          If you received a 6-digit code on your verified contact method, enter it below.
+        </p>
+        <div className="mb-6">
+          <OtpInput value={otp} onChange={setOtp} />
+        </div>
+        {error ? <p className="mb-3 text-center text-sm text-red-600">{error}</p> : null}
+        <AuthPrimaryButton disabled={otp.length < 6} loading={loading} onClick={verifyOtp}>
+          Verify code →
+        </AuthPrimaryButton>
+        <p className="mt-4 text-center text-sm text-slate-500">
+          Did not receive a code?{" "}
+          <button
+            type="button"
+            onClick={() => sendOtp(otpChannel)}
+            className="font-semibold text-[#0d9488] hover:underline"
+          >
+            Try again
+          </button>
+        </p>
+      </AuthCardShell>
+    );
+  }
 
+  if (method === "otp") {
     return (
       <AuthCardShell
         title="Enter your code"
-        subtitle={otpSubtitle}
+        subtitle={genericResetMessage}
       >
         <div className="mb-6">
           <OtpInput value={otp} onChange={setOtp} />

@@ -17,7 +17,7 @@ export type PasswordResetRow = {
 };
 
 const OTP_TTL_MS = 10 * 60 * 1000;
-const EMAIL_TTL_MS = 60 * 60 * 1000;
+const EMAIL_TTL_MS = 15 * 60 * 1000;
 
 export function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -31,7 +31,7 @@ export async function findUserByEmail(supabase: SupabaseClient, email: string) {
   const normalized = email.trim().toLowerCase();
   const { data } = await supabase
     .from("users")
-    .select("id, name, email, phone")
+    .select("id, name, email, phone, email_verified_at, phone_verified_at")
     .eq("email", normalized)
     .maybeSingle();
   return data;
@@ -45,7 +45,7 @@ export async function findUserByPhone(supabase: SupabaseClient, e164Phone: strin
 
   const { data: rows } = await supabase
     .from("users")
-    .select("id, name, email, phone")
+    .select("id, name, email, phone, email_verified_at, phone_verified_at")
     .not("phone", "is", null);
 
   const matches = (rows ?? []).filter((row) => {

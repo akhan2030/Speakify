@@ -85,13 +85,14 @@ export default function RegisterForm({
       }
 
       const params = new URLSearchParams({
+        userId: json.userId ?? "",
         name: fullName.trim(),
         program: slug,
       });
       if (purchasedTrack) {
         params.set("track", purchasedTrack);
       }
-      router.push(`/register/welcome?${params.toString()}`);
+      router.push(`/register/verify?${params.toString()}`);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

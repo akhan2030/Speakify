@@ -7,6 +7,8 @@ import {
 } from "@/lib/registration";
 import { hashPassword } from "@/lib/password";
 import { trackFromEnrollmentSlug } from "@/lib/accelerator/tracks";
+import { normalizeSaudiPhone } from "@/lib/auth/phone";
+import { issueRegistrationVerifications } from "@/lib/auth/verification";
 
 export const runtime = "nodejs";
 
@@ -95,6 +97,7 @@ export async function POST(request) {
     const passwordHash = await hashPassword(password);
     const userId = randomUUID();
     const cefrLevel = englishLevel ? englishLevelToCefr(englishLevel) : null;
+    const normalizedPhone = normalizeSaudiPhone(phone) ?? phone.trim();
 
     const isStepRegistration = registrationSlug === "step-test";
     const isIeltsGeneralRegistration = registrationSlug === "ielts-general";
@@ -109,7 +112,9 @@ export async function POST(request) {
       email,
       password: passwordHash,
       role: "student",
-      phone,
+      phone: normalizedPhone,
+      email_verified_at: null,
+      phone_verified_at: null,
       program_type: isIeltsGeneralRegistration
         ? "ielts_general"
         : isIeltsRegistration
@@ -181,11 +186,27 @@ export async function POST(request) {
       }
     }
 
+    try {
+      await issueRegistrationVerifications(
+        supabase,
+        {
+          id: newUser.id,
+          name: fullName,
+          email,
+          phone: normalizedPhone,
+        },
+        request
+      );
+    } catch (verifyErr) {
+      console.error("[auth/register] verification issue", verifyErr);
+    }
+
     return NextResponse.json({
       success: true,
       userId: newUser.id,
       name: fullName,
       programType,
+      requiresVerification: true,
     });
   } catch (err) {
     console.error("[auth/register]", err);

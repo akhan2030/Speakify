@@ -352,6 +352,12 @@ export const authOptions: NextAuthOptions = {
 
             program_type?: string | null;
 
+            email_verified_at?: string | null;
+
+            phone_verified_at?: string | null;
+
+            phone?: string | null;
+
           } | null = null;
 
           let error: { message?: string } | null = null;
@@ -364,7 +370,7 @@ export const authOptions: NextAuthOptions = {
 
             .select(
 
-              "id, name, email, password, role, is_active, must_change_password, program_type"
+              "id, name, email, password, role, is_active, must_change_password, program_type, email_verified_at, phone_verified_at, phone"
 
             )
 
@@ -421,7 +427,18 @@ export const authOptions: NextAuthOptions = {
 
           if (!isValid) return null;
 
+          const emailVerified =
+            data.email_verified_at === undefined || data.email_verified_at !== null;
+          const phoneVerified =
+            !data.phone ||
+            data.phone_verified_at === undefined ||
+            data.phone_verified_at !== null;
 
+          if (!emailVerified || !phoneVerified) {
+            throw new Error(
+              "Please verify your email and phone before signing in. Check your inbox and WhatsApp/SMS."
+            );
+          }
 
           const role = normalizeRole(data.role);
 

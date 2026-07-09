@@ -3,6 +3,7 @@ import {
   findValidResetToken,
   resetUserPassword,
 } from "@/lib/auth/passwordReset";
+import { notifyPasswordChanged } from "@/lib/auth/passwordChangeNotification";
 import { getSupabaseAdmin } from "@/lib/supabaseServer";
 
 export const runtime = "nodejs";
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
     }
 
     await resetUserPassword(supabase, tokenRecord.user_id, newPassword, tokenRecord.id);
+    await notifyPasswordChanged(supabase, tokenRecord.user_id);
 
     return NextResponse.json({ success: true });
   } catch (err) {

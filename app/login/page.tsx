@@ -147,9 +147,11 @@ function LoginForm() {
 
       if (result?.error || !result?.ok) {
         setError(
-          result?.error === "CredentialsSignin"
-            ? "Invalid email or password."
-            : "Sign in failed. Please try again."
+          result?.error?.includes("verify your email and phone")
+            ? result.error
+            : result?.error === "CredentialsSignin"
+              ? "Invalid email or password."
+              : result?.error || "Sign in failed. Please try again."
         );
         return;
       }

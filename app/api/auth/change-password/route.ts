@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { notifyPasswordChanged } from "@/lib/auth/passwordChangeNotification";
 import { getSupabaseAdmin } from "@/lib/supabaseServer";
 
 export const runtime = "nodejs";
@@ -91,6 +92,8 @@ export async function POST(request: Request) {
         );
       }
     }
+
+    await notifyPasswordChanged(supabase, user.id);
 
     return NextResponse.json({
       success: true,
