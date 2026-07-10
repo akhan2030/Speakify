@@ -65,6 +65,9 @@ export default function AcceleratorPracticeSessionPage() {
   const [sectionResults, setSectionResults] = useState<
     Record<string, { band: number; feedback: unknown }>
   >({});
+  const [allSectionAnswers, setAllSectionAnswers] = useState<
+    Record<string, Record<string, string>>
+  >({});
 
   const isFullMock = testType === "full_mock";
   const activeSection = isFullMock
@@ -194,7 +197,12 @@ export default function AcceleratorPracticeSessionPage() {
           ...sectionResults,
           [activeSection]: { band: json.bandScore, feedback: json.feedback },
         };
+        const nextAnswers = {
+          ...allSectionAnswers,
+          [activeSection]: sectionAnswers as Record<string, string>,
+        };
         setSectionResults(nextResults);
+        setAllSectionAnswers(nextAnswers);
 
         if (fullMockStep < SECTION_ORDER.length - 1) {
           setFullMockStep((s) => s + 1);
@@ -210,16 +218,7 @@ export default function AcceleratorPracticeSessionPage() {
             track,
             testId: test.id,
             testType: "full_mock",
-            sectionResults: Object.fromEntries(
-              SECTION_ORDER.map((s) => [
-                s,
-                {
-                  band: nextResults[s]?.band ?? json.bandScore,
-                  feedback: nextResults[s]?.feedback,
-                },
-              ])
-            ),
-            answers: {},
+            allSectionAnswers: nextAnswers,
             recordHistory: true,
           }),
         });

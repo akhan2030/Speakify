@@ -22,8 +22,14 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const programme = parseProgramme(searchParams.get("programme"));
+    const focusRaw = String(searchParams.get("focus") ?? "").trim();
+    const focusCategories = focusRaw
+      ? focusRaw.split(",").map((part) => part.trim()).filter(Boolean)
+      : [];
 
-    const questions = pickPracticeQuestions(10, programme).map((q) => ({
+    const questions = pickPracticeQuestions(10, programme, {
+      focusCategories,
+    }).map((q) => ({
       id: `${q.category}-${q.id}`,
       exerciseId: q.id,
       category: q.category,

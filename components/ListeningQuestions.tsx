@@ -1,6 +1,10 @@
 "use client";
 
-import { HighlightableInlineText } from "@/components/exam/ExamHighlightSection";
+import {
+  ExamHighlightQuestionText,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+} from "@/components/exam/ExamHighlightSection";
 
 export type ListeningQuestion = {
   id: number;
@@ -44,10 +48,12 @@ function QuestionPromptText({
   className?: string;
 }) {
   return (
-    <span className={className}>
-      <span className="font-bold">{q.questionNumber}.</span>{" "}
-      <HighlightableInlineText blockId={`lq-${q.id}`} text={q.text} />
-    </span>
+    <ExamHighlightQuestionText
+      blockId={`lq-${q.id}`}
+      number={q.questionNumber}
+      text={q.text}
+      className={className}
+    />
   );
 }
 
@@ -249,37 +255,24 @@ function MultipleChoiceQuestions(props: ListeningQuestionsProps) {
                 const optionText = displayOptionText(opt.text);
                 const isSelected = selectedLetters.has(letter);
                 return (
-                  <label
+                  <HighlightableMcqOption
                     key={`${q.id}-${letter || optionText}`}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
+                    blockId={`lq-${q.id}-opt-${letter || optionText.slice(0, 24)}`}
+                    letter={letter || "?"}
+                    text={optionText}
+                    name={`q-${q.id}`}
+                    checked={isSelected}
+                    disabled={disabled}
+                    multiSelect={isMultiSelect}
+                    onSelect={() =>
+                      isMultiSelect ? toggleMulti(letter) : onChange(q.id, letter)
+                    }
+                    className={
                       isSelected
                         ? "border-[#c9972c] bg-[#c9972c]/10"
                         : "border-slate-200"
-                    } ${disabled ? "pointer-events-none opacity-60" : ""}`}
-                  >
-                    <input
-                      type={isMultiSelect ? "checkbox" : "radio"}
-                      name={isMultiSelect ? undefined : `q-${q.id}`}
-                      value={letter}
-                      checked={isSelected}
-                      disabled={disabled}
-                      onChange={() =>
-                        isMultiSelect
-                          ? toggleMulti(letter)
-                          : onChange(q.id, letter)
-                      }
-                      className="accent-[#c9972c]"
-                    />
-                    <span>
-                      {letter ? (
-                        <>
-                          <strong>{letter}.</strong> {optionText}
-                        </>
-                      ) : (
-                        optionText
-                      )}
-                    </span>
-                  </label>
+                    }
+                  />
                 );
               })}
             </div>

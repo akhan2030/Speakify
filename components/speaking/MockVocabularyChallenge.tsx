@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type WordState = {
   sentence: string;
@@ -8,6 +8,7 @@ type WordState = {
   practiced: boolean;
   checking: boolean;
   listening: boolean;
+  transcribing: boolean;
   transcript: string | null;
 };
 
@@ -48,6 +49,11 @@ export default function MockVocabularyChallenge({ words }: { words: string[] }) 
   const list = useMemo(() => words.slice(0, 5), [words]);
   const [states, setStates] = useState<Record<string, WordState>>({});
 
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const activeWordRef = useRef<string | null>(null);
+
   useEffect(() => {
     const initial: Record<string, WordState> = {};
     for (const word of list) {
@@ -57,6 +63,7 @@ export default function MockVocabularyChallenge({ words }: { words: string[] }) 
         practiced: false,
         checking: false,
         listening: false,
+        transcribing: false,
         transcript: null,
       };
     }
@@ -71,6 +78,136 @@ export default function MockVocabularyChallenge({ words }: { words: string[] }) 
       [word]: { ...prev[word], ...patch },
     }));
   }, []);
+
+  const stopStream = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  }, []);
+
+  const transcribeBlob = useCallback(async (word: string, blob: Blob) => {
+    updateWord(word, { listening: false, transcribing: true, feedback: null });
+    try {
+      const formData = new FormData();
+      formData.append("audio", blob, "vocab-sentence.webm");
+      const res = await fetch("/api/speaking/transcribe", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.transcript) {
+        throw new Error(data?.error || "Transcription failed");
+      }
+      const text = String(data.transcript).trim();
+      updateWord(word, {
+        transcribing: false,
+        transcript: text,
+        sentence: text,
+      });
+    } catch (err) {
+      updateWord(word, {
+        transcribing: false,
+        feedback:
+          err instanceof Error
+            ? err.message
+            : "Could not hear you — try again or type your sentence.",
+      });
+    }
+  }, [updateWord]);
+
+  const stopSpeech = useCallback(() => {
+    const recorder = recorderRef.current;
+    const word = activeWordRef.current;
+    if (!recorder || recorder.state === "inactive" || !word) return;
+
+    recorder.onstop = () => {
+      const mimeType = recorder.mimeType || "audio/webm";
+      const blob = new Blob(chunksRef.current, { type: mimeType });
+      stopStream();
+      chunksRef.current = [];
+      activeWordRef.current = null;
+      recorderRef.current = null;
+      if (blob.size < 500) {
+        updateWord(word, {
+          listening: false,
+          feedback: "Recording too short. Speak a full sentence and try again.",
+        });
+        return;
+      }
+      void transcribeBlob(word, blob);
+    };
+
+    recorder.stop();
+  }, [stopStream, transcribeBlob, updateWord]);
+
+  const startSpeech = useCallback(
+    async (word: string) => {
+      if (typeof window === "undefined") return;
+      if (recorderRef.current?.state === "recording") {
+        stopSpeech();
+        return;
+      }
+
+      updateWord(word, {
+        listening: true,
+        transcribing: false,
+        feedback: null,
+        transcript: null,
+      });
+      activeWordRef.current = word;
+      chunksRef.current = [];
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : MediaRecorder.isTypeSupported("audio/mp4")
+            ? "audio/mp4"
+            : "";
+
+        const recorder = mimeType
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+
+        recorderRef.current = recorder;
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) chunksRef.current.push(event.data);
+        };
+        recorder.onerror = () => {
+          stopStream();
+          updateWord(word, {
+            listening: false,
+            feedback: "Recording failed. Try again or type your sentence.",
+          });
+        };
+        recorder.start(250);
+
+        window.setTimeout(() => {
+          if (recorderRef.current?.state === "recording" && activeWordRef.current === word) {
+            stopSpeech();
+          }
+        }, 15000);
+      } catch {
+        activeWordRef.current = null;
+        stopStream();
+        updateWord(word, {
+          listening: false,
+          feedback: "Microphone access denied. Type your sentence instead.",
+        });
+      }
+    },
+    [stopSpeech, stopStream, updateWord]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (recorderRef.current?.state === "recording") {
+        recorderRef.current.stop();
+      }
+      stopStream();
+    };
+  }, [stopStream]);
 
   const checkSentence = async (word: string) => {
     const sentence = states[word]?.sentence?.trim();
@@ -96,69 +233,6 @@ export default function MockVocabularyChallenge({ words }: { words: string[] }) 
         feedback: err instanceof Error ? err.message : "Could not check sentence",
       });
     }
-  };
-
-  const startSpeech = (word: string) => {
-    if (typeof window === "undefined") return;
-
-    const Win = window as Window & {
-      SpeechRecognition?: new () => {
-        lang: string;
-        interimResults: boolean;
-        maxAlternatives: number;
-        start: () => void;
-        onresult: ((event: { results: { [index: number]: { [index: number]: { transcript: string } } } }) => void) | null;
-        onerror: (() => void) | null;
-        onend: (() => void) | null;
-      };
-      webkitSpeechRecognition?: new () => {
-        lang: string;
-        interimResults: boolean;
-        maxAlternatives: number;
-        start: () => void;
-        onresult: ((event: { results: { [index: number]: { [index: number]: { transcript: string } } } }) => void) | null;
-        onerror: (() => void) | null;
-        onend: (() => void) | null;
-      };
-    };
-
-    const SpeechRecognition = Win.SpeechRecognition || Win.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      updateWord(word, {
-        feedback: "Speech recognition is not supported in this browser. Type your sentence instead.",
-      });
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-GB";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    updateWord(word, { listening: true, feedback: null, transcript: null });
-
-    recognition.onresult = (event) => {
-      const text = event.results[0]?.[0]?.transcript ?? "";
-      updateWord(word, {
-        listening: false,
-        transcript: text,
-        sentence: text,
-      });
-    };
-
-    recognition.onerror = () => {
-      updateWord(word, {
-        listening: false,
-        feedback: "Could not hear you — try again or type your sentence.",
-      });
-    };
-
-    recognition.onend = () => {
-      updateWord(word, { listening: false });
-    };
-
-    recognition.start();
   };
 
   if (list.length === 0) {
@@ -272,8 +346,14 @@ export default function MockVocabularyChallenge({ words }: { words: string[] }) 
               >
                 <button
                   type="button"
-                  onClick={() => startSpeech(word)}
-                  disabled={state.listening || state.checking}
+                  onClick={() => {
+                    if (state.listening) {
+                      stopSpeech();
+                    } else {
+                      void startSpeech(word);
+                    }
+                  }}
+                  disabled={state.transcribing || state.checking}
                   style={{
                     border: "1px solid #e2e8f0",
                     background: "white",
@@ -284,7 +364,11 @@ export default function MockVocabularyChallenge({ words }: { words: string[] }) 
                     cursor: "pointer",
                   }}
                 >
-                  {state.listening ? "🎤 Listening…" : "🎤 Or speak it"}
+                  {state.transcribing
+                    ? "Transcribing…"
+                    : state.listening
+                      ? "⏹ Stop recording"
+                      : "🎤 Or speak it"}
                 </button>
                 <button
                   type="button"

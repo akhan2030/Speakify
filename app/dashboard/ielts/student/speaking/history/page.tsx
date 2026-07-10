@@ -2,9 +2,10 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
+import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
 import { PageSpinner } from "@/components/StudentSidebar";
 import FeedbackReport from "@/components/speaking/FeedbackReport";
 import MockSpeakingFeedbackReport from "@/components/speaking/MockSpeakingFeedbackReport";
@@ -54,9 +55,16 @@ function bandColor(band: number | null) {
 
 function SpeakingHistoryContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const viewId = searchParams.get("session");
   const { status } = useSession();
+
+  const isGeneralTraining = (pathname ?? "").startsWith("/dashboard/ielts-general");
+  const speakingBase = isGeneralTraining
+    ? "/dashboard/ielts-general/student/speaking"
+    : "/dashboard/ielts/student/speaking";
+  const programmeQuery = isGeneralTraining ? "&programme=ielts_general" : "";
 
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +79,7 @@ function SpeakingHistoryContent() {
   const loadList = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch("/api/speaking/session/history")
+    fetch(`/api/speaking/session/history${isGeneralTraining ? "?programme=ielts_general" : ""}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.error) throw new Error(json.error);
@@ -82,7 +90,7 @@ function SpeakingHistoryContent() {
         setSessions([]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [isGeneralTraining]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -115,7 +123,7 @@ function SpeakingHistoryContent() {
             [],
         });
         if (json.session?.session_type === "mock") {
-          fetch("/api/speaking/session/history?mockOnly=true")
+          fetch(`/api/speaking/session/history?mockOnly=true${programmeQuery}`)
             .then((r) => r.json())
             .then((data) => {
               setMockJourney(
@@ -149,8 +157,8 @@ function SpeakingHistoryContent() {
             feedback as Parameters<typeof MockSpeakingFeedbackReport>[0]["feedback"]
           }
           mockJourney={mockJourney}
-          onReturnHome={() => router.push("/dashboard/ielts/student/speaking/history")}
-          onStartNext={() => router.push("/dashboard/ielts/student/speaking")}
+          onReturnHome={() => router.push(`${speakingBase}/history`)}
+          onStartNext={() => router.push(speakingBase)}
         />
       );
     }
@@ -158,8 +166,8 @@ function SpeakingHistoryContent() {
     return (
       <FeedbackReport
         feedback={feedback as Parameters<typeof FeedbackReport>[0]["feedback"]}
-        onReturnHome={() => router.push("/dashboard/ielts/student/speaking/history")}
-        onStartNext={() => router.push("/dashboard/ielts/student/speaking")}
+        onReturnHome={() => router.push(`${speakingBase}/history`)}
+        onStartNext={() => router.push(speakingBase)}
       />
     );
   }
@@ -182,7 +190,7 @@ function SpeakingHistoryContent() {
           </p>
         </div>
         <Link
-          href="/dashboard/ielts/student/speaking"
+          href={speakingBase}
           className="text-sm font-semibold text-[#0d9488] hover:underline"
         >
           ← Back to Speaking
@@ -201,7 +209,7 @@ function SpeakingHistoryContent() {
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
           <p className="text-sm text-slate-600">No completed speaking sessions yet.</p>
           <Link
-            href="/dashboard/ielts/student/speaking"
+            href={speakingBase}
             className="mt-4 inline-block rounded-xl bg-[#0d9488] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0b7c72]"
           >
             Start your first session →
@@ -242,7 +250,7 @@ function SpeakingHistoryContent() {
                   <td className="px-4 py-3 text-right">
                     {row.hasFeedback ? (
                       <Link
-                        href={`/dashboard/ielts/student/speaking/history?session=${row.id}`}
+                        href={`${speakingBase}/history?session=${row.id}`}
                         className="inline-flex rounded-lg bg-[#0d1b35] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#152a4d]"
                       >
                         View feedback
@@ -262,13 +270,24 @@ function SpeakingHistoryContent() {
 }
 
 export default function SpeakingHistoryPage() {
+  const pathname = usePathname();
+  const isGeneralTraining = (pathname ?? "").startsWith("/dashboard/ielts-general");
+
   return (
     <main className="min-h-screen flex-1 bg-slate-50 p-4 pb-24 md:p-6 md:pb-6">
-      <SkillBandHeader
-        skill="speaking"
-        title="Session History"
-        subtitle="Past speaking sessions and band feedback reports"
-      />
+      {isGeneralTraining ? (
+        <GeneralSkillBandHeader
+          skill="speaking"
+          title="Session History"
+          subtitle="General Training speaking sessions and band feedback reports"
+        />
+      ) : (
+        <SkillBandHeader
+          skill="speaking"
+          title="Session History"
+          subtitle="Past speaking sessions and band feedback reports"
+        />
+      )}
       <Suspense fallback={<PageSpinner />}>
         <SpeakingHistoryContent />
       </Suspense>

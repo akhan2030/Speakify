@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import WritingPracticeForm from "@/components/writing/WritingPracticeForm";
 import {
@@ -867,6 +867,7 @@ function EvaluationDisplay({
 
 export default function StudentWritingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { status } = useSession();
 
   const [taskType, setTaskType] = useState<"task1" | "task2">("task2");
@@ -898,6 +899,13 @@ export default function StudentWritingPage() {
       router.replace("/login");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    const requested = searchParams.get("task");
+    if (requested === "task1" || requested === "task2") {
+      setTaskType(requested);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setError(null);

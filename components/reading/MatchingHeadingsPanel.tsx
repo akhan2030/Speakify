@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  ExamHighlightQuestionText,
+  HighlightableInlineText,
+} from "@/components/exam/ExamHighlightSection";
+
 type HeadingOption = { key: string; label: string };
 
 type MatchingQuestion = {
@@ -33,7 +38,10 @@ export default function MatchingHeadingsPanel({
               className="text-sm leading-snug text-slate-700"
             >
               <span className="font-bold text-[#0d1b35]">{heading.key}.</span>{" "}
-              {heading.label}
+              <HighlightableInlineText
+                blockId={`mh-heading-${heading.key}`}
+                text={heading.label}
+              />
             </li>
           ))}
         </ul>
@@ -49,7 +57,11 @@ export default function MatchingHeadingsPanel({
             className="rounded-lg border border-slate-200 bg-white p-4"
           >
             <label className="block text-sm font-semibold text-[#0d1b35]">
-              {index + 1}. {question.text}
+              <ExamHighlightQuestionText
+                blockId={`mh-q-${question.id}`}
+                number={index + 1}
+                text={question.text}
+              />
             </label>
             <select
               value={answers[question.id] ?? ""}

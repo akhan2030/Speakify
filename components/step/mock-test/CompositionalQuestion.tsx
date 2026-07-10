@@ -1,3 +1,4 @@
+import { ExamHighlightQuestionText } from "@/components/exam/ExamHighlightSection";
 import type { MockExamClientQuestion } from "@/lib/step/mockExam/types";
 import MockOptionButtons from "./MockOptionButtons";
 import type { StepMcqOption } from "@/lib/step/types";
@@ -19,9 +20,14 @@ export default function CompositionalQuestion({
     <div>
       <p className="mb-1 text-xs tracking-widest text-slate-500">COMPOSITIONAL ANALYSIS</p>
       <p className="mb-4 whitespace-pre-wrap text-base font-semibold text-[#0d1b35]">
-        {questionNumber}. {question.stem}
+        <ExamHighlightQuestionText
+          blockId={`${question.id}-stem`}
+          number={questionNumber}
+          text={question.stem}
+        />
       </p>
       <MockOptionButtons
+        questionId={question.id}
         options={question.options}
         selected={answer}
         onSelect={onAnswer}

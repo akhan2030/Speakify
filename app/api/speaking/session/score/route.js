@@ -443,6 +443,26 @@ export async function POST(req) {
 
     await upsertVocabularyBank(supabase, studentId, sessionId, feedback);
 
+    try {
+      const { extractSpeakingDeductions } = await import(
+        "@/lib/growthRoadmap/extractDeductions"
+      );
+      const { syncRoadmapFromSessionScore } = await import("@/lib/growthRoadmap/syncRoadmap");
+      const deductions = extractSpeakingDeductions(structuredScore);
+      await syncRoadmapFromSessionScore({
+        supabase,
+        studentId,
+        sourceSessionId: sessionId,
+        skill: "speaking",
+        deductions,
+      });
+    } catch (roadmapErr) {
+      console.warn(
+        "[speaking/session/score] roadmap sync:",
+        roadmapErr instanceof Error ? roadmapErr.message : roadmapErr
+      );
+    }
+
     return NextResponse.json(feedback);
   } catch (err) {
     console.error("[speaking/session/score]", err);

@@ -11,6 +11,8 @@ const dotenv = require("dotenv");
 const OpenAI = require("openai");
 const { createClient } = require("@supabase/supabase-js");
 
+const { dailyTaskPublishFields } = require("./dailyTaskPublish.js");
+
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 
 const MODEL = "gpt-4o";
@@ -383,7 +385,7 @@ async function saveWordTask(supabase, wordData, generationDate) {
     answer_key: { correct_index: wordData.mini_quiz.correct_index },
     marking_rubric: { pass_score: 1, total: 1 },
     estimated_minutes: 5,
-    status: "draft",
+    ...dailyTaskPublishFields(),
     content_hash: contentHash,
     tags: [
       wordData.cefr_level,
@@ -490,7 +492,7 @@ async function runVocabularyGeneration() {
 
     log("========================================");
     log(`Done — ${tasksGenerated} drafts saved, ${tasksFailed} skipped/failed`);
-    log("All content saved as status: draft (not published)");
+    log("All content saved as status: published (live for students)");
     log("Next run: 3:00 AM tomorrow");
     log("========================================");
 

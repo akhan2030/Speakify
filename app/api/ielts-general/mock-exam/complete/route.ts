@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { gtReadingRawToBand } from "@/lib/ielts-general/readingScore";
 import { gtAttemptInsertRow } from "@/lib/ielts-general/attemptRows";
+import { readSessionState } from "@/lib/mock-test/attemptSchema";
+import { computeMockObjectiveFinish } from "@/lib/mock-test/serverFinish";
 
 export const runtime = "nodejs";
 
@@ -24,11 +26,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const sectionScores = body.sectionScores ?? {};
-  const overallBand = Number(body.overallBand);
-  const readingSectionBreakdown = body.readingSectionBreakdown as
-    | Record<string, { correct: number; total: number; band?: number }>
-    | undefined;
+  const attemptId = String(body.attemptId ?? "").trim();
   const mockNumber = Number(body.mockNumber) || 1;
   const completedAt = new Date().toISOString();
 
@@ -37,6 +35,45 @@ export async function POST(request: Request) {
   }
 
   const supabase = getSupabase();
+  let sectionScores = body.sectionScores ?? {};
+  let overallBand = Number(body.overallBand);
+  let readingSectionBreakdown = body.readingSectionBreakdown as
+    | Record<string, { correct: number; total: number; band?: number }>
+    | undefined;
+
+  if (attemptId && !attemptId.startsWith("local_")) {
+    const { data: attempt } = await supabase
+      .from("mock_test_attempts")
+      .select("exam_content, student_id")
+      .eq("id", attemptId)
+      .maybeSingle();
+
+    if (attempt?.student_id && String(attempt.student_id) !== String(studentId)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (attempt?.exam_content) {
+      const sessionState = readSessionState(attempt.exam_content);
+      const computed = computeMockObjectiveFinish({
+        answers: sessionState.answers ?? body.answers ?? {},
+        examContent: attempt.exam_content,
+        variant: "general",
+      });
+      sectionScores = computed.sectionScores;
+      overallBand = Number(computed.overallBand);
+      readingSectionBreakdown = computed.readingSectionBreakdown;
+    }
+  } else if (body.answers && body.examContent) {
+    const computed = computeMockObjectiveFinish({
+      answers: body.answers,
+      examContent: body.examContent,
+      variant: "general",
+    });
+    sectionScores = computed.sectionScores;
+    overallBand = Number(computed.overallBand);
+    readingSectionBreakdown = computed.readingSectionBreakdown;
+  }
+
   const rows = [];
 
   const listeningBand = sectionScores?.listening?.band;
@@ -76,7 +113,7 @@ export async function POST(request: Request) {
         gtAttemptInsertRow({
           studentId,
           skill: `reading_section_${sec.toLowerCase()}`,
-          bandScore: row.band ?? gtReadingRawToBand(row.correct, row.total),
+          bandScore: row.band ?? gtReadingRawToBand(row.correct, row.total || 1),
           accuracy: row.total ? row.correct / row.total : null,
           mockNumber,
           completedAt,
@@ -104,5 +141,12 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, saved: rows.length > 0 });
+  return NextResponse.json({
+    ok: true,
+    saved: rows.length > 0,
+    overallBand,
+    sectionScores,
+    readingSectionBreakdown,
+    serverComputed: true,
+  });
 }

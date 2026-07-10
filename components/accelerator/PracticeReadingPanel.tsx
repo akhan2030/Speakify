@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type { NormalizedReadingPassage } from "@/lib/accelerator/normalizePracticeContent";
+import {
+  ExamHighlightSection,
+  HighlightableInlineText,
+} from "@/components/exam/ExamHighlightSection";
+import { plainTextToBlocks, type TextHighlight } from "@/lib/examHighlight";
 import PracticeQuestionField, { McqQuestionPrompt } from "@/components/accelerator/PracticeQuestionField";
 
 const NAVY = "#0d1b35";
@@ -16,7 +21,12 @@ export default function PracticeReadingPanel({
   onChange: (key: string, value: string) => void;
 }) {
   const [passageIdx, setPassageIdx] = useState(0);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const passage = passages[passageIdx];
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [passageIdx]);
 
   useEffect(() => {
     for (const p of passages) {
@@ -61,7 +71,12 @@ export default function PracticeReadingPanel({
       </div>
 
       {passage ? (
-        <>
+        <ExamHighlightSection
+          sectionId={`acc-reading-${passage.id}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+          toolbarClassName="mb-4"
+        >
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <h3 className="font-bold" style={{ color: NAVY }}>
               {passage.title}
@@ -71,12 +86,16 @@ export default function PracticeReadingPanel({
                 Passage validation: {passage.validationErrors.join("; ")}
               </div>
             ) : null}
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-              {passage.text || "Passage text not available."}
-            </p>
+            <div className="mt-3 select-text space-y-3">
+              {plainTextToBlocks(passage.text || "", `acc-p${passage.id}`).map((block) => (
+                <p key={block.id} className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                  <HighlightableInlineText blockId={block.id} text={block.text} />
+                </p>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-5">
+          <div className="mt-6 select-text space-y-5">
             {passage.questions.map((q) => (
               <div key={q.key}>
                 <McqQuestionPrompt question={q} />
@@ -88,7 +107,7 @@ export default function PracticeReadingPanel({
               </div>
             ))}
           </div>
-        </>
+        </ExamHighlightSection>
       ) : null}
 
       {passages.length > 1 ? (

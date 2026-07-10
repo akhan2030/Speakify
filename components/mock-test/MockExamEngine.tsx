@@ -16,10 +16,10 @@ import MockExamWelcome, {
 } from "@/components/mock-test/MockExamWelcome";
 import MockListeningAudio from "@/components/mock-test/MockListeningAudio";
 import MockReadingQuestionInput from "@/components/mock-test/MockReadingQuestionInput";
-import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
 import {
   ExamHighlightSection,
   HighlightableInlineText,
+  HighlightableRadioOption,
 } from "@/components/exam/ExamHighlightSection";
 import type { TextHighlight } from "@/lib/examHighlight";
 import MockWritingChart from "@/components/mock-test/MockWritingChart";
@@ -62,47 +62,14 @@ import {
   pickGeneralMockWritingTasks,
 } from "@/lib/ielts-general/mockExamContent";
 import {
-  checkGtReadingAnswer,
-  gtReadingKindToType,
-  gtReadingRawToBand,
   scoreGtReadingFromMockContent,
 } from "@/lib/ielts-general/readingScore";
+import { buildGtReadingSectionBreakdown } from "@/lib/mock-test/serverFinish";
 import type { MockExamContent } from "@/lib/mock-test/types";
 import GeneralMockLetterPrompt from "@/components/ielts-general/mock/GeneralMockLetterPrompt";
 
 type ExamPhase = MockSection | "welcome" | "transition" | "submitting";
 type ListeningStep = "intro" | "prep" | "audio" | "break" | "check";
-
-function buildGtReadingSectionBreakdown(
-  examContent: MockExamContent,
-  answers: Record<string, string>
-) {
-  const sections: Record<string, { correct: number; total: number; band: number }> = {
-    A: { correct: 0, total: 0, band: 0 },
-    B: { correct: 0, total: 0, band: 0 },
-    C: { correct: 0, total: 0, band: 0 },
-  };
-
-  for (const passage of examContent.reading.passages) {
-    const secMatch = passage.difficulty.match(/Section ([ABC])/);
-    const sec = secMatch?.[1];
-    if (!sec || !sections[sec]) continue;
-    for (const q of passage.questions) {
-      sections[sec].total += 1;
-      const gtType = gtReadingKindToType(q.kind);
-      if (checkGtReadingAnswer(answers[q.id] ?? "", q.correct ?? "", gtType)) {
-        sections[sec].correct += 1;
-      }
-    }
-  }
-
-  for (const key of ["A", "B", "C"]) {
-    const row = sections[key];
-    row.band = gtReadingRawToBand(row.correct, row.total || 1);
-  }
-
-  return sections;
-}
 
 type MockExamEngineProps = {
   sectionReady?: typeof EXAM_CONTENT;
@@ -122,14 +89,16 @@ function ListeningQuestionField({
   if (q.type === "mcq" && q.options) {
     return (
       <div className="mt-2 space-y-1.5">
-        {q.options.map((opt) => (
-          <label
-            key={opt}
-            className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-          >
-            <input type="radio" checked={value === opt} onChange={() => onChange(opt)} />
-            {opt}
-          </label>
+        {q.options.map((opt, i) => (
+          <HighlightableRadioOption
+            key={`${q.id}-opt-${i}`}
+            blockId={`mock-lq-${q.id}-opt-${i}`}
+            name={`mock-lq-${q.id}`}
+            label={opt}
+            checked={value === opt}
+            onSelect={() => onChange(opt)}
+            className="border-slate-200 bg-white"
+          />
         ))}
       </div>
     );
@@ -207,9 +176,7 @@ export default function MockExamEngine({
   const [readingQIdx, setReadingQIdx] = useState(0);
   const [notesOpen, setNotesOpen] = useState(true);
   const [passageNotes, setPassageNotes] = useState<Record<string, string>>({});
-  const [readingHighlights, setReadingHighlights] = useState<
-    Record<string, TextHighlight[]>
-  >({});
+  const [readingHighlights, setReadingHighlights] = useState<TextHighlight[]>([]);
   const [listeningHighlights, setListeningHighlights] = useState<TextHighlight[]>([]);
 
   useEffect(() => {
@@ -402,6 +369,7 @@ export default function MockExamEngine({
       examVariant: variant,
       mockNumber,
       readingSectionBreakdown,
+      examContent,
       writingMeta: isGeneral
         ? {
             letterType: (writingTasks.task1 as { letter?: { letterType?: string } }).letter
@@ -415,14 +383,9 @@ export default function MockExamEngine({
     };
 
     const id = attemptId ?? `local_${crypto.randomUUID()}`;
-    try {
-      sessionStorage.setItem(`mock_test_${id}`, JSON.stringify(payload));
-    } catch {
-      /* ignore */
-    }
 
     if (isGeneral) {
-      await fetch("/api/ielts-general/mock-exam/complete", {
+      const gtRes = await fetch("/api/ielts-general/mock-exam/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -431,16 +394,42 @@ export default function MockExamEngine({
           sectionScores,
           overallBand,
           readingSectionBreakdown,
+          answers: answersRef.current,
+          examContent,
         }),
       }).catch(() => null);
+      if (gtRes?.ok) {
+        const gtData = await gtRes.json().catch(() => ({}));
+        if (gtData.serverComputed) {
+          payload.sectionScores = gtData.sectionScores ?? payload.sectionScores;
+          payload.overallBand = gtData.overallBand ?? payload.overallBand;
+          payload.readingSectionBreakdown =
+            gtData.readingSectionBreakdown ?? payload.readingSectionBreakdown;
+        }
+      }
     }
 
     if (attemptId && !attemptId.startsWith("local_")) {
-      await fetch("/api/mock-test/session", {
+      const putRes = await fetch("/api/mock-test/session", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ attemptId, ...payload, report: {} }),
       }).catch(() => null);
+      if (putRes?.ok) {
+        const putData = await putRes.json().catch(() => ({}));
+        if (putData.serverComputed) {
+          payload.sectionScores = putData.sectionScores ?? payload.sectionScores;
+          payload.overallBand = putData.overallBand ?? payload.overallBand;
+          payload.readingSectionBreakdown =
+            putData.readingSectionBreakdown ?? payload.readingSectionBreakdown;
+        }
+      }
+    }
+
+    try {
+      sessionStorage.setItem(`mock_test_${id}`, JSON.stringify(payload));
+    } catch {
+      /* ignore */
     }
 
     await new Promise((r) => setTimeout(r, 2500));
@@ -822,7 +811,7 @@ export default function MockExamEngine({
                   <p className="mt-1 text-sm text-[#0d1b35]">
                     <HighlightableInlineText
                       blockId={`mock-lq-${q.id}`}
-                      text={q.prompt}
+                      text={`${q.number}. ${q.prompt}`}
                     />
                   </p>
                   <ListeningQuestionField
@@ -838,106 +827,120 @@ export default function MockExamEngine({
       )}
 
       {phase === "reading" && readyFlags.reading.ready && passage && (
-        <div className="flex h-full min-h-0">
-          <div className="flex min-w-0 flex-1 flex-col border-r border-slate-200 bg-white">
-            <div className="flex gap-1 border-b border-slate-200 px-3 py-2">
-              {readingPassages.map((p, i) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setReadingPassageIdx(i)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
-                    i === readingPassageIdx ? "bg-[#0d1b35] text-white" : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  {isGeneral ? `Text ${p.index}` : `Passage ${p.index}`}
-                </button>
-              ))}
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed">
-              <h2 className="mb-1 text-lg font-bold text-[#0d1b35]">{passage.title}</h2>
-              <p className="mb-4 text-xs text-slate-500">{passage.difficulty}</p>
-              <ExamTextHighlighter
-                sectionId={passage.id}
-                blocks={passage.paragraphs.map((para) => ({
-                  id: para.id,
-                  text: para.label ? `${para.label} ${para.text}` : para.text,
-                }))}
-                highlights={readingHighlights[passage.id] ?? []}
-                onHighlightsChange={(next) =>
-                  setReadingHighlights((prev) => ({ ...prev, [passage.id]: next }))
-                }
-                textClassName="text-sm leading-relaxed text-slate-800"
-                blockClassName="mb-3"
-              />
-            </div>
-          </div>
-          <div className="flex w-full max-w-md flex-col bg-[#f8f9fa]">
-            <button
-              type="button"
-              onClick={() => setNotesOpen((o) => !o)}
-              className="border-b border-slate-200 px-3 py-2 text-left text-xs font-bold text-slate-600"
-            >
-              Notes {notesOpen ? "▼" : "▶"}
-            </button>
-            {notesOpen && (
-              <textarea
-                value={passageNotes[passage.id] ?? ""}
-                onChange={(e) =>
-                  setPassageNotes((n) => ({ ...n, [passage.id]: e.target.value }))
-                }
-                {...blockClipboard}
-                rows={3}
-                className="border-b border-slate-200 px-3 py-2 text-xs"
-                placeholder="Passage notes…"
-              />
-            )}
-            <div className="flex-1 overflow-y-auto p-4">
-              {readingQ && (
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
-                  <p className="text-xs font-bold text-[#c9972c]">
-                    Q{readingQ.globalNumber} · {readingQ.typeLabel}
-                  </p>
-                  <p className="mt-2 text-sm">{readingQ.text}</p>
-                  <MockReadingQuestionInput
-                    question={readingQ}
-                    value={answers[readingQ.id] ?? ""}
-                    onChange={(v) => setAnswer(readingQ.id, v)}
-                  />
-                  <div className="mt-4 flex justify-between">
+        <div className="flex h-full min-h-0 flex-col">
+          <ExamHighlightSection
+            sectionId={`mock-reading-${passage.id}`}
+            highlights={readingHighlights}
+            onHighlightsChange={setReadingHighlights}
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            toolbarClassName="mx-3 mb-2 mt-2 shrink-0"
+          >
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <div className="flex min-w-0 flex-1 flex-col border-r border-slate-200 bg-white">
+                <div className="flex gap-1 border-b border-slate-200 px-3 py-2">
+                  {readingPassages.map((p, i) => (
                     <button
+                      key={p.id}
                       type="button"
-                      disabled={readingQIdx <= 0}
-                      onClick={() => {
-                        setReadingQIdx((i) => i - 1);
-                        handleNavigate(readingQIdx - 1);
-                      }}
-                      className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40"
+                      onClick={() => setReadingPassageIdx(i)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
+                        i === readingPassageIdx
+                          ? "bg-[#0d1b35] text-white"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
                     >
-                      Prev
+                      {isGeneral ? `Text ${p.index}` : `Passage ${p.index}`}
                     </button>
-                    {readingQIdx >= allReadingQuestions.length - 1 ? (
-                      <button
-                        type="button"
-                        onClick={() => startTransition("reading")}
-                        className="rounded-lg bg-[#0d1b35] px-3 py-1.5 text-xs font-bold text-white"
-                      >
-                        Finish Reading
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setReadingQIdx((i) => i + 1)}
-                        className="rounded-lg bg-[#0d1b35] px-3 py-1.5 text-xs font-bold text-white"
-                      >
-                        Next
-                      </button>
-                    )}
+                  ))}
+                </div>
+                <div className="flex-1 select-text overflow-y-auto p-4 text-sm leading-relaxed">
+                  <h2 className="mb-1 text-lg font-bold text-[#0d1b35]">{passage.title}</h2>
+                  <p className="mb-4 text-xs text-slate-500">{passage.difficulty}</p>
+                  <div className="space-y-3">
+                    {passage.paragraphs.map((para) => (
+                      <p key={para.id} className="text-sm leading-relaxed text-slate-800">
+                        <HighlightableInlineText
+                          blockId={para.id}
+                          text={para.label ? `${para.label} ${para.text}` : para.text}
+                        />
+                      </p>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
+              <div className="flex w-full max-w-md flex-col bg-[#f8f9fa]">
+                <button
+                  type="button"
+                  onClick={() => setNotesOpen((o) => !o)}
+                  className="border-b border-slate-200 px-3 py-2 text-left text-xs font-bold text-slate-600"
+                >
+                  Notes {notesOpen ? "▼" : "▶"}
+                </button>
+                {notesOpen && (
+                  <textarea
+                    value={passageNotes[passage.id] ?? ""}
+                    onChange={(e) =>
+                      setPassageNotes((n) => ({ ...n, [passage.id]: e.target.value }))
+                    }
+                    {...blockClipboard}
+                    rows={3}
+                    className="border-b border-slate-200 px-3 py-2 text-xs"
+                    placeholder="Passage notes…"
+                  />
+                )}
+                <div className="flex-1 select-text overflow-y-auto p-4">
+                  {readingQ && (
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="text-xs font-bold text-[#c9972c]">
+                        Q{readingQ.globalNumber} · {readingQ.typeLabel}
+                      </p>
+                      <p className="mt-2 text-sm">
+                        <HighlightableInlineText
+                          blockId={`mock-rq-${readingQ.id}`}
+                          text={`${readingQ.globalNumber}. ${readingQ.text}`}
+                        />
+                      </p>
+                      <MockReadingQuestionInput
+                        question={readingQ}
+                        value={answers[readingQ.id] ?? ""}
+                        onChange={(v) => setAnswer(readingQ.id, v)}
+                      />
+                      <div className="mt-4 flex justify-between">
+                        <button
+                          type="button"
+                          disabled={readingQIdx <= 0}
+                          onClick={() => {
+                            setReadingQIdx((i) => i - 1);
+                            handleNavigate(readingQIdx - 1);
+                          }}
+                          className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40"
+                        >
+                          Prev
+                        </button>
+                        {readingQIdx >= allReadingQuestions.length - 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => startTransition("reading")}
+                            className="rounded-lg bg-[#0d1b35] px-3 py-1.5 text-xs font-bold text-white"
+                          >
+                            Finish Reading
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setReadingQIdx((i) => i + 1)}
+                            className="rounded-lg bg-[#0d1b35] px-3 py-1.5 text-xs font-bold text-white"
+                          >
+                            Next
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          </ExamHighlightSection>
         </div>
       )}
 

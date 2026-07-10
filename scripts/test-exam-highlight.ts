@@ -7,6 +7,7 @@ import { JSDOM } from "jsdom";
 import {
   addHighlights,
   buildHighlightSegments,
+  rangeIntersectsContainer,
   getSelectionRangesFromRange,
   processHighlightInteraction,
   removeHighlight,

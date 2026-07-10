@@ -1,5 +1,6 @@
 "use client";
 
+import { HighlightableInlineText } from "@/components/exam/ExamHighlightSection";
 import { getOfficialInstructionParts } from "@/lib/listeningIeltsInstructions";
 
 export default function ListeningIeltsInstruction({
@@ -20,10 +21,17 @@ export default function ListeningIeltsInstruction({
         {parts.map((part, i) =>
           part.emphasis === "limit" ? (
             <strong key={i} className="font-bold text-red-600">
-              {part.text}
+              <HighlightableInlineText
+                blockId={`li-${questionType}-p-${i}`}
+                text={part.text}
+              />
             </strong>
           ) : (
-            <span key={i}>{part.text}</span>
+            <HighlightableInlineText
+              key={i}
+              blockId={`li-${questionType}-p-${i}`}
+              text={part.text}
+            />
           )
         )}
       </p>

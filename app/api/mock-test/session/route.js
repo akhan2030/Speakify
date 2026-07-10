@@ -8,6 +8,7 @@ import {
   mergeSessionIntoExamContent,
   readSessionState,
 } from "@/lib/mock-test/attemptSchema";
+import { verifyMockAttemptOwnership } from "@/lib/mock-test/ownership";
 
 export const runtime = "nodejs";
 
@@ -132,6 +133,11 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const attemptId = String(body.attemptId ?? "").trim();
 
@@ -144,6 +150,16 @@ export async function PATCH(request) {
     }
 
     const supabase = getSupabase();
+    const ownership = await verifyMockAttemptOwnership(
+      supabase,
+      attemptId,
+      session.user.id,
+      "exam_content, status"
+    );
+    if (!ownership.ok) {
+      return NextResponse.json({ error: ownership.error }, { status: ownership.status });
+    }
+
     const sessionPatch = {};
 
     if (body.answers && typeof body.answers === "object") {
@@ -197,6 +213,11 @@ export async function PATCH(request) {
 
 export async function PUT(request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const attemptId = String(body.attemptId ?? "").trim();
 
@@ -204,39 +225,59 @@ export async function PUT(request) {
       return NextResponse.json({ error: "attemptId required" }, { status: 400 });
     }
 
+    if (attemptId.startsWith("local_") || !process.env.SUPABASE_SERVICE_KEY) {
+      return NextResponse.json({ ok: true, localOnly: true });
+    }
+
+    const supabase = getSupabase();
+    const ownership = await verifyMockAttemptOwnership(
+      supabase,
+      attemptId,
+      session.user.id,
+      "exam_content, programme, status"
+    );
+    if (!ownership.ok) {
+      return NextResponse.json({ error: ownership.error }, { status: ownership.status });
+    }
+
+    const existing = ownership.attempt;
+
+    const answers =
+      typeof body.answers === "object" && body.answers ? body.answers : {};
+    const transcripts =
+      typeof body.transcripts === "object" && body.transcripts ? body.transcripts : {};
+
+    const examContent = existing?.exam_content ?? body.examContent ?? null;
+    const variant =
+      body.examVariant === "general" || existing?.programme === "ielts_general"
+        ? "general"
+        : "academic";
+
+    const { computeMockObjectiveFinish } = await import("@/lib/mock-test/serverFinish");
+    const computed = computeMockObjectiveFinish({
+      answers,
+      examContent,
+      variant,
+    });
+
     const sessionPatch = {
       currentSection: "speaking",
-      answers: body.answers ?? {},
+      answers,
       flagged: Array.isArray(body.flagged) ? body.flagged : [],
-      sectionScores: body.sectionScores ?? {},
-      transcripts: body.transcripts ?? {},
+      sectionScores: computed.sectionScores,
+      transcripts,
       report: body.report ?? {},
     };
 
     const payload = {
       status: "completed",
       completed_at: new Date().toISOString(),
-      overall_band: Number(body.overallBand) || null,
+      overall_band: computed.overallBand,
+      section_scores: computed.sectionScores,
+      answers,
+      transcripts,
+      exam_content: mergeSessionIntoExamContent(existing?.exam_content, sessionPatch),
     };
-
-    if (attemptId.startsWith("local_") || !process.env.SUPABASE_SERVICE_KEY) {
-      return NextResponse.json({ ok: true, localOnly: true });
-    }
-
-    const supabase = getSupabase();
-
-    const { data: existing, error: loadError } = await supabase
-      .from("mock_test_attempts")
-      .select("exam_content")
-      .eq("id", attemptId)
-      .maybeSingle();
-
-    if (loadError) throw loadError;
-
-    payload.exam_content = mergeSessionIntoExamContent(
-      existing?.exam_content,
-      sessionPatch
-    );
 
     const { error } = await supabase
       .from("mock_test_attempts")
@@ -244,7 +285,13 @@ export async function PUT(request) {
       .eq("id", attemptId);
 
     if (error) throw error;
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      overallBand: computed.overallBand,
+      sectionScores: computed.sectionScores,
+      readingSectionBreakdown: computed.readingSectionBreakdown,
+      serverComputed: true,
+    });
   } catch (err) {
     console.error("[mock-test/session] PUT", err);
     return NextResponse.json(

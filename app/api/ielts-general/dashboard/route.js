@@ -563,7 +563,26 @@ export async function GET() {
         : studyDaysPerWeek >= 4;
 
     const aiRecommendations = buildRecommendationsList(weakestSkill, readiness, skillRows);
-    const totalRecMinutes = aiRecommendations.reduce((s, r) => s + r.minutes, 0);
+    let dashboardRecommendations = aiRecommendations;
+    try {
+      const { fetchStudentRoadmapItems, roadmapItemsToDashboardRecs } = await import(
+        "@/lib/growthRoadmap/syncRoadmap"
+      );
+      const roadmapItems = await fetchStudentRoadmapItems(supabase, studentId, {
+        activeOnly: true,
+        limit: 10,
+      });
+      const fromRoadmap = roadmapItemsToDashboardRecs(roadmapItems, "ielts_general");
+      if (fromRoadmap.length > 0) {
+        dashboardRecommendations = fromRoadmap;
+      }
+    } catch (roadmapErr) {
+      console.warn(
+        "[ielts-general/dashboard] roadmap recs:",
+        roadmapErr instanceof Error ? roadmapErr.message : roadmapErr
+      );
+    }
+    const totalRecMinutes = dashboardRecommendations.reduce((s, r) => s + r.minutes, 0);
 
     const tasksDone =
       streakRow?.total_tasks_completed ??
@@ -645,7 +664,7 @@ export async function GET() {
         href: weakestSkill?.href ?? `${BASE}/writing`,
       },
       recommendations: {
-        items: aiRecommendations,
+        items: dashboardRecommendations,
         totalMinutes: totalRecMinutes,
       },
       exam: {

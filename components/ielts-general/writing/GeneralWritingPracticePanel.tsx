@@ -11,6 +11,8 @@ import {
 import { recordGtPromptAttempt } from "@/lib/ielts-general/writingPromptAttempts";
 import GeneralWritingPracticeForm from "@/components/ielts-general/writing/GeneralWritingPracticeForm";
 import GeneralWritingPromptPicker from "@/components/ielts-general/writing/GeneralWritingPromptPicker";
+import GeneralGtWritingFeedback from "@/components/ielts-general/writing/GeneralGtWritingFeedback";
+import type { GtStructuredWritingFeedback } from "@/lib/ielts-general/gtWritingScoringSchema";
 import type { LetterType } from "@/lib/ielts-general/writingTaskData";
 
 export default function GeneralWritingPracticePanel({
@@ -23,7 +25,8 @@ export default function GeneralWritingPracticePanel({
   const [essay, setEssay] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [evaluation, setEvaluation] = useState<string | null>(null);
+  const [structuredFeedback, setStructuredFeedback] =
+    useState<GtStructuredWritingFeedback | null>(null);
   const [overallBand, setOverallBand] = useState<number | null>(null);
 
   const selectedPrompt = lockTaskType === "task1" ? selectedLetter : selectedEssay;
@@ -50,7 +53,7 @@ export default function GeneralWritingPracticePanel({
     setSelectedLetter(letter);
     setGeneralLetterById(letter.id);
     setEssay("");
-    setEvaluation(null);
+    setStructuredFeedback(null);
     setOverallBand(null);
     setError(null);
     setQuestionMeta({
@@ -63,7 +66,7 @@ export default function GeneralWritingPracticePanel({
     setSelectedEssay(task2);
     setGeneralTask2ById(task2.id);
     setEssay("");
-    setEvaluation(null);
+    setStructuredFeedback(null);
     setOverallBand(null);
     setError(null);
     setQuestionMeta({
@@ -76,7 +79,7 @@ export default function GeneralWritingPracticePanel({
     if (lockTaskType === "task1") setSelectedLetter(null);
     else setSelectedEssay(null);
     setEssay("");
-    setEvaluation(null);
+    setStructuredFeedback(null);
     setOverallBand(null);
     setError(null);
     setQuestionMeta({ questionPrompt: "" });
@@ -119,14 +122,13 @@ export default function GeneralWritingPracticePanel({
         return;
       }
       if (promptId) recordGtPromptAttempt(promptId);
-      setEvaluation(String(data.evaluation || ""));
+      if (data.structuredFeedback) {
+        setStructuredFeedback(data.structuredFeedback as GtStructuredWritingFeedback);
+      }
       if (data.bands?.overall != null) {
         setOverallBand(Number(data.bands.overall));
-      } else {
-        const m = String(data.evaluation || "").match(
-          /Overall Band\s*:\s*([0-9]+(?:\.[0-9])?)/i
-        );
-        setOverallBand(m ? Number(m[1]) : null);
+      } else if (data.structuredFeedback?.overallBand != null) {
+        setOverallBand(Number(data.structuredFeedback.overallBand));
       }
     } catch {
       setError("Something went wrong.");
@@ -145,24 +147,17 @@ export default function GeneralWritingPracticePanel({
     );
   }
 
-  if (evaluation) {
+  if (structuredFeedback && overallBand != null) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-[#0d9488]">
+        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-[#0d9488]">
           IELTS General Training — {lockTaskType === "task1" ? "Task 1 Letter" : "Task 2 Essay"}
         </p>
-        {overallBand != null ? (
-          <p className="text-center text-4xl font-bold text-[#c9972c]">
-            Band {overallBand.toFixed(1)}
-          </p>
-        ) : null}
-        <div className="mt-4 max-h-96 overflow-y-auto whitespace-pre-wrap text-sm text-slate-700">
-          {evaluation}
-        </div>
+        <GeneralGtWritingFeedback feedback={structuredFeedback} overallBand={overallBand} />
         <button
           type="button"
           onClick={() => {
-            setEvaluation(null);
+            setStructuredFeedback(null);
             setEssay("");
             setOverallBand(null);
             setError(null);

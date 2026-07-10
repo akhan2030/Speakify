@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import {
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+} from "@/components/exam/ExamHighlightSection";
 import { PageSpinner } from "@/components/StudentSidebar";
+import type { TextHighlight } from "@/lib/examHighlight";
 import StepSectionTopBar, {
   type SectionProgress,
   STEP_GOLD,
@@ -56,6 +62,7 @@ export default function StepStructurePractice() {
   const [sessionGraded, setSessionGraded] = useState<GradedResult[]>([]);
   const [batchKey, setBatchKey] = useState(0);
   const [runningToday, setRunningToday] = useState({ attempted: 0, correct: 0 });
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
 
   const loadSession = useCallback(async () => {
     setLoading(true);
@@ -80,6 +87,10 @@ export default function StepStructurePractice() {
   useEffect(() => {
     loadSession().catch(() => setLoading(false));
   }, [loadSession, batchKey]);
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [batchKey, idx, questions[idx]?.id]);
 
   const current = questions[idx];
 
@@ -158,42 +169,46 @@ export default function StepStructurePractice() {
       </div>
 
       {!sessionComplete && current ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-            Question {idx + 1} of {questions.length}
-          </p>
-          <p className="mt-4 text-lg font-medium leading-relaxed" style={{ color: STEP_NAVY }}>
-            {current.stem}
-          </p>
+        <ExamHighlightSection
+          sectionId={`step-structure-${current.id}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+        >
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              Question {idx + 1} of {questions.length}
+            </p>
+            <p className="mt-4 text-lg font-medium leading-relaxed" style={{ color: STEP_NAVY }}>
+              <HighlightableInlineText blockId={`${current.id}-stem`} text={current.stem} />
+            </p>
 
-          {feedback ? (
-            <div
-              className={`mt-5 rounded-xl p-4 text-sm ${
-                feedback.isCorrect ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-900"
-              }`}
-            >
-              {feedback.isCorrect ? "✅ Correct" : `❌ Incorrect — answer: ${feedback.correct}`} —{" "}
-              {feedback.explanation}
-            </div>
-          ) : (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {OPTS.map((letter) => (
-                <button
-                  key={letter}
-                  type="button"
-                  onClick={() => handleSelect(letter)}
-                  className="rounded-xl border-2 border-slate-200 px-4 py-4 text-left text-sm font-semibold transition hover:border-teal-400 hover:bg-teal-50"
-                  style={{ color: STEP_NAVY }}
-                >
-                  <span className="mr-2 font-bold" style={{ color: STEP_GOLD }}>
-                    {letter}.
-                  </span>
-                  {current.options[letter]}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+            {feedback ? (
+              <div
+                className={`mt-5 rounded-xl p-4 text-sm ${
+                  feedback.isCorrect ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-900"
+                }`}
+              >
+                {feedback.isCorrect ? "✅ Correct" : `❌ Incorrect — answer: ${feedback.correct}`} —{" "}
+                {feedback.explanation}
+              </div>
+            ) : (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {OPTS.map((letter) => (
+                  <HighlightableMcqOption
+                    key={letter}
+                    blockId={`${current.id}-opt-${letter}`}
+                    letter={letter}
+                    text={current.options[letter]}
+                    name={current.id}
+                    checked={false}
+                    onSelect={() => handleSelect(letter)}
+                    className="rounded-xl border-2 border-slate-200 px-4 py-4 text-left text-sm font-semibold transition hover:border-teal-400 hover:bg-teal-50"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </ExamHighlightSection>
       ) : (
         <div
           className="rounded-2xl p-6 text-white"

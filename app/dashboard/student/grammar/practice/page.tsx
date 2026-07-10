@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
@@ -35,6 +35,8 @@ type SessionResult = {
 
 export default function GrammarPracticePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const focusCategory = searchParams.get("focus");
   const { status } = useSession();
   const { base, usesProgramShell } = usePathwayStudentContext();
   const grammarProgramme = useGrammarProgramme();
@@ -63,9 +65,9 @@ export default function GrammarPracticePage() {
     setAnswer("");
     setFeedback(null);
     try {
-      const res = await fetch(
-        `/api/grammar/practice?programme=${grammarProgramme}`
-      );
+      const query = new URLSearchParams({ programme: grammarProgramme });
+      if (focusCategory) query.set("focus", focusCategory);
+      const res = await fetch(`/api/grammar/practice?${query.toString()}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setQuestions(json.questions ?? []);
@@ -74,7 +76,7 @@ export default function GrammarPracticePage() {
     } finally {
       setLoading(false);
     }
-  }, [grammarProgramme]);
+  }, [grammarProgramme, focusCategory]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -157,9 +159,17 @@ export default function GrammarPracticePage() {
             <p className="mt-1 text-sm text-slate-600">
               {isGeneralGrammar
                 ? "Mixed letter & essay grammar — 10 questions per session"
-                : "Mixed questions from all categories — 10 per session"}
+                : focusCategory
+                  ? "Personalized session — extra questions from your weakest grammar area"
+                  : "Mixed questions from all categories — 10 per session"}
             </p>
           </header>
+
+          {focusCategory ? (
+            <p className="mt-4 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900">
+              Daily practice focus: <strong>{focusCategory.replace(/-/g, " ")}</strong>
+            </p>
+          ) : null}
 
           {loading ? (
             <p className="mt-8 text-slate-500">Loading questions…</p>

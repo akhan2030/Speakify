@@ -555,6 +555,7 @@ export default function GeneralStudentDashboard() {
           <RecommendedFocusCard
             items={data.recommendations.items}
             totalMinutes={data.recommendations.totalMinutes}
+            roadmapHref="/dashboard/ielts-general/student/progress?tab=growth"
           />
         </div>
 

@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import {
   extractExaminerReport,
   generateMockTestReport,
   isFullReport,
 } from "@/lib/mock-test/reportGenerator";
+import { normalizeAttemptRow } from "@/lib/mock-test/attemptSchema";
+import { verifyMockAttemptOwnership } from "@/lib/mock-test/ownership";
+import { authOptions } from "@/lib/auth";
+import { isApiRateLimited, recordApiRateLimit } from "@/lib/auth/apiRateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -23,6 +28,11 @@ function getSupabase() {
 
 export async function POST(request, { params }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const attemptId = String(params?.id ?? "").trim();
     if (!attemptId) {
       return NextResponse.json({ error: "Attempt id required" }, { status: 400 });
@@ -53,16 +63,17 @@ export async function POST(request, { params }) {
     }
 
     const supabase = getSupabase();
-    const { data: attempt, error } = await supabase
-      .from("mock_test_attempts")
-      .select("*")
-      .eq("id", attemptId)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!attempt) {
-      return NextResponse.json({ error: "Attempt not found" }, { status: 404 });
+    const ownership = await verifyMockAttemptOwnership(
+      supabase,
+      attemptId,
+      session.user.id,
+      "*"
+    );
+    if (!ownership.ok) {
+      return NextResponse.json({ error: ownership.error }, { status: ownership.status });
     }
+
+    const attempt = ownership.attempt;
 
     if (isFullReport(attempt.report)) {
       return NextResponse.json({
@@ -75,11 +86,22 @@ export async function POST(request, { params }) {
       });
     }
 
+    const rateLimitKey = `evaluate_${session.user.id}_${attemptId}`;
+    if (await isApiRateLimited(supabase, rateLimitKey)) {
+      return NextResponse.json(
+        { error: "Please wait before re-submitting" },
+        { status: 429 }
+      );
+    }
+
+    const normalized = normalizeAttemptRow(attempt);
     const answers =
-      typeof attempt.answers === "object" && attempt.answers ? attempt.answers : {};
+      typeof normalized.answers === "object" && normalized.answers
+        ? normalized.answers
+        : {};
     const transcripts =
-      typeof attempt.transcripts === "object" && attempt.transcripts
-        ? attempt.transcripts
+      typeof normalized.transcripts === "object" && normalized.transcripts
+        ? normalized.transcripts
         : {};
     const examContent =
       attempt.report?.examContent ?? attempt.exam_content ?? null;
@@ -111,6 +133,8 @@ export async function POST(request, { params }) {
       })
       .eq("id", attemptId);
 
+    await recordApiRateLimit(supabase, rateLimitKey);
+
     return NextResponse.json({
       report,
       examinerReport,
@@ -128,22 +152,28 @@ export async function POST(request, { params }) {
 
 export async function GET(_request, { params }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const attemptId = String(params?.id ?? "").trim();
     if (!attemptId || attemptId.startsWith("local_")) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     const supabase = getSupabase();
-    const { data: attempt, error } = await supabase
-      .from("mock_test_attempts")
-      .select("report, examiner_report, overall_band, status, completed_at, student_id")
-      .eq("id", attemptId)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!attempt) {
-      return NextResponse.json({ error: "Attempt not found" }, { status: 404 });
+    const ownership = await verifyMockAttemptOwnership(
+      supabase,
+      attemptId,
+      session.user.id,
+      "report, examiner_report, overall_band, status, completed_at, student_id"
+    );
+    if (!ownership.ok) {
+      return NextResponse.json({ error: ownership.error }, { status: ownership.status });
     }
+
+    const attempt = ownership.attempt;
 
     return NextResponse.json({
       report: isFullReport(attempt.report) ? attempt.report : null,

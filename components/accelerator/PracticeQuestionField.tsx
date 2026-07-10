@@ -5,6 +5,13 @@ import {
   isCompletionQuestionType,
   isMcqQuestionType,
 } from "@/lib/accelerator/listeningQuestionUtils";
+import {
+  ExamHighlightQuestionText,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+  HighlightableTfngOptions,
+} from "@/components/exam/ExamHighlightSection";
+import { GtHighlightableCompletionPrompt } from "@/components/exam/GtReadingQuestionField";
 
 const NAVY = "#0d1b35";
 
@@ -28,22 +35,15 @@ export default function PracticeQuestionField({
     return (
       <div className="mt-2 space-y-2">
         {opts.map((opt) => (
-          <label
+          <HighlightableMcqOption
             key={`${question.key}-${opt.letter}`}
-            className="flex cursor-pointer items-start gap-2.5 py-1 text-sm text-slate-800"
-          >
-            <input
-              type="radio"
-              name={question.key}
-              checked={value === opt.value || value === opt.letter}
-              onChange={() => onChange(opt.value)}
-              className="mt-0.5 shrink-0"
-            />
-            <span className="leading-relaxed">
-              <strong className="mr-1">{opt.letter}</strong>
-              {opt.text}
-            </span>
-          </label>
+            blockId={`acc-mcq-${question.key}-opt-${opt.letter}`}
+            letter={opt.letter}
+            text={opt.text}
+            name={question.key}
+            checked={value === opt.value || value === opt.letter}
+            onSelect={() => onChange(opt.value)}
+          />
         ))}
       </div>
     );
@@ -54,33 +54,25 @@ export default function PracticeQuestionField({
     question.type === "tfng"
   ) {
     return (
-      <div className="mt-3 flex flex-wrap gap-2">
-        {["TRUE", "FALSE", "NOT GIVEN"].map((opt) => (
-          <label
-            key={opt}
-            className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm"
-          >
-            <input type="radio" checked={value === opt} onChange={() => onChange(opt)} />
-            {opt}
-          </label>
-        ))}
-      </div>
+      <HighlightableTfngOptions
+        blockIdPrefix={`acc-tfng-${question.key}`}
+        name={question.key}
+        options={["TRUE", "FALSE", "NOT GIVEN"]}
+        value={value}
+        onChange={onChange}
+      />
     );
   }
 
   if (question.questionType === "yes_no_not_given" || question.type === "ynng") {
     return (
-      <div className="mt-3 flex flex-wrap gap-2">
-        {["YES", "NO", "NOT GIVEN"].map((opt) => (
-          <label
-            key={opt}
-            className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm"
-          >
-            <input type="radio" checked={value === opt} onChange={() => onChange(opt)} />
-            {opt}
-          </label>
-        ))}
-      </div>
+      <HighlightableTfngOptions
+        blockIdPrefix={`acc-ynng-${question.key}`}
+        name={question.key}
+        options={["YES", "NO", "NOT GIVEN"]}
+        value={value}
+        onChange={onChange}
+      />
     );
   }
 
@@ -95,10 +87,11 @@ export default function PracticeQuestionField({
       .trim();
     return (
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 py-2.5 text-sm text-slate-800">
-        <span className="font-semibold tabular-nums" style={{ color: NAVY }}>
-          {question.number}.
-        </span>
-        <span>{cleanLabel}</span>
+        <GtHighlightableCompletionPrompt
+          blockId={`acc-completion-${question.key}`}
+          number={question.number}
+          text={cleanLabel}
+        />
         <input
           type="text"
           value={value}
@@ -124,10 +117,11 @@ export default function PracticeQuestionField({
 export function McqQuestionPrompt({ question }: { question: PracticeQuestion }) {
   return (
     <p className="mb-2 text-sm font-medium leading-relaxed text-slate-900">
-      <span className="font-bold" style={{ color: NAVY }}>
-        {question.number}.
-      </span>{" "}
-      {question.questionText || question.label}
+      <ExamHighlightQuestionText
+        blockId={`acc-q-${question.key}`}
+        number={question.number}
+        text={question.questionText || question.label}
+      />
     </p>
   );
 }
@@ -147,12 +141,20 @@ export function IeltsFormCompletionHeader({
       <h3 className="text-base font-bold" style={{ color: NAVY }}>
         {range}
       </h3>
-      <p className="text-sm font-medium text-slate-800">Complete the form below.</p>
+      <p className="text-sm font-medium text-slate-800">
+        <HighlightableInlineText
+          blockId={`acc-form-header-${startNum}`}
+          text="Complete the form below."
+        />
+      </p>
       <p
         className="inline-block rounded px-3 py-2 text-sm font-semibold"
         style={{ backgroundColor: "#fef3c7", color: NAVY }}
       >
-        Write <strong>NO MORE THAN TWO WORDS AND/OR A NUMBER</strong> for each answer.
+        <HighlightableInlineText
+          blockId={`acc-form-limit-${startNum}`}
+          text="Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer."
+        />
       </p>
     </div>
   );
@@ -182,7 +184,10 @@ export function IeltsMcqHeader({
         {range}
       </h3>
       <p className="text-sm text-slate-700">
-        Choose the correct letter, A, B, C or D.
+        <HighlightableInlineText
+          blockId={`acc-mcq-header-${startNum}`}
+          text="Choose the correct letter, A, B, C or D."
+        />
       </p>
     </div>
   );

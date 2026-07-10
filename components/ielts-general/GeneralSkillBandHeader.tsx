@@ -13,10 +13,14 @@ export default function GeneralSkillBandHeader({
   skill,
   title,
   subtitle,
+  refreshKey = 0,
+  latestBand = null,
 }: {
   skill: "writing" | "speaking" | "reading" | "listening";
   title: string;
   subtitle?: string;
+  refreshKey?: number;
+  latestBand?: number | null;
 }) {
   const [band, setBand] = useState<BandData | null>(null);
 
@@ -38,7 +42,12 @@ export default function GeneralSkillBandHeader({
         }
       })
       .catch(() => {});
-  }, [skill]);
+  }, [skill, refreshKey]);
+
+  const displayBand =
+    latestBand != null && Number.isFinite(latestBand)
+      ? latestBand
+      : band?.current ?? null;
 
   return (
     <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
@@ -54,7 +63,7 @@ export default function GeneralSkillBandHeader({
           <div className="text-right">
             <p className="text-xs text-slate-500">Your band estimate</p>
             <p className="text-2xl font-bold text-[#c9972c]">
-              {band.current?.toFixed(1) ?? "—"}
+              {displayBand?.toFixed(1) ?? "—"}
             </p>
             <p className="text-xs text-slate-500">
               Target {band.target.toFixed(1)}

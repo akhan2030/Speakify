@@ -8,18 +8,26 @@ import HistoryProgressPanel from "@/components/ielts/progress/HistoryProgressPan
 import ProgrammeProgressPanel from "@/components/ielts/progress/ProgrammeProgressPanel";
 import ReadinessProgressPanel from "@/components/ielts/progress/ReadinessProgressPanel";
 import WeeklyPlanPanel from "@/components/ielts/progress/WeeklyPlanPanel";
+import GrowthRoadmapPanel from "@/components/growth/GrowthRoadmapPanel";
 
-export type ProgressTab = "programme" | "readiness" | "history" | "achievements";
+export type ProgressTab = "programme" | "readiness" | "history" | "achievements" | "growth";
 
 const TABS: { id: ProgressTab; label: string; icon: string }[] = [
   { id: "programme", label: "Programme", icon: "🗺" },
+  { id: "growth", label: "Growth Roadmap", icon: "🎯" },
   { id: "readiness", label: "Readiness", icon: "📊" },
   { id: "history", label: "History", icon: "📈" },
   { id: "achievements", label: "Achievements", icon: "🏆" },
 ];
 
 function isProgressTab(value: string | null): value is ProgressTab {
-  return value === "programme" || value === "readiness" || value === "history" || value === "achievements";
+  return (
+    value === "programme" ||
+    value === "growth" ||
+    value === "readiness" ||
+    value === "history" ||
+    value === "achievements"
+  );
 }
 
 export default function IeltsMyProgressPage() {
@@ -113,6 +121,7 @@ export default function IeltsMyProgressPage() {
           </div>
         ) : null}
 
+        {activeTab === "growth" ? <GrowthRoadmapPanel programme="ielts" showResolved /> : null}
         {activeTab === "readiness" ? <ReadinessProgressPanel /> : null}
         {activeTab === "history" ? <HistoryProgressPanel /> : null}
         {activeTab === "achievements" ? <AchievementsProgressPanel /> : null}

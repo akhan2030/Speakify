@@ -14,7 +14,13 @@ import { initDailyLimit, fetchPassage } from "@/lib/useDailyLimitGate";
 import type { DailyLimitState } from "@/lib/useDailyLimitGate";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import MatchingHeadingsPanel from "@/components/reading/MatchingHeadingsPanel";
-import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import {
+  ExamHighlightQuestionText,
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+  HighlightableTfngOptions,
+} from "@/components/exam/ExamHighlightSection";
 import type { TextHighlight } from "@/lib/examHighlight";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 
@@ -83,51 +89,39 @@ function QuestionInputs({
           className="rounded-lg border border-slate-200 bg-white p-4"
         >
           <p className="text-sm font-semibold text-[#0d1b35]">
-            {index + 1}. {question.text}
+            <ExamHighlightQuestionText
+              blockId={`rp-${question.id}`}
+              number={index + 1}
+              text={question.text}
+            />
           </p>
 
-          {question.kind === "multiple-choice" && question.options ? (
+          {(question.kind === "multiple-choice" || content.slug === "multiple-choice") &&
+          question.options?.length ? (
             <div className="mt-3 space-y-2">
               {question.options.map((option) => (
-                <label
+                <HighlightableMcqOption
                   key={option.key}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  <input
-                    type="radio"
-                    name={question.id}
-                    value={option.key}
-                    checked={answers[question.id] === option.key}
-                    onChange={() => onChange(question.id, option.key)}
-                    className="text-[#0d1b35]"
-                  />
-                  <span className="text-slate-700">
-                    <strong className="text-[#0d1b35]">{option.key}.</strong>{" "}
-                    {option.label}
-                  </span>
-                </label>
+                  blockId={`rp-${question.id}-opt-${option.key}`}
+                  letter={option.key}
+                  text={option.label}
+                  name={question.id}
+                  checked={answers[question.id] === option.key}
+                  onSelect={() => onChange(question.id, option.key)}
+                />
               ))}
             </div>
           ) : null}
 
           {question.kind === "true-false-not-given" ? (
-            <div className="mt-3 flex flex-wrap gap-3">
-              {TFNG_OPTIONS.map((option) => (
-                <label
-                  key={option}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  <input
-                    type="radio"
-                    name={question.id}
-                    value={option}
-                    checked={answers[question.id] === option}
-                    onChange={() => onChange(question.id, option)}
-                  />
-                  {option}
-                </label>
-              ))}
-            </div>
+            <HighlightableTfngOptions
+              blockIdPrefix={`rp-tfng-${question.id}`}
+              name={question.id}
+              options={TFNG_OPTIONS}
+              value={answers[question.id] ?? ""}
+              onChange={(opt) => onChange(question.id, opt)}
+              className="mt-3 gap-3"
+            />
           ) : null}
 
           {question.kind === "matching-headings" && question.headings ? (
@@ -467,66 +461,72 @@ export default function ReadingPracticePage() {
           </div>
         </div>
 
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-6 py-6 lg:grid-cols-5">
-          <div className="lg:col-span-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-bold text-[#0d1b35]">{content.title}</h2>
-              <div className="mt-4">
-                <ExamTextHighlighter
-                  sectionId={content.passageId}
-                  blocks={content.paragraphs.map((p) => ({
-                    id: p.id,
-                    label: p.label,
-                    text: p.text,
-                  }))}
-                  highlights={highlights}
-                  onHighlightsChange={setHighlights}
-                  textClassName="text-sm leading-relaxed text-slate-700"
-                  renderBlockLabel={(block) => (
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      {block.label}
-                    </p>
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-slate-700">
-                {content.instructions}
-              </div>
-
-              <QuestionInputs
-                content={content}
-                answers={answers}
-                onChange={(id, value) =>
-                  setAnswers((prev) => ({ ...prev, [id]: value }))
-                }
-              />
-
-              {result && !showScreenLock ? (
-                <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm">
-                  <p className="font-bold text-green-800">
-                    Score: {result.score} / {result.total}
-                  </p>
-                  <p className="mt-1 text-green-700">
-                    Accuracy: {result.accuracy}% · Est. Band: {result.estimatedBand}
-                  </p>
+        <div className="px-6 pb-6 pt-6">
+          <ExamHighlightSection
+            sectionId={`practice-${content.passageId}`}
+            highlights={highlights}
+            onHighlightsChange={setHighlights}
+            toolbarClassName="mx-auto mb-4 max-w-6xl"
+          >
+            <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-5">
+            <div className="lg:col-span-3">
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="text-lg font-bold text-[#0d1b35]">{content.title}</h2>
+                <div className="mt-4 space-y-5">
+                  {content.paragraphs.map((p) => (
+                    <div key={p.id}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {p.label}
+                      </p>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                        <HighlightableInlineText blockId={p.id} text={p.text} />
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ) : null}
+              </div>
+            </div>
 
-              <button
-                type="button"
-                disabled={!allAnswered || submitting || timer.isTimedOut}
-                onClick={() => submitAnswers(false)}
-                className="mt-4 w-full rounded-xl bg-[#0d1b35] py-3 text-sm font-bold text-white transition-colors hover:bg-[#152a4d] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {submitting ? "Submitting…" : "Submit Answers"}
-              </button>
+            <div className="lg:col-span-2">
+              <div className="select-text rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-slate-700">
+                  <HighlightableInlineText
+                    blockId={`practice-instructions-${content.passageId}`}
+                    text={content.instructions}
+                  />
+                </div>
+
+                <QuestionInputs
+                  content={content}
+                  answers={answers}
+                  onChange={(id, value) =>
+                    setAnswers((prev) => ({ ...prev, [id]: value }))
+                  }
+                />
+
+                {result && !showScreenLock ? (
+                  <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm">
+                    <p className="font-bold text-green-800">
+                      Score: {result.score} / {result.total}
+                    </p>
+                    <p className="mt-1 text-green-700">
+                      Accuracy: {result.accuracy}% · Est. Band: {result.estimatedBand}
+                    </p>
+                  </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  disabled={!allAnswered || submitting || timer.isTimedOut}
+                  onClick={() => submitAnswers(false)}
+                  className="mt-4 w-full rounded-xl bg-[#0d1b35] py-3 text-sm font-bold text-white transition-colors hover:bg-[#152a4d] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submitting ? "Submitting…" : "Submit Answers"}
+                </button>
+              </div>
             </div>
           </div>
+        </ExamHighlightSection>
         </div>
       </main>
     </div>

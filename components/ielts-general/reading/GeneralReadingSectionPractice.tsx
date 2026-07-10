@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
-import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import {
+  ExamHighlightQuestionText,
+  ExamHighlightSection,
+  HighlightableInlineText,
+} from "@/components/exam/ExamHighlightSection";
+import GtReadingQuestionField from "@/components/exam/GtReadingQuestionField";
 import { plainTextToBlocks, type TextHighlight } from "@/lib/examHighlight";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
 import type { GtReadingPassage, GtReadingQuestion } from "@/lib/ielts-general/readingContent";
 import type { GtReadingScoreResult } from "@/lib/ielts-general/readingScore";
 import {
   gtQuestionPrompt,
-  gtUsesDropdown,
-  gtUsesOptionPicker,
-  normalizeGtOptions,
 } from "@/lib/ielts-general/readingQuestionView";
 
 const NAVY = "#0d1b35";
@@ -37,84 +39,12 @@ function QuestionInput({
   onChange: (v: string) => void;
   disabled: boolean;
 }) {
-  if (question.type === "true_false_not_given") {
-    return (
-      <div className="mt-2 flex flex-wrap gap-3">
-        {["TRUE", "FALSE", "NOT GIVEN"].map((opt) => (
-          <label
-            key={opt}
-            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-              value === opt ? "border-[#0d9488] bg-[#0d9488]/10" : "border-slate-200"
-            } ${disabled ? "opacity-70" : ""}`}
-          >
-            <input
-              type="radio"
-              name={question.id}
-              value={opt}
-              checked={value === opt}
-              disabled={disabled}
-              onChange={() => onChange(opt)}
-            />
-            {opt}
-          </label>
-        ))}
-      </div>
-    );
-  }
-
-  const options = normalizeGtOptions(question.options);
-
-  if (gtUsesOptionPicker(question.type) && options.length) {
-    if (gtUsesDropdown(question.type)) {
-      return (
-        <select
-          value={value}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.value)}
-          className="mt-2 w-full max-w-md rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50"
-        >
-          <option value="">Select an option…</option>
-          {options.map((opt, i) => (
-            <option key={`${question.id}-opt-${i}`} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      );
-    }
-
-    return (
-      <div className="mt-2 space-y-2">
-        {options.map((opt, i) => (
-          <label
-            key={`${question.id}-opt-${i}`}
-            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-              value === opt ? "border-[#0d9488] bg-[#0d9488]/10" : "border-slate-200"
-            } ${disabled ? "opacity-70" : ""}`}
-          >
-            <input
-              type="radio"
-              name={question.id}
-              value={opt}
-              checked={value === opt}
-              disabled={disabled}
-              onChange={() => onChange(opt)}
-            />
-            {opt}
-          </label>
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <input
-      type="text"
+    <GtReadingQuestionField
+      question={question}
       value={value}
+      onChange={onChange}
       disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="Your answer"
-      className="mt-2 w-full max-w-md rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50"
     />
   );
 }
@@ -286,78 +216,87 @@ export default function GeneralReadingSectionPractice({
         ) : null}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div
-          className="max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-          style={{ borderTopWidth: 4, borderTopColor: accent }}
-        >
-          <h2 className="text-lg font-bold text-[#0d1b35]">{passage.title}</h2>
-          <div className="mt-4">
-            <ExamTextHighlighter
-              sectionId={passage.id}
-              blocks={plainTextToBlocks(passage.text, passage.id)}
-              highlights={highlights}
-              onHighlightsChange={setHighlights}
-              textClassName="text-sm leading-relaxed text-slate-700"
-            />
+      <ExamHighlightSection
+        sectionId={`gt-section-${passage.id}`}
+        highlights={highlights}
+        onHighlightsChange={setHighlights}
+        toolbarClassName="mb-4"
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div
+            className="max-h-[70vh] select-text overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            style={{ borderTopWidth: 4, borderTopColor: accent }}
+          >
+            <h2 className="text-lg font-bold text-[#0d1b35]">{passage.title}</h2>
+            <div className="mt-4 space-y-4">
+              {plainTextToBlocks(passage.text, passage.id).map((block) => (
+                <p key={block.id} className="text-sm leading-relaxed text-slate-700">
+                  <HighlightableInlineText blockId={block.id} text={block.text} />
+                </p>
+              ))}
+            </div>
+          </div>
+
+          <div className="select-text">
+            {result ? (
+              <ResultsPanel result={result} />
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {passage.questions.map((q) => (
+                  <div
+                    key={q.id}
+                    className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                  >
+                    <p className="text-sm font-semibold text-[#0d1b35]">
+                      <ExamHighlightQuestionText
+                        blockId={`gt-pq-${q.id}`}
+                        number={q.number}
+                        text={gtQuestionPrompt(q)}
+                      />
+                    </p>
+                    <QuestionInput
+                      question={q}
+                      value={answers[q.id] ?? ""}
+                      disabled={submitting}
+                      onChange={(v) =>
+                        setAnswers((prev) => ({ ...prev, [q.id]: v }))
+                      }
+                    />
+                  </div>
+                ))}
+                {error ? <p className="text-sm text-red-600">{error}</p> : null}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full rounded-xl px-6 py-3 text-sm font-bold text-white disabled:opacity-60 sm:w-auto"
+                  style={{ backgroundColor: NAVY }}
+                >
+                  {submitting ? "Checking…" : "Submit answers"}
+                </button>
+              </form>
+            )}
+
+            {result ? (
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={load}
+                  className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-[#0d1b35]"
+                >
+                  Try again
+                </button>
+                <Link
+                  href={`${GENERAL_STUDENT_BASE}/reading`}
+                  className="rounded-xl px-5 py-2.5 text-sm font-bold text-white"
+                  style={{ backgroundColor: TEAL }}
+                >
+                  Back to Reading hub
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
-
-        <div>
-          {result ? (
-            <ResultsPanel result={result} />
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {passage.questions.map((q) => (
-                <div
-                  key={q.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-                >
-                  <p className="text-sm font-semibold text-[#0d1b35]">
-                    {q.number}. {gtQuestionPrompt(q)}
-                  </p>
-                  <QuestionInput
-                    question={q}
-                    value={answers[q.id] ?? ""}
-                    disabled={submitting}
-                    onChange={(v) =>
-                      setAnswers((prev) => ({ ...prev, [q.id]: v }))
-                    }
-                  />
-                </div>
-              ))}
-              {error ? <p className="text-sm text-red-600">{error}</p> : null}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-xl px-6 py-3 text-sm font-bold text-white disabled:opacity-60 sm:w-auto"
-                style={{ backgroundColor: NAVY }}
-              >
-                {submitting ? "Checking…" : "Submit answers"}
-              </button>
-            </form>
-          )}
-
-          {result ? (
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={load}
-                className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-[#0d1b35]"
-              >
-                Try again
-              </button>
-              <Link
-                href={`${GENERAL_STUDENT_BASE}/reading`}
-                className="rounded-xl px-5 py-2.5 text-sm font-bold text-white"
-                style={{ backgroundColor: TEAL }}
-              >
-                Back to Reading hub
-              </Link>
-            </div>
-          ) : null}
-        </div>
-      </div>
+      </ExamHighlightSection>
     </div>
   );
 }

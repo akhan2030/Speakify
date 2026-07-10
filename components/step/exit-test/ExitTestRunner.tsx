@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ExamHighlightSection } from "@/components/exam/ExamHighlightSection";
+import type { TextHighlight } from "@/lib/examHighlight";
 import {
   EXIT_TEST_SECTION_COUNTS,
   EXIT_TEST_TIME_SECONDS,
@@ -68,10 +70,15 @@ export default function ExitTestRunner({ attemptId, phase, questions, onSubmitte
     sectionSubmitted: [false, false, false, false],
   }));
   const [submitting, setSubmitting] = useState(false);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const warned10 = useRef(false);
   const warned5 = useRef(false);
   const examStateRef = useRef(examState);
   examStateRef.current = examState;
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [examState.currentSection, examState.currentQuestion]);
 
   const answeredInSection = useCallback(
     (sectionIndex: number) => {
@@ -237,6 +244,11 @@ export default function ExitTestRunner({ attemptId, phase, questions, onSubmitte
       />
 
       <div className="ml-0 max-w-[800px] px-4 py-8 md:ml-[200px] md:px-8" style={{ marginTop: 64 }}>
+        <ExamHighlightSection
+          sectionId={`exit-test-${examState.currentSection}-${examState.currentQuestion}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+        >
         {examState.currentSection === 0 && (
           <ReadingQuestion
             question={currentQ}
@@ -278,6 +290,8 @@ export default function ExitTestRunner({ attemptId, phase, questions, onSubmitte
             questionNumber={examState.currentQuestion + 1}
           />
         )}
+
+        </ExamHighlightSection>
 
         <div className="mt-8 flex justify-between border-t border-slate-200 pt-4">
           <button

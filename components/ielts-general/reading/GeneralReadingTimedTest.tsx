@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
-import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import {
+  ExamHighlightQuestionText,
+  ExamHighlightSection,
+  HighlightableInlineText,
+} from "@/components/exam/ExamHighlightSection";
+import GtReadingQuestionField from "@/components/exam/GtReadingQuestionField";
 import { plainTextToBlocks, type TextHighlight } from "@/lib/examHighlight";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
 import type { GtReadingPassage, GtReadingQuestion } from "@/lib/ielts-general/readingContent";
 import type { GtReadingScoreResult } from "@/lib/ielts-general/readingScore";
-import {
-  gtQuestionPrompt,
-  gtUsesDropdown,
-  gtUsesOptionPicker,
-  normalizeGtOptions,
-} from "@/lib/ielts-general/readingQuestionView";
+import { gtQuestionPrompt } from "@/lib/ielts-general/readingQuestionView";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
@@ -36,71 +36,12 @@ function QuestionField({
   onChange: (v: string) => void;
   disabled: boolean;
 }) {
-  if (question.type === "true_false_not_given") {
-    return (
-      <div className="mt-2 flex flex-wrap gap-2">
-        {["TRUE", "FALSE", "NOT GIVEN"].map((opt) => (
-          <label key={opt} className="flex items-center gap-1 text-xs">
-            <input
-              type="radio"
-              name={question.id}
-              checked={value === opt}
-              disabled={disabled}
-              onChange={() => onChange(opt)}
-            />
-            {opt}
-          </label>
-        ))}
-      </div>
-    );
-  }
-
-  const options = normalizeGtOptions(question.options);
-
-  if (gtUsesOptionPicker(question.type) && options.length) {
-    if (gtUsesDropdown(question.type)) {
-      return (
-        <select
-          value={value}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.value)}
-          className="mt-2 w-full rounded border border-slate-200 px-2 py-1 text-xs"
-        >
-          <option value="">Select…</option>
-          {options.map((opt, i) => (
-            <option key={`${question.id}-opt-${i}`} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      );
-    }
-
-    return (
-      <div className="mt-2 space-y-1">
-        {options.map((opt, i) => (
-          <label key={`${question.id}-opt-${i}`} className="flex items-center gap-2 text-xs">
-            <input
-              type="radio"
-              name={question.id}
-              checked={value === opt}
-              disabled={disabled}
-              onChange={() => onChange(opt)}
-            />
-            {opt}
-          </label>
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <input
-      type="text"
+    <GtReadingQuestionField
+      question={question}
       value={value}
+      onChange={onChange}
       disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      className="mt-2 w-full rounded border border-slate-200 px-2 py-1 text-xs"
     />
   );
 }
@@ -111,9 +52,7 @@ export default function GeneralReadingTimedTest() {
   const [passages, setPassages] = useState<GtReadingPassage[]>([]);
   const [questions, setQuestions] = useState<GtReadingQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [highlightsByPassage, setHighlightsByPassage] = useState<
-    Record<string, TextHighlight[]>
-  >({});
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(TEST_SECONDS);
   const [started, setStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -333,44 +272,48 @@ export default function GeneralReadingTimedTest() {
               </h2>
             ) : null}
 
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 className="font-bold text-[#0d1b35]">{passage.title}</h3>
-              <div className="mt-3 max-h-64 overflow-y-auto">
-                <ExamTextHighlighter
-                  sectionId={passage.id}
-                  blocks={plainTextToBlocks(passage.text, passage.id)}
-                  highlights={highlightsByPassage[passage.id] ?? []}
-                  onHighlightsChange={(next) =>
-                    setHighlightsByPassage((prev) => ({
-                      ...prev,
-                      [passage.id]: next,
-                    }))
-                  }
-                  textClassName="text-sm leading-relaxed text-slate-700"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {passage.questions.map((q) => (
-                <div
-                  key={q.id}
-                  className="rounded-lg border border-slate-100 bg-slate-50 p-3"
-                >
-                  <p className="text-sm font-medium text-[#0d1b35]">
-                    {q.number}. {gtQuestionPrompt(q)}
-                  </p>
-                  <QuestionField
-                    question={q}
-                    value={answers[q.id] ?? ""}
-                    disabled={submitting}
-                    onChange={(v) =>
-                      setAnswers((prev) => ({ ...prev, [q.id]: v }))
-                    }
-                  />
+            <ExamHighlightSection
+              sectionId={`gt-timed-${passage.id}`}
+              highlights={highlights}
+              onHighlightsChange={setHighlights}
+              toolbarClassName="mb-3"
+            >
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 className="font-bold text-[#0d1b35]">{passage.title}</h3>
+                <div className="mt-3 max-h-64 select-text space-y-3 overflow-y-auto">
+                  {plainTextToBlocks(passage.text, passage.id).map((block) => (
+                    <p key={block.id} className="text-sm leading-relaxed text-slate-700">
+                      <HighlightableInlineText blockId={block.id} text={block.text} />
+                    </p>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+
+              <div className="mt-3 space-y-3">
+                {passage.questions.map((q) => (
+                  <div
+                    key={q.id}
+                    className="select-text rounded-lg border border-slate-100 bg-slate-50 p-3"
+                  >
+                    <p className="text-sm font-medium text-[#0d1b35]">
+                      <ExamHighlightQuestionText
+                        blockId={`gt-rq-${q.id}`}
+                        number={q.number}
+                        text={gtQuestionPrompt(q)}
+                      />
+                    </p>
+                    <QuestionField
+                      question={q}
+                      value={answers[q.id] ?? ""}
+                      disabled={submitting}
+                      onChange={(v) =>
+                        setAnswers((prev) => ({ ...prev, [q.id]: v }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </ExamHighlightSection>
           </div>
         );
       })}

@@ -4,8 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { evaluateGeneralWriting } from "@/lib/ielts-general/writingEval.js";
 import {
+  extractGtWritingDeductions,
+} from "@/lib/ielts-general/gtWritingScoringSchema";
+import {
   gtAttemptInsertRow,
   gtHistoryInsertRow,
+  gtWritingAttemptInsertRow,
 } from "@/lib/ielts-general/attemptRows";
 
 export const runtime = "nodejs";
@@ -20,53 +24,69 @@ function getSupabase() {
   });
 }
 
-/**
- * Best-effort persistence of a completed GT writing attempt to
- * ielts_general_attempts (+ history). Never throws — a save failure must not
- * break the evaluation response. Task 1 stores letter_type so the GT dashboard
- * can compute letter-type accuracy.
- */
 async function persistGeneralWritingAttempt({
   studentId,
   taskType,
   letterType,
   bands,
+  essay,
+  structuredFeedback,
 }) {
-  if (!studentId) return;
+  if (!studentId) return null;
   const overall = bands?.overall;
-  if (overall == null || !Number.isFinite(Number(overall))) return;
+  if (overall == null || !Number.isFinite(Number(overall))) return null;
 
   const supabase = getSupabase();
-  if (!supabase) return;
+  if (!supabase) return null;
 
   const completedAt = new Date().toISOString();
+  const detailedRow = gtWritingAttemptInsertRow({
+    studentId,
+    taskType,
+    letterType,
+    bands,
+    essay,
+    structuredFeedback,
+    completedAt,
+  });
 
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("ielts_general_attempts")
-      .insert(
-        gtAttemptInsertRow({
-          studentId,
-          skill: "writing",
-          bandScore: Number(overall),
-          letterType: taskType === "task1" ? letterType ?? null : null,
-          completedAt,
-        })
-      );
-    if (error && !error.message?.includes("does not exist")) {
-      console.warn("[ielts-general/evaluate] attempt insert:", error.message);
-    }
-  } catch (err) {
-    console.warn(
-      "[ielts-general/evaluate] attempt insert threw:",
-      err instanceof Error ? err.message : err
-    );
-  }
+      .insert(detailedRow)
+      .select("id")
+      .single();
 
-  try {
-    const { error } = await supabase
-      .from("ielts_general_student_history")
-      .insert(
+    if (error) {
+      if (
+        error.message?.includes("ta_score") ||
+        error.message?.includes("feedback") ||
+        error.message?.includes("structured")
+      ) {
+        const { error: fallbackError } = await supabase
+          .from("ielts_general_attempts")
+          .insert(
+            gtAttemptInsertRow({
+              studentId,
+              skill: "writing",
+              bandScore: Number(overall),
+              letterType: taskType === "task1" ? letterType ?? null : null,
+              completedAt,
+            })
+          );
+        if (fallbackError && !fallbackError.message?.includes("does not exist")) {
+          console.warn("[ielts-general/evaluate] fallback insert:", fallbackError.message);
+        }
+        return `gt-writing-${completedAt}`;
+      }
+      if (!error.message?.includes("does not exist")) {
+        console.warn("[ielts-general/evaluate] attempt insert:", error.message);
+      }
+      return null;
+    }
+
+    try {
+      await supabase.from("ielts_general_student_history").insert(
         gtHistoryInsertRow({
           studentId,
           skill: "writing",
@@ -74,19 +94,30 @@ async function persistGeneralWritingAttempt({
           recordedAt: completedAt,
         })
       );
-    if (error && !error.message?.includes("does not exist")) {
-      console.warn("[ielts-general/evaluate] history insert:", error.message);
+    } catch (historyErr) {
+      console.warn(
+        "[ielts-general/evaluate] history insert:",
+        historyErr instanceof Error ? historyErr.message : historyErr
+      );
     }
+
+    return data?.id ?? `gt-writing-${completedAt}`;
   } catch (err) {
     console.warn(
-      "[ielts-general/evaluate] history insert threw:",
+      "[ielts-general/evaluate] attempt insert threw:",
       err instanceof Error ? err.message : err
     );
+    return null;
   }
 }
 
 export async function POST(request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized", success: false }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => null);
     const taskType = body?.taskType;
 
@@ -105,7 +136,7 @@ export async function POST(request) {
       );
     }
 
-    const { evaluation, bands } = await evaluateGeneralWriting({
+    const result = await evaluateGeneralWriting({
       essay,
       taskType,
       letterType: body?.letterType,
@@ -113,15 +144,45 @@ export async function POST(request) {
       essayType: body?.essayType,
     });
 
-    const session = await getServerSession(authOptions);
-    await persistGeneralWritingAttempt({
-      studentId: session?.user?.id,
+    const { structuredFeedback, evaluation, bands } = result;
+    const attemptId = await persistGeneralWritingAttempt({
+      studentId: session.user.id,
       taskType,
       letterType: body?.letterType,
       bands,
+      essay,
+      structuredFeedback,
     });
 
-    return NextResponse.json({ evaluation, bands, success: true });
+    try {
+      const { syncRoadmapFromSessionScore } = await import("@/lib/growthRoadmap/syncRoadmap");
+      const supabase = getSupabase();
+      if (supabase) {
+        const deductions = extractGtWritingDeductions(structuredFeedback);
+        if (deductions.length > 0) {
+          await syncRoadmapFromSessionScore({
+            supabase,
+            studentId: session.user.id,
+            sourceSessionId: String(attemptId ?? `gt-writing-${Date.now()}`),
+            skill: "writing",
+            deductions,
+          });
+        }
+      }
+    } catch (roadmapErr) {
+      console.warn(
+        "[ielts-general/evaluate] roadmap sync:",
+        roadmapErr instanceof Error ? roadmapErr.message : roadmapErr
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      evaluation,
+      bands,
+      structuredFeedback,
+      examVariant: "general",
+    });
   } catch (err) {
     console.error("[ielts-general/evaluate]", err?.message || err);
     return NextResponse.json(

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ExamHighlightSection } from "@/components/exam/ExamHighlightSection";
+import type { TextHighlight } from "@/lib/examHighlight";
 import {
   MOCK_SECTION_COUNTS,
   MOCK_SECTION_NAMES,
@@ -67,10 +69,15 @@ export default function MockExamRunner({ attemptId, questions, onSubmitted }: Pr
     sectionSubmitted: [false, false, false, false],
   }));
   const [submitting, setSubmitting] = useState(false);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const warned30 = useRef(false);
   const warned10 = useRef(false);
   const examStateRef = useRef(examState);
   examStateRef.current = examState;
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [examState.currentSection, examState.currentQuestion]);
 
   const answeredInSection = useCallback(
     (sectionIndex: number) => {
@@ -234,6 +241,11 @@ export default function MockExamRunner({ attemptId, questions, onSubmitted }: Pr
       />
 
       <div className="ml-0 max-w-[800px] px-4 py-8 md:ml-[200px] md:px-8" style={{ marginTop: 64 }}>
+        <ExamHighlightSection
+          sectionId={`step-mock-${examState.currentSection}-${examState.currentQuestion}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+        >
         {examState.currentSection === 0 && (
           <ReadingQuestion
             question={currentQ}
@@ -275,6 +287,8 @@ export default function MockExamRunner({ attemptId, questions, onSubmitted }: Pr
             questionNumber={examState.currentQuestion + 1}
           />
         )}
+
+        </ExamHighlightSection>
 
         <div className="mt-8 flex justify-between border-t border-slate-200 pt-4">
           <button

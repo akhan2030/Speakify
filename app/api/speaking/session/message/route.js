@@ -11,6 +11,10 @@ import {
   generatePart3Questions,
   normalizeExaminerCueCard,
 } from "@/lib/speaking/part3Generation";
+import {
+  generatePracticeCoachingHint,
+  lastExaminerQuestionFromHistory,
+} from "@/lib/speaking/practiceCoaching";
 import { isLikelyRealStudentSpeech } from "@/lib/speaking/validateSpeechInput";
 
 export const runtime = "nodejs";
@@ -154,6 +158,7 @@ export async function POST(req) {
       conversationHistory,
       words,
       speakingDurationMs,
+      sessionType,
     } = await req.json();
 
     if (!sessionId || !studentMessage) {
@@ -237,14 +242,34 @@ export async function POST(req) {
 
     console.time("[speaking/session/message] LLM examiner");
     let response;
+    let coachingHint = null;
+    const isPractice = sessionType === "practice";
+    const lastExaminerQuestion = lastExaminerQuestionFromHistory(conversationHistory);
+
     try {
-      response = await openai.chat.completions.create({
+      const examinerPromise = openai.chat.completions.create({
         model: "gpt-4o",
         messages,
         response_format: { type: "json_object" },
         max_tokens: 300,
         temperature: 0.7,
       });
+
+      const coachingPromise = isPractice
+        ? generatePracticeCoachingHint(openai, {
+            studentMessage,
+            currentPart: Number(currentPart) || 1,
+            lastExaminerQuestion,
+            programme: session?.programme ?? "ielts",
+          })
+        : Promise.resolve(null);
+
+      const [examinerResponse, coaching] = await Promise.all([
+        examinerPromise,
+        coachingPromise,
+      ]);
+      response = examinerResponse;
+      coachingHint = coaching;
     } finally {
       console.timeEnd("[speaking/session/message] LLM examiner");
     }
@@ -338,6 +363,8 @@ export async function POST(req) {
       speech: examinerResponse.speech,
       action: examinerResponse.action,
       part3Questions,
+      coachingHint: coachingHint?.hint ?? null,
+      coachingFocus: coachingHint?.focus ?? null,
     });
   } catch (err) {
     console.error("[speaking/session/message]", err);

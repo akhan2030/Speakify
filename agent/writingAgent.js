@@ -10,6 +10,7 @@ const cron = require("node-cron");
 const dotenv = require("dotenv");
 const OpenAI = require("openai");
 const { createClient } = require("@supabase/supabase-js");
+const { dailyTaskPublishFields } = require("./dailyTaskPublish.js");
 
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 
@@ -666,7 +667,7 @@ async function saveWritingTask(supabase, content, taskType, generationDate) {
     answer_key: answerKey,
     marking_rubric: markingRubric,
     estimated_minutes: taskNumber === 1 ? 20 : 40,
-    status: "draft",
+    ...dailyTaskPublishFields(),
     content_hash: contentHash,
     tags: [
       "writing",
@@ -804,7 +805,7 @@ async function runWritingGeneration() {
 
     log("========================================");
     log(`Done — ${tasksGenerated} drafts saved, ${tasksFailed} failed/skipped`);
-    log("All content saved as status: draft (not published)");
+    log("All content saved as status: published (live for students)");
     log("Next run: 6:00 AM tomorrow");
     log("========================================");
 

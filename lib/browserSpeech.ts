@@ -1,11 +1,162 @@
 /**
  * Client-side speech fallback when OpenAI TTS is unavailable.
  */
+
+let activeSarahAudio: HTMLAudioElement | null = null;
+let activeSarahRaf: number | null = null;
+
+function stopSarahAudio(): void {
+  if (activeSarahRaf != null) {
+    cancelAnimationFrame(activeSarahRaf);
+    activeSarahRaf = null;
+  }
+  if (activeSarahAudio) {
+    activeSarahAudio.pause();
+    activeSarahAudio.src = "";
+    activeSarahAudio = null;
+  }
+}
+
+function isQuotaOrUnavailable(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("429") ||
+    lower.includes("quota") ||
+    lower.includes("billing") ||
+    lower.includes("openai_api_key") ||
+    lower.includes("not configured") ||
+    lower.includes("unauthorized")
+  );
+}
+
+async function fetchSarahExaminerAudio(text: string): Promise<Blob> {
+  const response = await fetch("/api/speaking/synthesize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ text }),
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!response.ok || contentType.includes("application/json")) {
+    let message = "Sarah voice unavailable";
+    try {
+      const body = await response.json();
+      message = String((body as { error?: string })?.error ?? message);
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  if (!blob.size) {
+    throw new Error("Empty audio response");
+  }
+  return blob;
+}
+
+async function playSarahAudioBlob(
+  text: string,
+  blob: Blob,
+  handlers?: {
+    onStart?: () => void;
+    onEnd?: () => void;
+    onBoundary?: (charIndex: number, charLength: number) => void;
+  }
+): Promise<void> {
+  stopSarahAudio();
+  stopBrowserSpeech();
+
+  const audio = new Audio();
+  activeSarahAudio = audio;
+  const url = URL.createObjectURL(blob);
+  audio.src = url;
+  audio.preload = "auto";
+
+  let lastCharIndex = -1;
+
+  const revealProgress = () => {
+    if (!audio.duration || !Number.isFinite(audio.duration)) return;
+    const ratio = Math.min(1, audio.currentTime / audio.duration);
+    const charIndex = Math.min(text.length - 1, Math.floor(ratio * text.length));
+    if (charIndex !== lastCharIndex) {
+      lastCharIndex = charIndex;
+      handlers?.onBoundary?.(charIndex, 1);
+    }
+  };
+
+  const scheduleReveal = () => {
+    revealProgress();
+    if (!audio.paused && !audio.ended) {
+      activeSarahRaf = requestAnimationFrame(scheduleReveal);
+    }
+  };
+
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const settle = (ok: boolean, err?: Error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      if (activeSarahRaf != null) {
+        cancelAnimationFrame(activeSarahRaf);
+        activeSarahRaf = null;
+      }
+      audio.onplay = null;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.ontimeupdate = null;
+      URL.revokeObjectURL(url);
+      if (activeSarahAudio === audio) {
+        activeSarahAudio = null;
+      }
+      if (ok) {
+        handlers?.onBoundary?.(Math.max(0, text.length - 1), 1);
+        handlers?.onEnd?.();
+        resolve();
+      } else {
+        handlers?.onEnd?.();
+        reject(err ?? new Error("Could not play examiner audio."));
+      }
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      settle(false, new Error("Examiner audio timed out."));
+    }, Math.max(20000, text.length * 120 + 8000));
+
+    audio.onplay = () => {
+      handlers?.onStart?.();
+      scheduleReveal();
+    };
+
+    audio.ontimeupdate = revealProgress;
+
+    audio.onended = () => settle(true);
+
+    audio.onerror = () => {
+      settle(false, new Error("Could not play examiner audio."));
+    };
+
+    void audio
+      .play()
+      .catch((playErr) => {
+        settle(
+          false,
+          playErr instanceof Error
+            ? playErr
+            : new Error("Playback blocked — check browser sound settings.")
+        );
+      });
+  });
+}
+
 export function canUseBrowserSpeech(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
 export function stopBrowserSpeech(): void {
+  stopSarahAudio();
   if (canUseBrowserSpeech()) {
     window.speechSynthesis.cancel();
   }
@@ -391,7 +542,7 @@ function pickFemaleBritishVoice(
   return undefined;
 }
 
-/** Sarah — female British examiner voice for IELTS Speaking. */
+/** Sarah — OpenAI TTS (nova) with browser speech fallback for IELTS Speaking. */
 export async function speakSarahExaminer(
   text: string,
   handlers?: {
@@ -400,10 +551,29 @@ export async function speakSarahExaminer(
     onBoundary?: (charIndex: number, charLength: number) => void;
   }
 ): Promise<void> {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    handlers?.onEnd?.();
+    return;
+  }
+
+  try {
+    const blob = await fetchSarahExaminerAudio(trimmed);
+    await playSarahAudioBlob(trimmed, blob, handlers);
+    return;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Sarah voice unavailable";
+    if (!isQuotaOrUnavailable(message)) {
+      console.warn("[speakSarahExaminer] OpenAI TTS failed, using browser voice:", message);
+    }
+  }
+
   if (!canUseBrowserSpeech()) {
     handlers?.onEnd?.();
     return;
   }
+
+  stopSarahAudio();
 
   const synth = window.speechSynthesis;
   synth.cancel();
@@ -414,7 +584,7 @@ export async function speakSarahExaminer(
   }
 
   const voice = pickFemaleBritishVoice(voices);
-  const utterance = buildUtterance(text, "en-GB", voice);
+  const utterance = buildUtterance(trimmed, "en-GB", voice);
   utterance.pitch = 1.08;
   utterance.rate = 0.9;
 

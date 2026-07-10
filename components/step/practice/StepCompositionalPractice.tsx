@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import {
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+} from "@/components/exam/ExamHighlightSection";
 import { PageSpinner } from "@/components/StudentSidebar";
+import type { TextHighlight } from "@/lib/examHighlight";
 import StepSectionTopBar, {
   type SectionProgress,
   STEP_GOLD,
@@ -49,6 +55,7 @@ export default function StepCompositionalPractice() {
   const [sessionGraded, setSessionGraded] = useState<GradedResult[]>([]);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [batchKey, setBatchKey] = useState(0);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
 
   const loadSession = useCallback(async () => {
     setLoading(true);
@@ -70,6 +77,10 @@ export default function StepCompositionalPractice() {
   useEffect(() => {
     loadSession().catch(() => setLoading(false));
   }, [loadSession, batchKey]);
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [batchKey, idx, questions[idx]?.id]);
 
   const current = questions[idx];
 
@@ -143,51 +154,56 @@ export default function StepCompositionalPractice() {
       />
 
       {!sessionComplete && current ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-            Question {idx + 1} of {questions.length}
-          </p>
-          <p
-            className="mt-4 whitespace-pre-wrap text-base font-medium leading-relaxed"
-            style={{ color: STEP_NAVY }}
-          >
-            {current.stem}
-          </p>
-
-          {feedback ? (
-            <div
-              className={`mt-5 space-y-2 rounded-xl p-4 text-sm ${
-                feedback.isCorrect ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-900"
-              }`}
+        <ExamHighlightSection
+          sectionId={`step-compositional-${current.id}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+        >
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              Question {idx + 1} of {questions.length}
+            </p>
+            <p
+              className="mt-4 whitespace-pre-wrap text-base font-medium leading-relaxed"
+              style={{ color: STEP_NAVY }}
             >
-              <p>
-                {feedback.isCorrect ? "✅ Correct" : `❌ Correct: ${feedback.correct}`} —{" "}
-                {feedback.explanation}
-              </p>
-              {saudiTip(feedback.questionType) ? (
-                <p className="rounded-lg bg-white/60 px-3 py-2 text-xs italic">
-                  🇸🇦 Saudi tip: {saudiTip(feedback.questionType)}
+              <HighlightableInlineText blockId={`${current.id}-stem`} text={current.stem} />
+            </p>
+
+            {feedback ? (
+              <div
+                className={`mt-5 space-y-2 rounded-xl p-4 text-sm ${
+                  feedback.isCorrect ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-900"
+                }`}
+              >
+                <p>
+                  {feedback.isCorrect ? "✅ Correct" : `❌ Correct: ${feedback.correct}`} —{" "}
+                  {feedback.explanation}
                 </p>
-              ) : null}
-            </div>
-          ) : (
-            <div className="mt-5 space-y-2">
-              {OPTS.map((letter) => (
-                <button
-                  key={letter}
-                  type="button"
-                  onClick={() => handleSelect(letter)}
-                  className="flex w-full items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm transition hover:border-teal-400 hover:bg-teal-50"
-                >
-                  <span className="font-bold" style={{ color: STEP_GOLD }}>
-                    {letter}.
-                  </span>
-                  <span style={{ color: STEP_NAVY }}>{current.options[letter]}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                {saudiTip(feedback.questionType) ? (
+                  <p className="rounded-lg bg-white/60 px-3 py-2 text-xs italic">
+                    🇸🇦 Saudi tip: {saudiTip(feedback.questionType)}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-5 space-y-2">
+                {OPTS.map((letter) => (
+                  <HighlightableMcqOption
+                    key={letter}
+                    blockId={`${current.id}-opt-${letter}`}
+                    letter={letter}
+                    text={current.options[letter]}
+                    name={current.id}
+                    checked={false}
+                    onSelect={() => handleSelect(letter)}
+                    className="flex w-full items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm transition hover:border-teal-400 hover:bg-teal-50"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </ExamHighlightSection>
       ) : (
         <div
           className="rounded-2xl p-6 text-white"

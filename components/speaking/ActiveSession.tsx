@@ -99,6 +99,43 @@ function formatElapsed(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+function resolveSarahBubbleText({
+  sessionType,
+  sarahThinking,
+  isExaminerSpeaking,
+  isTtsLoading,
+  displayedSpeech,
+  examinerSpeech,
+}: {
+  sessionType: "practice" | "mock";
+  sarahThinking: boolean;
+  isExaminerSpeaking: boolean;
+  isTtsLoading: boolean;
+  displayedSpeech: string;
+  examinerSpeech: string;
+}): string {
+  if (sarahThinking && !isExaminerSpeaking && !isTtsLoading) {
+    return "Sarah is thinking…";
+  }
+
+  if (isTtsLoading || isExaminerSpeaking) {
+    if (sessionType === "mock") {
+      return "Listen to Sarah — the question is audio only.";
+    }
+    return displayedSpeech.trim() || "▸ Sarah is speaking…";
+  }
+
+  if (sessionType === "practice" && (displayedSpeech.trim() || examinerSpeech.trim())) {
+    return displayedSpeech.trim() || examinerSpeech;
+  }
+
+  if (sessionType === "mock") {
+    return "Waiting for your turn…";
+  }
+
+  return examinerSpeech.trim() || "…";
+}
+
 export default function ActiveSession({
   sessionId,
   sessionNumber,
@@ -122,6 +159,7 @@ export default function ActiveSession({
   sessionStatus,
   setSessionStatus,
   sessionType,
+  programme = "ielts",
   studentId,
   onComplete,
 }: {
@@ -147,13 +185,22 @@ export default function ActiveSession({
   sessionStatus: "idle" | "active" | "scoring" | "complete";
   setSessionStatus: (s: "idle" | "active" | "scoring" | "complete") => void;
   sessionType: "practice" | "mock";
+  programme?: string;
   studentId?: string;
   onComplete: (feedback: unknown) => void;
 }) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const isGeneralTraining = programme === "ielts_general";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem("speakify_programme", programme);
+  }, [programme]);
   const [sessionElapsed, setSessionElapsed] = useState(0);
   const [prepNotes, setPrepNotes] = useState("");
   const [displayedSpeech, setDisplayedSpeech] = useState("");
+  const [isTtsLoading, setIsTtsLoading] = useState(false);
+  const isSarahAudioActive = isExaminerSpeaking || isTtsLoading;
   const [part2Pulse, setPart2Pulse] = useState(false);
   const [viewPart, setViewPart] = useState<Part>(1);
   const [micError, setMicError] = useState<string | null>(null);
@@ -177,6 +224,9 @@ export default function ActiveSession({
   const [part2MicStatus, setPart2MicStatus] = useState<
     "idle" | "arming" | "ready" | "live" | "error"
   >("idle");
+  const [coachingHint, setCoachingHint] = useState<string | null>(null);
+  const [coachingFocus, setCoachingFocus] = useState<string | null>(null);
+  const [voiceTierLabel, setVoiceTierLabel] = useState<string | null>(null);
   const part2ArmingRef = useRef(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -225,6 +275,16 @@ export default function ActiveSession({
   useEffect(() => {
     part2PhaseRef.current = part2Phase;
   }, [part2Phase]);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    fetch("/api/speaking/voice-tier")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.label) setVoiceTierLabel(String(data.label));
+      })
+      .catch(() => null);
+  }, [sessionReady]);
 
   useEffect(() => {
     isExaminerSpeakingRef.current = isExaminerSpeaking;
@@ -578,26 +638,37 @@ export default function ActiveSession({
       clearAnswerTimer();
       setMicError(null);
       setDisplayedSpeech("");
-      setExaminerSpeech(text);
+      setExaminerSpeech("");
 
       if (isSpeakingTestClosing(text)) {
         markTestEnded();
       }
 
       console.time("[speaking] TTS call");
+      setIsTtsLoading(true);
 
       void speakSarahExaminer(text, {
         onStart: () => {
+          setIsTtsLoading(false);
           isExaminerSpeakingRef.current = true;
           setIsExaminerSpeaking(true);
         },
         onBoundary: (charIndex, charLength) => {
-          setDisplayedSpeech(text.slice(0, charIndex + charLength));
+          if (sessionTypeRef.current === "practice") {
+            setDisplayedSpeech(text.slice(0, charIndex + charLength));
+          }
         },
         onEnd: () => {
-          setDisplayedSpeech(text);
+          setIsTtsLoading(false);
           setIsExaminerSpeaking(false);
           isExaminerSpeakingRef.current = false;
+          if (sessionTypeRef.current === "practice") {
+            setDisplayedSpeech(text);
+            setExaminerSpeech(text);
+          } else {
+            setDisplayedSpeech("");
+            setExaminerSpeech("");
+          }
           console.timeEnd("[speaking] TTS call");
           onEnd?.();
           // Never re-arm after the exam has closed.
@@ -608,6 +679,10 @@ export default function ActiveSession({
           }
           requestArmAfterExaminer();
         },
+      }).catch(() => {
+        setIsTtsLoading(false);
+        setIsExaminerSpeaking(false);
+        isExaminerSpeakingRef.current = false;
       });
     },
     [
@@ -745,11 +820,7 @@ export default function ActiveSession({
           sessionId,
           cueCard: cueCardPayload(cueCard),
           part2Transcript,
-          testType:
-            typeof window !== "undefined" &&
-            sessionStorage.getItem("speakify_programme") === "ielts_general"
-              ? "ielts_general_training"
-              : "ielts_academic",
+          testType: isGeneralTraining ? "ielts_general_training" : "ielts_academic",
         });
         setPart3Questions(questions);
         return questions;
@@ -760,7 +831,7 @@ export default function ActiveSession({
         setPart3Generating(false);
       }
     },
-    [sessionId, cueCard, part3Questions]
+    [sessionId, cueCard, part3Questions, isGeneralTraining]
   );
 
   const switchToPracticePart = useCallback(
@@ -781,7 +852,6 @@ export default function ActiveSession({
         setPart2Timer(null);
         const speech =
           "Let's practice Part 1. Could you tell me a little about where you live?";
-        setExaminerSpeech(speech);
         setConversationHistory((history) => [
           ...history,
           { role: "examiner", text: speech, part: 1 },
@@ -798,7 +868,6 @@ export default function ActiveSession({
         setPrepNotes("");
         part2TranscriptRef.current = "";
         const speech = buildPart2PracticeIntro(cueCard);
-        setExaminerSpeech(speech);
         setConversationHistory((history) => [
           ...history,
           { role: "examiner", text: speech, part: 2 },
@@ -821,7 +890,6 @@ export default function ActiveSession({
           questions[0] != null
             ? buildPart3TransitionSpeech(card, questions[0])
             : `Thank you. That is the end of Part 2. We've been talking about ${String(cueCard.topic).charAt(0).toLowerCase()}${String(cueCard.topic).slice(1)}, and I'd now like to ask you some more general questions related to this. Let's begin Part 3.`;
-        setExaminerSpeech(speech);
         setConversationHistory((history) => [
           ...history,
           { role: "examiner", text: speech, part: 3 },
@@ -839,7 +907,6 @@ export default function ActiveSession({
       setPart2Phase,
       setPart2Timer,
       setConversationHistory,
-      setExaminerSpeech,
       speakExaminer,
       stopRecording,
     ]
@@ -914,6 +981,8 @@ export default function ActiveSession({
       setIsProcessing(true);
       setTranscript("");
       transcriptRef.current = "";
+      setCoachingHint(null);
+      setCoachingFocus(null);
 
       const studentEntry: HistoryEntry = {
         role: "student",
@@ -931,6 +1000,8 @@ export default function ActiveSession({
           action?: string;
           error?: string;
           part3Questions?: string[];
+          coachingHint?: string | null;
+          coachingFocus?: string | null;
         } = {};
         try {
           res = await fetch("/api/speaking/session/message", {
@@ -943,6 +1014,7 @@ export default function ActiveSession({
               conversationHistory: historyForApi,
               words: meta?.words ?? [],
               speakingDurationMs: meta?.speakingDurationMs,
+              sessionType,
             }),
           });
           data = await res.json();
@@ -960,6 +1032,14 @@ export default function ActiveSession({
 
         if (Array.isArray(data.part3Questions) && data.part3Questions.length >= 3) {
           setPart3Questions(data.part3Questions);
+        }
+
+        if (sessionTypeRef.current === "practice") {
+          setCoachingHint(data.coachingHint?.trim() || null);
+          setCoachingFocus(data.coachingFocus?.trim() || null);
+        } else {
+          setCoachingHint(null);
+          setCoachingFocus(null);
         }
 
         const examinerSpeechText = data.speech ?? "";
@@ -989,6 +1069,7 @@ export default function ActiveSession({
       handleExaminerAction,
       isSpeakingTestClosing,
       markTestEnded,
+      sessionType,
     ]
   );
 
@@ -1261,6 +1342,7 @@ export default function ActiveSession({
       >
         <p style={{ fontSize: "13px", fontWeight: 600, color: "#0d1b35", margin: 0 }}>
           Session #{sessionNumber} — Part {currentPart}: {PART_LABELS[currentPart]}
+          {isGeneralTraining ? " · General Training" : ""}
           {sessionType === "mock" ? " (Mock)" : ""}
         </p>
 
@@ -1387,14 +1469,28 @@ export default function ActiveSession({
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: "12px", fontWeight: 600, color: "#64748b", margin: "0 0 6px" }}>
-              Sarah {sarahThinking && !isExaminerSpeaking ? (
+              Sarah {voiceTierLabel ? (
+                <span
+                  style={{
+                    marginLeft: "6px",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: voiceTierLabel.includes("Pro") ? "#c9972c" : "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  {voiceTierLabel}
+                </span>
+              ) : null}
+              {sarahThinking && !isExaminerSpeaking && !isTtsLoading ? (
                 <span style={{ color: "#c9972c" }}>
                   <span className="speaking-dot" style={{ animation: "pulse 1s infinite" }}>
                     ● thinking…
                   </span>
                 </span>
               ) : null}
-              {isExaminerSpeaking && (
+              {(isExaminerSpeaking || isTtsLoading) && (
                 <span style={{ color: "#0d9488" }}>
                   <span className="speaking-dot" style={{ animation: "pulse 1s infinite" }}>
                     ● speaking
@@ -1403,9 +1499,14 @@ export default function ActiveSession({
               )}
             </p>
             <p style={{ fontSize: "16px", color: "#0d1b35", lineHeight: 1.6, margin: 0 }}>
-              {sarahThinking && !isExaminerSpeaking
-                ? "Sarah is thinking…"
-                : displayedSpeech || examinerSpeech || "…"}
+              {resolveSarahBubbleText({
+                sessionType,
+                sarahThinking,
+                isExaminerSpeaking,
+                isTtsLoading,
+                displayedSpeech,
+                examinerSpeech,
+              })}
             </p>
           </div>
         </div>
@@ -1664,7 +1765,7 @@ export default function ActiveSession({
                   alignItems: "center",
                   justifyContent: "center",
                   margin: "0 auto",
-                  opacity: isExaminerSpeaking || isProcessing ? 0.7 : 1,
+                  opacity: isSarahAudioActive || isProcessing ? 0.7 : 1,
                   animation: isListening ? "pulse 0.8s infinite" : undefined,
                 }}
               >
@@ -1673,7 +1774,7 @@ export default function ActiveSession({
               <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", marginTop: "12px" }}>
                 {isProcessing
                   ? "Processing your answer…"
-                  : isExaminerSpeaking
+                  : isSarahAudioActive
                     ? "Sarah is speaking — wait for your turn"
                     : isListening
                       ? `Recording… ${recordSeconds}s`
@@ -1681,7 +1782,7 @@ export default function ActiveSession({
                         ? "Sarah is preparing the next question…"
                         : "Tap Record when you are ready to answer"}
               </p>
-              {!isExaminerSpeaking && !isProcessing && !sarahThinking && (
+              {!isSarahAudioActive && !isProcessing && !sarahThinking && (
                 <div style={{ marginTop: "12px", display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
                   {!isListening ? (
                     <button
@@ -1741,7 +1842,7 @@ export default function ActiveSession({
               justifyContent: "center",
               margin: "0 auto",
               position: "relative",
-              opacity: isExaminerSpeaking || turnState === "thinking" ? 0.7 : 1,
+              opacity: isSarahAudioActive || turnState === "thinking" ? 0.7 : 1,
               animation:
                 turnState === "listening"
                   ? "pulse 1.2s infinite"
@@ -1773,7 +1874,7 @@ export default function ActiveSession({
           <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d1b35", marginTop: "12px" }}>
             {isProcessing || turnState === "processing"
               ? "Processing your answer…"
-              : isExaminerSpeaking
+              : isSarahAudioActive
                 ? "Sarah is speaking…"
                 : turnState === "thinking"
                   ? "Get ready — recording starts in a moment…"
@@ -1808,7 +1909,7 @@ export default function ActiveSession({
           )}
 
           {(turnState === "idle" || turnState === "thinking") &&
-            !isExaminerSpeaking &&
+            !isSarahAudioActive &&
             !isProcessing && (
               <button
                 type="button"
@@ -1846,8 +1947,30 @@ export default function ActiveSession({
               {transcript}
             </p>
           )}
+          {sessionType === "practice" && coachingHint && !isProcessing && !sarahThinking ? (
+            <div
+              style={{
+                marginTop: "12px",
+                marginLeft: "auto",
+                marginRight: "auto",
+                maxWidth: "500px",
+                textAlign: "left",
+                background: "#f0fdfa",
+                border: "1px solid #99f6e4",
+                borderRadius: "10px",
+                padding: "10px 12px",
+              }}
+            >
+              <p style={{ fontSize: "11px", fontWeight: 700, color: "#0d9488", margin: "0 0 4px" }}>
+                💡 Coach tip{coachingFocus ? ` · ${coachingFocus}` : ""}
+              </p>
+              <p style={{ fontSize: "13px", color: "#0d1b35", margin: 0, lineHeight: 1.5 }}>
+                {coachingHint}
+              </p>
+            </div>
+          ) : null}
           <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px", maxWidth: "420px", marginLeft: "auto", marginRight: "auto", lineHeight: 1.45 }}>
-            {isExaminerSpeaking
+            {isSarahAudioActive
               ? "Wait for Sarah to finish — recording starts automatically"
               : turnState === "listening" || turnState === "speaking"
                 ? "Speak naturally. Tap I'm done, or pause ~3 seconds to send automatically. Use headphones."

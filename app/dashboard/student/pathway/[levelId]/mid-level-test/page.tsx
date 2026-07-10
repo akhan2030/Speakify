@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  ExamHighlightQuestionText,
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableRadioOption,
+} from "@/components/exam/ExamHighlightSection";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import type { TextHighlight } from "@/lib/examHighlight";
 
 const TOTAL = 45 * 60;
 
@@ -18,6 +25,7 @@ export default function MidLevelTestPage() {
   const [speakingText, setSpeakingText] = useState("");
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [started, setStarted] = useState(false);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
 
   useEffect(() => {
     fetch(`/api/pathway/mid-level-test/${levelId}`)
@@ -33,6 +41,10 @@ export default function MidLevelTestPage() {
     }, 1000);
     return () => window.clearInterval(id);
   }, [started, result]);
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [step]);
 
   const submit = async () => {
     const sections = payload?.sections as Record<string, unknown>;
@@ -183,47 +195,100 @@ export default function MidLevelTestPage() {
           </span>
         </div>
         {current === "reading" && readingSection?.passage ? (
-          <div className="mt-4 rounded-xl border bg-white p-4 text-sm leading-relaxed text-slate-700">
-            {readingSection.passage}
-          </div>
-        ) : null}
-        <div className="mt-6 space-y-3">
-          {current !== "speaking"
-            ? (items as Array<{ id: string; question: string; options: string[] }>).map(
+          <ExamHighlightSection
+            sectionId={`mid-level-${current}`}
+            highlights={highlights}
+            onHighlightsChange={setHighlights}
+          >
+            <div className="mt-4 rounded-xl border bg-white p-4 text-sm leading-relaxed text-slate-700">
+              <HighlightableInlineText
+                blockId="mid-level-reading-passage"
+                text={readingSection.passage}
+              />
+            </div>
+            <div className="mt-6 space-y-3">
+              {(items as Array<{ id: string; question: string; options: string[] }>).map(
                 (q, i) => (
                   <div key={q.id} className="rounded-xl border bg-white p-4">
                     <p className="text-sm font-medium">
-                      {i + 1}. {q.question}
+                      <ExamHighlightQuestionText
+                        blockId={`${q.id}-stem`}
+                        number={i + 1}
+                        text={q.question}
+                      />
                     </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-col gap-2">
                       {q.options?.map((opt, oi) => (
-                        <button
+                        <HighlightableRadioOption
                           key={opt}
-                          type="button"
-                          onClick={() => setAnswers((p) => ({ ...p, [q.id]: oi }))}
+                          blockId={`${q.id}-opt-${oi}`}
+                          name={q.id}
+                          label={opt}
+                          checked={answers[q.id] === oi}
+                          onSelect={() => setAnswers((p) => ({ ...p, [q.id]: oi }))}
                           className="rounded border px-2 py-1 text-xs"
-                        >
-                          {opt}
-                        </button>
+                        />
                       ))}
                     </div>
                   </div>
                 )
-              )
-            : (
-                <div className="rounded-xl border bg-white p-4">
-                  <p className="text-sm">
-                    {(items[0] as { prompt?: string })?.prompt}
-                  </p>
-                  <textarea
-                    className="mt-3 w-full rounded-lg border p-3 text-sm"
-                    placeholder="Record or type your response..."
-                    value={speakingText}
-                    onChange={(e) => setSpeakingText(e.target.value)}
-                  />
-                </div>
               )}
-        </div>
+            </div>
+          </ExamHighlightSection>
+        ) : (
+          <ExamHighlightSection
+            sectionId={`mid-level-${current}`}
+            highlights={highlights}
+            onHighlightsChange={setHighlights}
+            className="mt-6"
+          >
+            <div className="space-y-3">
+              {current !== "speaking"
+                ? (items as Array<{ id: string; question: string; options: string[] }>).map(
+                    (q, i) => (
+                      <div key={q.id} className="rounded-xl border bg-white p-4">
+                        <p className="text-sm font-medium">
+                          <ExamHighlightQuestionText
+                            blockId={`${q.id}-stem`}
+                            number={i + 1}
+                            text={q.question}
+                          />
+                        </p>
+                        <div className="mt-2 flex flex-col gap-2">
+                          {q.options?.map((opt, oi) => (
+                            <HighlightableRadioOption
+                              key={opt}
+                              blockId={`${q.id}-opt-${oi}`}
+                              name={q.id}
+                              label={opt}
+                              checked={answers[q.id] === oi}
+                              onSelect={() => setAnswers((p) => ({ ...p, [q.id]: oi }))}
+                              className="rounded border px-2 py-1 text-xs"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  )
+                : (
+                    <div className="rounded-xl border bg-white p-4">
+                      <p className="text-sm">
+                        <HighlightableInlineText
+                          blockId="mid-level-speaking-prompt"
+                          text={(items[0] as { prompt?: string })?.prompt ?? ""}
+                        />
+                      </p>
+                      <textarea
+                        className="mt-3 w-full rounded-lg border p-3 text-sm"
+                        placeholder="Record or type your response..."
+                        value={speakingText}
+                        onChange={(e) => setSpeakingText(e.target.value)}
+                      />
+                    </div>
+                  )}
+            </div>
+          </ExamHighlightSection>
+        )}
         <div className="mt-8 flex gap-3">
           {step > 0 ? (
             <button

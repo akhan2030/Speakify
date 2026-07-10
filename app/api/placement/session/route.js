@@ -264,25 +264,47 @@ export async function PUT(request) {
       return NextResponse.json({ error: "attemptId required" }, { status: 400 });
     }
 
-    const cefrLevel = String(body.cefr ?? "").trim();
-
-    const payload = {
-      completed_at: new Date().toISOString(),
-      overall_band: Number(body.overallBand) || null,
-      cefr_level: cefrLevel,
-      skill_bands: body.skillBands ?? {},
-      weak_areas: body.weakAreas ?? [],
-      strong_areas: body.strongAreas ?? [],
-      total_questions: Number(body.totalQuestions) || 0,
-      confidence_score: Number(body.confidenceScore) || 0,
-      status: "completed",
-    };
-
     if (attemptId.startsWith("local_") || !process.env.SUPABASE_SERVICE_KEY) {
       return NextResponse.json({ ok: true, localOnly: true });
     }
 
     const supabase = getSupabase();
+    const { computePlacementFinishFromDb } = await import(
+      "@/lib/placement/serverFinish"
+    );
+
+    let result;
+    try {
+      result = await computePlacementFinishFromDb(supabase, attemptId);
+    } catch (computeErr) {
+      console.warn(
+        "[placement/session] server finish failed, using client payload:",
+        computeErr instanceof Error ? computeErr.message : computeErr
+      );
+      result = {
+        overallBand: Number(body.overallBand) || null,
+        cefr: String(body.cefr ?? "").trim(),
+        skillBands: body.skillBands ?? {},
+        weakAreas: body.weakAreas ?? [],
+        strongAreas: body.strongAreas ?? [],
+        totalQuestions: Number(body.totalQuestions) || 0,
+        confidenceScore: Number(body.confidenceScore) || 0,
+      };
+    }
+
+    const cefrLevel = String(result.cefr ?? "").trim();
+
+    const payload = {
+      completed_at: new Date().toISOString(),
+      overall_band: Number(result.overallBand) || null,
+      cefr_level: cefrLevel,
+      skill_bands: result.skillBands ?? {},
+      weak_areas: result.weakAreas ?? [],
+      strong_areas: result.strongAreas ?? [],
+      total_questions: Number(result.totalQuestions) || 0,
+      confidence_score: Number(result.confidenceScore) || 0,
+      status: "completed",
+    };
 
     const { data: attempt, error: fetchError } = await supabase
       .from("placement_attempts")
@@ -314,7 +336,17 @@ export async function PUT(request) {
       }
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      overallBand: payload.overall_band,
+      cefr: cefrLevel,
+      skillBands: payload.skill_bands,
+      weakAreas: payload.weak_areas,
+      strongAreas: payload.strong_areas,
+      totalQuestions: payload.total_questions,
+      confidenceScore: payload.confidence_score,
+      serverComputed: true,
+    });
   } catch (err) {
     console.error("[placement/session] PUT", err);
     return NextResponse.json(

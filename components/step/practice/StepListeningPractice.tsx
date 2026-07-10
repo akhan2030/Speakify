@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ExamHighlightQuestionText,
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+} from "@/components/exam/ExamHighlightSection";
 import { PageSpinner } from "@/components/StudentSidebar";
+import type { TextHighlight } from "@/lib/examHighlight";
 import StepSectionTopBar, {
   type SectionProgress,
   STEP_GOLD,
@@ -35,15 +42,6 @@ function estimateDurationSeconds(text: string): number {
   return Math.max(30, Math.ceil(words / 2.5));
 }
 
-function highlightTranscript(transcript: string, phrase: string): string {
-  if (!phrase || phrase.length < 4) return transcript;
-  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return transcript.replace(
-    new RegExp(escaped, "gi"),
-    (m) => `⟦${m}⟧`
-  );
-}
-
 export default function StepListeningPractice() {
   const [recordingOffset, setRecordingOffset] = useState(0);
   const [recordingsToday, setRecordingsToday] = useState(1);
@@ -68,6 +66,7 @@ export default function StepListeningPractice() {
   const [submitting, setSubmitting] = useState(false);
   const [graded, setGraded] = useState<GradedResult[]>([]);
   const [sessionCorrect, setSessionCorrect] = useState(0);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
 
   const loadRecording = useCallback(async (offset: number) => {
     setLoading(true);
@@ -96,6 +95,10 @@ export default function StepListeningPractice() {
     loadRecording(recordingOffset).catch(() => setLoading(false));
     return () => stopBrowserSpeech();
   }, [loadRecording, recordingOffset]);
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [recordingOffset, recording?.id]);
 
   const durationSec = useMemo(
     () => (recording ? estimateDurationSeconds(recording.transcript) : 0),
@@ -161,17 +164,6 @@ export default function StepListeningPractice() {
     return m;
   }, [graded]);
 
-  let displayTranscript = recording?.transcript ?? "";
-  if (submitted) {
-    for (const g of graded) {
-      if (!g.isCorrect) {
-        const q = questions.find((x) => x.id === g.id);
-        const phrase = q?.options[g.correct] ?? "";
-        displayTranscript = highlightTranscript(displayTranscript, phrase.slice(0, 40));
-      }
-    }
-  }
-
   if (loading || !recording) return <PageSpinner />;
 
   const todayAttempted = progress?.questionsAttemptedToday ?? 0;
@@ -233,110 +225,116 @@ export default function StepListeningPractice() {
       </div>
 
       {audioFinished && !submitted ? (
-        <div className="space-y-4">
-          {questions.map((q, i) => (
-            <div key={q.id} className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-sm font-semibold" style={{ color: STEP_NAVY }}>
-                Question {i + 1}. {q.stem}
-              </p>
-              <div className="mt-3 space-y-2">
-                {OPTS.map((letter) => (
-                  <label
-                    key={letter}
-                    className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm ${
-                      answers[q.id] === letter
-                        ? "border-teal-400 bg-teal-50"
-                        : "border-slate-100"
-                    }`}
-                  >
-                    <input
-                      type="radio"
+        <ExamHighlightSection
+          sectionId={`step-listening-${recording.id}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+        >
+          <div className="space-y-4">
+            {questions.map((q, i) => (
+              <div key={q.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-sm font-semibold" style={{ color: STEP_NAVY }}>
+                  <ExamHighlightQuestionText
+                    blockId={`${q.id}-stem`}
+                    number={i + 1}
+                    text={q.stem}
+                  />
+                </p>
+                <div className="mt-3 space-y-2">
+                  {OPTS.map((letter) => (
+                    <HighlightableMcqOption
+                      key={letter}
+                      blockId={`${q.id}-opt-${letter}`}
+                      letter={letter}
+                      text={q.options[letter]}
                       name={q.id}
                       checked={answers[q.id] === letter}
-                      onChange={() =>
+                      onSelect={() =>
                         setAnswers((prev) => ({ ...prev, [q.id]: letter }))
                       }
+                      className={
+                        answers[q.id] === letter
+                          ? "border-teal-400 bg-teal-50"
+                          : "border-slate-100"
+                      }
                     />
-                    <span>
-                      <strong>{letter}.</strong> {q.options[letter]}
-                    </span>
-                  </label>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-          <button
-            type="button"
-            disabled={!allAnswered || submitting}
-            onClick={handleSubmit}
-            className="rounded-xl px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
-            style={{ backgroundColor: STEP_TEAL }}
-          >
-            {submitting ? "Submitting…" : "Submit answers"}
-          </button>
-        </div>
+            ))}
+            <button
+              type="button"
+              disabled={!allAnswered || submitting}
+              onClick={handleSubmit}
+              className="rounded-xl px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
+              style={{ backgroundColor: STEP_TEAL }}
+            >
+              {submitting ? "Submitting…" : "Submit answers"}
+            </button>
+          </div>
+        </ExamHighlightSection>
       ) : null}
 
       {submitted ? (
-        <div className="space-y-4">
-          <div
-            className="rounded-xl p-4 text-white"
-            style={{ backgroundColor: STEP_NAVY }}
-          >
-            <p className="font-bold">
-              {sessionCorrect}/{questions.length} correct —{" "}
-              {accuracyPercent(sessionCorrect, questions.length)}%
-            </p>
+        <ExamHighlightSection
+          sectionId={`step-listening-review-${recording.id}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+        >
+          <div className="space-y-4">
+            <div
+              className="rounded-xl p-4 text-white"
+              style={{ backgroundColor: STEP_NAVY }}
+            >
+              <p className="font-bold">
+                {sessionCorrect}/{questions.length} correct —{" "}
+                {accuracyPercent(sessionCorrect, questions.length)}%
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="text-sm font-bold" style={{ color: STEP_NAVY }}>
+                Transcript
+              </h3>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                <HighlightableInlineText
+                  blockId={`${recording.id}-transcript`}
+                  text={recording.transcript}
+                />
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                Use the highlighter to mark key phrases in the transcript.
+              </p>
+            </div>
+
+            {questions.map((q, i) => {
+              const g = gradedById.get(q.id);
+              if (!g) return null;
+              return (
+                <div
+                  key={q.id}
+                  className={`rounded-lg border p-3 text-sm ${
+                    g.isCorrect ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"
+                  }`}
+                >
+                  {g.isCorrect ? "✅" : "❌"} Q{i + 1}: {g.explanation}
+                </div>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={() => {
+                setRecordingsToday((n) => Math.min(3, n + 1));
+                setRecordingOffset((n) => n + 1);
+              }}
+              className="rounded-lg px-5 py-2.5 text-sm font-bold"
+              style={{ backgroundColor: STEP_GOLD, color: STEP_NAVY }}
+            >
+              Next Recording →
+            </button>
           </div>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <h3 className="text-sm font-bold" style={{ color: STEP_NAVY }}>
-              Transcript
-            </h3>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-              {displayTranscript.split("⟦").map((part, i) => {
-                if (i === 0) return part;
-                const [hl, rest] = part.split("⟧");
-                return (
-                  <span key={i}>
-                    <mark className="rounded bg-yellow-200 px-0.5">{hl}</mark>
-                    {rest}
-                  </span>
-                );
-              })}
-            </p>
-            <p className="mt-2 text-xs text-slate-500">
-              Highlighted phrases relate to correct answers you missed.
-            </p>
-          </div>
-
-          {questions.map((q, i) => {
-            const g = gradedById.get(q.id);
-            if (!g) return null;
-            return (
-              <div
-                key={q.id}
-                className={`rounded-lg border p-3 text-sm ${
-                  g.isCorrect ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"
-                }`}
-              >
-                {g.isCorrect ? "✅" : "❌"} Q{i + 1}: {g.explanation}
-              </div>
-            );
-          })}
-
-          <button
-            type="button"
-            onClick={() => {
-              setRecordingsToday((n) => Math.min(3, n + 1));
-              setRecordingOffset((n) => n + 1);
-            }}
-            className="rounded-lg px-5 py-2.5 text-sm font-bold"
-            style={{ backgroundColor: STEP_GOLD, color: STEP_NAVY }}
-          >
-            Next Recording →
-          </button>
-        </div>
+        </ExamHighlightSection>
       ) : null}
 
       <p className="text-sm text-slate-600">

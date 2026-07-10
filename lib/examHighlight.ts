@@ -227,6 +227,30 @@ export function getSelectionIntersectionInBlock(
   return null;
 }
 
+/** Whether any part of a Range overlaps a DOM node (more reliable than commonAncestor alone). */
+export function rangeIntersectsContainer(
+  container: HTMLElement,
+  range: Range
+): boolean {
+  if (
+    container.contains(range.startContainer) ||
+    container.contains(range.endContainer)
+  ) {
+    return true;
+  }
+
+  try {
+    const containerRange = container.ownerDocument.createRange();
+    containerRange.selectNodeContents(container);
+    return (
+      range.compareBoundaryPoints(Range.END_TO_START, containerRange) > 0 &&
+      range.compareBoundaryPoints(Range.START_TO_END, containerRange) < 0
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Read a text range as highlight ranges.
  * Discovers blocks from [data-highlight-block] elements in the container.
@@ -235,7 +259,7 @@ export function getSelectionRangesFromRange(
   container: HTMLElement,
   range: Range
 ): Omit<TextHighlight, "id">[] {
-  if (!container.contains(range.commonAncestorContainer)) {
+  if (!rangeIntersectsContainer(container, range)) {
     return [];
   }
 

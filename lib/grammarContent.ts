@@ -355,9 +355,32 @@ export function getLessonContent(
 
 export function pickPracticeQuestions(
   count = 10,
-  programme: "academic" | "general" = "academic"
+  programme: "academic" | "general" = "academic",
+  options?: { focusCategories?: string[] }
 ) {
   const pool = [...getPracticePool(programme)];
+  const focusCategories = (options?.focusCategories ?? []).filter(Boolean);
+
+  if (focusCategories.length > 0) {
+    const focused = pool.filter((q) => focusCategories.includes(q.category));
+    const remainder = pool.filter((q) => !focusCategories.includes(q.category));
+    const focusedCount = Math.min(
+      count,
+      Math.max(Math.ceil(count * 0.7), Math.min(focused.length, count - 1))
+    );
+    const mixed = [
+      ...focused.slice(0, focusedCount),
+      ...remainder.slice(0, Math.max(0, count - focusedCount)),
+    ];
+
+    for (let i = mixed.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
+    }
+
+    return mixed.slice(0, count);
+  }
+
   for (let i = pool.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];

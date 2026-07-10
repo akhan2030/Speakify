@@ -77,9 +77,79 @@ async function twilioSendMessage(input: {
   }
 }
 
+async function metaWhatsAppSendTemplateOtp(phone: string, otp: string): Promise<SendResult> {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
+  const templateName =
+    process.env.WHATSAPP_OTP_TEMPLATE_NAME?.trim() || "hello_world";
+  const templateLanguage =
+    process.env.WHATSAPP_OTP_TEMPLATE_LANGUAGE?.trim() || "en_US";
+  const apiVersion = process.env.WHATSAPP_API_VERSION?.trim() || "v21.0";
+
+  if (!accessToken || !phoneNumberId) {
+    return { ok: false, mode: "console", error: "Meta WhatsApp is not configured." };
+  }
+
+  const to = phone.replace(/\D/g, "");
+  const isAuthTemplate = templateName !== "hello_world";
+
+  const templateBody: Record<string, unknown> = {
+    messaging_product: "whatsapp",
+    to,
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: templateLanguage },
+      ...(isAuthTemplate
+        ? {
+            components: [
+              {
+                type: "body",
+                parameters: [{ type: "text", text: otp }],
+              },
+              {
+                type: "button",
+                sub_type: "url",
+                index: "0",
+                parameters: [{ type: "text", text: otp }],
+              },
+            ],
+          }
+        : {}),
+    },
+  };
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(templateBody),
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("[meta:whatsapp:template]", text);
+      return { ok: false, mode: "meta", error: text || `Meta HTTP ${response.status}` };
+    }
+
+    return { ok: true, mode: "meta" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Meta WhatsApp template send failed";
+    console.error("[meta:whatsapp:template]", message);
+    return { ok: false, mode: "meta", error: message };
+  }
+}
+
 async function metaWhatsAppSendMessage(phone: string, body: string): Promise<SendResult> {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
+  const apiVersion = process.env.WHATSAPP_API_VERSION?.trim() || "v21.0";
 
   if (!accessToken || !phoneNumberId) {
     return { ok: false, mode: "console", error: "Meta WhatsApp is not configured." };
@@ -89,7 +159,7 @@ async function metaWhatsAppSendMessage(phone: string, body: string): Promise<Sen
 
   try {
     const response = await fetch(
-      `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+      `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
       {
         method: "POST",
         headers: {
@@ -148,8 +218,11 @@ export async function sendWhatsAppOtp(phone: string, otp: string): Promise<SendR
   const body = buildOtpMessage(otp);
 
   if (isMetaWhatsAppConfigured()) {
-    const metaResult = await metaWhatsAppSendMessage(phone, body);
-    if (metaResult.ok) return metaResult;
+    const templateResult = await metaWhatsAppSendTemplateOtp(phone, otp);
+    if (templateResult.ok) return templateResult;
+
+    const textResult = await metaWhatsAppSendMessage(phone, body);
+    if (textResult.ok) return textResult;
   }
 
   if (isTwilioWhatsAppConfigured()) {

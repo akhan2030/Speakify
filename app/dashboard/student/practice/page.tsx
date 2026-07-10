@@ -18,6 +18,16 @@ type PracticeTask = {
   estimated_minutes?: number;
   estimatedMinutes?: number;
   wordCount?: number;
+  practiceHref?: string;
+  focusReason?: string | null;
+  isPersonalized?: boolean;
+};
+
+type PersonalizationMeta = {
+  topFocus?: string | null;
+  personalizedCount?: number;
+  focusSkills?: string[];
+  weakSkills?: string[];
 };
 
 const SKILL_SEGMENTS: Record<string, string> = {
@@ -40,6 +50,9 @@ export default function StudentPracticePage() {
   const [skill, setSkill] = useState("all");
   const [studentLevel, setStudentLevel] = useState("B1.1");
   const [levelMatch, setLevelMatch] = useState(true);
+  const [personalization, setPersonalization] = useState<PersonalizationMeta | null>(
+    null
+  );
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -50,7 +63,10 @@ export default function StudentPracticePage() {
 
     setLoading(true);
     setError(null);
-    fetch("/api/student/practice", { credentials: "include" })
+    fetch(
+      `/api/student/practice?programme=${isIeltsGeneralProgram ? "ielts_general" : "ielts"}`,
+      { credentials: "include" }
+    )
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
         if (!r.ok) {
@@ -62,13 +78,14 @@ export default function StudentPracticePage() {
         setTasks(d.tasks ?? []);
         setStudentLevel(d.studentLevel ?? d.cefrLevel ?? "B1.1");
         setLevelMatch(d.levelMatch !== false);
+        setPersonalization(d.personalization ?? null);
       })
       .catch((err) => {
         setTasks([]);
         setError(err instanceof Error ? err.message : "Failed to load practice tasks");
       })
       .finally(() => setLoading(false));
-  }, [status]);
+  }, [status, isIeltsGeneralProgram]);
 
   const filtered =
     skill === "all"
@@ -78,14 +95,16 @@ export default function StudentPracticePage() {
   function handleStartPractice(task: PracticeTask) {
     setLoadingTaskId(task.id);
     const skill = (task.skill ?? "").toLowerCase();
+    if (task.practiceHref) {
+      router.push(`${base}${task.practiceHref}`);
+      return;
+    }
     if (skill === "vocabulary" && task.topic) {
       const href = `${base}/vocabulary/study?topic=${encodeURIComponent(task.topic)}`;
-      console.log("Navigating to vocabulary topic practice:", task.topic, href);
       router.push(href);
       return;
     }
     const href = `${base}${SKILL_SEGMENTS[skill] ?? "/practice"}`;
-    console.log("Navigating to practice:", task.id, href);
     router.push(href);
   }
 
@@ -117,8 +136,12 @@ export default function StudentPracticePage() {
             <h1 className="text-2xl font-bold text-[#0d1b35]">Daily Practice</h1>
             <p className="text-gray-500">
               {isIeltsGeneralProgram
-                ? "Fresh General Training tasks — letters, everyday English, and GT skills"
-                : "Fresh content added every day — tailored to your level"}
+                ? personalization?.topFocus
+                  ? `GT personalized practice — ${personalization.topFocus}`
+                  : "One GT task per skill — tuned to your letter, reading section, and speaking mistakes"
+                : personalization?.topFocus
+                  ? `Personalized for your mistakes — ${personalization.topFocus}`
+                  : "One task per skill today — tuned to your weak areas and band targets"}
             </p>
           </div>
           <span className="rounded-full border border-[#c9972c]/40 bg-[#c9972c]/10 px-4 py-1.5 text-sm font-bold text-[#c9972c]">
@@ -129,6 +152,13 @@ export default function StudentPracticePage() {
         {error ? (
           <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+          </p>
+        ) : null}
+
+        {personalization?.personalizedCount ? (
+          <p className="mb-4 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900">
+            {personalization.personalizedCount} of 6 tasks target skills or question types
+            where you have made mistakes or scored lowest.
           </p>
         ) : null}
 
@@ -164,7 +194,9 @@ export default function StudentPracticePage() {
               {error ? "Could not load practice tasks." : "No practice tasks available yet."}
             </p>
             <p className="mt-2 text-gray-300">
-              Check back tomorrow — new content is added daily.
+              {skill === "all"
+                ? "Tasks refresh daily. If you still see this, try reloading in a moment."
+                : `No ${skill} task loaded yet — check All or reload the page.`}
             </p>
           </div>
         ) : (
@@ -183,6 +215,16 @@ export default function StudentPracticePage() {
                     {isVocabTopic ? "Vocabulary" : task.skill}
                   </span>
                   <h3 className="mb-2 mt-1 font-bold text-[#0d1b35]">{task.title}</h3>
+                  {task.focusReason ? (
+                    <p className="mb-3 text-sm leading-relaxed text-slate-600">
+                      {task.focusReason}
+                    </p>
+                  ) : null}
+                  {task.isPersonalized ? (
+                    <span className="mb-3 inline-block rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-teal-700">
+                      Personalized
+                    </span>
+                  ) : null}
                   {isVocabTopic && task.wordCount ? (
                     <p className="mb-3 text-sm text-slate-600">
                       {task.wordCount} word{task.wordCount === 1 ? "" : "s"} in this topic

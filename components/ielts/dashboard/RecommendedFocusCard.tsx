@@ -13,9 +13,11 @@ type RecItem = {
 export default function RecommendedFocusCard({
   items,
   totalMinutes,
+  roadmapHref = "/dashboard/ielts/student/progress?tab=growth",
 }: {
   items: RecItem[];
   totalMinutes: number;
+  roadmapHref?: string;
 }) {
   return (
     <div className="rounded-xl border border-[#0d9488]/30 border-l-4 border-l-[#0d9488] bg-white p-5 shadow-sm">
@@ -45,10 +47,10 @@ export default function RecommendedFocusCard({
 
       <p className="mt-3 text-xs text-slate-500">Total: {totalMinutes} minutes</p>
       <Link
-        href="/dashboard/ielts/student/practice"
+        href={roadmapHref}
         className="mt-4 inline-block rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
       >
-        Start recommended session →
+        My Growth Roadmap →
       </Link>
     </div>
   );

@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ExamHighlightQuestionText,
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+} from "@/components/exam/ExamHighlightSection";
 import { PageSpinner } from "@/components/StudentSidebar";
+import type { TextHighlight } from "@/lib/examHighlight";
 import StepSectionTopBar, {
   type SectionProgress,
   STEP_GOLD,
@@ -53,6 +60,7 @@ export default function StepReadingPractice() {
     {}
   );
   const [progress, setProgress] = useState<SectionProgress | null>(null);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
 
   const loadPassage = useCallback(async (offset: number) => {
     setLoading(true);
@@ -72,6 +80,10 @@ export default function StepReadingPractice() {
   useEffect(() => {
     loadPassage(passageOffset).catch(() => setLoading(false));
   }, [loadPassage, passageOffset]);
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [passageOffset, payload?.passage.id]);
 
   const questions = payload?.questions ?? [];
   const allAnswered = questions.length > 0 && Object.keys(answers).length >= questions.length;
@@ -144,73 +156,82 @@ export default function StepReadingPractice() {
         progress={progress ?? payload.progress}
       />
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-bold" style={{ color: STEP_NAVY }}>
-          {payload.passage.title}
-        </h2>
-        <div
-          className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-slate-700"
-          style={{ lineHeight: 1.75 }}
-        >
-          {payload.passage.text}
-        </div>
-      </article>
+      <ExamHighlightSection
+        sectionId={`step-reading-${payload.passage.id}`}
+        highlights={highlights}
+        onHighlightsChange={setHighlights}
+      >
+        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-bold" style={{ color: STEP_NAVY }}>
+            {payload.passage.title}
+          </h2>
+          <div
+            className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-slate-700"
+            style={{ lineHeight: 1.75 }}
+          >
+            <HighlightableInlineText
+              blockId={`${payload.passage.id}-passage`}
+              text={payload.passage.text}
+            />
+          </div>
+        </article>
 
-      <div className="space-y-4">
-        {questions.map((q, i) => {
-          const g = gradedById.get(q.id);
-          const showResult = submitted && g;
-          return (
-            <div
-              key={q.id}
-              className={`rounded-xl border p-4 ${
-                showResult
-                  ? g.isCorrect
-                    ? "border-emerald-200 bg-emerald-50"
-                    : "border-red-200 bg-red-50"
-                  : "border-slate-200 bg-white"
-              }`}
-            >
-              <p className="text-sm font-semibold" style={{ color: STEP_NAVY }}>
-                {showResult ? (g.isCorrect ? "✅" : "❌") : null} Question {i + 1}. {q.stem}
-              </p>
-              <div className="mt-3 space-y-2">
-                {OPTS.map((letter) => (
-                  <label
-                    key={letter}
-                    className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm ${
-                      submitted
-                        ? "cursor-default opacity-90"
-                        : answers[q.id] === letter
-                          ? "border-teal-400 bg-teal-50"
-                          : "border-slate-100 hover:border-slate-200"
-                    }`}
-                  >
-                    <input
-                      type="radio"
+        <div className="mt-6 space-y-4">
+          {questions.map((q, i) => {
+            const g = gradedById.get(q.id);
+            const showResult = submitted && g;
+            return (
+              <div
+                key={q.id}
+                className={`rounded-xl border p-4 ${
+                  showResult
+                    ? g.isCorrect
+                      ? "border-emerald-200 bg-emerald-50"
+                      : "border-red-200 bg-red-50"
+                    : "border-slate-200 bg-white"
+                }`}
+              >
+                <p className="text-sm font-semibold" style={{ color: STEP_NAVY }}>
+                  {showResult ? (g.isCorrect ? "✅" : "❌") : null}{" "}
+                  <ExamHighlightQuestionText
+                    blockId={`${q.id}-stem`}
+                    number={i + 1}
+                    text={q.stem}
+                  />
+                </p>
+                <div className="mt-3 space-y-2">
+                  {OPTS.map((letter) => (
+                    <HighlightableMcqOption
+                      key={letter}
+                      blockId={`${q.id}-opt-${letter}`}
+                      letter={letter}
+                      text={q.options[letter]}
                       name={q.id}
                       disabled={submitted}
                       checked={answers[q.id] === letter}
-                      onChange={() =>
+                      onSelect={() =>
                         setAnswers((prev) => ({ ...prev, [q.id]: letter }))
                       }
-                      className="mt-0.5"
+                      className={
+                        submitted
+                          ? "cursor-default opacity-90"
+                          : answers[q.id] === letter
+                            ? "border-teal-400 bg-teal-50"
+                            : "border-slate-100 hover:border-slate-200"
+                      }
                     />
-                    <span>
-                      <strong>{letter}.</strong> {q.options[letter]}
-                    </span>
-                  </label>
-                ))}
+                  ))}
+                </div>
+                {showResult && !g.isCorrect ? (
+                  <p className="mt-3 text-sm text-slate-700">
+                    <strong>Correct answer: {g.correct}</strong> — {g.explanation}
+                  </p>
+                ) : null}
               </div>
-              {showResult && !g.isCorrect ? (
-                <p className="mt-3 text-sm text-slate-700">
-                  <strong>Correct answer: {g.correct}</strong> — {g.explanation}
-                </p>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </ExamHighlightSection>
 
       {!submitted ? (
         <button

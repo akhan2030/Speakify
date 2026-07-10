@@ -17,6 +17,8 @@ import PracticeQuestionField, {
   McqQuestionPrompt,
   PracticeRefreshMessage,
 } from "@/components/accelerator/PracticeQuestionField";
+import { ExamHighlightSection } from "@/components/exam/ExamHighlightSection";
+import type { TextHighlight } from "@/lib/examHighlight";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
@@ -551,7 +553,12 @@ export default function PracticeListeningPanel({
   onChange: (key: string, value: string) => void;
 }) {
   const [partIdx, setPartIdx] = useState(0);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const section = sections[partIdx];
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [partIdx]);
 
   const sectionValidation = section
     ? validateListeningSectionForDisplay(section)
@@ -600,12 +607,20 @@ export default function PracticeListeningPanel({
                   {sectionValidation.studentMessage}
                 </div>
               ) : null}
-              <SectionQuestions
-                section={section}
-                displayableQuestions={sectionValidation.displayableQuestions}
-                answers={answers}
-                onChange={onChange}
-              />
+              <ExamHighlightSection
+                sectionId={`acc-listening-${section.id}`}
+                highlights={highlights}
+                onHighlightsChange={setHighlights}
+                className="select-text"
+                toolbarClassName="mb-4"
+              >
+                <SectionQuestions
+                  section={section}
+                  displayableQuestions={sectionValidation.displayableQuestions}
+                  answers={answers}
+                  onChange={onChange}
+                />
+              </ExamHighlightSection>
             </>
           ) : null}
         </>

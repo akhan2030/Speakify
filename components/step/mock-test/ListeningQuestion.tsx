@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ExamHighlightQuestionText } from "@/components/exam/ExamHighlightSection";
 import type { MockExamClientQuestion } from "@/lib/step/mockExam/types";
 import MockOptionButtons from "./MockOptionButtons";
 import { speakDialogueWithBrowser, stopBrowserSpeech } from "@/lib/browserSpeech";
@@ -80,9 +81,14 @@ export default function ListeningQuestion({
       {canAnswer ? (
         <div>
           <p className="mb-4 text-[15px] font-semibold text-[#0d1b35]">
-            {questionNumber}. {question.stem}
+            <ExamHighlightQuestionText
+              blockId={`${question.id}-stem`}
+              number={questionNumber}
+              text={question.stem}
+            />
           </p>
           <MockOptionButtons
+            questionId={question.id}
             options={question.options}
             selected={answer}
             onSelect={onAnswer}

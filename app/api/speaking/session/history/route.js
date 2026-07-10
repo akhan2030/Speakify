@@ -26,6 +26,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId");
     const mockOnly = searchParams.get("mockOnly") === "true";
+    const programme = searchParams.get("programme");
 
     const supabase = createClient(getSupabaseUrl(), process.env.SUPABASE_SERVICE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -56,12 +57,12 @@ export async function GET(request) {
     let query = supabase
       .from("speaking_sessions")
       .select(
-        "id, session_number, session_type, overall_band, duration_minutes, speaking_time_seconds, started_at, completed_at, feedback"
+        "id, session_number, session_type, overall_band, duration_minutes, speaking_time_seconds, started_at, completed_at, feedback, programme"
       )
       .eq("student_id", studentId)
       .not("completed_at", "is", null)
       .order("completed_at", { ascending: false })
-      .limit(mockOnly ? 6 : 50);
+      .limit(mockOnly ? 12 : 80);
 
     if (mockOnly) {
       query = query.eq("session_type", "mock");
@@ -69,12 +70,19 @@ export async function GET(request) {
 
     const { data, error } = await query;
 
+    const programmeFilter = (rows) => {
+      if (!programme) return rows ?? [];
+      return (rows ?? []).filter((r) => (r.programme ?? "ielts") === programme);
+    };
+
+    const filtered = programmeFilter(data).slice(0, mockOnly ? 6 : 50);
+
     if (error) {
       console.error("[speaking/session/history]", error.message);
       return NextResponse.json({ error: "Could not load history" }, { status: 500 });
     }
 
-    const sessions = (data ?? []).map((row) => ({
+    const sessions = filtered.map((row) => ({
       id: row.id,
       sessionNumber: row.session_number,
       sessionType: row.session_type,

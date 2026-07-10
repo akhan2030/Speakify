@@ -3,6 +3,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ExamHighlightQuestionText,
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableRadioOption,
+} from "@/components/exam/ExamHighlightSection";
+import type { TextHighlight } from "@/lib/examHighlight";
+import {
   GRADUATION_SECTION_ORDER,
   GRADUATION_TOTAL_SECONDS,
   type GraduationSkill,
@@ -68,26 +75,27 @@ function McqSection({
       {questions.map((q, qi) => (
         <div key={q.id} className="rounded-xl border border-slate-200 bg-white p-4">
           <p className="font-medium text-[#0d1b35]">
-            {qi + 1}. {q.question}
+            <ExamHighlightQuestionText
+              blockId={`${q.id}-stem`}
+              number={qi + 1}
+              text={q.question}
+            />
           </p>
           <div className="mt-3 space-y-2">
             {q.options.map((opt, oi) => (
-              <label
+              <HighlightableRadioOption
                 key={opt}
-                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                blockId={`${q.id}-opt-${oi}`}
+                name={q.id}
+                label={opt}
+                checked={answers[q.id] === oi}
+                onSelect={() => onChange(q.id, oi)}
+                className={
                   answers[q.id] === oi
                     ? "border-[#c9972c] bg-[#c9972c]/10"
                     : "border-slate-200"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={q.id}
-                  checked={answers[q.id] === oi}
-                  onChange={() => onChange(q.id, oi)}
-                />
-                {opt}
-              </label>
+                }
+              />
             ))}
           </div>
         </div>
@@ -125,6 +133,11 @@ export default function GraduationTestRunner({ levelId }: { levelId: string }) {
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const submittedRef = useRef(false);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [sectionIndex]);
 
   const submitTest = useCallback(async () => {
     if (submittedRef.current || !payload) return;
@@ -442,6 +455,11 @@ export default function GraduationTestRunner({ levelId }: { levelId: string }) {
       </div>
 
       <div className="mt-6">
+        <ExamHighlightSection
+          sectionId={`pathway-graduation-${currentSkill}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+        >
         {currentSkill === "grammar" ? (
           <McqSection
             questions={payload.content.grammar}
@@ -461,28 +479,34 @@ export default function GraduationTestRunner({ levelId }: { levelId: string }) {
         {currentSkill === "reading" ? (
           <div>
             <div className="rounded-xl bg-white p-5 text-sm leading-relaxed text-slate-700 shadow-sm">
-              {payload.content.reading.passage}
+              <HighlightableInlineText
+                blockId="graduation-reading-passage"
+                text={payload.content.reading.passage}
+              />
             </div>
             <div className="mt-4 space-y-3">
               {payload.content.reading.questions.map((q, i) => (
                 <div key={q.id} className="rounded-xl border bg-white p-4">
                   <p className="text-sm font-medium text-[#0d1b35]">
-                    {i + 1}. {q.question}
+                    <ExamHighlightQuestionText
+                      blockId={`${q.id}-stem`}
+                      number={i + 1}
+                      text={q.question}
+                    />
                   </p>
                   {q.options ? (
                     <div className="mt-2 space-y-1">
-                      {q.options.map((opt) => (
-                        <label key={opt} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="radio"
-                            name={q.id}
-                            checked={readingAns[q.id] === opt}
-                            onChange={() =>
-                              setReadingAns((p) => ({ ...p, [q.id]: opt }))
-                            }
-                          />
-                          {opt}
-                        </label>
+                      {q.options.map((opt, oi) => (
+                        <HighlightableRadioOption
+                          key={opt}
+                          blockId={`${q.id}-opt-${oi}`}
+                          name={q.id}
+                          label={opt}
+                          checked={readingAns[q.id] === opt}
+                          onSelect={() =>
+                            setReadingAns((p) => ({ ...p, [q.id]: opt }))
+                          }
+                        />
                       ))}
                     </div>
                   ) : (
@@ -514,22 +538,25 @@ export default function GraduationTestRunner({ levelId }: { levelId: string }) {
               {payload.content.listening.questions.map((q, i) => (
                 <div key={q.id} className="rounded-xl border bg-white p-4">
                   <p className="text-sm font-medium">
-                    {i + 1}. {q.question}
+                    <ExamHighlightQuestionText
+                      blockId={`${q.id}-stem`}
+                      number={i + 1}
+                      text={q.question}
+                    />
                   </p>
                   {q.options ? (
                     <div className="mt-2 space-y-1">
-                      {q.options.map((opt) => (
-                        <label key={opt} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="radio"
-                            name={q.id}
-                            checked={listeningAns[q.id] === opt}
-                            onChange={() =>
-                              setListeningAns((p) => ({ ...p, [q.id]: opt }))
-                            }
-                          />
-                          {opt}
-                        </label>
+                      {q.options.map((opt, oi) => (
+                        <HighlightableRadioOption
+                          key={opt}
+                          blockId={`${q.id}-opt-${oi}`}
+                          name={q.id}
+                          label={opt}
+                          checked={listeningAns[q.id] === opt}
+                          onSelect={() =>
+                            setListeningAns((p) => ({ ...p, [q.id]: opt }))
+                          }
+                        />
                       ))}
                     </div>
                   ) : (
@@ -550,10 +577,16 @@ export default function GraduationTestRunner({ levelId }: { levelId: string }) {
         {currentSkill === "writing" ? (
           <div className="rounded-xl border bg-white p-5">
             <p className="text-sm text-slate-600">
-              {payload.content.writing.instruction}
+              <HighlightableInlineText
+                blockId="graduation-writing-instruction"
+                text={payload.content.writing.instruction}
+              />
             </p>
             <p className="mt-3 font-medium text-[#0d1b35]">
-              {payload.content.writing.prompt}
+              <HighlightableInlineText
+                blockId="graduation-writing-prompt"
+                text={payload.content.writing.prompt}
+              />
             </p>
             <textarea
               className="mt-4 min-h-[200px] w-full rounded-xl border px-4 py-3 text-sm"
@@ -569,7 +602,11 @@ export default function GraduationTestRunner({ levelId }: { levelId: string }) {
             {payload.content.speaking.map((q, i) => (
               <div key={q.id} className="rounded-xl border bg-white p-5">
                 <p className="font-medium text-[#0d1b35]">
-                  Question {i + 1}: {q.prompt}
+                  Question {i + 1}:{" "}
+                  <HighlightableInlineText
+                    blockId={`${q.id}-prompt`}
+                    text={q.prompt}
+                  />
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {recording === i ? (
@@ -599,6 +636,7 @@ export default function GraduationTestRunner({ levelId }: { levelId: string }) {
             ))}
           </div>
         ) : null}
+        </ExamHighlightSection>
       </div>
 
       <div className="mt-8 flex justify-between">

@@ -22,6 +22,12 @@ import type { Answer, Question, SpeakingScore, TestState } from "@/lib/placement
 import PlacementListeningAudio from "./PlacementListeningAudio";
 import PlacementOnboardingForm from "./PlacementOnboarding";
 import SpeakingSection from "./SpeakingSection";
+import {
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+} from "@/components/exam/ExamHighlightSection";
+import type { TextHighlight } from "@/lib/examHighlight";
 import { getWritingTaskLabel } from "@/lib/placement/bank/writing";
 
 const GUEST_KEY = "speakify_placement_guest_id";
@@ -216,6 +222,7 @@ export default function PlacementTestPage() {
   const [elapsed, setElapsed] = useState(0);
   const [milestone, setMilestone] = useState<string | null>(null);
   const [encouragement, setEncouragement] = useState<string | null>(null);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const questionStart = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -268,6 +275,7 @@ export default function PlacementTestPage() {
     setAnswerInput("");
     setSelectedOption(null);
     setAdvancing(false);
+    setHighlights([]);
   }, [currentQuestion?.id, phase]);
 
   useEffect(() => {
@@ -313,11 +321,11 @@ export default function PlacementTestPage() {
   const finishTest = useCallback(
     async (state: TestState) => {
       setPhase("finishing");
-      const result = calculateFinalResult(state);
+      let result = calculateFinalResult(state);
       const studyPlan = generateStudyPlan(result);
 
       if (attemptId) {
-        await fetch("/api/placement/session", {
+        const putRes = await fetch("/api/placement/session", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -331,6 +339,19 @@ export default function PlacementTestPage() {
             confidenceScore: result.confidenceScore,
           }),
         });
+        const putData = await putRes.json().catch(() => ({}));
+        if (putRes.ok && putData.overallBand != null) {
+          result = {
+            ...result,
+            overallBand: Number(putData.overallBand) || result.overallBand,
+            cefr: putData.cefr || result.cefr,
+            skillBands: putData.skillBands ?? result.skillBands,
+            weakAreas: putData.weakAreas ?? result.weakAreas,
+            strongAreas: putData.strongAreas ?? result.strongAreas,
+            totalQuestions: putData.totalQuestions ?? result.totalQuestions,
+            confidenceScore: putData.confidenceScore ?? result.confidenceScore,
+          };
+        }
       }
 
       sessionStorage.setItem(
@@ -559,29 +580,23 @@ export default function PlacementTestPage() {
             if (!optionText || optionText.trim().length === 0) return null;
             const selected = selectedOption === optionText;
             return (
-              <button
+              <HighlightableMcqOption
                 key={`${q.id}-${letter}`}
-                type="button"
+                blockId={`${q.id}-opt-${letter}`}
+                letter={letter}
+                text={optionText}
+                name={q.id}
                 disabled={advancing || checking}
-                onClick={() => handleMcq(optionText)}
-                className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
+                checked={selected}
+                onSelect={() => handleMcq(optionText)}
+                className={`items-start gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
                   selected
                     ? "border-[#c9972c] bg-[#c9972c]/10 text-[#0d1b35]"
                     : advancing
                       ? "border-slate-200 opacity-60"
                       : "border-slate-200 bg-white text-[#0d1b35] hover:border-[#c9972c]/50"
                 }`}
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c9972c] text-sm font-bold text-[#0d1b35]">
-                  {letter}
-                </span>
-                <span className="flex-1 pt-0.5">{optionText}</span>
-                {selected ? (
-                  <span className="pt-0.5 text-sm font-bold text-[#c9972c]" aria-hidden>
-                    ✓
-                  </span>
-                ) : null}
-              </button>
+              />
             );
           })}
         </div>
@@ -785,21 +800,32 @@ export default function PlacementTestPage() {
         ) : null}
 
         <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          {currentQuestion?.type === "open_writing" &&
-          getWritingTaskLabel(currentQuestion.id) ? (
-            <p className="mb-4 inline-block rounded-full bg-[#0d1b35] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-[#c9972c]">
-              {getWritingTaskLabel(currentQuestion.id)}
-            </p>
-          ) : null}
-          {currentQuestion?.id === "write-task1-data" ? <TourismBarChart /> : null}
-          <p
-            className={`whitespace-pre-wrap text-base leading-relaxed text-[#0d1b35] ${
-              currentQuestion?.id === "write-task1-data" ? "mt-4" : ""
-            }`}
+          <ExamHighlightSection
+            sectionId={`placement-${currentQuestion?.id ?? "question"}`}
+            highlights={highlights}
+            onHighlightsChange={setHighlights}
           >
-            {currentQuestion?.question}
-          </p>
-          {questionCard}
+            {currentQuestion?.type === "open_writing" &&
+            getWritingTaskLabel(currentQuestion.id) ? (
+              <p className="mb-4 inline-block rounded-full bg-[#0d1b35] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-[#c9972c]">
+                {getWritingTaskLabel(currentQuestion.id)}
+              </p>
+            ) : null}
+            {currentQuestion?.id === "write-task1-data" ? <TourismBarChart /> : null}
+            <p
+              className={`whitespace-pre-wrap text-base leading-relaxed text-[#0d1b35] ${
+                currentQuestion?.id === "write-task1-data" ? "mt-4" : ""
+              }`}
+            >
+              {currentQuestion?.question ? (
+                <HighlightableInlineText
+                  blockId={`${currentQuestion.id}-prompt`}
+                  text={currentQuestion.question}
+                />
+              ) : null}
+            </p>
+            {questionCard}
+          </ExamHighlightSection>
           {advancing ? (
             <p className="mt-4 text-center text-xs text-slate-500">Loading next question…</p>
           ) : null}

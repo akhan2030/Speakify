@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  HighlightableInlineText,
+  HighlightableMcqOption,
+  HighlightableRadioOption,
+  HighlightableTfngOptions,
+} from "@/components/exam/ExamHighlightSection";
 import type { ReadingQuestion as RQ } from "@/lib/mock-test/types";
 import { blockClipboard } from "@/lib/mock-test/utils";
 
@@ -21,21 +27,16 @@ export default function MockReadingQuestionInput({
     return (
       <div className="mt-2 space-y-2">
         {question.options.map((option) => (
-          <label
+          <HighlightableMcqOption
             key={option.key}
-            className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            <input
-              type="radio"
-              name={question.id}
-              checked={value === option.key}
-              onChange={() => onChange(option.key)}
-              className="mt-0.5"
-            />
-            <span>
-              <strong>{option.key}.</strong> {option.label}
-            </span>
-          </label>
+            blockId={`mock-rq-${question.id}-opt-${option.key}`}
+            letter={option.key}
+            text={option.label}
+            name={question.id}
+            checked={value === option.key}
+            onSelect={() => onChange(option.key)}
+            className="border-slate-200 bg-white hover:bg-slate-50"
+          />
         ))}
       </div>
     );
@@ -43,43 +44,25 @@ export default function MockReadingQuestionInput({
 
   if (question.kind === "true-false-not-given") {
     return (
-      <div className="mt-2 flex flex-wrap gap-2">
-        {TFNG.map((option) => (
-          <label
-            key={option}
-            className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-          >
-            <input
-              type="radio"
-              name={question.id}
-              checked={value === option}
-              onChange={() => onChange(option)}
-            />
-            {option}
-          </label>
-        ))}
-      </div>
+      <HighlightableTfngOptions
+        blockIdPrefix={`mock-rq-tfng-${question.id}`}
+        name={question.id}
+        options={TFNG}
+        value={value}
+        onChange={onChange}
+      />
     );
   }
 
   if (question.kind === "yes-no-not-given") {
     return (
-      <div className="mt-2 flex flex-wrap gap-2">
-        {YNNG.map((option) => (
-          <label
-            key={option}
-            className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-          >
-            <input
-              type="radio"
-              name={question.id}
-              checked={value === option}
-              onChange={() => onChange(option)}
-            />
-            {option}
-          </label>
-        ))}
-      </div>
+      <HighlightableTfngOptions
+        blockIdPrefix={`mock-rq-ynng-${question.id}`}
+        name={question.id}
+        options={YNNG}
+        value={value}
+        onChange={onChange}
+      />
     );
   }
 
@@ -104,7 +87,11 @@ export default function MockReadingQuestionInput({
     return (
       <div>
         <p className="mb-2 text-xs text-slate-500">
-          Word bank: {question.wordBank.join(" · ")}
+          Word bank:{" "}
+          <HighlightableInlineText
+            blockId={`mock-rq-${question.id}-wordbank`}
+            text={question.wordBank.join(" · ")}
+          />
         </p>
         <select
           value={value}

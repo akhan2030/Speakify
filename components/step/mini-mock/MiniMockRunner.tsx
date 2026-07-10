@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ExamHighlightSection } from "@/components/exam/ExamHighlightSection";
+import type { TextHighlight } from "@/lib/examHighlight";
 import { MINI_MOCK_SECTION_COUNTS, MINI_MOCK_TIME_SECONDS } from "@/lib/step/miniMock/constants";
 import type { MockExamClientQuestion, MockExamPayload } from "@/lib/step/mockExam/types";
 import CompositionalQuestion from "@/components/step/mock-test/CompositionalQuestion";
@@ -64,9 +66,14 @@ export default function MiniMockRunner({ attemptId, questions, onSubmitted }: Pr
     sectionSubmitted: [false, false, false, false],
   }));
   const [submitting, setSubmitting] = useState(false);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
   const warned5 = useRef(false);
   const examStateRef = useRef(examState);
   examStateRef.current = examState;
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [examState.currentSection, examState.currentQuestion]);
 
   const answeredInSection = useCallback(
     (sectionIndex: number) => {
@@ -168,6 +175,11 @@ export default function MiniMockRunner({ attemptId, questions, onSubmitted }: Pr
       />
 
       <div className="ml-0 max-w-[800px] px-4 py-8 md:ml-[200px] md:px-8" style={{ marginTop: 64 }}>
+        <ExamHighlightSection
+          sectionId={`mini-mock-${examState.currentSection}-${examState.currentQuestion}`}
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+        >
         {examState.currentSection === 0 && (
           <ReadingQuestion
             question={currentQ}
@@ -207,6 +219,7 @@ export default function MiniMockRunner({ attemptId, questions, onSubmitted }: Pr
             questionNumber={examState.currentQuestion + 1}
           />
         )}
+        </ExamHighlightSection>
       </div>
 
       <div

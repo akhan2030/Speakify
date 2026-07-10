@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
+import { authOptions } from "@/lib/auth";
 import {
   generateReadingExamContent,
   getFallbackExamContent,
 } from "@/lib/mock-test/generateReadingContent";
 import { mergeSessionIntoExamContent, readSessionState } from "@/lib/mock-test/attemptSchema";
+import { verifyMockAttemptOwnership } from "@/lib/mock-test/ownership";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
@@ -43,6 +46,21 @@ export async function GET(request, { params }) {
     }
 
     const supabase = getSupabase();
+    const sessionAuth = await getServerSession(authOptions);
+    if (!sessionAuth?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const ownership = await verifyMockAttemptOwnership(
+      supabase,
+      attemptId,
+      sessionAuth.user.id,
+      "exam_content"
+    );
+    if (!ownership.ok) {
+      return NextResponse.json({ error: ownership.error }, { status: ownership.status });
+    }
+
     const { data, error } = await supabase
       .from("mock_test_attempts")
       .select("exam_content")
@@ -84,7 +102,22 @@ export async function POST(request, { params }) {
       : await generateReadingExamContent();
 
     if (attemptId && !attemptId.startsWith("local_") && process.env.SUPABASE_SERVICE_KEY) {
+      const sessionAuth = await getServerSession(authOptions);
+      if (!sessionAuth?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
       const supabase = getSupabase();
+      const ownership = await verifyMockAttemptOwnership(
+        supabase,
+        attemptId,
+        sessionAuth.user.id,
+        "exam_content"
+      );
+      if (!ownership.ok) {
+        return NextResponse.json({ error: ownership.error }, { status: ownership.status });
+      }
+
       const { data: existing } = await supabase
         .from("mock_test_attempts")
         .select("exam_content")

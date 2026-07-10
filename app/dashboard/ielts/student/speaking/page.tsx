@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { PageSpinner } from "@/components/StudentSidebar";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
+import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
 import ActiveSession from "@/components/speaking/ActiveSession";
 import FeedbackReport from "@/components/speaking/FeedbackReport";
 import MockSpeakingFeedbackReport from "@/components/speaking/MockSpeakingFeedbackReport";
@@ -37,6 +38,10 @@ function SpeakingPartnerContent() {
   const dashboardHome = isGeneralTraining
     ? "/dashboard/ielts-general/student"
     : "/dashboard/ielts/student";
+  const speakingBase = isGeneralTraining
+    ? "/dashboard/ielts-general/student/speaking"
+    : "/dashboard/ielts/student/speaking";
+  const programmeQuery = isGeneralTraining ? "?programme=ielts_general" : "";
 
   const [mode, setMode] = useState<Mode>("home");
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -60,6 +65,8 @@ function SpeakingPartnerContent() {
     "idle" | "active" | "scoring" | "complete"
   >("idle");
   const [starting, setStarting] = useState(false);
+  const [startingType, setStartingType] = useState<"practice" | "mock" | null>(null);
+  const startLockRef = useRef(false);
   const [progressRefreshKey, setProgressRefreshKey] = useState(0);
   const [feedbackSessionType, setFeedbackSessionType] = useState<"practice" | "mock">(
     "practice"
@@ -85,8 +92,10 @@ function SpeakingPartnerContent() {
   }, []);
 
   const startSession = async (type: "practice" | "mock") => {
-    if (!studentId || starting) return;
+    if (!studentId || starting || startLockRef.current) return;
+    startLockRef.current = true;
     setStarting(true);
+    setStartingType(type);
 
     try {
       const res = await fetch("/api/speaking/session/start", {
@@ -115,6 +124,8 @@ function SpeakingPartnerContent() {
       );
     } finally {
       setStarting(false);
+      setStartingType(null);
+      startLockRef.current = false;
     }
   };
 
@@ -134,7 +145,7 @@ function SpeakingPartnerContent() {
     setFeedbackSessionType(mode === "mock" ? "mock" : "practice");
     setProgressRefreshKey((k) => k + 1);
     try {
-      const prog = await fetch("/api/speaking/session/progress");
+      const prog = await fetch(`/api/speaking/session/progress${programmeQuery}`);
       const data = await prog.json();
       setBandHistory(data.bandHistory || []);
     } catch {
@@ -142,7 +153,9 @@ function SpeakingPartnerContent() {
     }
     if (mode === "mock") {
       try {
-        const hist = await fetch("/api/speaking/session/history?mockOnly=true");
+        const hist = await fetch(
+          `/api/speaking/session/history?mockOnly=true${isGeneralTraining ? "&programme=ielts_general" : ""}`
+        );
         const data = await hist.json();
         setMockJourney(
           (data.sessions ?? []).map(
@@ -166,7 +179,15 @@ function SpeakingPartnerContent() {
       ? feedback.overallBand
       : null;
 
-  const header = (
+  const header = isGeneralTraining ? (
+    <GeneralSkillBandHeader
+      skill="speaking"
+      title="Speaking"
+      subtitle="AI examiner Sarah — General Training speaking across Parts 1, 2 & 3"
+      refreshKey={progressRefreshKey}
+      latestBand={latestBand}
+    />
+  ) : (
     <SkillBandHeader
       skill="speaking"
       title="Speaking"
@@ -286,6 +307,7 @@ function SpeakingPartnerContent() {
           sessionStatus={sessionStatus}
           setSessionStatus={setSessionStatus}
           sessionType={mode}
+          programme={programme}
           studentId={studentId}
           onComplete={handleComplete}
         />
@@ -308,30 +330,30 @@ function SpeakingPartnerContent() {
         Speaking Practice
       </h1>
       <p style={{ color: "#888", fontSize: "14px", marginBottom: "2rem" }}>
-        Choose your practice mode below
+        {isGeneralTraining
+          ? "General Training speaking — same live examiner, coaching tips, and band reports"
+          : "Choose your practice mode below"}
       </p>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: "1.5rem",
           marginBottom: "2rem",
         }}
       >
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => startSession("practice")}
-          onKeyDown={(e) => e.key === "Enter" && startSession("practice")}
+        <article
           style={{
+            position: "relative",
+            isolation: "isolate",
+            zIndex: 1,
             background: "white",
             border: "2px solid #0d9488",
             borderRadius: "16px",
             padding: "2rem",
-            cursor: starting ? "wait" : "pointer",
-            transition: "all 0.2s",
-            opacity: starting ? 0.7 : 1,
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           <div style={{ fontSize: "40px", marginBottom: "1rem" }}>🎤</div>
@@ -367,7 +389,7 @@ function SpeakingPartnerContent() {
             responds, and asks follow-up questions — just like the real exam.
           </p>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            {["Parts 1, 2 & 3", "Live feedback", "15 minutes", "Band score"].map(
+            {["Parts 1, 2 & 3", "Live coaching", "Whisper mic", "Band score"].map(
               (tag) => (
                 <span
                   key={tag}
@@ -384,9 +406,16 @@ function SpeakingPartnerContent() {
               )
             )}
           </div>
-          <div
+          <button
+            type="button"
+            disabled={starting}
+            onClick={(e) => {
+              e.stopPropagation();
+              void startSession("practice");
+            }}
             style={{
-              marginTop: "1.5rem",
+              marginTop: "auto",
+              width: "100%",
               background: "#0d9488",
               color: "white",
               padding: "10px",
@@ -394,24 +423,29 @@ function SpeakingPartnerContent() {
               textAlign: "center",
               fontSize: "14px",
               fontWeight: 600,
+              border: "none",
+              cursor: starting ? "wait" : "pointer",
+              opacity: starting && startingType !== "practice" ? 0.55 : 1,
             }}
           >
-            Start Practice Session →
-          </div>
-        </div>
+            {starting && startingType === "practice"
+              ? "Starting practice…"
+              : "Start Practice Session →"}
+          </button>
+        </article>
 
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => startSession("mock")}
-          onKeyDown={(e) => e.key === "Enter" && startSession("mock")}
+        <article
           style={{
+            position: "relative",
+            isolation: "isolate",
+            zIndex: 1,
             background: "white",
             border: "1px solid #e5e7eb",
             borderRadius: "16px",
             padding: "2rem",
-            cursor: starting ? "wait" : "pointer",
-            opacity: starting ? 0.7 : 1,
+            display: "flex",
+            flexDirection: "column",
+            opacity: starting && startingType === "mock" ? 0.95 : 1,
           }}
         >
           <div style={{ fontSize: "40px", marginBottom: "1rem" }}>📝</div>
@@ -462,9 +496,16 @@ function SpeakingPartnerContent() {
               </span>
             ))}
           </div>
-          <div
+          <button
+            type="button"
+            disabled={starting}
+            onClick={(e) => {
+              e.stopPropagation();
+              void startSession("mock");
+            }}
             style={{
-              marginTop: "1.5rem",
+              marginTop: "auto",
+              width: "100%",
               background: "#c9972c",
               color: "white",
               padding: "10px",
@@ -472,19 +513,28 @@ function SpeakingPartnerContent() {
               textAlign: "center",
               fontSize: "14px",
               fontWeight: 600,
+              border: "none",
+              cursor: starting ? "wait" : "pointer",
+              opacity: starting && startingType !== "mock" ? 0.55 : 1,
             }}
           >
-            Start Mock Test →
-          </div>
-        </div>
+            {starting && startingType === "mock"
+              ? "Starting mock test…"
+              : "Start Mock Test →"}
+          </button>
+        </article>
       </div>
 
-      <ProgressSummary studentId={studentId} refreshKey={progressRefreshKey} />
+      <ProgressSummary
+        studentId={studentId}
+        refreshKey={progressRefreshKey}
+        programme={isGeneralTraining ? "ielts_general" : undefined}
+      />
 
       <div style={{ marginTop: "1rem", textAlign: "right" }}>
         <button
           type="button"
-          onClick={() => router.push("/dashboard/ielts/student/speaking/history")}
+          onClick={() => router.push(`${speakingBase}/history`)}
           style={{
             background: "none",
             border: "none",

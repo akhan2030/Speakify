@@ -10,14 +10,16 @@ import ProgrammeProgressPanel from "@/components/ielts/progress/ProgrammeProgres
 import WeeklyPlanPanel from "@/components/ielts/progress/WeeklyPlanPanel";
 import GeneralIeltsReadinessMeter from "@/components/ielts-general/GeneralIeltsReadinessMeter";
 import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
+import GrowthRoadmapPanel from "@/components/growth/GrowthRoadmapPanel";
 
 const BASE = "/dashboard/ielts-general/student";
 const MISSION_API = "/api/ielts-general/mission";
 
-export type GtProgressTab = "programme" | "readiness" | "history" | "achievements";
+export type GtProgressTab = "programme" | "growth" | "readiness" | "history" | "achievements";
 
 const TABS: { id: GtProgressTab; label: string; icon: string }[] = [
   { id: "programme", label: "Programme", icon: "🗺" },
+  { id: "growth", label: "Growth Roadmap", icon: "🎯" },
   { id: "readiness", label: "Readiness", icon: "📊" },
   { id: "history", label: "History", icon: "📈" },
   { id: "achievements", label: "Achievements", icon: "🏆" },
@@ -26,6 +28,7 @@ const TABS: { id: GtProgressTab; label: string; icon: string }[] = [
 function isGtProgressTab(value: string | null): value is GtProgressTab {
   return (
     value === "programme" ||
+    value === "growth" ||
     value === "readiness" ||
     value === "history" ||
     value === "achievements"
@@ -135,6 +138,10 @@ function GeneralMyProgressContent() {
               )}
             </div>
           </div>
+        ) : null}
+
+        {activeTab === "growth" ? (
+          <GrowthRoadmapPanel programme="ielts_general" showResolved />
         ) : null}
 
         {activeTab === "readiness" ? (

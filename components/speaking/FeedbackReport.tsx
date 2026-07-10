@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import SessionTranscriptReview from "@/components/speaking/SessionTranscriptReview";
+import RoadmapPracticeLink from "@/components/growth/RoadmapPracticeLink";
 import type { TranscriptEntry, TranscriptReview } from "@/lib/speaking/transcriptReview";
 import type { StructuredSpeakingScore } from "@/lib/speaking/scoringSchema";
 import {
@@ -257,6 +258,12 @@ export default function FeedbackReport({
                         <p style={{ fontSize: "12px", color: "#64748b", margin: 0, fontStyle: "italic" }}>
                           Evidence: &ldquo;{deduction.evidence}&rdquo;
                         </p>
+                        <RoadmapPracticeLink
+                          skill="speaking"
+                          criterion={criterion.structuredKey}
+                          errorType={deduction.error_type}
+                          reason={deduction.reason}
+                        />
                       </div>
                     ))}
                   </div>

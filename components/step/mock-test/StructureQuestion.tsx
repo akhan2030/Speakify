@@ -1,3 +1,4 @@
+import { HighlightableInlineText } from "@/components/exam/ExamHighlightSection";
 import type { MockExamClientQuestion } from "@/lib/step/mockExam/types";
 import MockOptionButtons from "./MockOptionButtons";
 import type { StepMcqOption } from "@/lib/step/types";
@@ -20,12 +21,18 @@ export default function StructureQuestion({
     <div>
       <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-5">
         <p className="mb-1 text-xs tracking-widest text-amber-800">STRUCTURE & GRAMMAR</p>
-        <p className="m-0 text-lg font-medium leading-relaxed text-[#0d1b35]">{sentence}</p>
+        <p className="m-0 text-lg font-medium leading-relaxed text-[#0d1b35]">
+          <HighlightableInlineText
+            blockId={`${question.id}-sentence`}
+            text={sentence}
+          />
+        </p>
       </div>
       <p className="mb-4 text-[15px] text-[#0d1b35]">
         Question {questionNumber}: Choose the best answer.
       </p>
       <MockOptionButtons
+        questionId={question.id}
         options={question.options}
         selected={answer}
         onSelect={onAnswer}

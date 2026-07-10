@@ -6,6 +6,15 @@ import {
   formatVocabTopicLabel,
   normalizeVocabTopicKey,
 } from "@/lib/vocabularyTopics";
+import {
+  PRACTICE_SKILLS,
+  ensureDailySkillCoverage,
+  getTodayDateKey,
+} from "@/lib/dailyPractice/ensureSkillCoverage";
+import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
+import { fetchWeaknessSignals } from "@/lib/dailyPractice/fetchWeaknessSignals";
+import { personalizeDailyPracticeTasks } from "@/lib/dailyPractice/personalizeTasks";
+import { parseDailyPracticeProgramme } from "@/lib/dailyPractice/programme";
 
 export const runtime = "nodejs";
 
@@ -33,7 +42,7 @@ function cefrLevelPrefix(level) {
     .replace(/\+$/, "");
 }
 
-function normalizeTask(row) {
+function normalizeTask(row, source = "published") {
   return {
     id: row.id,
     skill: row.skill,
@@ -49,6 +58,7 @@ function normalizeTask(row) {
     published_at: row.published_at,
     publishedAt: row.published_at,
     wordCount: row.wordCount,
+    source,
   };
 }
 
@@ -85,6 +95,7 @@ function groupVocabularyTasksByTopic(tasks) {
         published_at: task.published_at,
         publishedAt: task.publishedAt ?? task.published_at,
         wordCount: 1,
+        source: task.source ?? "published",
       });
     }
   }
@@ -96,12 +107,64 @@ function groupVocabularyTasksByTopic(tasks) {
   return [...vocabulary, ...other];
 }
 
-export async function GET() {
+function coveredSkills(tasks) {
+  return new Set(
+    tasks.map((task) => String(task.skill ?? "").toLowerCase()).filter(Boolean)
+  );
+}
+
+async function fetchDraftTasksForSkills(supabase, {
+  missingSkills,
+  levelPrefix,
+  taskColumns,
+}) {
+  if (!missingSkills.length) return [];
+
+  const drafts = [];
+
+  for (const skill of missingSkills) {
+    const levelQuery = await supabase
+      .from("daily_ai_tasks")
+      .select(taskColumns)
+      .eq("skill", skill)
+      .eq("status", "draft")
+      .ilike("cefr_level", `${levelPrefix}%`)
+      .order("generated_at", { ascending: false })
+      .limit(skill === "vocabulary" ? 10 : 1);
+
+    let rows = levelQuery.data ?? [];
+
+    if (!levelQuery.error && rows.length === 0) {
+      const anyLevel = await supabase
+        .from("daily_ai_tasks")
+        .select(taskColumns)
+        .eq("skill", skill)
+        .eq("status", "draft")
+        .order("generated_at", { ascending: false })
+        .limit(skill === "vocabulary" ? 10 : 1);
+
+      if (!anyLevel.error) {
+        rows = anyLevel.data ?? [];
+      }
+    }
+
+    for (const row of rows) {
+      drafts.push(normalizeTask(row, "draft"));
+    }
+  }
+
+  return drafts;
+}
+
+export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ tasks: [], studentLevel: "B1.1" });
     }
+
+    const { searchParams } = new URL(request.url);
+    const programme = parseDailyPracticeProgramme(searchParams.get("programme"));
 
     if (!process.env.SUPABASE_SERVICE_KEY || !getSupabaseUrl()) {
       return NextResponse.json({ tasks: [], studentLevel: "B1.1" });
@@ -129,18 +192,17 @@ export async function GET() {
       .eq("status", "published")
       .ilike("cefr_level", `${levelPrefix}%`)
       .order("published_at", { ascending: false })
-      .limit(30);
+      .limit(40);
 
     let levelMatch = true;
 
-    // No published content at this level yet — show whatever is available
     if (!error && (data ?? []).length === 0) {
       const fallback = await supabase
         .from("daily_ai_tasks")
         .select(taskColumns)
         .eq("status", "published")
         .order("published_at", { ascending: false })
-        .limit(30);
+        .limit(40);
 
       if (!fallback.error && (fallback.data ?? []).length > 0) {
         data = fallback.data;
@@ -148,24 +210,85 @@ export async function GET() {
       }
     }
 
-    console.log("Student level:", cefrLevel);
-    console.log("Level prefix:", levelPrefix);
-    console.log("Level match:", levelMatch);
-    console.log("Tasks found:", data?.length ?? 0);
-
     if (error) {
       console.warn("[student/practice] GET", error.message);
       return NextResponse.json({ tasks: [], studentLevel: cefrLevel, error: error.message });
     }
 
-    const normalized = (data ?? []).map(normalizeTask);
-    const tasks = groupVocabularyTasksByTopic(normalized);
+    let normalized = (data ?? []).map((row) => normalizeTask(row, "published"));
+    let tasks = groupVocabularyTasksByTopic(normalized);
+
+    const missingAfterPublished = PRACTICE_SKILLS.filter(
+      (skill) => !coveredSkills(tasks).has(skill)
+    );
+
+    if (missingAfterPublished.length > 0) {
+      const draftTasks = await fetchDraftTasksForSkills(supabase, {
+        missingSkills: missingAfterPublished,
+        levelPrefix,
+        taskColumns,
+      });
+
+    if (draftTasks.length > 0) {
+      const draftIds = draftTasks
+        .map((task) => task.id)
+        .filter((id) => id && !String(id).startsWith("rotation-") && !String(id).startsWith("vocabulary-topic-"));
+
+      if (draftIds.length > 0) {
+        await supabase
+          .from("daily_ai_tasks")
+          .update({
+            status: "published",
+            published_at: new Date().toISOString(),
+          })
+          .in("id", draftIds)
+          .eq("status", "draft");
+      }
+
+      tasks = groupVocabularyTasksByTopic([
+        ...tasks,
+        ...draftTasks.map((task) => ({ ...task, source: "published" })),
+      ]);
+    }
+    }
+
+    const dateKey = getTodayDateKey();
+    tasks = ensureDailySkillCoverage(tasks, { cefrLevel, dateKey, programme });
+
+    const profile = await fetchStudentProfile(session.user.id);
+    const weaknessSignals = await fetchWeaknessSignals(
+      supabase,
+      session.user.id,
+      profile,
+      { programme }
+    );
+    const personalized = personalizeDailyPracticeTasks(tasks, {
+      profile,
+      signals: weaknessSignals,
+      cefrLevel,
+    });
+    tasks = personalized.tasks;
+
+    const usedRotation = tasks.some((task) => task.source === "rotation");
+    const usedDraft = tasks.some((task) => task.source === "draft");
 
     return NextResponse.json({
       tasks,
       studentLevel: cefrLevel,
       cefrLevel,
       levelMatch,
+      personalization: {
+        programme,
+        topFocus: personalized.topFocus,
+        personalizedCount: personalized.personalizedCount,
+        focusSkills: weaknessSignals.focusSkills,
+        weakSkills: weaknessSignals.weakSkills,
+      },
+      coverage: {
+        complete: tasks.length >= PRACTICE_SKILLS.length,
+        usedDraft,
+        usedRotation,
+      },
     });
   } catch (err) {
     console.error("[student/practice] GET", err);

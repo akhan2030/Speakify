@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -110,7 +111,7 @@ export function ExamHighlightToolbar({ className = "" }: { className?: string })
       </button>
       <span className="text-[11px] text-slate-400">
         {mode === "highlight"
-          ? "Drag over text to highlight · click a highlight to remove"
+          ? "Drag over passage or questions to highlight · click a highlight to remove"
           : "Click or drag over highlights to erase"}
       </span>
     </div>
@@ -165,11 +166,27 @@ export function ExamHighlightSection({
     [onHighlightsChange]
   );
 
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
+  const interactionGuardRef = useRef(0);
+
+  // Native capture-phase listener — more reliable inside scroll panes / near form controls.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onPointerUp = (e: PointerEvent) => {
       if (e.button !== 0) return;
-      const target = e.target as HTMLElement;
-      if (target.closest('[role="toolbar"]')) return;
+      const target = e.target;
+      if (!(target instanceof Node) || !container.contains(target)) return;
+      if (
+        target instanceof HTMLElement &&
+        target.closest('[role="toolbar"]')
+      ) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - interactionGuardRef.current < 40) return;
+      interactionGuardRef.current = now;
 
       const selection = window.getSelection();
       const capturedRange =
@@ -177,10 +194,12 @@ export function ExamHighlightSection({
           ? selection.getRangeAt(0).cloneRange()
           : null;
 
-      applyInteraction(e.target, capturedRange);
-    },
-    [applyInteraction]
-  );
+      applyInteraction(target, capturedRange);
+    };
+
+    container.addEventListener("pointerup", onPointerUp, true);
+    return () => container.removeEventListener("pointerup", onPointerUp, true);
+  }, [applyInteraction]);
 
   const handleMarkPointerDown = useCallback(
     (e: React.PointerEvent, highlightId: string) => {
@@ -205,16 +224,40 @@ export function ExamHighlightSection({
 
   return (
     <ExamHighlightContext.Provider value={value}>
-      {showToolbar ? <ExamHighlightToolbar className={toolbarClassName} /> : null}
+      {showToolbar ? (
+        <ExamHighlightToolbar
+          className={`sticky top-0 z-20 bg-slate-50/95 backdrop-blur-sm ${toolbarClassName}`}
+        />
+      ) : null}
       <div
         ref={containerRef}
         data-highlight-section={sectionId}
-        onPointerUp={handlePointerUp}
-        className={`select-text ${mode === "erase" ? "cursor-cell" : ""} ${className}`}
+        className={`select-text ${mode === "erase" ? "cursor-cell" : "cursor-text"} ${className}`}
       >
         {children}
       </div>
     </ExamHighlightContext.Provider>
+  );
+}
+
+/** Question number + prompt in one highlight block (CD-IELTS style). */
+export function ExamHighlightQuestionText({
+  blockId,
+  number,
+  text,
+  className = "",
+}: {
+  blockId: string;
+  number?: number | string;
+  text: string;
+  className?: string;
+}) {
+  const fullText =
+    number !== undefined && String(number).trim() !== ""
+      ? `${number}. ${text}`
+      : text;
+  return (
+    <HighlightableInlineText blockId={blockId} text={fullText} className={className} />
   );
 }
 
@@ -263,4 +306,133 @@ export function HighlightableInlineText({
 
 export function useExamHighlightContext() {
   return useContext(ExamHighlightContext);
+}
+
+/** Single radio/checkbox row with highlightable label text. */
+export function HighlightableRadioOption({
+  blockId,
+  name,
+  label,
+  checked,
+  disabled = false,
+  onSelect,
+  showInput = true,
+  inputType = "radio",
+  className = "",
+}: {
+  blockId: string;
+  name: string;
+  label: string;
+  checked: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+  showInput?: boolean;
+  inputType?: "radio" | "checkbox";
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-700 ${
+        disabled ? "pointer-events-none opacity-60" : ""
+      } ${checked ? "border-[#c9972c] bg-[#c9972c]/10" : ""} ${className}`}
+    >
+      {showInput ? (
+        <input
+          type={inputType}
+          name={inputType === "radio" ? name : undefined}
+          checked={checked}
+          disabled={disabled}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            if (!disabled) onSelect();
+          }}
+          className="mt-0.5 shrink-0 accent-[#c9972c] text-[#0d1b35]"
+        />
+      ) : null}
+      <div className="min-w-0 flex-1 select-text leading-relaxed">
+        <HighlightableInlineText blockId={blockId} text={label} />
+      </div>
+    </div>
+  );
+}
+
+export function HighlightableTfngOptions({
+  blockIdPrefix,
+  name,
+  options,
+  value,
+  onChange,
+  disabled = false,
+  className = "",
+}: {
+  blockIdPrefix: string;
+  name: string;
+  options: readonly string[];
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={`mt-2 flex flex-wrap gap-2 ${className}`}>
+      {options.map((opt) => (
+        <HighlightableRadioOption
+          key={opt}
+          blockId={`${blockIdPrefix}-${opt.replace(/\s+/g, "-")}`}
+          name={name}
+          label={opt}
+          checked={value === opt}
+          disabled={disabled}
+          onSelect={() => onChange(opt)}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** MCQ row: radio/checkbox separate from highlightable text so drag-select works. */
+export function HighlightableMcqOption({
+  blockId,
+  letter,
+  text,
+  name,
+  checked,
+  disabled = false,
+  onSelect,
+  multiSelect = false,
+  className = "",
+}: {
+  blockId: string;
+  letter: string;
+  text: string;
+  name: string;
+  checked: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+  multiSelect?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-700 ${
+        disabled ? "pointer-events-none opacity-60" : ""
+      } ${className}`}
+    >
+      <input
+        type={multiSelect ? "checkbox" : "radio"}
+        name={multiSelect ? undefined : name}
+        checked={checked}
+        disabled={disabled}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          if (!disabled) onSelect();
+        }}
+        className="mt-0.5 shrink-0 accent-[#c9972c] text-[#0d1b35]"
+      />
+      <div className="min-w-0 flex-1 select-text leading-relaxed">
+        <strong className="text-[#0d1b35]">{letter}.</strong>{" "}
+        <HighlightableInlineText blockId={blockId} text={text} />
+      </div>
+    </div>
+  );
 }

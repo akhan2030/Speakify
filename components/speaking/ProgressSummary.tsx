@@ -70,9 +70,11 @@ function StatCard({
 export default function ProgressSummary({
   studentId,
   refreshKey = 0,
+  programme,
 }: {
   studentId?: string;
   refreshKey?: number;
+  programme?: string;
 }) {
   const [data, setData] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,8 @@ export default function ProgressSummary({
       return;
     }
     setLoading(true);
-    fetch("/api/speaking/session/progress")
+    const query = programme ? `?programme=${encodeURIComponent(programme)}` : "";
+    fetch(`/api/speaking/session/progress${query}`)
       .then((r) => r.json())
       .then((json) => {
         setData({
@@ -103,7 +106,7 @@ export default function ProgressSummary({
       })
       .catch(() => setData(null))
       .finally(() => setLoading(false));
-  }, [studentId]);
+  }, [studentId, programme]);
 
   useEffect(() => {
     loadProgress();

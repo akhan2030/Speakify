@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+} from "@/components/exam/ExamHighlightSection";
 import { speakDialogueWithBrowser } from "@/lib/browserSpeech";
+import type { TextHighlight } from "@/lib/examHighlight";
 import type { StepMcqOption } from "@/lib/step/types";
 
 export type StepRunnerQuestion = {
@@ -72,6 +78,7 @@ export default function StepMcqRunner({
   );
   const [listeningPlayed, setListeningPlayed] = useState<Record<string, boolean>>({});
   const [audioPlaying, setAudioPlaying] = useState(false);
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
 
   useEffect(() => {
     if (secondsLeft == null) return;
@@ -81,6 +88,10 @@ export default function StepMcqRunner({
   }, [secondsLeft]);
 
   const current = questions[idx];
+
+  useEffect(() => {
+    setHighlights([]);
+  }, [idx, current?.id]);
 
   const recordingKey = current?.recordingId ?? current?.id ?? "";
   const listeningUnlocked =
@@ -204,91 +215,94 @@ export default function StepMcqRunner({
         ))}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-          Question {current.number ?? idx + 1} of {questions.length}
-          {current.section ? (
-            <span className="ml-2 normal-case text-slate-500">· {current.section.replace(/_/g, " ")}</span>
+      <ExamHighlightSection
+        sectionId={`step-runner-${current.id}`}
+        highlights={highlights}
+        onHighlightsChange={setHighlights}
+      >
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+            Question {current.number ?? idx + 1} of {questions.length}
+            {current.section ? (
+              <span className="ml-2 normal-case text-slate-500">· {current.section.replace(/_/g, " ")}</span>
+            ) : null}
+          </p>
+
+          {current.passage ? (
+            <div className="mt-4 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-bold tracking-widest text-slate-500">
+                {current.passageTitle ?? "READING PASSAGE"}
+              </p>
+              <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-[#0d1b35]">
+                <HighlightableInlineText
+                  blockId={`${current.id}-passage`}
+                  text={current.passage}
+                />
+              </p>
+            </div>
           ) : null}
-        </p>
 
-        {current.passage ? (
-          <div className="mt-4 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-bold tracking-widest text-slate-500">
-              {current.passageTitle ?? "READING PASSAGE"}
-            </p>
-            <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-[#0d1b35]">
-              {current.passage}
-            </p>
-          </div>
-        ) : null}
-
-        {current.section === "listening" && current.transcript ? (
-          <div className="mt-4 space-y-3">
-            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              🎧 Listening plays <strong>once only</strong> — like the real STEP exam.
-              <span className="mt-1 block text-xs text-amber-800">
-                Each speaker uses a different voice (e.g. Student vs Administrator).
-              </span>
-            </div>
-            <div className="rounded-xl bg-[#0d1b35] p-4 text-center">
-              {!listeningPlayed[recordingKey] ? (
-                <>
-                  <p className="mb-2 text-sm text-white/70">
-                    Recording {current.recordingNumber ?? 1}
+          {current.section === "listening" && current.transcript ? (
+            <div className="mt-4 space-y-3">
+              <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                🎧 Listening plays <strong>once only</strong> — like the real STEP exam.
+                <span className="mt-1 block text-xs text-amber-800">
+                  Each speaker uses a different voice (e.g. Student vs Administrator).
+                </span>
+              </div>
+              <div className="rounded-xl bg-[#0d1b35] p-4 text-center">
+                {!listeningPlayed[recordingKey] ? (
+                  <>
+                    <p className="mb-2 text-sm text-white/70">
+                      Recording {current.recordingNumber ?? 1}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void playListening()}
+                      disabled={audioPlaying}
+                      className="mx-auto flex h-14 w-14 items-center justify-center rounded-full text-xl text-white disabled:opacity-60"
+                      style={{ background: "#c9972c" }}
+                    >
+                      {audioPlaying ? "⏸" : "▶"}
+                    </button>
+                    <p className="mt-2 text-xs text-white/50">
+                      {audioPlaying ? "Playing…" : "Press play, then answer below"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm font-semibold text-[#c9972c]">
+                    ✓ Recording played — answer the question
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => void playListening()}
-                    disabled={audioPlaying}
-                    className="mx-auto flex h-14 w-14 items-center justify-center rounded-full text-xl text-white disabled:opacity-60"
-                    style={{ background: "#c9972c" }}
-                  >
-                    {audioPlaying ? "⏸" : "▶"}
-                  </button>
-                  <p className="mt-2 text-xs text-white/50">
-                    {audioPlaying ? "Playing…" : "Press play, then answer below"}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm font-semibold text-[#c9972c]">
-                  ✓ Recording played — answer the question
-                </p>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        <p className="mt-4 text-base font-medium leading-relaxed text-[#0d1b35]">
-          {current.stem}
-        </p>
-        <div className={`mt-5 space-y-3 ${!listeningUnlocked ? "pointer-events-none opacity-40" : ""}`}>
-          {opts.map((letter) => (
-            <label
-              key={letter}
-              className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
-                answers[current.id] === letter
-                  ? "border-emerald-400 bg-emerald-50"
-                  : "border-slate-200 hover:border-slate-300"
-              }`}
-            >
-              <input
-                type="radio"
+          <p className="mt-4 text-base font-medium leading-relaxed text-[#0d1b35]">
+            <HighlightableInlineText blockId={`${current.id}-stem`} text={current.stem} />
+          </p>
+          <div className={`mt-5 space-y-3 ${!listeningUnlocked ? "pointer-events-none opacity-40" : ""}`}>
+            {opts.map((letter) => (
+              <HighlightableMcqOption
+                key={letter}
+                blockId={`${current.id}-opt-${letter}`}
+                letter={letter}
+                text={current.options[letter]}
                 name={current.id}
                 checked={answers[current.id] === letter}
-                onChange={() =>
+                onSelect={() =>
                   setAnswers((prev) => ({ ...prev, [current.id]: letter }))
                 }
-                className="mt-0.5"
+                className={
+                  answers[current.id] === letter
+                    ? "border-emerald-400 bg-emerald-50"
+                    : "border-slate-200 hover:border-slate-300"
+                }
               />
-              <span>
-                <strong className="mr-2">{letter}.</strong>
-                {current.options[letter]}
-              </span>
-            </label>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </ExamHighlightSection>
 
       <div className="flex justify-between gap-3">
         <button

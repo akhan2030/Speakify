@@ -11,7 +11,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReadingTimer from "@/components/ReadingTimer";
 import ScreenLock from "@/components/ScreenLock";
-import ExamTextHighlighter from "@/components/exam/ExamTextHighlighter";
+import {
+  ExamHighlightQuestionText,
+  ExamHighlightSection,
+  HighlightableInlineText,
+  HighlightableMcqOption,
+  HighlightableTfngOptions,
+} from "@/components/exam/ExamHighlightSection";
 import type { TextHighlight } from "@/lib/examHighlight";
 import { useReadingTimer } from "@/lib/readingTimer";
 import {
@@ -44,6 +50,23 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
+function isMcqQuestion(
+  question: MockQuestion,
+  typeSlug?: string
+): question is MockQuestion & {
+  options: NonNullable<MockQuestion["options"]>;
+} {
+  const kind = String(question.kind ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-");
+  return (
+    (kind === "multiple-choice" || typeSlug === "multiple-choice") &&
+    Array.isArray(question.options) &&
+    question.options.length > 0
+  );
+}
+
 function MockQuestionInput({
   question,
   value,
@@ -53,26 +76,19 @@ function MockQuestionInput({
   value: string;
   onChange: (value: string) => void;
 }) {
-  if (question.kind === "multiple-choice" && question.options) {
+  if (isMcqQuestion(question, question.typeSlug)) {
     return (
       <div className="mt-3 space-y-2">
         {question.options.map((option) => (
-          <label
+          <HighlightableMcqOption
             key={option.key}
-            className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            <input
-              type="radio"
-              name={question.id}
-              value={option.key}
-              checked={value === option.key}
-              onChange={() => onChange(option.key)}
-              className="mt-0.5 text-[#0d1b35]"
-            />
-            <span>
-              <strong>{option.key}.</strong> {option.label}
-            </span>
-          </label>
+            blockId={`rq-${question.id}-opt-${option.key}`}
+            letter={option.key}
+            text={option.label}
+            name={question.id}
+            checked={value === option.key}
+            onSelect={() => onChange(option.key)}
+          />
         ))}
       </div>
     );
@@ -80,23 +96,13 @@ function MockQuestionInput({
 
   if (question.kind === "true-false-not-given") {
     return (
-      <div className="mt-3 flex flex-wrap gap-2">
-        {TFNG_OPTIONS.map((option) => (
-          <label
-            key={option}
-            className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
-          >
-            <input
-              type="radio"
-              name={question.id}
-              value={option}
-              checked={value === option}
-              onChange={() => onChange(option)}
-            />
-            {option}
-          </label>
-        ))}
-      </div>
+      <HighlightableTfngOptions
+        blockIdPrefix={`rq-tfng-${question.id}`}
+        name={question.id}
+        options={TFNG_OPTIONS}
+        value={value}
+        onChange={onChange}
+      />
     );
   }
 
@@ -159,9 +165,7 @@ export default function ReadingTestShell({
     score: number;
     total: number;
   } | null>(null);
-  const [highlightsByPassage, setHighlightsByPassage] = useState<
-    Record<string, TextHighlight[]>
-  >({});
+  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
 
   const answersRef = useRef(answers);
   const submittedRef = useRef(false);
@@ -398,82 +402,100 @@ export default function ReadingTestShell({
 
       {/* Main split content */}
       <div
-        className={`flex flex-1 overflow-hidden ${
+        className={`flex flex-1 flex-col overflow-hidden ${
           config.passages.length > 1 ? "pt-[106px]" : "pt-[58px]"
         } pb-[88px]`}
       >
-        {/* Passage panel — fixed scroll */}
-        <div className="w-[55%] overflow-y-auto border-r border-slate-200 bg-white p-6">
-          <h2 className="text-xl font-bold text-[#0d1b35]">
-            {activePassage?.title}
-          </h2>
-          {activePassage ? (
-            <div className="mt-5">
-              <ExamTextHighlighter
-                sectionId={activePassage.id}
-                blocks={activePassage.paragraphs.map((paragraph) => ({
-                  id: paragraph.id,
-                  label: paragraph.label,
-                  text: paragraph.text,
-                }))}
-                highlights={highlightsByPassage[activePassage.id] ?? []}
-                onHighlightsChange={(next) =>
-                  setHighlightsByPassage((prev) => ({
-                    ...prev,
-                    [activePassage.id]: next,
-                  }))
-                }
-              />
-            </div>
-          ) : null}
-        </div>
-
-        {/* Questions panel — scrollable */}
-        <div className="w-[45%] overflow-y-auto bg-slate-50 p-5">
-          {groupedQuestions.map((group) => (
-            <div key={group.label} className="mb-8">
-              <span className="inline-block rounded-full bg-[#c9972c]/15 px-3 py-1 text-xs font-bold text-[#c9972c]">
-                {group.questions[0]?.typeLabel ?? group.label}
-              </span>
-              <div className="mt-4 space-y-4">
-                {group.questions.map((question) => {
-                  const answered = Boolean(answers[question.id]?.trim());
-                  const isCurrent =
-                    question.globalNumber === currentQuestionNumber;
-                  return (
-                    <div
-                      key={question.id}
-                      id={`question-${question.globalNumber}`}
-                      onFocus={() =>
-                        setCurrentQuestionNumber(question.globalNumber)
-                      }
-                      className={`rounded-lg border bg-white p-4 transition-colors ${
-                        isCurrent ? "border-[#c9972c]" : "border-slate-200"
-                      } border-l-4 ${
-                        answered ? "border-l-green-500" : "border-l-slate-300"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold text-[#0d1b35]">
-                        {question.globalNumber}. {question.text}
+        <ExamHighlightSection
+          sectionId="reading-test"
+          highlights={highlights}
+          onHighlightsChange={setHighlights}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          toolbarClassName="mx-5 mb-2 mt-2 shrink-0"
+        >
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            {/* Passage panel — fixed scroll */}
+            <div className="w-[55%] overflow-y-auto border-r border-slate-200 bg-white p-6">
+              <h2 className="text-xl font-bold text-[#0d1b35]">
+                {activePassage?.title}
+              </h2>
+              {activePassage ? (
+                <div className="mt-5 space-y-5">
+                  {activePassage.paragraphs.map((paragraph) => (
+                    <div key={paragraph.id}>
+                      {paragraph.label ? (
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#0d1b35] text-xs font-bold text-white">
+                          {paragraph.label}
+                        </span>
+                      ) : null}
+                      <p className="mt-2 text-base leading-relaxed text-slate-700">
+                        <HighlightableInlineText
+                          blockId={paragraph.id}
+                          text={paragraph.text}
+                        />
                       </p>
-                      <MockQuestionInput
-                        question={question}
-                        value={answers[question.id] ?? ""}
-                        onChange={(value) => {
-                          setAnswers((prev) => ({
-                            ...prev,
-                            [question.id]: value,
-                          }));
-                          setCurrentQuestionNumber(question.globalNumber);
-                        }}
-                      />
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
-          ))}
-        </div>
+
+            {/* Questions panel — scrollable */}
+            <div className="w-[45%] select-text overflow-y-auto bg-slate-50 p-5">
+              {activePassage
+                ? groupedQuestions.map((group) => (
+                    <div key={group.label} className="mb-8">
+                      <span className="inline-block rounded-full bg-[#c9972c]/15 px-3 py-1 text-xs font-bold text-[#c9972c]">
+                        {group.questions[0]?.typeLabel ?? group.label}
+                      </span>
+                      <div className="mt-4 space-y-4">
+                        {group.questions.map((question) => {
+                          const answered = Boolean(answers[question.id]?.trim());
+                          const isCurrent =
+                            question.globalNumber === currentQuestionNumber;
+                          return (
+                            <div
+                              key={question.id}
+                              id={`question-${question.globalNumber}`}
+                              onFocus={() =>
+                                setCurrentQuestionNumber(question.globalNumber)
+                              }
+                              className={`rounded-lg border bg-white p-4 transition-colors ${
+                                isCurrent ? "border-[#c9972c]" : "border-slate-200"
+                              } border-l-4 ${
+                                answered
+                                  ? "border-l-green-500"
+                                  : "border-l-slate-300"
+                              }`}
+                            >
+                              <p className="text-sm font-semibold text-[#0d1b35]">
+                                <ExamHighlightQuestionText
+                                  blockId={`rq-${question.id}`}
+                                  number={question.globalNumber}
+                                  text={question.text}
+                                />
+                              </p>
+                              <MockQuestionInput
+                                question={question}
+                                value={answers[question.id] ?? ""}
+                                onChange={(value) => {
+                                  setAnswers((prev) => ({
+                                    ...prev,
+                                    [question.id]: value,
+                                  }));
+                                  setCurrentQuestionNumber(question.globalNumber);
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                : null}
+            </div>
+          </div>
+        </ExamHighlightSection>
       </div>
 
       {/* Bottom bar */}

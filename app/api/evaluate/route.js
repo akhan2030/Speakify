@@ -24,10 +24,18 @@ function getSupabase() {
  * Best-effort persistence of a completed Academic writing attempt.
  * Never throws — a save failure must not break the evaluation response.
  */
-async function persistWritingAttempt({ studentId, taskType, essay, evaluation, bands, promptId }) {
-  if (!studentId) return;
+async function persistWritingAttempt({
+  studentId,
+  taskType,
+  essay,
+  evaluation,
+  bands,
+  promptId,
+  structuredScore,
+}) {
+  if (!studentId) return null;
   const supabase = getSupabase();
-  if (!supabase) return;
+  if (!supabase) return null;
 
   try {
     const row = {
@@ -44,14 +52,74 @@ async function persistWritingAttempt({ studentId, taskType, essay, evaluation, b
     if (typeof promptId === "string" && promptId.trim()) {
       row.prompt_id = promptId.trim();
     }
-
-    const { error } = await supabase.from("writing_attempts").insert(row);
-    if (error) {
-      console.warn("[/api/evaluate] writing_attempts insert failed:", error.message);
+    if (structuredScore) {
+      row.structured_score = structuredScore;
     }
+
+    const { data, error } = await supabase
+      .from("writing_attempts")
+      .insert(row)
+      .select("id")
+      .single();
+    if (error) {
+      if (structuredScore && error.message?.includes("structured_score")) {
+        delete row.structured_score;
+        const retry = await supabase.from("writing_attempts").insert(row).select("id").single();
+        if (retry.error) {
+          console.warn("[/api/evaluate] writing_attempts insert failed:", retry.error.message);
+          return null;
+        }
+        return retry.data?.id ?? null;
+      }
+      console.warn("[/api/evaluate] writing_attempts insert failed:", error.message);
+      return null;
+    }
+    return data?.id ?? null;
   } catch (err) {
     console.warn(
       "[/api/evaluate] writing_attempts insert threw:",
+      err instanceof Error ? err.message : err
+    );
+    return null;
+  }
+}
+
+async function syncWritingRoadmap({
+  studentId,
+  attemptId,
+  taskType,
+  evaluation,
+  bands,
+  structuredScore,
+}) {
+  if (!studentId) return;
+  try {
+    const { extractWritingDeductions, inferWritingDeductions } = await import(
+      "@/lib/growthRoadmap/extractDeductions"
+    );
+    const { syncRoadmapFromSessionScore } = await import("@/lib/growthRoadmap/syncRoadmap");
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const deductions =
+      extractWritingDeductions(structuredScore).length > 0
+        ? extractWritingDeductions(structuredScore)
+        : inferWritingDeductions({
+            evaluationText: evaluation,
+            bands,
+            taskType,
+          });
+
+    await syncRoadmapFromSessionScore({
+      supabase,
+      studentId,
+      sourceSessionId: String(attemptId ?? `writing-${Date.now()}`),
+      skill: "writing",
+      deductions,
+    });
+  } catch (err) {
+    console.warn(
+      "[/api/evaluate] roadmap sync:",
       err instanceof Error ? err.message : err
     );
   }
@@ -126,21 +194,30 @@ export async function POST(request) {
         );
       }
 
-      const { evaluation, bands } = await evaluateEssay(essay, taskType);
+      const { evaluation, bands, structuredScore } = await evaluateEssay(essay, taskType);
 
       const session = await getServerSession(authOptions);
       const promptId = typeof body?.promptId === "string" ? body.promptId : null;
-      await persistWritingAttempt({
+      const attemptId = await persistWritingAttempt({
         studentId: session?.user?.id,
         taskType,
         essay,
         evaluation,
         bands,
         promptId,
+        structuredScore,
+      });
+      await syncWritingRoadmap({
+        studentId: session?.user?.id,
+        attemptId,
+        taskType,
+        evaluation,
+        bands,
+        structuredScore,
       });
 
       return NextResponse.json(
-        { evaluation, bands, success: true, guided: true },
+        { evaluation, bands, structuredScore, success: true, guided: true },
         { status: 200 }
       );
     }
@@ -155,19 +232,28 @@ export async function POST(request) {
 
     const promptId = typeof body?.promptId === "string" ? body.promptId : null;
 
-    const { evaluation, bands } = await evaluateEssay(essay, taskType);
+    const { evaluation, bands, structuredScore } = await evaluateEssay(essay, taskType);
 
     const session = await getServerSession(authOptions);
-    await persistWritingAttempt({
+    const attemptId = await persistWritingAttempt({
       studentId: session?.user?.id,
       taskType,
       essay,
       evaluation,
       bands,
       promptId,
+      structuredScore,
+    });
+    await syncWritingRoadmap({
+      studentId: session?.user?.id,
+      attemptId,
+      taskType,
+      evaluation,
+      bands,
+      structuredScore,
     });
 
-    return NextResponse.json({ evaluation, bands, success: true }, { status: 200 });
+    return NextResponse.json({ evaluation, bands, structuredScore, success: true }, { status: 200 });
   } catch (err) {
     console.error("[/api/evaluate] Error:", err?.message || err);
     return NextResponse.json(
