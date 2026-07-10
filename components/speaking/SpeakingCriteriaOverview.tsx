@@ -31,13 +31,10 @@ export default function SpeakingCriteriaOverview({
         </p>
         <ul className="mt-1.5 space-y-1">
           {labels.map((label) => (
-            <li
-              key={label}
-              className="flex items-baseline justify-between gap-2 text-sm text-slate-700"
-            >
+            <li key={label} className="text-sm text-slate-700">
               <span>{label}</span>
-              <span className="shrink-0 text-xs font-semibold text-[#c9972c]">
-                {SPEAKING_CRITERION_WEIGHT_PERCENT}%
+              <span className="ml-2 text-xs font-semibold text-[#c9972c]">
+                — {SPEAKING_CRITERION_WEIGHT_PERCENT}%
               </span>
             </li>
           ))}
