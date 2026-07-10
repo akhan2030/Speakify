@@ -104,7 +104,11 @@ export default function WritingPracticePanel({
       if (promptId) recordPromptAttempt(promptId);
       setEvaluation(String(data.evaluation || ""));
       setOverallBand(
-        resolveWritingOverallBand(data.bands, String(data.evaluation || ""))
+        resolveWritingOverallBand(
+          data.bands,
+          String(data.evaluation || ""),
+          taskType
+        )
       );
     } catch {
       setError("Something went wrong.");

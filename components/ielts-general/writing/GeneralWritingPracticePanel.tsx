@@ -129,7 +129,8 @@ export default function GeneralWritingPracticePanel({
       }
       const resolvedOverall = resolveWritingOverallBand(
         data.bands,
-        data.structuredFeedback?.evaluation ?? data.evaluation ?? ""
+        data.structuredFeedback?.evaluation ?? data.evaluation ?? "",
+        lockTaskType
       );
       if (resolvedOverall != null) {
         setOverallBand(resolvedOverall);

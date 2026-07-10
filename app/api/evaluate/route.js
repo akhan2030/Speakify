@@ -7,6 +7,15 @@ import {
   combineGuidedParagraphs,
   evaluateWritingParagraph,
 } from "../../../lib/ielts/writingParagraphEval.js";
+import { syncWritingEvaluationScores } from "@/lib/ielts/writingBandScore";
+
+function alignWritingResponse(evaluation, bands, taskType) {
+  const synced = syncWritingEvaluationScores(evaluation, taskType);
+  return {
+    evaluation: synced.evaluation,
+    bands: synced.bands,
+  };
+}
 
 export const runtime = "nodejs";
 
@@ -201,6 +210,7 @@ export async function POST(request) {
       }
 
       const { evaluation, bands, structuredScore } = await evaluateEssay(essay, taskType);
+      const aligned = alignWritingResponse(evaluation, bands, taskType);
 
       const session = await getServerSession(authOptions);
       const promptId = typeof body?.promptId === "string" ? body.promptId : null;
@@ -208,8 +218,8 @@ export async function POST(request) {
         studentId: session?.user?.id,
         taskType,
         essay,
-        evaluation,
-        bands,
+        evaluation: aligned.evaluation,
+        bands: aligned.bands,
         promptId,
         structuredScore,
       });
@@ -217,13 +227,19 @@ export async function POST(request) {
         studentId: session?.user?.id,
         attemptId,
         taskType,
-        evaluation,
-        bands,
+        evaluation: aligned.evaluation,
+        bands: aligned.bands,
         structuredScore,
       });
 
       return NextResponse.json(
-        { evaluation, bands, structuredScore, success: true, guided: true },
+        {
+          evaluation: aligned.evaluation,
+          bands: aligned.bands,
+          structuredScore,
+          success: true,
+          guided: true,
+        },
         { status: 200 }
       );
     }
@@ -245,14 +261,15 @@ export async function POST(request) {
     const promptId = typeof body?.promptId === "string" ? body.promptId : null;
 
     const { evaluation, bands, structuredScore } = await evaluateEssay(essay, taskType);
+    const aligned = alignWritingResponse(evaluation, bands, taskType);
 
     const session = await getServerSession(authOptions);
     const attemptId = await persistWritingAttempt({
       studentId: session?.user?.id,
       taskType,
       essay,
-      evaluation,
-      bands,
+      evaluation: aligned.evaluation,
+      bands: aligned.bands,
       promptId,
       structuredScore,
     });
@@ -260,12 +277,20 @@ export async function POST(request) {
       studentId: session?.user?.id,
       attemptId,
       taskType,
-      evaluation,
-      bands,
+      evaluation: aligned.evaluation,
+      bands: aligned.bands,
       structuredScore,
     });
 
-    return NextResponse.json({ evaluation, bands, structuredScore, success: true }, { status: 200 });
+    return NextResponse.json(
+      {
+        evaluation: aligned.evaluation,
+        bands: aligned.bands,
+        structuredScore,
+        success: true,
+      },
+      { status: 200 }
+    );
   } catch (err) {
     console.error("[/api/evaluate] Error:", err?.message || err);
     return NextResponse.json(
