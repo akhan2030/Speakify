@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { criteriaSummaryForTask } from "@/lib/ielts/writingCriteria";
+import {
+  canSubmitWriting,
+  countWritingWords,
+  getWritingWordLimits,
+  submitLabelForWritingTask,
+  writingWordLimitExceededMessage,
+  writingWordMinimumMessage,
+} from "@/lib/ielts/writingCriteria";
 import {
   lessonsForTrack,
   sharedWritingLessons,
@@ -69,16 +76,20 @@ export default function WritingPracticePanel({
     e.preventDefault();
     setError(null);
 
-    const words = essay.trim().split(/\s+/).filter(Boolean).length;
-    const minWords = taskType === "task1" ? 150 : 250;
+    const words = countWritingWords(essay);
+    const { min: minWords, max: maxWords } = getWritingWordLimits(taskType);
 
     if (!essay.trim()) {
       setError("Please write your response first.");
       return;
     }
 
-    if (words < minWords) {
-      setError(`Your response must be at least ${minWords} words.`);
+    if (!canSubmitWriting(essay, taskType)) {
+      if (words < minWords) {
+        setError(writingWordMinimumMessage(taskType));
+      } else if (words > maxWords) {
+        setError(writingWordLimitExceededMessage(taskType));
+      }
       return;
     }
 
@@ -232,7 +243,7 @@ export default function WritingPracticePanel({
           task1Question={selectedTask1 ?? undefined}
           task2Question={selectedTask2 ?? undefined}
           formClassName="space-y-6"
-          submitLabel={`Submit for AI score (${criteriaSummaryForTask(taskType)})`}
+          submitLabel={submitLabelForWritingTask(taskType)}
         />
       )}
     </div>

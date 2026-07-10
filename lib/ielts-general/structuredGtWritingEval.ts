@@ -1,6 +1,12 @@
 import OpenAI from "openai";
 import { LETTER_TYPE_LABELS } from "@/lib/ielts-general/writingTaskData";
 import {
+  countWritingWords,
+  getWritingWordLimits,
+  writingWordLimitExceededMessage,
+  writingWordMinimumMessage,
+} from "@/lib/ielts/writingCriteria";
+import {
   GT_TASK1_SCORING_PROMPT,
   GT_TASK2_SCORING_PROMPT,
 } from "@/lib/ielts-general/gtWritingScoringPrompts";
@@ -52,10 +58,14 @@ export async function evaluateGeneralWritingStructured(input: {
   const trimmed = String(input.essay ?? "").trim();
   if (!trimmed) throw new Error("Response is empty");
 
-  const minWords = taskType === "task1" ? 150 : 250;
-  const wordCount = countWords(trimmed);
+  const minWords = getWritingWordLimits(taskType).min;
+  const maxWords = getWritingWordLimits(taskType).max;
+  const wordCount = countWritingWords(trimmed);
   if (wordCount < minWords) {
-    throw new Error(`Response must be at least ${minWords} words`);
+    throw new Error(writingWordMinimumMessage(taskType));
+  }
+  if (wordCount > maxWords) {
+    throw new Error(writingWordLimitExceededMessage(taskType));
   }
 
   const isTask1 = taskType === "task1";

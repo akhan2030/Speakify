@@ -12,9 +12,19 @@ import {
   type GeneralLetterQuestion,
   type GeneralTask2Question,
 } from "@/lib/ielts-general/writingTaskData";
+import WritingCriteriaLegend from "@/components/writing/WritingCriteriaLegend";
+import {
+  canSubmitWriting,
+  countWritingWords,
+  getWritingWordLimits,
+  truncateToWritingWordLimit,
+  wordCountRangeLabel,
+  writingWordLimitExceededMessage,
+  writingWordMinimumMessage,
+} from "@/lib/ielts/writingCriteria";
 
 function countWords(text: string) {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+  return countWritingWords(text);
 }
 
 type Props = {
@@ -76,12 +86,23 @@ export default function GeneralWritingPracticeForm({
   }, [taskType, letterQuestionProp, task2QuestionProp, onQuestionChange]);
 
   const words = useMemo(() => countWords(essay), [essay]);
-  const minWords = taskType === "task1" ? 150 : 250;
+  const { min: minWords, max: maxWords } = getWritingWordLimits(taskType);
   const belowMinimum = words > 0 && words < minWords;
-  const meetsMinimum = words >= minWords;
+  const atWordLimit = words === maxWords;
+  const canSubmit = canSubmitWriting(essay, taskType);
 
   const wordCountClass =
-    words === 0 ? "text-slate-500" : belowMinimum ? "text-[#E24B4A]" : "text-green-600";
+    words === 0
+      ? "text-slate-500"
+      : belowMinimum
+        ? "text-[#E24B4A]"
+        : atWordLimit
+          ? "text-amber-700"
+          : "text-green-600";
+
+  function handleEssayChange(value: string) {
+    onEssayChange(truncateToWritingWordLimit(value, taskType));
+  }
 
   function handleLetterSelect(index: number) {
     const next = GT_LETTER_PROMPT_BANK[index % GT_LETTER_PROMPT_BANK.length];
@@ -210,8 +231,8 @@ export default function GeneralWritingPracticeForm({
         ) : (
           <>
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              <strong>General Training Task 2</strong> is an essay (250+ words) on an everyday topic
-              — same essay format as Academic Task 2, but different prompt style.
+              <strong>General Training Task 2</strong> is an essay ({wordCountRangeLabel("task2")})
+              on an everyday topic — same essay format as Academic Task 2, but different prompt style.
             </div>
             <div className="mt-4 rounded-lg border border-[#0d9488]/30 bg-white px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -234,7 +255,7 @@ export default function GeneralWritingPracticeForm({
         <textarea
           id={`general-writing-response-${taskType}`}
           value={essay}
-          onChange={(e) => onEssayChange(e.target.value)}
+          onChange={(e) => handleEssayChange(e.target.value)}
           placeholder={
             isLetter
               ? "Dear Sir or Madam,\n\nI am writing to…\n\nYours faithfully,"
@@ -248,27 +269,33 @@ export default function GeneralWritingPracticeForm({
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <p className={`text-sm font-medium ${wordCountClass}`}>
             Word count: <span className="font-bold">{words}</span>
-            <span className="text-slate-400"> / minimum {minWords}</span>
+            <span className="text-slate-400"> / {wordCountRangeLabel(taskType)}</span>
           </p>
-          {meetsMinimum ? (
-            <span className="text-xs font-medium text-green-600">✓ Minimum reached</span>
+          {canSubmit ? (
+            <span className="text-xs font-medium text-green-600">✓ Ready to submit</span>
           ) : null}
         </div>
 
         {belowMinimum ? (
           <div className="mt-3 rounded-xl border border-[#E24B4A]/40 bg-red-50 px-4 py-3 text-sm text-[#E24B4A]">
-            {isLetter
-              ? "Your letter is below 150 words. Task 1 requires at least 150 words."
-              : "Your essay is below 250 words. Task 2 requires at least 250 words."}
+            {writingWordMinimumMessage(taskType)}
+          </div>
+        ) : null}
+
+        {atWordLimit ? (
+          <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {writingWordLimitExceededMessage(taskType)}
           </div>
         ) : null}
       </div>
+
+      <WritingCriteriaLegend taskType={taskType} />
 
       {error ? <p className="text-sm text-[#E24B4A]">{error}</p> : null}
 
       <button
         type="submit"
-        disabled={loading || !meetsMinimum}
+        disabled={loading || !canSubmit}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#c9972c] py-3 font-semibold text-[#0d1b35] shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? (
@@ -280,6 +307,11 @@ export default function GeneralWritingPracticeForm({
           submitLabel
         )}
       </button>
+      {!canSubmit ? (
+        <p className="text-center text-xs text-slate-500">
+          Write between {minWords} and {maxWords} words to enable scoring
+        </p>
+      ) : null}
     </form>
   );
 }

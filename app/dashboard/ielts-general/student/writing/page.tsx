@@ -3,14 +3,14 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
-import { dualTaskWritingCriteriaSubtitle } from "@/lib/ielts/writingCriteria";
+import { dualTaskWritingCriteriaSubtitle, wordCountRangeLabel } from "@/lib/ielts/writingCriteria";
 import GeneralWritingPracticePanel from "@/components/ielts-general/writing/GeneralWritingPracticePanel";
 import GeneralWritingLessonsHub from "@/components/ielts-general/writing/GeneralWritingLessonsHub";
 import { PageSpinner } from "@/components/StudentSidebar";
 
 const TABS = [
-  { id: "task1" as const, label: "Task 1 — Letter", hint: "150+ words · formal / semi-formal / informal" },
-  { id: "task2" as const, label: "Task 2 — Essay", hint: "250+ words · everyday topics" },
+  { id: "task1" as const, label: "Task 1 — Letter", hint: wordCountRangeLabel("task1") },
+  { id: "task2" as const, label: "Task 2 — Essay", hint: wordCountRangeLabel("task2") },
   { id: "lessons" as const, label: "Lessons", hint: "Letter & essay skills" },
 ];
 

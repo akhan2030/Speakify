@@ -194,6 +194,12 @@ export async function POST(request) {
         );
       }
 
+      const { validateWritingSubmission } = await import("@/lib/ielts/writingCriteria");
+      const wordCheck = validateWritingSubmission(essay, taskType);
+      if (!wordCheck.ok) {
+        return NextResponse.json({ error: wordCheck.error, success: false }, { status: 400 });
+      }
+
       const { evaluation, bands, structuredScore } = await evaluateEssay(essay, taskType);
 
       const session = await getServerSession(authOptions);
@@ -228,6 +234,12 @@ export async function POST(request) {
         { error: "Essay is empty", success: false },
         { status: 400 }
       );
+    }
+
+    const { validateWritingSubmission } = await import("@/lib/ielts/writingCriteria");
+    const wordCheck = validateWritingSubmission(essay, taskType);
+    if (!wordCheck.ok) {
+      return NextResponse.json({ error: wordCheck.error, success: false }, { status: 400 });
     }
 
     const promptId = typeof body?.promptId === "string" ? body.promptId : null;

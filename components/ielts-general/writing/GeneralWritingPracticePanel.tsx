@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { criteriaSummaryForTask } from "@/lib/ielts/writingCriteria";
+import {
+  canSubmitWriting,
+  countWritingWords,
+  getWritingWordLimits,
+  submitLabelForWritingTask,
+  writingWordLimitExceededMessage,
+  writingWordMinimumMessage,
+} from "@/lib/ielts/writingCriteria";
 import {
   setGeneralLetterById,
   setGeneralTask2ById,
@@ -89,16 +96,20 @@ export default function GeneralWritingPracticePanel({
     e.preventDefault();
     setError(null);
 
-    const words = essay.trim().split(/\s+/).filter(Boolean).length;
-    const minWords = lockTaskType === "task1" ? 150 : 250;
+    const words = countWritingWords(essay);
+    const { min: minWords, max: maxWords } = getWritingWordLimits(lockTaskType);
 
     if (!essay.trim()) {
       setError("Please write your response first.");
       return;
     }
 
-    if (words < minWords) {
-      setError(`Your response must be at least ${minWords} words.`);
+    if (!canSubmitWriting(essay, lockTaskType)) {
+      if (words < minWords) {
+        setError(writingWordMinimumMessage(lockTaskType));
+      } else if (words > maxWords) {
+        setError(writingWordLimitExceededMessage(lockTaskType));
+      }
       return;
     }
 
@@ -191,7 +202,7 @@ export default function GeneralWritingPracticePanel({
         error={error}
         onSubmit={onSubmit}
         formClassName="space-y-6"
-        submitLabel={`Submit for AI score (${criteriaSummaryForTask(lockTaskType)})`}
+        submitLabel={submitLabelForWritingTask(lockTaskType)}
         onQuestionChange={handleQuestionChange}
         hidePromptPicker
         letterQuestion={selectedLetter ?? undefined}

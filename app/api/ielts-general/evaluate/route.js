@@ -136,6 +136,12 @@ export async function POST(request) {
       );
     }
 
+    const { validateWritingSubmission } = await import("@/lib/ielts/writingCriteria");
+    const wordCheck = validateWritingSubmission(essay, taskType);
+    if (!wordCheck.ok) {
+      return NextResponse.json({ error: wordCheck.error, success: false }, { status: 400 });
+    }
+
     const result = await evaluateGeneralWriting({
       essay,
       taskType,

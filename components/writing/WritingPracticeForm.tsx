@@ -12,9 +12,19 @@ import {
   type Task2Question,
 } from "@/lib/ielts/writingTaskData";
 import WritingTaskVisual from "@/components/writing/WritingTaskVisual";
+import WritingCriteriaLegend from "@/components/writing/WritingCriteriaLegend";
+import {
+  canSubmitWriting,
+  countWritingWords,
+  getWritingWordLimits,
+  truncateToWritingWordLimit,
+  wordCountRangeLabel,
+  writingWordLimitExceededMessage,
+  writingWordMinimumMessage,
+} from "@/lib/ielts/writingCriteria";
 
 function countWords(text: string) {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+  return countWritingWords(text);
 }
 
 const VISUAL_TYPE_LABELS: Record<Task1Question["visualType"], string> = {
@@ -72,12 +82,24 @@ export default function WritingPracticeForm({
   }, [task1QuestionProp, task2QuestionProp]);
 
   const words = useMemo(() => countWords(essay), [essay]);
-  const minWords = taskType === "task1" ? 150 : 250;
+  const { min: minWords, max: maxWords } = getWritingWordLimits(taskType);
   const belowMinimum = words > 0 && words < minWords;
+  const atWordLimit = words === maxWords;
   const meetsMinimum = words >= minWords;
+  const canSubmit = canSubmitWriting(essay, taskType);
 
   const wordCountClass =
-    words === 0 ? "text-slate-500" : belowMinimum ? "text-[#E24B4A]" : "text-green-600";
+    words === 0
+      ? "text-slate-500"
+      : belowMinimum
+        ? "text-[#E24B4A]"
+        : atWordLimit
+          ? "text-amber-700"
+          : "text-green-600";
+
+  function handleEssayChange(value: string) {
+    onEssayChange(truncateToWritingWordLimit(value, taskType));
+  }
 
   function handleTask1Select(index: number) {
     setTask1QuestionIndex(index);
@@ -114,7 +136,9 @@ export default function WritingPracticeForm({
             }`}
           >
             Task 1
-            <span className="mt-0.5 block text-xs font-normal opacity-80">Report writing · min. 150 words</span>
+            <span className="mt-0.5 block text-xs font-normal opacity-80">
+              Report writing · {wordCountRangeLabel("task1")}
+            </span>
           </button>
           <button
             type="button"
@@ -127,7 +151,9 @@ export default function WritingPracticeForm({
             }`}
           >
             Task 2
-            <span className="mt-0.5 block text-xs font-normal opacity-80">Essay writing · min. 250 words</span>
+            <span className="mt-0.5 block text-xs font-normal opacity-80">
+              Essay writing · {wordCountRangeLabel("task2")}
+            </span>
           </button>
         </div>
       ) : null}
@@ -205,7 +231,7 @@ export default function WritingPracticeForm({
         <textarea
           id={`writing-response-${taskType}`}
           value={essay}
-          onChange={(e) => onEssayChange(e.target.value)}
+          onChange={(e) => handleEssayChange(e.target.value)}
           placeholder={
             taskType === "task1"
               ? "Write your report here. Begin with an overview of the main trends…"
@@ -219,35 +245,33 @@ export default function WritingPracticeForm({
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <p className={`text-sm font-medium ${wordCountClass}`}>
             Word count: <span className="font-bold">{words}</span>
-            <span className="text-slate-400"> / minimum {minWords}</span>
+            <span className="text-slate-400"> / {wordCountRangeLabel(taskType)}</span>
           </p>
-          {meetsMinimum ? (
-            <span className="text-xs font-medium text-green-600">✓ Minimum reached</span>
+          {canSubmit ? (
+            <span className="text-xs font-medium text-green-600">✓ Ready to submit</span>
           ) : null}
         </div>
 
         {belowMinimum ? (
           <div className="mt-3 rounded-xl border border-[#E24B4A]/40 bg-red-50 px-4 py-3 text-sm text-[#E24B4A]">
-            {taskType === "task2" ? (
-              <>
-                Your essay is below 250 words. Task 2 requires a minimum of 250 words — continue
-                writing before submitting.
-              </>
-            ) : (
-              <>
-                Your report is below 150 words. Task 1 requires a minimum of 150 words — continue
-                writing before submitting.
-              </>
-            )}
+            {writingWordMinimumMessage(taskType)}
+          </div>
+        ) : null}
+
+        {atWordLimit ? (
+          <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {writingWordLimitExceededMessage(taskType)}
           </div>
         ) : null}
       </div>
+
+      <WritingCriteriaLegend taskType={taskType} />
 
       {error ? <p className="text-sm text-[#E24B4A]">{error}</p> : null}
 
       <button
         type="submit"
-        disabled={loading || !meetsMinimum}
+        disabled={loading || !canSubmit}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#c9972c] py-3 font-semibold text-[#0d1b35] shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? (
@@ -259,9 +283,9 @@ export default function WritingPracticeForm({
           submitLabel
         )}
       </button>
-      {!meetsMinimum ? (
+      {!canSubmit ? (
         <p className="text-center text-xs text-slate-500">
-          Write at least {minWords} words to enable scoring
+          Write between {minWords} and {maxWords} words to enable scoring
         </p>
       ) : null}
     </form>
