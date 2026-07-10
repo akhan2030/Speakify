@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
-import { dualTaskWritingCriteriaSubtitle } from "@/lib/ielts/writingCriteria";
+import WritingCriteriaOverview from "@/components/writing/WritingCriteriaOverview";
 import SkillTabs from "@/components/ielts/SkillTabs";
 import WritingPracticePanel from "@/components/ielts/writing/WritingPracticePanel";
 import WritingLessonsHub from "@/components/ielts/writing/WritingLessonsHub";
@@ -35,7 +35,7 @@ export default function IeltsWritingPage() {
       <SkillBandHeader
         skill="writing"
         title="Writing"
-        subtitle={dualTaskWritingCriteriaSubtitle()}
+        subtitle={<WritingCriteriaOverview />}
       />
       <Suspense fallback={<PageSpinner />}>
         <WritingContent />

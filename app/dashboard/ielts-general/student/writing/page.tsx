@@ -3,7 +3,8 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
-import { dualTaskWritingCriteriaSubtitle, wordCountRangeLabel } from "@/lib/ielts/writingCriteria";
+import WritingCriteriaOverview from "@/components/writing/WritingCriteriaOverview";
+import { wordCountRangeLabel } from "@/lib/ielts/writingCriteria";
 import GeneralWritingPracticePanel from "@/components/ielts-general/writing/GeneralWritingPracticePanel";
 import GeneralWritingLessonsHub from "@/components/ielts-general/writing/GeneralWritingLessonsHub";
 import { PageSpinner } from "@/components/StudentSidebar";
@@ -33,7 +34,15 @@ function WritingPageContent() {
       <GeneralSkillBandHeader
         skill="writing"
         title="Writing — Letter + Essay"
-        subtitle={`IELTS General Training — ${dualTaskWritingCriteriaSubtitle()}`}
+        subtitle={
+          <div>
+            <p className="text-sm font-medium text-[#0d9488]">IELTS General Training</p>
+            <WritingCriteriaOverview
+              task1Label="Task 1 — Letter"
+              task2Label="Task 2 — Essay"
+            />
+          </div>
+        }
       />
 
       <div className="mb-4 rounded-xl border border-[#0d9488]/30 bg-[#0d9488]/5 px-4 py-3 text-sm text-[#0d1b35]">

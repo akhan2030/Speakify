@@ -14,9 +14,9 @@ export const WRITING_WORD_LIMITS = {
 } as const;
 
 const SHARED_CRITERIA = [
-  "Coherence & Cohesion",
+  "Coherence and Cohesion",
   "Lexical Resource",
-  "Grammatical Range & Accuracy",
+  "Grammatical Range and Accuracy",
 ] as const;
 
 export function getFirstWritingCriterion(
@@ -124,12 +124,16 @@ export function submitLabelForWritingTask(_taskType?: WritingTaskType): string {
   return `Submit for AI score — 4 criteria, ${WRITING_CRITERION_WEIGHT_PERCENT}% each`;
 }
 
-/** Subtitle for pages with both tasks visible. */
+/** Plain-text summary for pages with both tasks visible. */
 export function dualTaskWritingCriteriaSubtitle(): string {
   const weight = `Each criterion carries ${WRITING_CRITERION_WEIGHT_PERCENT}% of your band score.`;
-  const task1 = writingCriteriaLabels("task1").join(", ");
-  const task2 = writingCriteriaLabels("task2").join(", ");
-  return `${weight} Task 1: ${task1}. Task 2: ${task2}.`;
+  const formatTask = (taskType: WritingTaskType, label: string) => {
+    const criteria = writingCriteriaLabels(taskType)
+      .map((name) => `${name} (${WRITING_CRITERION_WEIGHT_PERCENT}%)`)
+      .join("; ");
+    return `${label}: ${criteria}`;
+  };
+  return `${weight} ${formatTask("task1", "Task 1")}. ${formatTask("task2", "Task 2")}.`;
 }
 
 export function validateWritingSubmission(

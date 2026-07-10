@@ -25,7 +25,7 @@ export default function SkillBandHeader({
 }: {
   skill: keyof typeof SKILL_KEYS;
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   /** Bump after a session completes so the header refetches. */
   refreshKey?: number;
   /** Immediate override while dashboard API catches up. */

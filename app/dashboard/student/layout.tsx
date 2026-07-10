@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PageSpinner } from "@/components/StudentSidebar";
+import { resolveLegacyStudentRedirect } from "@/lib/legacyStudentRoutes";
+import { resolveStudentProgramType } from "@/lib/programType";
 import { normalizeRole } from "@/lib/roles";
 
 export default function StudentDashboardLayout({
@@ -12,6 +14,7 @@ export default function StudentDashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { status, data: session } = useSession();
   const role = normalizeRole((session?.user as { role?: string })?.role);
   const [teacherStudentAccess, setTeacherStudentAccess] = useState<boolean | null>(
@@ -50,6 +53,20 @@ export default function StudentDashboardLayout({
       router.replace("/login");
     }
   }, [status, role, router]);
+
+  useEffect(() => {
+    if (status !== "authenticated" || role !== "student") return;
+
+    const programType = resolveStudentProgramType({
+      programType: (session?.user as { programType?: string })?.programType,
+      enrolledPrograms: (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms,
+      programSelected: (session?.user as { programSelected?: string })?.programSelected,
+    });
+    const target = resolveLegacyStudentRedirect(pathname, programType);
+    if (target && target !== pathname) {
+      router.replace(target);
+    }
+  }, [status, role, pathname, session, router]);
 
   if (status === "loading" || status === "unauthenticated") {
     return <PageSpinner />;

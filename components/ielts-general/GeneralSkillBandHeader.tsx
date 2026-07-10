@@ -18,7 +18,7 @@ export default function GeneralSkillBandHeader({
 }: {
   skill: "writing" | "speaking" | "reading" | "listening";
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   refreshKey?: number;
   latestBand?: number | null;
 }) {
