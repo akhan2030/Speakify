@@ -77,6 +77,20 @@ export function exceedsWritingWordLimit(
   return countWritingWords(text) > WRITING_WORD_LIMITS[taskType].max;
 }
 
+export type WritingWordCountZone = "empty" | "practice" | "exam_ready" | "over_limit";
+
+export function getWritingWordCountZone(
+  text: string,
+  taskType: WritingTaskType
+): WritingWordCountZone {
+  const words = countWritingWords(text);
+  const { min, max } = WRITING_WORD_LIMITS[taskType];
+  if (words === 0) return "empty";
+  if (words > max) return "over_limit";
+  if (words < min) return "practice";
+  return "exam_ready";
+}
+
 export function belowWritingWordMinimum(
   text: string,
   taskType: WritingTaskType
@@ -87,8 +101,8 @@ export function belowWritingWordMinimum(
 
 export function canSubmitWriting(text: string, taskType: WritingTaskType): boolean {
   const words = countWritingWords(text);
-  const { min, max } = WRITING_WORD_LIMITS[taskType];
-  return words >= min && words <= max;
+  const { max } = WRITING_WORD_LIMITS[taskType];
+  return words > 0 && words <= max;
 }
 
 export function writingWordLimitExceededMessage(taskType: WritingTaskType): string {
@@ -99,10 +113,44 @@ export function writingWordLimitExceededMessage(taskType: WritingTaskType): stri
 
 export function writingWordMinimumMessage(taskType: WritingTaskType): string {
   const min = WRITING_WORD_LIMITS[taskType].min;
-  if (taskType === "task2") {
-    return `Your essay is below ${min} words. Task 2 requires a minimum of ${min} words — continue writing before submitting.`;
+  const first = getFirstWritingCriterion(taskType);
+  const taskLabel = taskType === "task1" ? "Task 1" : "Task 2";
+  return `${taskLabel} requires at least ${min} words in the real IELTS exam. You can still submit shorter drafts for feedback — ${first.sectionHeading} will reflect the short length.`;
+}
+
+export function writingUnderMinimumNotice(taskType: WritingTaskType): string {
+  return writingWordMinimumMessage(taskType);
+}
+
+export function writingWordMaximumReachedMessage(taskType: WritingTaskType): string {
+  const max = WRITING_WORD_LIMITS[taskType].max;
+  const taskLabel = taskType === "task1" ? "Task 1" : "Task 2";
+  return `You've reached the ${max}-word limit for ${taskLabel} on this platform. You can submit now, but cannot add more words.`;
+}
+
+export function writingWordRequirementsSummary(taskType: WritingTaskType): string {
+  const { min, max } = WRITING_WORD_LIMITS[taskType];
+  const taskLabel = taskType === "task1" ? "Task 1" : "Task 2";
+  return `${taskLabel}: IELTS requires at least ${min} words · maximum ${max} words here`;
+}
+
+export function writingWordCountStatusMessage(
+  text: string,
+  taskType: WritingTaskType
+): string {
+  const words = countWritingWords(text);
+  const { min, max } = WRITING_WORD_LIMITS[taskType];
+  const zone = getWritingWordCountZone(text, taskType);
+
+  if (zone === "empty") return "Write something to get feedback";
+  if (zone === "over_limit") {
+    return `${words} words — delete ${words - max} to submit`;
   }
-  return `Your response is below ${min} words. Task 1 requires a minimum of ${min} words — continue writing before submitting.`;
+  if (zone === "practice") {
+    return `${words} words — ${min - words} below IELTS minimum`;
+  }
+  if (words === max) return `${words} words — at platform maximum`;
+  return `${words} words — meets IELTS minimum`;
 }
 
 export function writingCriteriaLabels(taskType: WritingTaskType): string[] {
@@ -120,8 +168,43 @@ export function criteriaSummaryForTask(taskType: WritingTaskType): string {
     .join(" · ");
 }
 
-export function submitLabelForWritingTask(_taskType?: WritingTaskType): string {
+export function submitLabelForWritingTask(taskType?: WritingTaskType): string {
+  if (!taskType) {
+    return `Submit for AI score — 4 criteria, ${WRITING_CRITERION_WEIGHT_PERCENT}% each`;
+  }
+  return submitLabelForWritingSubmission("", taskType);
+}
+
+export function submitLabelForWritingSubmission(
+  text: string,
+  taskType: WritingTaskType
+): string {
+  const zone = getWritingWordCountZone(text, taskType);
+  const first = getFirstWritingCriterion(taskType);
+
+  if (zone === "empty") return "Submit for feedback";
+  if (zone === "practice") {
+    return `Submit for feedback (under length — ${first.sectionHeading} affected)`;
+  }
+  if (zone === "over_limit") return "Delete words to submit";
   return `Submit for AI score — 4 criteria, ${WRITING_CRITERION_WEIGHT_PERCENT}% each`;
+}
+
+export function writingSubmitHintMessage(
+  text: string,
+  taskType: WritingTaskType
+): string {
+  const zone = getWritingWordCountZone(text, taskType);
+  const { min, max } = WRITING_WORD_LIMITS[taskType];
+
+  if (zone === "empty") return "Write something to get AI feedback";
+  if (zone === "over_limit") {
+    return `Delete words to submit — maximum ${max} words allowed on this platform`;
+  }
+  if (zone === "practice") {
+    return `Below IELTS minimum (${min} words) — feedback still available`;
+  }
+  return `Meets IELTS minimum (${min}+ words) · do not exceed ${max} words`;
 }
 
 /** Plain-text summary for pages with both tasks visible. */
@@ -139,24 +222,22 @@ export function dualTaskWritingCriteriaSubtitle(): string {
 export function validateWritingSubmission(
   text: string,
   taskType: WritingTaskType
-): { ok: true } | { ok: false; error: string } {
+): { ok: true; underMinimum: boolean } | { ok: false; error: string } {
   if (!String(text ?? "").trim()) {
     return { ok: false, error: "Response is empty" };
   }
-  if (!canSubmitWriting(text, taskType)) {
-    const words = countWritingWords(text);
-    const { min, max } = WRITING_WORD_LIMITS[taskType];
-    if (words < min) {
-      return { ok: false, error: writingWordMinimumMessage(taskType) };
-    }
-    if (words > max) {
-      return { ok: false, error: writingWordLimitExceededMessage(taskType) };
-    }
+  const words = countWritingWords(text);
+  const { max } = WRITING_WORD_LIMITS[taskType];
+  if (words > max) {
+    return { ok: false, error: writingWordLimitExceededMessage(taskType) };
   }
-  return { ok: true };
+  return {
+    ok: true,
+    underMinimum: belowWritingWordMinimum(text, taskType),
+  };
 }
 
 export function wordCountRangeLabel(taskType: WritingTaskType): string {
   const { min, max } = WRITING_WORD_LIMITS[taskType];
-  return `minimum ${min} · maximum ${max}`;
+  return `IELTS min ${min} · max ${max}`;
 }

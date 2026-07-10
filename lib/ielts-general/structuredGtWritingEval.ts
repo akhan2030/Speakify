@@ -3,8 +3,8 @@ import { LETTER_TYPE_LABELS } from "@/lib/ielts-general/writingTaskData";
 import {
   countWritingWords,
   getWritingWordLimits,
+  belowWritingWordMinimum,
   writingWordLimitExceededMessage,
-  writingWordMinimumMessage,
 } from "@/lib/ielts/writingCriteria";
 import {
   GT_TASK1_SCORING_PROMPT,
@@ -61,12 +61,14 @@ export async function evaluateGeneralWritingStructured(input: {
   const minWords = getWritingWordLimits(taskType).min;
   const maxWords = getWritingWordLimits(taskType).max;
   const wordCount = countWritingWords(trimmed);
-  if (wordCount < minWords) {
-    throw new Error(writingWordMinimumMessage(taskType));
-  }
   if (wordCount > maxWords) {
     throw new Error(writingWordLimitExceededMessage(taskType));
   }
+
+  const underMinimum = belowWritingWordMinimum(trimmed, taskType);
+  const lengthNote = underMinimum
+    ? `IMPORTANT: This response is UNDER the IELTS minimum of ${minWords} words. Penalize Task Achievement / Task Response accordingly and mention the under-length issue in your feedback.\n\n`
+    : "";
 
   const isTask1 = taskType === "task1";
   const systemPrompt = isTask1 ? GT_TASK1_SCORING_PROMPT : GT_TASK2_SCORING_PROMPT;
@@ -76,13 +78,13 @@ export async function evaluateGeneralWritingStructured(input: {
       : input.letterType ?? "not specified";
 
   const userContent = isTask1
-    ? `Letter type: ${letterLabel}
+    ? `${lengthNote}Letter type: ${letterLabel}
 Task prompt: ${input.questionPrompt || "Write a letter responding to the situation."}
-Student response (${wordCount} words):
+Student response (${wordCount} words, IELTS minimum ${minWords}):
 ${trimmed}`
-    : `Essay type: ${input.essayType ?? "General Training essay"}
+    : `${lengthNote}Essay type: ${input.essayType ?? "General Training essay"}
 Task prompt: ${input.questionPrompt || "Write an essay."}
-Student response (${wordCount} words):
+Student response (${wordCount} words, IELTS minimum ${minWords}):
 ${trimmed}`;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

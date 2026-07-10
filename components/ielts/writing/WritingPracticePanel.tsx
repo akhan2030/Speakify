@@ -4,11 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   canSubmitWriting,
-  countWritingWords,
-  getWritingWordLimits,
   submitLabelForWritingTask,
   writingWordLimitExceededMessage,
-  writingWordMinimumMessage,
 } from "@/lib/ielts/writingCriteria";
 import {
   lessonsForTrack,
@@ -76,20 +73,13 @@ export default function WritingPracticePanel({
     e.preventDefault();
     setError(null);
 
-    const words = countWritingWords(essay);
-    const { min: minWords, max: maxWords } = getWritingWordLimits(taskType);
-
     if (!essay.trim()) {
       setError("Please write your response first.");
       return;
     }
 
     if (!canSubmitWriting(essay, taskType)) {
-      if (words < minWords) {
-        setError(writingWordMinimumMessage(taskType));
-      } else if (words > maxWords) {
-        setError(writingWordLimitExceededMessage(taskType));
-      }
+      setError(writingWordLimitExceededMessage(taskType));
       return;
     }
 

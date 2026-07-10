@@ -3,11 +3,8 @@
 import { useCallback, useState } from "react";
 import {
   canSubmitWriting,
-  countWritingWords,
-  getWritingWordLimits,
   submitLabelForWritingTask,
   writingWordLimitExceededMessage,
-  writingWordMinimumMessage,
 } from "@/lib/ielts/writingCriteria";
 import {
   setGeneralLetterById,
@@ -96,20 +93,13 @@ export default function GeneralWritingPracticePanel({
     e.preventDefault();
     setError(null);
 
-    const words = countWritingWords(essay);
-    const { min: minWords, max: maxWords } = getWritingWordLimits(lockTaskType);
-
     if (!essay.trim()) {
       setError("Please write your response first.");
       return;
     }
 
     if (!canSubmitWriting(essay, lockTaskType)) {
-      if (words < minWords) {
-        setError(writingWordMinimumMessage(lockTaskType));
-      } else if (words > maxWords) {
-        setError(writingWordLimitExceededMessage(lockTaskType));
-      }
+      setError(writingWordLimitExceededMessage(lockTaskType));
       return;
     }
 

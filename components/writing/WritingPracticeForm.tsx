@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   TASK1_QUESTIONS,
   TASK2_QUESTIONS,
@@ -13,19 +13,15 @@ import {
 } from "@/lib/ielts/writingTaskData";
 import WritingTaskVisual from "@/components/writing/WritingTaskVisual";
 import WritingCriteriaLegend from "@/components/writing/WritingCriteriaLegend";
+import WritingWordCountFeedback, {
+  writingCanSubmit,
+  writingSubmitButtonLabel,
+  writingSubmitHint,
+} from "@/components/writing/WritingWordCountFeedback";
 import {
-  canSubmitWriting,
-  countWritingWords,
-  getWritingWordLimits,
   truncateToWritingWordLimit,
   wordCountRangeLabel,
-  writingWordLimitExceededMessage,
-  writingWordMinimumMessage,
 } from "@/lib/ielts/writingCriteria";
-
-function countWords(text: string) {
-  return countWritingWords(text);
-}
 
 const VISUAL_TYPE_LABELS: Record<Task1Question["visualType"], string> = {
   bar: "Bar chart",
@@ -81,21 +77,9 @@ export default function WritingPracticeForm({
     else setTask2Question(getSessionTask2Question());
   }, [task1QuestionProp, task2QuestionProp]);
 
-  const words = useMemo(() => countWords(essay), [essay]);
-  const { min: minWords, max: maxWords } = getWritingWordLimits(taskType);
-  const belowMinimum = words > 0 && words < minWords;
-  const atWordLimit = words === maxWords;
-  const meetsMinimum = words >= minWords;
-  const canSubmit = canSubmitWriting(essay, taskType);
-
-  const wordCountClass =
-    words === 0
-      ? "text-slate-500"
-      : belowMinimum
-        ? "text-[#E24B4A]"
-        : atWordLimit
-          ? "text-amber-700"
-          : "text-green-600";
+  const canSubmit = writingCanSubmit(essay, taskType);
+  const submitButtonLabel = writingSubmitButtonLabel(essay, taskType);
+  const submitHint = writingSubmitHint(essay, taskType);
 
   function handleEssayChange(value: string) {
     onEssayChange(truncateToWritingWordLimit(value, taskType));
@@ -242,27 +226,7 @@ export default function WritingPracticeForm({
           className="mt-2 min-h-[320px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:border-[#c9972c] focus:outline-none focus:ring-2 focus:ring-[#c9972c]/30 disabled:bg-slate-50"
         />
 
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <p className={`text-sm font-medium ${wordCountClass}`}>
-            Word count: <span className="font-bold">{words}</span>
-            <span className="text-slate-400"> / {wordCountRangeLabel(taskType)}</span>
-          </p>
-          {canSubmit ? (
-            <span className="text-xs font-medium text-green-600">✓ Ready to submit</span>
-          ) : null}
-        </div>
-
-        {belowMinimum ? (
-          <div className="mt-3 rounded-xl border border-[#E24B4A]/40 bg-red-50 px-4 py-3 text-sm text-[#E24B4A]">
-            {writingWordMinimumMessage(taskType)}
-          </div>
-        ) : null}
-
-        {atWordLimit ? (
-          <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {writingWordLimitExceededMessage(taskType)}
-          </div>
-        ) : null}
+        <WritingWordCountFeedback text={essay} taskType={taskType} />
       </div>
 
       <WritingCriteriaLegend taskType={taskType} />
@@ -280,14 +244,10 @@ export default function WritingPracticeForm({
             Evaluating...
           </>
         ) : (
-          submitLabel
+          submitButtonLabel
         )}
       </button>
-      {!canSubmit ? (
-        <p className="text-center text-xs text-slate-500">
-          Write between {minWords} and {maxWords} words to enable scoring
-        </p>
-      ) : null}
+      <p className="text-center text-xs text-slate-500">{submitHint}</p>
     </form>
   );
 }
