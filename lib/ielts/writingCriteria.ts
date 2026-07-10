@@ -118,8 +118,21 @@ export function writingWordMinimumMessage(taskType: WritingTaskType): string {
   return `${taskLabel} requires at least ${min} words in the real IELTS exam. You can still submit shorter drafts for feedback — ${first.sectionHeading} will reflect the short length.`;
 }
 
+export function writingUnderMinimumNoticeParts(taskType: WritingTaskType) {
+  const min = WRITING_WORD_LIMITS[taskType].min;
+  const first = getFirstWritingCriterion(taskType);
+  const taskLabel = taskType === "task1" ? "Task 1" : "Task 2";
+  return {
+    taskLabel,
+    minWords: min,
+    criterionLabel: first.sectionHeading,
+  };
+}
+
 export function writingUnderMinimumNotice(taskType: WritingTaskType): string {
-  return writingWordMinimumMessage(taskType);
+  const { taskLabel, minWords, criterionLabel } =
+    writingUnderMinimumNoticeParts(taskType);
+  return `${taskLabel} requires at least ${minWords} words in the real IELTS exam. You can still submit shorter drafts for feedback — ${criterionLabel} will reflect the short length.`;
 }
 
 export function writingWordMaximumReachedMessage(taskType: WritingTaskType): string {

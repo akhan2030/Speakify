@@ -8,11 +8,11 @@ import {
   getWritingWordLimits,
   submitLabelForWritingSubmission,
   writingSubmitHintMessage,
-  writingUnderMinimumNotice,
   writingWordCountStatusMessage,
   writingWordMaximumReachedMessage,
   writingWordRequirementsSummary,
 } from "@/lib/ielts/writingCriteria";
+import WritingUnderMinimumAlert from "@/components/writing/WritingUnderMinimumAlert";
 
 export default function WritingWordCountFeedback({
   text,
@@ -67,11 +67,11 @@ export default function WritingWordCountFeedback({
         ) : null}
       </div>
 
-      {zone === "practice" ? (
-        <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {writingUnderMinimumNotice(taskType)}
-        </div>
-      ) : null}
+      {zone !== "practice" ? (
+        <WritingUnderMinimumAlert taskType={taskType} variant="compact" />
+      ) : (
+        <WritingUnderMinimumAlert taskType={taskType} variant="full" />
+      )}
 
       {atMaximum ? (
         <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
