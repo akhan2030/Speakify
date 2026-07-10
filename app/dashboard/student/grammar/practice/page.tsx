@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
 import { useGrammarProgramme } from "@/components/grammar/useGrammarProgramme";
+import DailyPracticeFinishBridge from "@/components/practice/DailyPracticeFinishBridge";
 
 type Question = {
   id: string;
@@ -212,6 +213,8 @@ export default function GrammarPracticePage() {
               >
                 Try another session
               </button>
+
+              <DailyPracticeFinishBridge timeSpentMinutes={10} className="mt-6 text-left" />
             </div>
           ) : current ? (
             <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

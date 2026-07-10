@@ -22,6 +22,7 @@ import { recordPromptAttempt } from "@/lib/ielts/writingPromptAttempts";
 import WritingPracticeForm from "@/components/writing/WritingPracticeForm";
 import GuidedWritingMode from "@/components/writing/GuidedWritingMode";
 import WritingPromptPicker from "@/components/ielts/writing/WritingPromptPicker";
+import DailyPracticeFinishBridge from "@/components/practice/DailyPracticeFinishBridge";
 
 type PracticeMode = "full" | "guided";
 
@@ -218,6 +219,7 @@ export default function WritingPracticePanel({
           >
             Submit another
           </button>
+          <DailyPracticeFinishBridge timeSpentMinutes={40} className="mt-6" />
         </div>
       ) : (
         <WritingPracticeForm

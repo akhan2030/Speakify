@@ -12,6 +12,7 @@ import { ListeningQuestionsColumn } from "@/components/listening/ListeningQuesti
 import type { TextHighlight } from "@/lib/examHighlight";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
+import DailyPracticeFinishBridge from "@/components/practice/DailyPracticeFinishBridge";
 import StickySubmitBar from "@/components/accelerator/StickySubmitBar";
 import {
   getCheckAnnouncement,
@@ -576,6 +577,8 @@ function ListeningSectionExam() {
                 </Link>
               )}
             </div>
+
+            <DailyPracticeFinishBridge timeSpentMinutes={15} className="mt-8" />
           </div>
         </main>
       </div>

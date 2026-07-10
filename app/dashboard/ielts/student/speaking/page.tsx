@@ -12,6 +12,7 @@ import FeedbackReport from "@/components/speaking/FeedbackReport";
 import MockSpeakingFeedbackReport from "@/components/speaking/MockSpeakingFeedbackReport";
 import ProgressSummary from "@/components/speaking/ProgressSummary";
 import NoSpeechDetected from "@/components/speaking/NoSpeechDetected";
+import DailyPracticeFinishBridge from "@/components/practice/DailyPracticeFinishBridge";
 
 type Part = 1 | 2 | 3;
 type Mode = "home" | "practice" | "mock" | "feedback" | "no_speech";
@@ -291,6 +292,7 @@ function SpeakingPartnerContent() {
             router.push(dashboardHome);
           }}
         />
+        <DailyPracticeFinishBridge timeSpentMinutes={15} className="mt-6" />
       </>
     );
   }

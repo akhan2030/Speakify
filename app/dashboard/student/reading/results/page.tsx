@@ -10,6 +10,7 @@ import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudent
 import MidnightCountdown from "@/components/MidnightCountdown";
 import { formatTimeTaken, loadTestResults } from "@/lib/readingTestUtils";
 import { accuracyColorClass, bandColorClass } from "@/lib/readingScorer";
+import DailyPracticeFinishBridge from "@/components/practice/DailyPracticeFinishBridge";
 
 type TestResults = {
   testType?: string;
@@ -248,6 +249,8 @@ function ResultsContent() {
               Back to Reading Home
             </Link>
           </div>
+
+          <DailyPracticeFinishBridge timeSpentMinutes={20} className="mt-8" />
 
           <DailyLimitSummary />
         </div>

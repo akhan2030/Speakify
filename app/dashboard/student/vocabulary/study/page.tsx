@@ -13,6 +13,7 @@ import {
   type VocabRating,
   type VocabularyWord,
 } from "@/lib/vocabulary";
+import DailyPracticeFinishBridge from "@/components/practice/DailyPracticeFinishBridge";
 
 function readParam(searchParams: URLSearchParams, key: string): string | null {
   const fromHook = searchParams.get(key);
@@ -166,6 +167,7 @@ function VocabularyStudyContent() {
                   Back to topics
                 </a>
               </div>
+              <DailyPracticeFinishBridge timeSpentMinutes={10} className="mt-6 text-left" />
             </div>
           ) : (
             <div className="mt-8">

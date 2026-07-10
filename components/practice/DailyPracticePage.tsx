@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PageSpinner } from "@/components/StudentSidebar";
+import DailyPracticeProgressHeader from "@/components/practice/DailyPracticeProgressHeader";
+import {
+  storeDailyPracticeContext,
+  withDailyPracticeParams,
+} from "@/lib/dailyPractice/client";
 
 type PracticeProgramme = "ielts" | "ielts_general";
 
@@ -22,6 +27,7 @@ type PracticeTask = {
   practiceHref?: string;
   focusReason?: string | null;
   isPersonalized?: boolean;
+  completed?: boolean;
 };
 
 type PersonalizationMeta = {
@@ -29,6 +35,12 @@ type PersonalizationMeta = {
   personalizedCount?: number;
   focusSkills?: string[];
   weakSkills?: string[];
+};
+
+type PracticeProgress = {
+  completedCount: number;
+  totalCount: number;
+  allComplete: boolean;
 };
 
 const SKILL_SEGMENTS: Record<string, string> = {
@@ -39,6 +51,17 @@ const SKILL_SEGMENTS: Record<string, string> = {
   writing: "/writing",
   grammar: "/grammar/practice",
 };
+
+function buildTaskHref(task: PracticeTask, base: string): string {
+  const taskSkill = (task.skill ?? "").toLowerCase();
+  if (task.practiceHref) {
+    return `${base}${task.practiceHref}`;
+  }
+  if (taskSkill === "vocabulary" && task.topic) {
+    return `${base}/vocabulary/study?topic=${encodeURIComponent(task.topic)}`;
+  }
+  return `${base}${SKILL_SEGMENTS[taskSkill] ?? "/practice"}`;
+}
 
 export default function DailyPracticePage({
   programme,
@@ -60,6 +83,11 @@ export default function DailyPracticePage({
   const [personalization, setPersonalization] = useState<PersonalizationMeta | null>(
     null
   );
+  const [progress, setProgress] = useState<PracticeProgress>({
+    completedCount: 0,
+    totalCount: 6,
+    allComplete: false,
+  });
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -83,6 +111,13 @@ export default function DailyPracticePage({
         setStudentLevel(d.studentLevel ?? d.cefrLevel ?? "B1.1");
         setLevelMatch(d.levelMatch !== false);
         setPersonalization(d.personalization ?? null);
+        if (d.progress) {
+          setProgress({
+            completedCount: d.progress.completedCount ?? 0,
+            totalCount: d.progress.totalCount ?? 6,
+            allComplete: Boolean(d.progress.allComplete),
+          });
+        }
       })
       .catch((err) => {
         setTasks([]);
@@ -98,17 +133,15 @@ export default function DailyPracticePage({
 
   function handleStartPractice(task: PracticeTask) {
     setLoadingTaskId(task.id);
-    const taskSkill = (task.skill ?? "").toLowerCase();
-    if (task.practiceHref) {
-      router.push(`${base}${task.practiceHref}`);
-      return;
-    }
-    if (taskSkill === "vocabulary" && task.topic) {
-      const href = `${base}/vocabulary/study?topic=${encodeURIComponent(task.topic)}`;
-      router.push(href);
-      return;
-    }
-    const href = `${base}${SKILL_SEGMENTS[taskSkill] ?? "/practice"}`;
+    const ctx = {
+      taskId: task.id,
+      title: task.title ?? "Daily practice task",
+      programme,
+      practiceBase: base,
+      estimatedMinutes: task.estimated_minutes ?? task.estimatedMinutes,
+    };
+    storeDailyPracticeContext(ctx);
+    const href = withDailyPracticeParams(buildTaskHref(task, base), ctx);
     router.push(href);
   }
 
@@ -141,6 +174,12 @@ export default function DailyPracticePage({
           {studentLevel}
         </span>
       </div>
+
+      <DailyPracticeProgressHeader
+        completed={progress.completedCount}
+        total={progress.totalCount}
+        allComplete={progress.allComplete}
+      />
 
       {error ? (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -199,15 +238,31 @@ export default function DailyPracticePage({
             const minutes = task.estimated_minutes ?? task.estimatedMinutes;
             const isVocabTopic =
               (task.skill ?? "").toLowerCase() === "vocabulary" && Boolean(task.topic);
+            const isComplete = Boolean(task.completed);
             return (
               <div
                 key={task.id}
-                className="rounded-xl border bg-white p-5 shadow-sm transition hover:shadow-md"
+                className={`rounded-xl border bg-white p-5 shadow-sm transition hover:shadow-md ${
+                  isComplete ? "border-green-200 bg-green-50/40 opacity-90" : ""
+                }`}
               >
-                <span className="text-xs font-bold uppercase text-[#c9972c]">
-                  {isVocabTopic ? "Vocabulary" : task.skill}
-                </span>
-                <h3 className="mb-2 mt-1 font-bold text-[#0d1b35]">{task.title}</h3>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <span className="text-xs font-bold uppercase text-[#c9972c]">
+                    {isVocabTopic ? "Vocabulary" : task.skill}
+                  </span>
+                  {isComplete ? (
+                    <span className="shrink-0 rounded-full bg-green-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-green-800">
+                      ✓ Completed
+                    </span>
+                  ) : null}
+                </div>
+                <h3
+                  className={`mb-2 mt-1 font-bold ${
+                    isComplete ? "text-slate-500 line-through" : "text-[#0d1b35]"
+                  }`}
+                >
+                  {task.title}
+                </h3>
                 {task.focusReason ? (
                   <p className="mb-3 text-sm leading-relaxed text-slate-600">
                     {task.focusReason}
@@ -235,9 +290,17 @@ export default function DailyPracticePage({
                   type="button"
                   disabled={loadingTaskId !== null}
                   onClick={() => handleStartPractice(task)}
-                  className="w-full rounded-lg bg-[#0d1b35] py-2 text-sm font-bold text-white disabled:opacity-60"
+                  className={`w-full rounded-lg py-2 text-sm font-bold text-white disabled:opacity-60 ${
+                    isComplete
+                      ? "bg-slate-500 hover:bg-slate-600"
+                      : "bg-[#0d1b35] hover:bg-[#152a4d]"
+                  }`}
                 >
-                  {loadingTaskId === task.id ? "Loading…" : "Start Practice"}
+                  {loadingTaskId === task.id
+                    ? "Loading…"
+                    : isComplete
+                      ? "Practice again"
+                      : "Start Practice"}
                 </button>
               </div>
             );

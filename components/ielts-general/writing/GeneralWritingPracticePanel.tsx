@@ -17,6 +17,7 @@ import { recordGtPromptAttempt } from "@/lib/ielts-general/writingPromptAttempts
 import GeneralWritingPracticeForm from "@/components/ielts-general/writing/GeneralWritingPracticeForm";
 import GeneralWritingPromptPicker from "@/components/ielts-general/writing/GeneralWritingPromptPicker";
 import GeneralGtWritingFeedback from "@/components/ielts-general/writing/GeneralGtWritingFeedback";
+import DailyPracticeFinishBridge from "@/components/practice/DailyPracticeFinishBridge";
 import type { GtStructuredWritingFeedback } from "@/lib/ielts-general/gtWritingScoringSchema";
 import type { LetterType } from "@/lib/ielts-general/writingTaskData";
 
@@ -173,6 +174,7 @@ export default function GeneralWritingPracticePanel({
         >
           Submit another
         </button>
+        <DailyPracticeFinishBridge timeSpentMinutes={40} className="mt-6" />
       </div>
     );
   }
