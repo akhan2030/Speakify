@@ -100,11 +100,20 @@ export async function POST(request) {
     const normalizedPhone = normalizeSaudiPhone(phone) ?? phone.trim();
 
     const isStepRegistration = registrationSlug === "step-test";
-    const isIeltsGeneralRegistration = registrationSlug === "ielts-general";
-    const isIeltsRegistration =
-      programType === "ielts" ||
-      registrationSlug === "ielts" ||
-      registrationSlug.startsWith("ielts-");
+    const isIeltsGeneralRegistration =
+      registrationSlug === "ielts-general" ||
+      courseSlug === "ielts-general" ||
+      courseSlug.startsWith("ielts-gt");
+    const isIeltsAcademicRegistration =
+      !isIeltsGeneralRegistration &&
+      (programType === "ielts" ||
+        registrationSlug === "ielts" ||
+        (registrationSlug.startsWith("ielts-") &&
+          !registrationSlug.startsWith("ielts-gt") &&
+          registrationSlug !== "ielts-general") ||
+        (courseSlug.startsWith("ielts-") &&
+          !courseSlug.startsWith("ielts-gt") &&
+          courseSlug !== "ielts-general"));
 
     const { data: newUser, error: userError } = await insertUser(supabase, {
       id: userId,
@@ -117,14 +126,19 @@ export async function POST(request) {
       phone_verified_at: null,
       program_type: isIeltsGeneralRegistration
         ? "ielts_general"
-        : isIeltsRegistration
+        : isIeltsAcademicRegistration
           ? "ielts"
           : programType,
       ...(isStepRegistration
         ? { step_enrolled: true, enrolled_programs: ["step"] }
         : isIeltsGeneralRegistration
-          ? { enrolled_programs: ["ielts_general"] }
-          : isIeltsRegistration
+          ? {
+              enrolled_programs: ["ielts_general"],
+              ...(purchasedTrack
+                ? { checkout_track: purchasedTrack, payment_status: "unpaid" }
+                : {}),
+            }
+          : isIeltsAcademicRegistration
             ? {
                 enrolled_programs: ["ielts"],
                 ...(purchasedTrack
@@ -172,7 +186,7 @@ export async function POST(request) {
       );
     }
 
-    if (isIeltsRegistration && !isIeltsGeneralRegistration && purchasedTrack) {
+    if (isIeltsAcademicRegistration && purchasedTrack) {
       const { error: trackUpdateError } = await supabase
         .from("users")
         .update({ checkout_track: purchasedTrack, payment_status: "unpaid" })

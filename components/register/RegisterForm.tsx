@@ -68,7 +68,12 @@ export default function RegisterForm({
           programType: program.programType,
           registrationSlug: slug,
           acceleratorTrack: purchasedTrack ?? undefined,
-          courseSlug: purchasedTrack ? `ielts-${purchasedTrack}` : undefined,
+          courseSlug:
+            purchasedTrack && slug === "ielts-general"
+              ? `ielts-gt-${purchasedTrack}`
+              : purchasedTrack
+                ? `ielts-${purchasedTrack}`
+                : undefined,
           fullName: fullName.trim(),
           email: email.trim(),
           phone: phone.trim(),

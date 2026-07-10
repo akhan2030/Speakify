@@ -613,6 +613,36 @@ export const authOptions: NextAuthOptions = {
 
       }
 
+      const email = String(
+        session.user?.email ?? (token as any).email ?? ""
+      )
+        .trim()
+        .toLowerCase();
+
+      let programType = normalizeProgramType((token as any).programType);
+      let enrolledPrograms = normalizeEnrolledPrograms(
+        (token as any).enrolledPrograms,
+        programType
+      );
+      let programSelected = (token as any).programSelected ?? null;
+      let paymentStatus = (token as any).paymentStatus ?? "unpaid";
+      let paymentCompedUntil = (token as any).paymentCompedUntil ?? null;
+      let onboardingCompleted = (token as any).onboardingCompleted === true;
+      let stepEnrolled = (token as any).stepEnrolled === true;
+
+      if (email) {
+        const dbUser = await fetchUserByEmail(email);
+        if (dbUser) {
+          programType = dbUser.programType;
+          enrolledPrograms = dbUser.enrolledPrograms;
+          programSelected = dbUser.programSelected;
+          paymentStatus = dbUser.paymentStatus;
+          paymentCompedUntil = dbUser.paymentCompedUntil;
+          onboardingCompleted = dbUser.onboardingCompleted;
+          stepEnrolled = dbUser.stepEnrolled;
+        }
+      }
+
       (session.user as any).role = normalizeRole((token as any).role);
 
       (session.user as any).id =
@@ -623,34 +653,31 @@ export const authOptions: NextAuthOptions = {
 
         (token as any).mustChangePassword === true;
 
-      (session.user as any).programType = normalizeProgramType(
+      (session.user as any).programType = programType;
 
-        (token as any).programType
+      (session.user as any).enrolledPrograms = enrolledPrograms;
 
-      );
+      (session.user as any).stepEnrolled = stepEnrolled;
 
-      (session.user as any).enrolledPrograms = normalizeEnrolledPrograms(
+      (session.user as any).onboardingCompleted = onboardingCompleted;
 
-        (token as any).enrolledPrograms,
+      (session.user as any).paymentStatus = paymentStatus;
 
-        normalizeProgramType((token as any).programType)
+      (session.user as any).hasDashboardAccess = hasDashboardAccess({
+        role: normalizeRole((token as any).role),
+        paymentStatus,
+        paymentCompedUntil,
+        enrolledPrograms,
+        programSelected,
+      });
 
-      );
+      (session.user as any).requiresPayment = requiresProgrammePayment({
+        role: normalizeRole((token as any).role),
+        enrolledPrograms,
+        programSelected,
+      });
 
-      (session.user as any).stepEnrolled = (token as any).stepEnrolled === true;
-
-      (session.user as any).onboardingCompleted =
-        (token as any).onboardingCompleted === true;
-
-      (session.user as any).paymentStatus = (token as any).paymentStatus ?? "unpaid";
-
-      (session.user as any).hasDashboardAccess =
-        (token as any).hasDashboardAccess === true;
-
-      (session.user as any).requiresPayment = (token as any).requiresPayment === true;
-
-      (session.user as any).programSelected =
-        (token as any).programSelected ?? null;
+      (session.user as any).programSelected = programSelected;
 
       if ((token as any).email) {
 

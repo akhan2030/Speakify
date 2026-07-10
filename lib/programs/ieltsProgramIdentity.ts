@@ -14,7 +14,7 @@ const VARIANT_LABELS: Record<IeltsProgramVariant, string> = {
 
 const SIDEBAR_PROGRAM_LABELS: Record<IeltsProgramVariant, string> = {
   ielts: "IELTS Academic Accelerator",
-  ielts_general: "IELTS General Training Accelerator",
+  ielts_general: "IELTS General Accelerator",
 };
 
 /** Resolve Academic vs GT from session / enrollment fields. */
