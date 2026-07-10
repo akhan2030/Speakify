@@ -634,7 +634,10 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await fetchUserByEmail(email);
         if (dbUser) {
           programType = dbUser.programType;
-          enrolledPrograms = dbUser.enrolledPrograms;
+          enrolledPrograms = normalizeEnrolledPrograms(
+            dbUser.enrolledPrograms,
+            dbUser.programType
+          );
           programSelected = dbUser.programSelected;
           paymentStatus = dbUser.paymentStatus;
           paymentCompedUntil = dbUser.paymentCompedUntil;
