@@ -53,7 +53,11 @@ function bandColor(band: number | null) {
   return "#dc2626";
 }
 
-function SpeakingHistoryContent() {
+function SpeakingHistoryContent({
+  onLatestBand,
+}: {
+  onLatestBand?: (band: number | null) => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -83,14 +87,21 @@ function SpeakingHistoryContent() {
       .then((r) => r.json())
       .then((json) => {
         if (json.error) throw new Error(json.error);
-        setSessions(json.sessions ?? []);
+        const rows = json.sessions ?? [];
+        setSessions(rows);
+        const latest = rows.find(
+          (row: SessionRow) => row.overallBand != null && Number.isFinite(Number(row.overallBand))
+        );
+        onLatestBand?.(
+          latest?.overallBand != null ? Number(latest.overallBand) : null
+        );
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Could not load history");
         setSessions([]);
       })
       .finally(() => setLoading(false));
-  }, [isGeneralTraining]);
+  }, [isGeneralTraining, onLatestBand]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -272,6 +283,7 @@ function SpeakingHistoryContent() {
 export default function SpeakingHistoryPage() {
   const pathname = usePathname();
   const isGeneralTraining = (pathname ?? "").startsWith("/dashboard/ielts-general");
+  const [latestSpeakingBand, setLatestSpeakingBand] = useState<number | null>(null);
 
   return (
     <main className="min-h-screen flex-1 bg-slate-50 p-4 pb-24 md:p-6 md:pb-6">
@@ -280,16 +292,18 @@ export default function SpeakingHistoryPage() {
           skill="speaking"
           title="Session History"
           subtitle="General Training speaking sessions and band feedback reports"
+          latestBand={latestSpeakingBand}
         />
       ) : (
         <SkillBandHeader
           skill="speaking"
           title="Session History"
           subtitle="Past speaking sessions and band feedback reports"
+          latestBand={latestSpeakingBand}
         />
       )}
       <Suspense fallback={<PageSpinner />}>
-        <SpeakingHistoryContent />
+        <SpeakingHistoryContent onLatestBand={setLatestSpeakingBand} />
       </Suspense>
     </main>
   );

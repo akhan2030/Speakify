@@ -66,6 +66,85 @@ export function extractSpeakingDeductions(
   return results;
 }
 
+type SpeakingFeedbackPayload = {
+  structuredScore?: StructuredSpeakingScore;
+  sessionScore?: {
+    fluency?: { band?: number };
+    lexical?: { band?: number };
+    grammar?: { band?: number };
+    pronunciation?: { band?: number };
+  };
+  topImprovements?: string[];
+};
+
+/** Fallback when structured deductions are empty — uses weakest criterion band. */
+export function inferSpeakingDeductionsFromFeedback(
+  feedback: SpeakingFeedbackPayload | Record<string, unknown> | null | undefined
+): SessionDeduction[] {
+  const payload = feedback as SpeakingFeedbackPayload | null | undefined;
+  const structured = extractSpeakingDeductions(payload?.structuredScore);
+  if (structured.length) return structured;
+
+  const sessionScore = payload?.sessionScore;
+  if (!sessionScore) return [];
+
+  const pairs: {
+    key: keyof NonNullable<SpeakingFeedbackPayload["sessionScore"]>;
+    criterion: RoadmapCriterion;
+    trigger: string;
+    label: string;
+  }[] = [
+    {
+      key: "fluency",
+      criterion: "fluency_coherence",
+      trigger: "filler_word_overuse",
+      label: "fluency",
+    },
+    {
+      key: "lexical",
+      criterion: "lexical_resource",
+      trigger: "repetitive_vocabulary",
+      label: "vocabulary",
+    },
+    {
+      key: "grammar",
+      criterion: "grammatical_range_accuracy",
+      trigger: "run_on_sentences",
+      label: "grammar",
+    },
+    {
+      key: "pronunciation",
+      criterion: "pronunciation",
+      trigger: "word_stress_error",
+      label: "pronunciation",
+    },
+  ];
+
+  const scored = pairs
+    .map((pair) => {
+      const block = sessionScore[pair.key];
+      const band = Number(block?.band);
+      return { ...pair, band: Number.isFinite(band) ? band : 9 };
+    })
+    .sort((a, b) => a.band - b.band);
+
+  const weakest = scored[0];
+  if (!weakest || weakest.band >= 7) return [];
+
+  const improvementHint = payload?.topImprovements?.[0];
+  return [
+    {
+      criterion: weakest.criterion,
+      trigger_pattern: weakest.trigger,
+      reason:
+        improvementHint ??
+        `Strengthen ${weakest.label} (scored Band ${weakest.band.toFixed(1)})`,
+      evidence: "",
+      band_impact: 0.5,
+    },
+  ];
+}
+
 function inferPatternFromReason(reason: string): string | null {
   const lower = reason.toLowerCase();
   if (/filler|hesitat|um\b|uh\b/.test(lower)) return "filler_word_overuse";

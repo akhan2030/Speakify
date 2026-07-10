@@ -1,6 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SessionDeduction } from "@/lib/growthRoadmap/extractDeductions";
 import {
+  extractGtWritingDeductions,
+  type GtStructuredWritingFeedback,
+} from "@/lib/ielts-general/gtWritingScoringSchema";
+import {
+  inferSpeakingDeductionsFromFeedback,
+  inferWritingDeductions,
+} from "@/lib/growthRoadmap/extractDeductions";
+import {
   CRITERION_DISPLAY_LABELS,
   PRACTICE_RECOMMENDATION_SEEDS,
   type RoadmapSkill,
@@ -210,6 +218,96 @@ export async function syncRoadmapFromSessionScore(input: {
     if (insertError) {
       console.warn("[growthRoadmap] insert item:", insertError.message);
     }
+  }
+}
+
+export async function backfillRoadmapFromRecentSessions(
+  supabase: SupabaseClient,
+  studentId: string
+): Promise<void> {
+  const { data: existing } = await supabase
+    .from("student_roadmap_items")
+    .select("id")
+    .eq("student_id", studentId)
+    .in("status", ["pending", "in_progress", "completed", "still_present"])
+    .limit(1);
+
+  if (existing?.length) return;
+
+  const { data: speakingSessions } = await supabase
+    .from("speaking_sessions")
+    .select("id, feedback, overall_band, completed_at")
+    .eq("student_id", studentId)
+    .not("completed_at", "is", null)
+    .not("overall_band", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(5);
+
+  for (const session of speakingSessions ?? []) {
+    const feedback =
+      session.feedback && typeof session.feedback === "object"
+        ? (session.feedback as Record<string, unknown>)
+        : null;
+    const deductions = inferSpeakingDeductionsFromFeedback(feedback);
+    if (!deductions.length) continue;
+
+    await syncRoadmapFromSessionScore({
+      supabase,
+      studentId,
+      sourceSessionId: String(session.id),
+      skill: "speaking",
+      deductions,
+    });
+    return;
+  }
+
+  const { data: writingRows } = await supabase
+    .from("writing_attempts")
+    .select("id, structured_score, band_overall, created_at")
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  for (const row of writingRows ?? []) {
+    let deductions: SessionDeduction[] = [];
+    if (row.structured_score && typeof row.structured_score === "object") {
+      deductions = inferWritingDeductions(row.structured_score as never);
+    }
+    if (!deductions.length) continue;
+
+    await syncRoadmapFromSessionScore({
+      supabase,
+      studentId,
+      sourceSessionId: String(row.id),
+      skill: "writing",
+      deductions,
+    });
+    return;
+  }
+
+  const { data: gtRows } = await supabase
+    .from("ielts_general_attempts")
+    .select("id, feedback, skill, band_score, completed_at")
+    .eq("student_id", studentId)
+    .eq("skill", "writing")
+    .order("completed_at", { ascending: false })
+    .limit(5);
+
+  for (const row of gtRows ?? []) {
+    if (!row.feedback || typeof row.feedback !== "object") continue;
+    const deductions = extractGtWritingDeductions(
+      row.feedback as GtStructuredWritingFeedback
+    );
+    if (!deductions.length) continue;
+
+    await syncRoadmapFromSessionScore({
+      supabase,
+      studentId,
+      sourceSessionId: String(row.id),
+      skill: "writing",
+      deductions,
+    });
+    return;
   }
 }
 

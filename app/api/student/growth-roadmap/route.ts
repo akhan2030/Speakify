@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabaseServer";
 import {
+  backfillRoadmapFromRecentSessions,
   fetchStudentRoadmapItems,
   markRoadmapItemCompleted,
 } from "@/lib/growthRoadmap/syncRoadmap";
@@ -22,6 +23,8 @@ export async function GET(request: Request) {
     const limit = Math.min(50, Number(url.searchParams.get("limit")) || 30);
 
     const supabase = getSupabaseAdmin();
+    await backfillRoadmapFromRecentSessions(supabase, studentId);
+
     const items = await fetchStudentRoadmapItems(supabase, studentId, {
       activeOnly,
       limit,

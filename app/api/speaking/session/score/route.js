@@ -23,6 +23,7 @@ import {
   hasValidSpeechInput,
   isLikelyRealStudentSpeech,
 } from "@/lib/speaking/validateSpeechInput";
+import { recordSpeakingBandForProfile } from "@/lib/speaking/bandSync";
 
 export const runtime = "nodejs";
 
@@ -443,19 +444,31 @@ export async function POST(req) {
 
     await upsertVocabularyBank(supabase, studentId, sessionId, feedback);
 
+    await recordSpeakingBandForProfile(
+      supabase,
+      studentId,
+      sessionScore.overall_band,
+      sessionId
+    );
+
     try {
-      const { extractSpeakingDeductions } = await import(
-        "@/lib/growthRoadmap/extractDeductions"
-      );
+      const { extractSpeakingDeductions, inferSpeakingDeductionsFromFeedback } =
+        await import("@/lib/growthRoadmap/extractDeductions");
       const { syncRoadmapFromSessionScore } = await import("@/lib/growthRoadmap/syncRoadmap");
       const deductions = extractSpeakingDeductions(structuredScore);
-      await syncRoadmapFromSessionScore({
-        supabase,
-        studentId,
-        sourceSessionId: sessionId,
-        skill: "speaking",
-        deductions,
-      });
+      const roadmapDeductions =
+        deductions.length > 0
+          ? deductions
+          : inferSpeakingDeductionsFromFeedback(feedback);
+      if (roadmapDeductions.length > 0) {
+        await syncRoadmapFromSessionScore({
+          supabase,
+          studentId,
+          sourceSessionId: sessionId,
+          skill: "speaking",
+          deductions: roadmapDeductions,
+        });
+      }
     } catch (roadmapErr) {
       console.warn(
         "[speaking/session/score] roadmap sync:",
