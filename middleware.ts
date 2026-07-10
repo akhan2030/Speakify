@@ -4,7 +4,12 @@ import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
 import { dashboardPathForStudentUser, normalizeEnrolledPrograms } from "@/lib/studentLoginRedirect";
 import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
 import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
-import { normalizeProgramType } from "@/lib/programType";
+import {
+  normalizeProgramType,
+  resolveStudentProgramType,
+  mirrorIeltsStudentDashboardPath,
+  isIeltsVariantProgram,
+} from "@/lib/programType";
 
 function paymentContextFromToken(token: {
   role?: string;
@@ -109,6 +114,21 @@ export default withAuth(
 
     if (pathname === "/dashboard/home" && role === "admin") {
       return NextResponse.redirect(new URL("/dashboard/admin", req.url));
+    }
+
+    if (role === "student" && onboardingCompleted) {
+      const programType = resolveStudentProgramType({
+        programType: token?.programType,
+        enrolledPrograms: token?.enrolledPrograms,
+        programSelected: token?.programSelected,
+      });
+
+      if (isIeltsVariantProgram(programType)) {
+        const mirrored = mirrorIeltsStudentDashboardPath(pathname, programType);
+        if (mirrored !== pathname) {
+          return NextResponse.redirect(new URL(mirrored, req.url));
+        }
+      }
     }
 
     return NextResponse.next();

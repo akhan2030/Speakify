@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PageSpinner } from "@/components/StudentSidebar";
 import { resolveLegacyStudentRedirect } from "@/lib/legacyStudentRoutes";
-import { resolveStudentProgramType } from "@/lib/programType";
+import { resolveStudentProgramType, studentDashboardPath } from "@/lib/programType";
 import { normalizeRole } from "@/lib/roles";
 
 export default function LegacyStudentPracticeRedirectPage() {
@@ -28,7 +28,7 @@ export default function LegacyStudentPracticeRedirectPage() {
       });
       const target =
         resolveLegacyStudentRedirect("/dashboard/student/practice", programType) ??
-        "/dashboard/ielts/student/practice";
+        `${studentDashboardPath(programType)}/practice`;
       router.replace(target);
     }
   }, [status, role, session, router]);

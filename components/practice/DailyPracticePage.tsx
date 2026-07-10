@@ -9,6 +9,7 @@ import {
   storeDailyPracticeContext,
   withDailyPracticeParams,
 } from "@/lib/dailyPractice/client";
+import { resolveStudentProgramType } from "@/lib/programType";
 
 type PracticeProgramme = "ielts" | "ielts_general";
 
@@ -71,7 +72,7 @@ export default function DailyPracticePage({
   base: string;
 }) {
   const router = useRouter();
-  const { status } = useSession();
+  const { status, data: session } = useSession();
   const isIeltsGeneralProgram = programme === "ielts_general";
   const [tasks, setTasks] = useState<PracticeTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +93,22 @@ export default function DailyPracticePage({
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
   }, [status, router]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    const resolved = resolveStudentProgramType({
+      programType: (session?.user as { programType?: string })?.programType,
+      enrolledPrograms: (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms,
+      programSelected: (session?.user as { programSelected?: string })?.programSelected,
+    });
+    if (resolved === "ielts_general" && programme === "ielts") {
+      router.replace("/dashboard/ielts-general/student/practice");
+      return;
+    }
+    if (resolved === "ielts" && programme === "ielts_general") {
+      router.replace("/dashboard/ielts/student/practice");
+    }
+  }, [status, session, programme, router]);
 
   useEffect(() => {
     if (status !== "authenticated") return;

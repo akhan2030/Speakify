@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PageSpinner } from "@/components/StudentSidebar";
-import { studentDashboardPath, canAccessStudentDashboard, resolveStudentProgramType, type ProgramType } from "@/lib/programType";
+import {
+  studentDashboardPath,
+  canAccessStudentDashboard,
+  resolveStudentProgramType,
+  mirrorIeltsStudentDashboardPath,
+  isIeltsVariantProgram,
+  type ProgramType,
+} from "@/lib/programType";
 import { normalizeRole } from "@/lib/roles";
 
 export default function ProgramStudentLayout({
@@ -15,6 +22,7 @@ export default function ProgramStudentLayout({
   expectedProgram: ProgramType;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { status, data: session } = useSession();
   const role = normalizeRole((session?.user as { role?: string })?.role);
   const programType = resolveStudentProgramType({
@@ -63,9 +71,14 @@ export default function ProgramStudentLayout({
       programSelected,
     });
     if (!allowed) {
-      router.replace(studentDashboardPath(programType));
+      const target = isIeltsVariantProgram(programType)
+        ? mirrorIeltsStudentDashboardPath(pathname, programType)
+        : studentDashboardPath(programType);
+      if (target !== pathname) {
+        router.replace(target);
+      }
     }
-  }, [status, role, programType, expectedProgram, rawProgramType, enrolledPrograms, programSelected, router]);
+  }, [status, role, programType, expectedProgram, rawProgramType, enrolledPrograms, programSelected, pathname, router]);
 
   if (status === "loading" || status === "unauthenticated") {
     return <PageSpinner />;
