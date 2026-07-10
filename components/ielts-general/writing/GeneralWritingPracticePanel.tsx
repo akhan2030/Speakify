@@ -6,6 +6,7 @@ import {
   submitLabelForWritingTask,
   writingWordLimitExceededMessage,
 } from "@/lib/ielts/writingCriteria";
+import { resolveWritingOverallBand } from "@/lib/ielts/writingBandScore";
 import {
   setGeneralLetterById,
   setGeneralTask2ById,
@@ -126,8 +127,12 @@ export default function GeneralWritingPracticePanel({
       if (data.structuredFeedback) {
         setStructuredFeedback(data.structuredFeedback as GtStructuredWritingFeedback);
       }
-      if (data.bands?.overall != null) {
-        setOverallBand(Number(data.bands.overall));
+      const resolvedOverall = resolveWritingOverallBand(
+        data.bands,
+        data.structuredFeedback?.evaluation ?? data.evaluation ?? ""
+      );
+      if (resolvedOverall != null) {
+        setOverallBand(resolvedOverall);
       } else if (data.structuredFeedback?.overallBand != null) {
         setOverallBand(Number(data.structuredFeedback.overallBand));
       }

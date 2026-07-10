@@ -7,6 +7,7 @@ import {
   submitLabelForWritingTask,
   writingWordLimitExceededMessage,
 } from "@/lib/ielts/writingCriteria";
+import { resolveWritingOverallBand } from "@/lib/ielts/writingBandScore";
 import {
   lessonsForTrack,
   sharedWritingLessons,
@@ -102,14 +103,9 @@ export default function WritingPracticePanel({
       }
       if (promptId) recordPromptAttempt(promptId);
       setEvaluation(String(data.evaluation || ""));
-      if (data.bands?.overall != null) {
-        setOverallBand(Number(data.bands.overall));
-      } else {
-        const m = String(data.evaluation || "").match(
-          /Overall Band\s*:\s*([0-9]+(?:\.[0-9])?)/i
-        );
-        setOverallBand(m ? Number(m[1]) : null);
-      }
+      setOverallBand(
+        resolveWritingOverallBand(data.bands, String(data.evaluation || ""))
+      );
     } catch {
       setError("Something went wrong.");
     } finally {

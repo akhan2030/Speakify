@@ -2,6 +2,7 @@ import type { SessionDeduction } from "@/lib/growthRoadmap/extractDeductions";
 import { normalizeTriggerPattern } from "@/lib/growthRoadmap/extractDeductions";
 import type { RoadmapCriterion } from "@/lib/growthRoadmap/seedRecommendations";
 import { roundToHalfBand } from "@/lib/speaking/scoringSchema";
+import { calculateWritingOverallBand } from "@/lib/ielts/writingBandScore";
 
 export type GtSaudiError = {
   type: string;
@@ -180,7 +181,8 @@ export function normalizeGtStructuredFeedback(
       coherenceCohesion: cc,
       lexicalResource: lr,
       grammaticalRange: gra,
-      overallBand: asBand(row.overallBand, roundToHalfBand(mean)),
+      overallBand:
+        calculateWritingOverallBand(ta, cc, lr, gra) ?? roundToHalfBand(mean),
       letterFormatCheck: normalizeLetterFormat(row.letterFormatCheck),
       criteriaFeedback: {
         taskAchievement: String(criteriaFeedback.taskAchievement ?? ""),
@@ -211,7 +213,8 @@ export function normalizeGtStructuredFeedback(
     coherenceCohesion: cc,
     lexicalResource: lr,
     grammaticalRange: gra,
-    overallBand: asBand(row.overallBand, roundToHalfBand(mean)),
+    overallBand:
+      calculateWritingOverallBand(tr, cc, lr, gra) ?? roundToHalfBand(mean),
     criteriaFeedback: {
       taskResponse: String(criteriaFeedback.taskResponse ?? ""),
       coherenceCohesion: String(criteriaFeedback.coherenceCohesion ?? ""),
@@ -229,20 +232,28 @@ export function normalizeGtStructuredFeedback(
 
 export function gtFeedbackToBands(feedback: GtStructuredWritingFeedback) {
   if (feedback.taskType === "task1") {
+    const ta = feedback.taskAchievement;
+    const cc = feedback.coherenceCohesion;
+    const lr = feedback.lexicalResource;
+    const gra = feedback.grammaticalRange;
     return {
-      ta: feedback.taskAchievement,
-      cc: feedback.coherenceCohesion,
-      lr: feedback.lexicalResource,
-      gra: feedback.grammaticalRange,
-      overall: feedback.overallBand,
+      ta,
+      cc,
+      lr,
+      gra,
+      overall: calculateWritingOverallBand(ta, cc, lr, gra) ?? feedback.overallBand,
     };
   }
+  const ta = feedback.taskResponse;
+  const cc = feedback.coherenceCohesion;
+  const lr = feedback.lexicalResource;
+  const gra = feedback.grammaticalRange;
   return {
-    ta: feedback.taskResponse,
-    cc: feedback.coherenceCohesion,
-    lr: feedback.lexicalResource,
-    gra: feedback.grammaticalRange,
-    overall: feedback.overallBand,
+    ta,
+    cc,
+    lr,
+    gra,
+    overall: calculateWritingOverallBand(ta, cc, lr, gra) ?? feedback.overallBand,
   };
 }
 

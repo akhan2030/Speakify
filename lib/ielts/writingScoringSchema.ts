@@ -1,5 +1,6 @@
 import type { ScoreDeduction } from "@/lib/speaking/scoringSchema";
 import { roundToHalfBand } from "@/lib/speaking/scoringSchema";
+import { calculateWritingOverallBand } from "@/lib/ielts/writingBandScore";
 
 export type WritingCriterionKey =
   | "task_achievement"
@@ -119,8 +120,14 @@ export function normalizeStructuredWritingScore(
   }
 
   const bands = keys.map((key) => criteria[key].band);
-  const mean = bands.reduce((sum, band) => sum + band, 0) / bands.length;
-  const overall = asBand(payload.overall_band, roundToHalfBand(mean));
+  const ta = taskType === "task1" ? criteria.task_achievement.band : criteria.task_response.band;
+  const overall =
+    calculateWritingOverallBand(
+      ta,
+      criteria.coherence_cohesion.band,
+      criteria.lexical_resource.band,
+      criteria.grammatical_range_accuracy.band
+    ) ?? roundToHalfBand(bands.reduce((sum, band) => sum + band, 0) / bands.length);
 
   return {
     overall_band: overall,
@@ -131,11 +138,16 @@ export function normalizeStructuredWritingScore(
 
 export function structuredWritingToFlatBands(score: StructuredWritingScore) {
   const c = score.criteria;
+  const ta =
+    score.task_type === "task1" ? c.task_achievement.band : c.task_response.band;
+  const cc = c.coherence_cohesion.band;
+  const lr = c.lexical_resource.band;
+  const gra = c.grammatical_range_accuracy.band;
   return {
-    ta: score.task_type === "task1" ? c.task_achievement.band : c.task_response.band,
-    cc: c.coherence_cohesion.band,
-    lr: c.lexical_resource.band,
-    gra: c.grammatical_range_accuracy.band,
-    overall: score.overall_band,
+    ta,
+    cc,
+    lr,
+    gra,
+    overall: calculateWritingOverallBand(ta, cc, lr, gra) ?? score.overall_band,
   };
 }
