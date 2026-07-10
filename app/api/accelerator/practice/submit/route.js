@@ -54,13 +54,13 @@ function writingPrompts(test, sectionAnswers) {
   return {
     task1:
       String(
-        (writingContent.task1 as Record<string, unknown>)?.prompt ??
+        writingContent.task1?.prompt ??
           sectionAnswers?.task1Prompt ??
           ""
       ) || undefined,
     task2:
       String(
-        (writingContent.task2 as Record<string, unknown>)?.prompt ??
+        writingContent.task2?.prompt ??
           sectionAnswers?.task2Prompt ??
           ""
       ) || undefined,
