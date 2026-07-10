@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { PageSpinner } from "@/components/StudentSidebar";
 import SkillBandHeader from "@/components/ielts/SkillBandHeader";
 import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
+import SpeakingCriteriaOverview from "@/components/speaking/SpeakingCriteriaOverview";
 import ActiveSession from "@/components/speaking/ActiveSession";
 import FeedbackReport from "@/components/speaking/FeedbackReport";
 import MockSpeakingFeedbackReport from "@/components/speaking/MockSpeakingFeedbackReport";
@@ -183,7 +184,14 @@ function SpeakingPartnerContent() {
     <GeneralSkillBandHeader
       skill="speaking"
       title="Speaking"
-      subtitle="AI examiner Sarah — General Training speaking across Parts 1, 2 & 3"
+      subtitle={
+        <div>
+          <p className="text-sm text-slate-600">
+            AI examiner Sarah — General Training speaking across Parts 1, 2 & 3
+          </p>
+          <SpeakingCriteriaOverview programmeLabel="IELTS General Training" />
+        </div>
+      }
       refreshKey={progressRefreshKey}
       latestBand={latestBand}
     />
@@ -191,7 +199,14 @@ function SpeakingPartnerContent() {
     <SkillBandHeader
       skill="speaking"
       title="Speaking"
-      subtitle="AI examiner Sarah — live conversation across Parts 1, 2 & 3"
+      subtitle={
+        <div>
+          <p className="text-sm text-slate-600">
+            AI examiner Sarah — live conversation across Parts 1, 2 & 3
+          </p>
+          <SpeakingCriteriaOverview />
+        </div>
+      }
       refreshKey={progressRefreshKey}
       latestBand={latestBand}
     />
