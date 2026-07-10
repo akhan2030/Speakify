@@ -39,6 +39,15 @@ const IELTS_DEMO_PROFILE = {
   placement_test_completed: true,
 };
 
+const IELTS_GENERAL_DEMO_PROFILE = {
+  program_type: "ielts_general",
+  enrolled_programs: ["ielts_general"],
+  step_enrolled: false,
+  onboarding_completed: true,
+  program_selected: "ielts_general",
+  placement_test_completed: true,
+};
+
 // Demo/admin accounts (may exist in production) take their password from env
 // vars. When the var is unset the account is skipped rather than seeded with a
 // known password. Rotate live passwords with scripts/rotate-demo-passwords.mjs.
@@ -50,6 +59,24 @@ const TEST_USERS = [
     name: "Test Student",
     programType: "ielts",
     forcePassword: false,
+  },
+  {
+    email: "ielts.academic@speakify.demo",
+    password: "SpeakifyAcademic1!",
+    role: "student",
+    name: "IELTS Academic Demo",
+    programType: "ielts",
+    ieltsDemo: true,
+    forcePassword: true,
+  },
+  {
+    email: "ielts.general@speakify.demo",
+    password: "SpeakifyGeneral1!",
+    role: "student",
+    name: "IELTS General Demo",
+    programType: "ielts_general",
+    ieltsGeneralDemo: true,
+    forcePassword: true,
   },
   {
     email: "pathway@test.com",
@@ -178,6 +205,7 @@ async function main() {
       if ((existing.name ?? "") !== user.name) updates.name = user.name;
       if (user.programType) updates.program_type = user.programType;
       if (user.ieltsDemo) Object.assign(updates, IELTS_DEMO_PROFILE);
+      if (user.ieltsGeneralDemo) Object.assign(updates, IELTS_GENERAL_DEMO_PROFILE);
       if (user.forcePassword || !isBcryptHash(existing.password)) {
         updates.password = passwordHash;
       }
@@ -202,6 +230,7 @@ async function main() {
       name: user.name,
       ...(user.programType ? { program_type: user.programType } : {}),
       ...(user.ieltsDemo ? IELTS_DEMO_PROFILE : {}),
+      ...(user.ieltsGeneralDemo ? IELTS_GENERAL_DEMO_PROFILE : {}),
     });
 
     if (insertError) {

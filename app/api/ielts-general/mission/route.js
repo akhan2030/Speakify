@@ -7,6 +7,7 @@ import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 import { getGeneralMissionTasksForDay } from "@/lib/ielts-general/missionTasks";
 import {
   getDaySubtitle,
+  getStudyDay,
   getStudyWeekDates,
   getNextStudyWeekDates,
   STUDY_DAY_FULL,
@@ -20,6 +21,7 @@ import {
   fetchCompletionsForRange,
   completionsSetForDate,
   attachTaskCompletion,
+  updateStudyStreak,
 } from "@/lib/ielts/updateStudyStreak";
 
 export const runtime = "nodejs";
@@ -194,6 +196,108 @@ export async function GET() {
     console.error("[ielts-general/mission GET]", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to load programme" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request) {
+  try {
+    const session = await getServerSession(authOptions);
+    const studentId = session?.user?.id;
+    if (!studentId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!process.env.SUPABASE_SERVICE_KEY || !getSupabaseUrl()) {
+      return NextResponse.json(
+        { error: "Run supabase/ielts_self_study_setup.sql first" },
+        { status: 503 }
+      );
+    }
+
+    const body = await request.json();
+    const { taskId, action = "complete", timeSpentMinutes } = body;
+    const todayKey = todayDateKey();
+
+    if (!taskId || typeof taskId !== "string") {
+      return NextResponse.json({ error: "taskId required" }, { status: 400 });
+    }
+
+    const supabase = getSupabase();
+    const studyDay = getStudyDay();
+    const missionTasks = getGeneralMissionTasksForDay(studyDay);
+    const baseTaskId = taskId.includes("::")
+      ? parseMissionTaskKey(taskId).taskId
+      : taskId;
+    const task = missionTasks.find((t) => t.id === baseTaskId);
+
+    if (!task) {
+      return NextResponse.json({ error: "Unknown task for today" }, { status: 400 });
+    }
+
+    const fullKey = missionTaskKey(todayKey, task.id);
+
+    if (action === "uncomplete") {
+      await supabase
+        .from("daily_task_completions")
+        .delete()
+        .eq("student_id", studentId)
+        .eq("task_id", fullKey);
+    } else {
+      const { data: existing } = await supabase
+        .from("daily_task_completions")
+        .select("id")
+        .eq("student_id", studentId)
+        .eq("task_id", fullKey)
+        .maybeSingle();
+
+      if (!existing) {
+        const { error: insertError } = await supabase.from("daily_task_completions").insert({
+          student_id: studentId,
+          task_id: fullKey,
+          task_type: task.taskType,
+          day_of_week: studyDay,
+          time_spent_minutes: Number(timeSpentMinutes) || task.minutes,
+        });
+
+        if (insertError) {
+          throw insertError;
+        }
+      }
+    }
+
+    const streakResult = await updateStudyStreak(
+      supabase,
+      studentId,
+      Number(timeSpentMinutes) || task.minutes
+    );
+
+    const completions = await fetchCompletionsForRange(
+      supabase,
+      studentId,
+      todayKey,
+      todayKey
+    );
+    const completedIds = completionsSetForDate(completions, todayKey);
+    const tasks = attachTaskCompletion(missionTasks, todayKey, completedIds);
+    const allComplete = tasks.every((t) => t.completed);
+
+    return NextResponse.json({
+      ok: true,
+      task: tasks.find((t) => t.id === task.id),
+      completedCount: tasks.filter((t) => t.completed).length,
+      totalCount: tasks.length,
+      allComplete,
+      remainingMinutes: tasks
+        .filter((t) => !t.completed)
+        .reduce((sum, t) => sum + t.minutes, 0),
+      streak: streakResult,
+    });
+  } catch (err) {
+    console.error("[ielts-general/mission POST]", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to update task" },
       { status: 500 }
     );
   }

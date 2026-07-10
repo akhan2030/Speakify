@@ -218,7 +218,7 @@ export default function GeneralStudentDashboard() {
     if (!data) return;
     setTogglingId(task.id);
     try {
-      const res = await fetch("/api/student/ielts-mission", {
+      const res = await fetch("/api/ielts-general/mission", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

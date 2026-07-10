@@ -3,6 +3,8 @@ import {
   type SpecialtyProgramId,
 } from "@/lib/specialtyPrograms";
 
+export { mirrorIeltsStudentDashboardPath } from "@/lib/ieltsStudentRouteMirror";
+
 export type CoreProgramType = "pathway" | "ielts" | "ielts_general";
 export type ProgramType = CoreProgramType | SpecialtyProgramId;
 
@@ -48,30 +50,10 @@ export function studentDashboardPath(programType: ProgramType): string {
   }
 }
 
-const ACADEMIC_STUDENT_PREFIX = "/dashboard/ielts/student";
-const GT_STUDENT_PREFIX = "/dashboard/ielts-general/student";
-
 export function isIeltsVariantProgram(
   program: ProgramType
 ): program is "ielts" | "ielts_general" {
   return program === "ielts" || program === "ielts_general";
-}
-
-/** Map an Academic student URL to GT (or the reverse) when programmes are mismatched. */
-export function mirrorIeltsStudentDashboardPath(
-  pathname: string,
-  targetProgram: "ielts" | "ielts_general"
-): string {
-  if (
-    targetProgram === "ielts_general" &&
-    pathname.startsWith(ACADEMIC_STUDENT_PREFIX)
-  ) {
-    return pathname.replace(ACADEMIC_STUDENT_PREFIX, GT_STUDENT_PREFIX);
-  }
-  if (targetProgram === "ielts" && pathname.startsWith(GT_STUDENT_PREFIX)) {
-    return pathname.replace(GT_STUDENT_PREFIX, ACADEMIC_STUDENT_PREFIX);
-  }
-  return studentDashboardPath(targetProgram);
 }
 
 export function dashboardPathForUser(
