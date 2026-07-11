@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SkillRadarChart from "@/components/mock-test/SkillRadarChart";
+import MockCompletionCertificate, {
+  printMockCertificate,
+} from "@/components/mock-test/MockCompletionCertificate";
+import {
+  buildMockCertificateFromReport,
+  readMockSessionMeta,
+} from "@/lib/mock-test/certificate";
 import type { MockTestFullReport, SectionBreakdown } from "@/lib/mock-test/reportTypes";
 
 const NAVY = "#0d1b35";
@@ -189,6 +196,32 @@ export default function MockResultsReport({ report, attemptId }: Props) {
   const printRef = useRef<HTMLDivElement>(null);
   const [task1Open, setTask1Open] = useState(false);
   const [task2Open, setTask2Open] = useState(false);
+  const [sessionMeta, setSessionMeta] = useState<ReturnType<typeof readMockSessionMeta>>(
+    {}
+  );
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(`mock_test_${attemptId}`);
+      if (!raw) return;
+      const payload = JSON.parse(raw) as Record<string, unknown>;
+      setSessionMeta(readMockSessionMeta(payload));
+    } catch {
+      setSessionMeta({});
+    }
+  }, [attemptId]);
+
+  const certificateData = useMemo(
+    () =>
+      buildMockCertificateFromReport(report, {
+        examReference: sessionMeta.examReference,
+        examDateTime: sessionMeta.examDateTime,
+        mockNumber: sessionMeta.mockNumber,
+        programme:
+          sessionMeta.examVariant === "general" ? "ielts_general" : "ielts_academic",
+      }),
+    [report, sessionMeta]
+  );
   const whatsappRaw =
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() || "966556004488";
   const waBase = `https://wa.me/${whatsappRaw.replace(/\D/g, "")}`;
@@ -274,6 +307,20 @@ export default function MockResultsReport({ report, attemptId }: Props) {
         </header>
 
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+          <section className="mb-12 print:break-before-page">
+            <h2 className="mb-4 text-2xl font-bold text-[#0d1b35] print:hidden">
+              Your IELTS Test Report Form
+            </h2>
+            <p className="mb-6 text-sm text-slate-600 print:hidden">
+              Official-style mock certificate with CEFR levels — download and keep for your
+              records.
+            </p>
+            <MockCompletionCertificate
+              data={certificateData}
+              onPrint={printMockCertificate}
+            />
+          </section>
+
           {/* Score breakdown grid */}
           <section>
             <h2 className="text-2xl font-bold text-[#0d1b35]">Score breakdown</h2>
@@ -681,6 +728,15 @@ export default function MockResultsReport({ report, attemptId }: Props) {
           }
           .print\\:hidden {
             display: none !important;
+          }
+          #mock-completion-certificate,
+          #mock-completion-certificate * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .mock-certificate-wrap {
+            max-width: 100% !important;
+            margin: 0 !important;
           }
         }
       `}</style>

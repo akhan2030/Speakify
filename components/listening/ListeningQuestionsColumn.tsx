@@ -9,7 +9,10 @@ import ListeningQuestions, {
 } from "@/components/ListeningQuestions";
 import { getGlobalQuestionRange } from "@/lib/listeningIeltsInstructions";
 import { getMcqChooseCountForQuestions } from "@/lib/listeningQuestionContent.js";
-import type { QuestionGroup } from "@/lib/listeningQuestionGroups";
+import {
+  resolveEffectiveGroupType,
+  type QuestionGroup,
+} from "@/lib/listeningQuestionGroups";
 
 export function ListeningQuestionsColumn({
   groups,
@@ -83,7 +86,9 @@ export function ListeningQuestionsColumn({
           Questions {globalRange.label}
         </h2>
       </div>
-      {groups.map((group) => (
+      {groups.map((group) => {
+        const effectiveType = resolveEffectiveGroupType(group);
+        return (
         <div key={`${group.type}-${group.start}`} className="space-y-4">
           {group.type === "form-completion" && sectionTitle ? (
             <h3 className="text-base font-bold text-[#0d1b35]">{sectionTitle}</h3>
@@ -93,9 +98,9 @@ export function ListeningQuestionsColumn({
           </h3>
           {!hideInstructionBlock ? (
             <ListeningIeltsInstruction
-              questionType={group.type}
+              questionType={effectiveType}
               chooseCount={
-                group.type === "multiple-choice"
+                effectiveType === "multiple-choice"
                   ? getMcqChooseCountForQuestions(group.questions)
                   : undefined
               }
@@ -112,13 +117,14 @@ export function ListeningQuestionsColumn({
                 if (q) resolveChange(q, value);
               }}
               disabled={disabled}
-              questionType={group.type}
+              questionType={effectiveType}
               highlightAnswered={highlightAnswered}
               answeredIds={answeredIds}
             />
           </div>
         </div>
-      ))}
+        );
+      })}
     </ExamHighlightSection>
   );
 }

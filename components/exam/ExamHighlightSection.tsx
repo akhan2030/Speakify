@@ -66,6 +66,15 @@ function EraserIcon() {
   );
 }
 
+function isFormInteractionTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(
+    target.closest(
+      'input, textarea, select, button, label, [role="radio"], [role="checkbox"], [data-exam-input]'
+    )
+  );
+}
+
 export function ExamHighlightToolbar({ className = "" }: { className?: string }) {
   const ctx = useContext(ExamHighlightContext);
   if (!ctx) return null;
@@ -83,7 +92,7 @@ export function ExamHighlightToolbar({ className = "" }: { className?: string })
       </span>
       <button
         type="button"
-        onClick={() => setMode("highlight")}
+        onClick={() => setMode(mode === "highlight" ? "idle" : "highlight")}
         className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
           mode === "highlight"
             ? "bg-[#ffff00] text-[#0d1b35] shadow-sm"
@@ -97,7 +106,7 @@ export function ExamHighlightToolbar({ className = "" }: { className?: string })
       </button>
       <button
         type="button"
-        onClick={() => setMode("erase")}
+        onClick={() => setMode(mode === "erase" ? "idle" : "erase")}
         className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
           mode === "erase"
             ? "bg-slate-800 text-white shadow-sm"
@@ -112,7 +121,9 @@ export function ExamHighlightToolbar({ className = "" }: { className?: string })
       <span className="text-[11px] text-slate-400">
         {mode === "highlight"
           ? "Drag over passage or questions to highlight · click a highlight to remove"
-          : "Click or drag over highlights to erase"}
+          : mode === "erase"
+            ? "Click or drag over highlights to erase"
+            : "Select Highlight or Eraser to annotate · type answers in the fields below"}
       </span>
     </div>
   );
@@ -123,6 +134,7 @@ type SectionProps = {
   highlights: TextHighlight[];
   onHighlightsChange: (next: TextHighlight[]) => void;
   showToolbar?: boolean;
+  defaultMode?: ExamHighlightMode;
   className?: string;
   toolbarClassName?: string;
   children: ReactNode;
@@ -133,14 +145,15 @@ export function ExamHighlightSection({
   highlights,
   onHighlightsChange,
   showToolbar = true,
+  defaultMode = "idle",
   className = "",
   toolbarClassName = "",
   children,
 }: SectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const modeRef = useRef<ExamHighlightMode>("highlight");
+  const modeRef = useRef<ExamHighlightMode>(defaultMode);
   const highlightsRef = useRef(highlights);
-  const [mode, setMode] = useState<ExamHighlightMode>("highlight");
+  const [mode, setMode] = useState<ExamHighlightMode>(defaultMode);
 
   highlightsRef.current = highlights;
   modeRef.current = mode;
@@ -160,8 +173,8 @@ export function ExamHighlightSection({
 
       if (next) {
         onHighlightsChange(next);
+        window.getSelection()?.removeAllRanges();
       }
-      window.getSelection()?.removeAllRanges();
     },
     [onHighlightsChange]
   );
@@ -183,6 +196,8 @@ export function ExamHighlightSection({
       ) {
         return;
       }
+      if (isFormInteractionTarget(target)) return;
+      if (modeRef.current === "idle") return;
 
       const now = Date.now();
       if (now - interactionGuardRef.current < 40) return;
@@ -232,7 +247,13 @@ export function ExamHighlightSection({
       <div
         ref={containerRef}
         data-highlight-section={sectionId}
-        className={`select-text ${mode === "erase" ? "cursor-cell" : "cursor-text"} ${className}`}
+        className={`select-text ${
+          mode === "erase"
+            ? "cursor-cell"
+            : mode === "highlight"
+              ? "cursor-text"
+              : ""
+        } ${className}`}
       >
         {children}
       </div>

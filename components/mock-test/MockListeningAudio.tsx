@@ -4,10 +4,28 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type MockAudioStatus = "idle" | "loading" | "ready" | "playing" | "complete" | "error";
 
+type SpeakerPayload = {
+  label: string;
+  name?: string;
+  displayName?: string;
+  gender?: string;
+  voice?: string;
+};
+
+type QuestionPayload = {
+  questionNumber?: number;
+  number?: number;
+  type?: string;
+  answer?: string;
+};
+
 type Props = {
   transcript: string;
   voice?: string;
   sectionNumber?: number;
+  mockNumber?: number;
+  speakers?: SpeakerPayload[];
+  questions?: QuestionPayload[];
   onComplete: () => void;
   onStatusChange?: (status: MockAudioStatus) => void;
 };
@@ -16,6 +34,9 @@ export default function MockListeningAudio({
   transcript,
   voice = "onyx",
   sectionNumber = 1,
+  mockNumber = 1,
+  speakers = [],
+  questions = [],
   onComplete,
   onStatusChange,
 }: Props) {
@@ -90,6 +111,9 @@ export default function MockListeningAudio({
             voice,
             mockTest: true,
             sectionNumber,
+            speakers,
+            questions,
+            testId: `mock-${mockNumber}-s${sectionNumber}`,
           }),
         });
 
@@ -127,7 +151,16 @@ export default function MockListeningAudio({
       cancelled = true;
       cleanup();
     };
-  }, [transcript, voice, sectionNumber, cleanup, updateStatus]);
+  }, [
+    transcript,
+    voice,
+    sectionNumber,
+    mockNumber,
+    speakers,
+    questions,
+    cleanup,
+    updateStatus,
+  ]);
 
   useEffect(() => {
     if (status !== "ready" || autoplayAttemptedRef.current) return;

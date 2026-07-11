@@ -84,18 +84,27 @@ export async function POST(request) {
     if (generatedMockTestId) {
       const { data: mockRow } = await supabase
         .from("generated_mock_tests")
-        .select("listening, reading, writing, speaking, topic, mock_number")
+        .select("*")
         .eq("id", generatedMockTestId)
         .maybeSingle();
       if (mockRow) {
+        const { resolveAcademicMockBundle } = await import(
+          "@/lib/mock-test/resolveFullMockContent"
+        );
+        const bundle = resolveAcademicMockBundle({
+          ...mockRow,
+          generatedMockTestId: mockRow.id,
+        });
         examContent = {
-          ...examContent,
-          listening: mockRow.listening,
-          reading: mockRow.reading,
-          writing: mockRow.writing,
-          speaking: mockRow.speaking,
-          topic: mockRow.topic,
-          mockNumber: mockRow.mock_number ?? mockNumber,
+          examVariant: "academic",
+          mockNumber: bundle.mockNumber,
+          generatedMockTestId: mockRow.id,
+          topic: bundle.topic,
+          reading: bundle.reading.reading,
+          listeningParts: bundle.listening,
+          writingTasks: bundle.writing,
+          speakingParts: bundle.speaking,
+          resolvedAt: new Date().toISOString(),
         };
       }
     }
@@ -267,6 +276,14 @@ export async function PUT(request) {
       sectionScores: computed.sectionScores,
       transcripts,
       report: body.report ?? {},
+      certificateMeta: {
+        examReference: body.examReference ?? null,
+        examDateTime: body.examDateTime ?? null,
+        studentName: body.studentName ?? null,
+        mockNumber: body.mockNumber ?? null,
+        examVariant: body.examVariant ?? variant,
+        completedAt: body.completedAt ?? new Date().toISOString(),
+      },
     };
 
     const payload = {

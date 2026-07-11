@@ -20,9 +20,10 @@ export type ListeningQuestion = {
   id: string;
   number: number;
   section: 1 | 2 | 3 | 4;
-  type: "form" | "note" | "mcq" | "summary" | "matching" | "matching-features";
+  type: "form" | "note" | "table" | "mcq" | "summary" | "matching" | "matching-features";
   prompt: string;
   options?: string[];
+  tableHeaders?: string[];
   correct: string;
 };
 
@@ -62,6 +63,31 @@ export type MockExamContent = {
   version: 1;
   reading: { passages: ReadingPassage[]; totalQuestions: number };
   generatedAt: string;
+};
+
+export type WritingTaskDef = {
+  id: string;
+  title: string;
+  prompt: string;
+  minWords: number;
+  chartData?: {
+    title: string;
+    countries: string[];
+    years: number[];
+    values: number[][];
+  };
+};
+
+import type { ListeningExamPart } from "./listeningExam";
+
+export type AcademicMockBundle = {
+  mockNumber: number;
+  generatedMockTestId?: number | null;
+  topic?: string | null;
+  reading: MockExamContent;
+  listening: ListeningExamPart[];
+  writing: { task1: WritingTaskDef; task2: WritingTaskDef };
+  speaking: SpeakingPart[];
 };
 
 export type SpeakingPart = {

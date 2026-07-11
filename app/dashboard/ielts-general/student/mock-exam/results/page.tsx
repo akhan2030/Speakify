@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import MockCompletionCertificate, {
+  printMockCertificate,
+} from "@/components/mock-test/MockCompletionCertificate";
+import {
+  buildMockCertificateData,
+  readMockSessionMeta,
+} from "@/lib/mock-test/certificate";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
 import { computeOverallBand } from "@/lib/mock-test/scoring";
 
@@ -21,9 +29,15 @@ type StoredPayload = {
         band: number;
       }>;
     };
+    speaking?: { band?: number };
   };
   overallBand?: number;
   mockNumber?: number;
+  examVariant?: string;
+  examReference?: string;
+  examDateTime?: string;
+  studentName?: string;
+  completedAt?: string;
   readingSectionBreakdown?: Record<
     string,
     { correct: number; total: number; band: number }
@@ -46,11 +60,18 @@ type WritingBands = {
 
 function ResultsInner() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const attemptId = searchParams.get("attemptId") ?? "";
   const [payload, setPayload] = useState<StoredPayload | null>(null);
   const [writingBands, setWritingBands] = useState<WritingBands>({
     evaluating: false,
   });
+
+  const studentName =
+    payload?.studentName?.trim() ||
+    session?.user?.name?.trim() ||
+    session?.user?.email?.split("@")[0] ||
+    "Candidate";
 
   useEffect(() => {
     if (!attemptId) return;
@@ -134,44 +155,89 @@ function ResultsInner() {
   const reading = payload?.sectionScores?.reading;
   const readingSections = payload?.readingSectionBreakdown;
 
+  const writingBand =
+    writingBands.task1 != null && writingBands.task2 != null
+      ? (writingBands.task1 + writingBands.task2) / 2
+      : writingBands.task1 ?? writingBands.task2 ?? null;
+
+  const speakingBand = payload?.sectionScores?.speaking?.band ?? null;
+
   const fourSkillBand = computeOverallBand({
     listening: listening?.band,
     reading: reading?.band,
-    writing:
-      writingBands.task1 != null && writingBands.task2 != null
-        ? (writingBands.task1 + writingBands.task2) / 2
-        : writingBands.task1 ?? writingBands.task2 ?? undefined,
+    writing: writingBand ?? undefined,
+    speaking: speakingBand ?? undefined,
   });
+
+  const sessionMeta = readMockSessionMeta(payload as Record<string, unknown> | null);
+
+  const certificateData = useMemo(() => {
+    if (!payload) return null;
+    return buildMockCertificateData({
+      programme: "ielts_general",
+      studentName,
+      completedAt: payload.completedAt ?? new Date().toISOString(),
+      examReference: sessionMeta.examReference ?? payload.examReference,
+      examDateTime: sessionMeta.examDateTime ?? payload.examDateTime,
+      mockNumber: sessionMeta.mockNumber ?? payload.mockNumber,
+      skills: {
+        listening: listening?.band,
+        reading: reading?.band,
+        writing: writingBand,
+        speaking: speakingBand,
+      },
+      speakingNote: speakingBand == null ? "Practice session recorded" : null,
+    });
+  }, [
+    payload,
+    studentName,
+    sessionMeta,
+    listening?.band,
+    reading?.band,
+    writingBand,
+    speakingBand,
+  ]);
 
   return (
     <main className="min-h-screen flex-1 bg-slate-50 p-4 pb-24 md:p-6 md:pb-6">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div className="rounded-xl border border-[#0d1b35] bg-[#0d1b35] p-6 text-white">
+      <div className="mx-auto max-w-4xl space-y-6">
+        {certificateData ? (
+          <section>
+            <h2 className="mb-4 text-xl font-bold text-[#0d1b35] print:hidden">
+              IELTS General Training — Test Report Form
+            </h2>
+            <MockCompletionCertificate
+              data={certificateData}
+              onPrint={printMockCertificate}
+            />
+          </section>
+        ) : null}
+
+        <div className="rounded-xl border border-[#0d1b35] bg-[#0d1b35] p-6 text-white print:hidden">
           <h1 className="text-2xl font-bold">GT mock complete</h1>
           <p className="mt-2 text-sm text-slate-300">
-            Listening & Reading scored automatically. Writing is evaluated with AI when you submit
-            responses. Speaking transcripts are saved for review.
+            Your Test Report Form is above. Listening and Reading are scored automatically;
+            Writing is AI-evaluated when you submit responses.
           </p>
           {payload?.mockNumber ? (
             <p className="mt-2 text-xs text-slate-400">
               Mock #{String(payload.mockNumber).padStart(2, "0")}
             </p>
           ) : null}
-          {payload?.overallBand != null ? (
+          {fourSkillBand != null &&
+          !writingBands.evaluating &&
+          (writingBands.task1 != null || writingBands.task2 != null) ? (
+            <p className="mt-4 text-3xl font-bold text-[#c9972c]">
+              Overall band: {fourSkillBand.toFixed(1)}
+            </p>
+          ) : payload?.overallBand != null ? (
             <p className="mt-4 text-3xl font-bold text-[#c9972c]">
               L+R estimate: Band {Number(payload.overallBand).toFixed(1)}
             </p>
           ) : null}
-          {fourSkillBand != null &&
-          !writingBands.evaluating &&
-          (writingBands.task1 != null || writingBands.task2 != null) ? (
-            <p className="mt-2 text-lg font-semibold text-white">
-              With writing: Band {fourSkillBand.toFixed(1)}
-            </p>
-          ) : null}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 print:hidden">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-bold uppercase text-slate-500">Listening</p>
             <p className="mt-1 text-2xl font-bold text-[#0d1b35]">
@@ -197,7 +263,7 @@ function ResultsInner() {
         </div>
 
         {readingSections ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm print:hidden">
             <p className="text-xs font-bold uppercase text-slate-500">Reading by section</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {(["A", "B", "C"] as const).map((sec) => {
@@ -219,7 +285,7 @@ function ResultsInner() {
           </div>
         ) : null}
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm print:hidden">
           <p className="text-xs font-bold uppercase text-slate-500">Writing (AI)</p>
           {writingBands.evaluating ? (
             <p className="mt-2 text-sm text-slate-600">Evaluating your letter and essay…</p>
@@ -253,7 +319,7 @@ function ResultsInner() {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 print:hidden">
           <Link
             href={`${GENERAL_STUDENT_BASE}/mock-exam`}
             className="rounded-xl bg-[#c9972c] px-6 py-3 text-sm font-bold text-[#0d1b35]"
@@ -268,6 +334,24 @@ function ResultsInner() {
           </Link>
         </div>
       </div>
+
+      <style jsx global>{`
+        @media print {
+          body {
+            background: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+          #mock-completion-certificate,
+          #mock-completion-certificate * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+      `}</style>
     </main>
   );
 }

@@ -11,7 +11,7 @@ export type HighlightBlock = {
   text: string;
 };
 
-export type ExamHighlightMode = "highlight" | "erase";
+export type ExamHighlightMode = "highlight" | "erase" | "idle";
 
 export function createHighlightId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {

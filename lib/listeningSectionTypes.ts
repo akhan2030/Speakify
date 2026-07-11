@@ -73,19 +73,19 @@ NO multiple-choice. options must be [].`,
       "plan-map-diagram",
       "table-completion",
     ],
-    questionTypeLabel: "Note Completion + Matching",
+    questionTypeLabel: "Multiple Choice + Matching",
     blocks: [
       {
-        type: "note-completion",
+        type: "multiple-choice",
         count: 5,
         promptHint:
-          "Questions 1–5 (within section): note-completion — facility/tour notes with gaps.",
+          "Questions 11–15: multiple-choice with exactly 3 options (A, B, C). Social/public information monologue.",
       },
       {
         type: "matching",
         count: 5,
         promptHint:
-          "Questions 6–10: matching — match places/features to descriptions (provide matching options list in questions).",
+          "Questions 16–20: matching — match places/features to descriptions (provide matching options list in questions).",
       },
     ],
   },

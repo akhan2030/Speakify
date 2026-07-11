@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { generateExamReference } from "@/lib/mock-test/certificate";
 import { parseTargetBandNumeric } from "@/lib/placement/onboarding";
 
 const PACK_LABELS: Record<string, string> = {
@@ -57,12 +58,6 @@ const READINESS_ITEMS = [
 
 const PLACEMENT_RESULT_KEY = "speakify_placement_result";
 
-function generateExamReference(): string {
-  const year = new Date().getFullYear();
-  const seq = String(Math.floor(10000 + Math.random() * 90000));
-  return `SPK-MOCK-${year}-${seq}`;
-}
-
 function getTargetBandFromPlacement(): number | null {
   if (typeof window === "undefined") return null;
   try {
@@ -87,15 +82,22 @@ function getMotivationalMessage(targetBand: number | null): string {
   return "Your IELTS journey starts here. Give it everything you have.";
 }
 
+type ExamBeginMeta = {
+  examReference: string;
+  examDateTime: string;
+};
+
 type Props = {
   studentName: string;
   packName: string;
-  onBegin: () => void;
+  programme?: "academic" | "general";
+  onBegin: (meta: ExamBeginMeta) => void;
 };
 
 export default function MockExamWelcome({
   studentName,
   packName,
+  programme = "academic",
   onBegin,
 }: Props) {
   const [checked, setChecked] = useState<Record<number, boolean>>({});
@@ -131,6 +133,11 @@ export default function MockExamWelcome({
     setChecked((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
+  const examTitle =
+    programme === "general"
+      ? "Speakify IELTS General Training Mock Exam"
+      : "Speakify IELTS Academic Mock Exam";
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8f9fa] px-4 py-10">
       <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-lg sm:p-10">
@@ -138,7 +145,7 @@ export default function MockExamWelcome({
           Speakify
         </p>
         <h1 className="mt-3 text-center text-2xl font-bold text-[#0d1b35] sm:text-3xl">
-          Speakify IELTS Academic Mock Exam
+          {examTitle}
         </h1>
 
         <p className="mx-auto mt-4 max-w-xl text-center text-sm font-medium leading-relaxed text-[#0d1b35]">
@@ -291,8 +298,14 @@ export default function MockExamWelcome({
 
         <button
           type="button"
-          onClick={onBegin}
-          disabled={!allReady}
+          onClick={() => {
+            if (!clientMeta) return;
+            onBegin({
+              examReference: clientMeta.examReference,
+              examDateTime: clientMeta.examDateTime,
+            });
+          }}
+          disabled={!allReady || !clientMeta}
           className={`mt-10 w-full rounded-xl py-4 text-lg font-bold shadow-md transition ${
             allReady
               ? "bg-[#c9972c] text-[#0d1b35] hover:bg-[#d4a84a]"

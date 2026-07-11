@@ -1,7 +1,8 @@
 import type { MockExamContent, ReadingPassage, ReadingQuestion } from "./types";
 import { getStaticExamContent } from "./staticExamContent";
+import { readingFromPassageColumns } from "./resolveFullMockContent";
 
-function mapAgentReadingKind(type: string): string {
+export function mapAgentReadingKind(type: string): string {
   const t = String(type ?? "").toLowerCase().replace(/-/g, "_");
   if (t.includes("true") && t.includes("false")) return "true-false-not-given";
   if (t.includes("yes") && t.includes("no")) return "yes-no-not-given";
@@ -103,14 +104,17 @@ export function readingFromGeneratedPayload(
   return { passages, totalQuestions };
 }
 
-/** Prefer generated reading from a stored mock row; fall back to static academic content. */
+/** Prefer generated reading from stored mock row; fall back to static academic content. */
 export function resolveAcademicExamContent(
   stored?: Record<string, unknown> | null
 ): MockExamContent {
   const base = getStaticExamContent();
   if (!stored) return base;
 
-  const reading = readingFromGeneratedPayload(stored.reading);
+  const reading =
+    readingFromPassageColumns(stored) ??
+    readingFromGeneratedPayload(stored.reading);
+
   if (!reading) return base;
 
   return {

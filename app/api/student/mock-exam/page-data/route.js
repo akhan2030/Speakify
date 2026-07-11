@@ -274,7 +274,7 @@ export async function GET() {
 
     let availableMocks = generated.map((row) => {
 
-      const mockNumber = row.mock_number ?? row.id;
+      const mockNumber = row.mock_number ?? row.test_number ?? row.id;
 
       const attempt = attemptsByMockNumber.get(mockNumber);
 

@@ -16,10 +16,13 @@ export default function ListeningExamPrepBanner({
   message,
   secondsLeft,
   className = "",
+  secondsOnly = false,
 }: {
   message: string;
   secondsLeft: number;
   className?: string;
+  /** IELTS-style prep countdown: 30, 29, 28… instead of 0:30 */
+  secondsOnly?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = message.length > 72;
@@ -51,8 +54,15 @@ export default function ListeningExamPrepBanner({
           </button>
         ) : null}
       </div>
-      <span className="shrink-0 font-mono text-lg font-bold tabular-nums text-[#c9972c]">
-        {formatCountdown(secondsLeft)}
+      <span
+        className={`shrink-0 font-mono font-bold tabular-nums text-[#c9972c] ${
+          secondsOnly ? "min-w-[2.5rem] text-2xl" : "text-lg"
+        }`}
+        aria-label={`${Math.max(0, secondsLeft)} seconds remaining`}
+      >
+        {secondsOnly
+          ? Math.max(0, secondsLeft)
+          : formatCountdown(secondsLeft)}
       </span>
     </div>
   );

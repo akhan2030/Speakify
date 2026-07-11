@@ -27,6 +27,8 @@
     "agent:step-research": "node agent/stepResearchAgent.js",
     "agent:step-questions": "node agent/stepQuestionAgent.js",
     "test:listening": "node scripts/listening-regression-check.mjs",
+    "test:mock-listening": "npx tsx scripts/mock-listening-regression.ts",
+    "audit:listening": "npx tsx scripts/audit-listening-content-bank.ts",
     "test:speaking-scoring": "node --experimental-strip-types scripts/speaking-scoring-regression.ts",
     "test:speaking-pipeline": "node --experimental-strip-types scripts/speaking-pipeline-regression.ts",
     "test:speaking": "npm run test:speaking-pipeline && npm run test:speaking-scoring",

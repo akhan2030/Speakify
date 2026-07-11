@@ -16,6 +16,8 @@ import {
   scoreListening,
   scoreReading,
 } from "./scoring";
+import { resolveAcademicMockBundle } from "./resolveFullMockContent";
+import type { SpeakingPart } from "./types";
 import { SPEAKING_PARTS } from "./speakingContent";
 import { WRITING_TASK1, WRITING_TASK2 } from "./writingContent";
 
@@ -65,11 +67,12 @@ function parseJson<T>(raw: string, fallback: T): T {
 }
 
 function buildSpeakingPartTranscripts(
-  transcripts: Record<string, string>
+  transcripts: Record<string, string>,
+  speakingParts: SpeakingPart[] = SPEAKING_PARTS
 ): SpeakingPartTranscript[] {
   const parts: SpeakingPartTranscript[] = [];
 
-  SPEAKING_PARTS.forEach((part) => {
+  speakingParts.forEach((part) => {
     if (part.part === 2) {
       const text = transcripts["speaking-p2"] ?? "";
       if (text.trim()) {
@@ -291,22 +294,35 @@ export async function generateMockTestReport(
   transcripts: Record<string, string>,
   options?: {
     examContent?: import("./types").MockExamContent | null;
+    examPayload?: Record<string, unknown> | null;
     studentName?: string;
     completedAt?: string;
   }
 ): Promise<MockTestFullReport> {
   const examContent = options?.examContent ?? getStaticExamContent();
-  const listening = scoreListening(answers);
-  const reading = scoreReading(answers, examContent);
+  const bundle = options?.examPayload
+    ? resolveAcademicMockBundle(options.examPayload)
+    : null;
+  const listening = scoreListening(answers, bundle?.listening);
+  const reading = scoreReading(answers, bundle?.reading ?? examContent);
 
-  const task1Text = answers[WRITING_TASK1.id] ?? "";
-  const task2Text = answers[WRITING_TASK2.id] ?? "";
-  const partTranscripts = buildSpeakingPartTranscripts(transcripts);
+  const writing = bundle?.writing;
+  const task1Id = writing?.task1.id ?? WRITING_TASK1.id;
+  const task2Id = writing?.task2.id ?? WRITING_TASK2.id;
+  const task1Prompt = writing?.task1.prompt ?? WRITING_TASK1.prompt;
+  const task2Prompt = writing?.task2.prompt ?? WRITING_TASK2.prompt;
+
+  const task1Text = answers[task1Id] ?? "";
+  const task2Text = answers[task2Id] ?? "";
+  const partTranscripts = buildSpeakingPartTranscripts(
+    transcripts,
+    bundle?.speaking
+  );
   const speakingTranscript = combineSpeakingTranscript(transcripts);
 
   const [task1Score, task2Score, speakingScore] = await Promise.all([
-    scoreWriting(WRITING_TASK1.prompt, task1Text, listening.band, "task1"),
-    scoreWriting(WRITING_TASK2.prompt, task2Text, reading.band, "task2"),
+    scoreWriting(task1Prompt, task1Text, listening.band, "task1"),
+    scoreWriting(task2Prompt, task2Text, reading.band, "task2"),
     scoreSpeaking(speakingTranscript, Math.min(listening.band, reading.band)),
   ]);
 

@@ -8,6 +8,12 @@ export type ListeningAudioBlock = {
   transcript: string;
   sectionNumber: 1 | 2 | 3 | 4;
   voice: string;
+  /** Official IELTS question type id (form-completion, note-completion, …) */
+  questionType?: string;
+  /** Form title shown above Q1–5 in Section 1 */
+  formTitle?: string;
+  /** Column headers for table-completion blocks */
+  tableHeaders?: string[];
 };
 
 export type ListeningExamPart = {
@@ -15,6 +21,14 @@ export type ListeningExamPart = {
   introText: string;
   blocks: ListeningAudioBlock[];
   questions: ListeningQuestion[];
+  speakers?: Array<{
+    label: string;
+    name?: string;
+    displayName?: string;
+    gender?: "male" | "female";
+    voice?: string;
+    role?: string;
+  }>;
 };
 
 function q(
@@ -36,7 +50,7 @@ function q(
   };
 }
 
-/** Original Speakify mock listening — 40 questions, 4 parts */
+/** @deprecated Mock engine uses per-mock variants — retained for legacy fallback only. */
 export const LISTENING_EXAM_PARTS: ListeningExamPart[] = [
   {
     partNumber: 1,

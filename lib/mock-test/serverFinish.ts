@@ -9,6 +9,7 @@ import {
   scoreListening,
   scoreReading,
 } from "@/lib/mock-test/scoring";
+import { resolveAcademicMockBundle } from "@/lib/mock-test/resolveFullMockContent";
 import type { MockExamContent } from "@/lib/mock-test/types";
 
 export function buildGtReadingSectionBreakdown(
@@ -51,7 +52,15 @@ export function computeMockObjectiveFinish(input: {
   const examContent = input.examContent ?? null;
   const isGeneral = input.variant === "general";
 
-  const listening = scoreListening(answers);
+  const academicBundle =
+    !isGeneral && examContent
+      ? resolveAcademicMockBundle(examContent as Record<string, unknown>)
+      : null;
+
+  const listening = scoreListening(
+    answers,
+    academicBundle?.listening
+  );
   const reading = isGeneral
     ? scoreGtReadingFromMockContent(answers, examContent as MockExamContent)
     : scoreReading(answers, examContent);

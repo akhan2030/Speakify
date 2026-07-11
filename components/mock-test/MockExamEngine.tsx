@@ -10,17 +10,19 @@ import {
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import AudioRecorder from "@/components/AudioRecorder";
-import ExamChrome, { PrepBanner } from "@/components/mock-test/ExamChrome";
+import ExamChrome from "@/components/mock-test/ExamChrome";
+import MockListeningInstructorBanner from "@/components/mock-test/MockListeningInstructorBanner";
 import MockExamWelcome, {
   resolveMockPackName,
 } from "@/components/mock-test/MockExamWelcome";
 import MockListeningAudio from "@/components/mock-test/MockListeningAudio";
+import MockListeningBlockPanel from "@/components/mock-test/MockListeningBlockPanel";
 import MockReadingQuestionInput from "@/components/mock-test/MockReadingQuestionInput";
 import {
   ExamHighlightSection,
   HighlightableInlineText,
-  HighlightableRadioOption,
 } from "@/components/exam/ExamHighlightSection";
+import { getVisibleListeningBlockGroups } from "@/lib/mock-test/mockListeningDisplay";
 import type { TextHighlight } from "@/lib/examHighlight";
 import MockWritingChart from "@/components/mock-test/MockWritingChart";
 import StickySubmitBar from "@/components/accelerator/StickySubmitBar";
@@ -42,20 +44,12 @@ import {
   EXAM_CONTENT,
   getStaticExamContent,
 } from "@/lib/mock-test/staticExamContent";
-import { resolveAcademicExamContent } from "@/lib/mock-test/resolveGeneratedContent";
-import {
-  LISTENING_EXAM_PARTS,
-  getAllListeningExamQuestions,
-} from "@/lib/mock-test/listeningExam";
+import { getListeningPartsForMock } from "@/lib/mock-test/academicMockSkillVariants";
+import { resolveAcademicMockBundle } from "@/lib/mock-test/resolveFullMockContent";
+import type { ListeningExamPart } from "@/lib/mock-test/listeningExam";
+import { getAllListeningQuestionsFromParts } from "@/lib/mock-test/resolveFullMockContent";
+import type { AcademicMockBundle, SpeakingPart } from "@/lib/mock-test/types";
 import { computeOverallBand, scoreListening, scoreReading } from "@/lib/mock-test/scoring";
-import { SPEAKING_PARTS } from "@/lib/mock-test/speakingContent";
-import type {
-  ListeningQuestion,
-  MockSection,
-  NavigatorItem,
-} from "@/lib/mock-test/types";
-import { answersMatch, blockClipboard, countWords } from "@/lib/mock-test/utils";
-import { WRITING_TASK1, WRITING_TASK2 } from "@/lib/mock-test/writingContent";
 import {
   GENERAL_EXAM_CONTENT,
   getGeneralMockExamContent,
@@ -66,6 +60,12 @@ import {
 } from "@/lib/ielts-general/readingScore";
 import { buildGtReadingSectionBreakdown } from "@/lib/mock-test/serverFinish";
 import type { MockExamContent } from "@/lib/mock-test/types";
+import type {
+  ListeningQuestion,
+  MockSection,
+  NavigatorItem,
+} from "@/lib/mock-test/types";
+import { blockClipboard, countWords } from "@/lib/mock-test/utils";
 import GeneralMockLetterPrompt from "@/components/ielts-general/mock/GeneralMockLetterPrompt";
 
 type ExamPhase = MockSection | "welcome" | "transition" | "submitting";
@@ -76,43 +76,6 @@ type MockExamEngineProps = {
   variant?: "academic" | "general";
   resultsPath?: string;
 };
-
-function ListeningQuestionField({
-  q,
-  value,
-  onChange,
-}: {
-  q: ListeningQuestion;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  if (q.type === "mcq" && q.options) {
-    return (
-      <div className="mt-2 space-y-1.5">
-        {q.options.map((opt, i) => (
-          <HighlightableRadioOption
-            key={`${q.id}-opt-${i}`}
-            blockId={`mock-lq-${q.id}-opt-${i}`}
-            name={`mock-lq-${q.id}`}
-            label={opt}
-            checked={value === opt}
-            onSelect={() => onChange(opt)}
-            className="border-slate-200 bg-white"
-          />
-        ))}
-      </div>
-    );
-  }
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      {...blockClipboard}
-      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-    />
-  );
-}
 
 export default function MockExamEngine({
   sectionReady = EXAM_CONTENT,
@@ -138,17 +101,32 @@ export default function MockExamEngine({
   }, []);
   const [generatedAcademicContent, setGeneratedAcademicContent] =
     useState<MockExamContent | null>(null);
+  const [academicBundle, setAcademicBundle] = useState<AcademicMockBundle | null>(
+    null
+  );
   const examContent = useMemo(() => {
     if (isGeneral) return getGeneralMockExamContent(mockNumber);
-    return generatedAcademicContent ?? getStaticExamContent();
-  }, [isGeneral, mockNumber, generatedAcademicContent]);
+    return academicBundle?.reading ?? generatedAcademicContent ?? getStaticExamContent();
+  }, [isGeneral, mockNumber, generatedAcademicContent, academicBundle]);
+  const listeningParts = useMemo<ListeningExamPart[]>(() => {
+    return getListeningPartsForMock(mockNumber);
+  }, [mockNumber]);
+  const speakingParts = useMemo<SpeakingPart[]>(() => {
+    if (isGeneral) return [];
+    return academicBundle?.speaking ?? [];
+  }, [isGeneral, academicBundle]);
   const writingTasks = useMemo(() => {
     if (!isGeneral) {
-      return { task1: WRITING_TASK1, task2: WRITING_TASK2 };
+      return (
+        academicBundle?.writing ?? {
+          task1: { id: "write-task1", title: "Task 1", prompt: "", minWords: 150 },
+          task2: { id: "write-task2", title: "Task 2", prompt: "", minWords: 250 },
+        }
+      );
     }
     const picked = pickGeneralMockWritingTasks(mockNumber);
     return { task1: picked.task1, task2: picked.task2 };
-  }, [isGeneral, mockNumber]);
+  }, [isGeneral, mockNumber, academicBundle]);
   const readyFlags = isGeneral ? GENERAL_EXAM_CONTENT : sectionReady;
   const [phase, setPhase] = useState<ExamPhase>("welcome");
   const [transitionFrom, setTransitionFrom] = useState<MockSection>("listening");
@@ -197,7 +175,23 @@ export default function MockExamEngine({
   const transcriptsRef = useRef(transcripts);
   const flaggedRef = useRef(flagged);
   const submittingRef = useRef(false);
+  const examMetaRef = useRef<{ examReference: string; examDateTime: string } | null>(
+    null
+  );
   const advancingListeningRef = useRef(false);
+  const listeningPartsRef = useRef(listeningParts);
+  const listeningPartIdxRef = useRef(listeningPartIdx);
+  const listeningBlockIdxRef = useRef(listeningBlockIdx);
+
+  useEffect(() => {
+    listeningPartsRef.current = listeningParts;
+  }, [listeningParts]);
+  useEffect(() => {
+    listeningPartIdxRef.current = listeningPartIdx;
+  }, [listeningPartIdx]);
+  useEffect(() => {
+    listeningBlockIdxRef.current = listeningBlockIdx;
+  }, [listeningBlockIdx]);
 
   useEffect(() => {
     try {
@@ -211,22 +205,65 @@ export default function MockExamEngine({
   }, []);
 
   useEffect(() => {
-    if (isGeneral || !attemptId || attemptId.startsWith("local_")) return;
+    if (isGeneral) return;
     let cancelled = false;
-    fetch(`/api/mock-test/session/${encodeURIComponent(attemptId)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.attempt?.exam_content) return;
-        const resolved = resolveAcademicExamContent(
-          data.attempt.exam_content as Record<string, unknown>
-        );
-        setGeneratedAcademicContent(resolved);
-      })
-      .catch(() => null);
+
+    async function loadAcademicBundle() {
+      const applyBundle = (bundle: AcademicMockBundle) => {
+        if (cancelled) return;
+        setAcademicBundle(bundle);
+        setGeneratedAcademicContent(bundle.reading);
+      };
+
+      if (attemptId && !attemptId.startsWith("local_")) {
+        try {
+          const res = await fetch(
+            `/api/mock-test/session/${encodeURIComponent(attemptId)}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const ec = data?.attempt?.exam_content as
+              | Record<string, unknown>
+              | undefined;
+            if (ec && (ec.reading || ec.passage_1 || ec.listeningParts)) {
+              applyBundle(resolveAcademicMockBundle(ec));
+              return;
+            }
+          }
+        } catch {
+          /* fall through */
+        }
+      }
+
+      try {
+        const genId = sessionStorage.getItem("mock_test_generated_id");
+        if (genId) {
+          const res = await fetch(`/api/mock-test/bundle/${encodeURIComponent(genId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.bundle) {
+              applyBundle(data.bundle as AcademicMockBundle);
+              return;
+            }
+          }
+        }
+      } catch {
+        /* fall through */
+      }
+
+      applyBundle(
+        resolveAcademicMockBundle({
+          mockNumber,
+          test_number: mockNumber,
+        })
+      );
+    }
+
+    void loadAcademicBundle();
     return () => {
       cancelled = true;
     };
-  }, [attemptId, isGeneral]);
+  }, [attemptId, isGeneral, mockNumber]);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -238,7 +275,10 @@ export default function MockExamEngine({
     flaggedRef.current = flagged;
   }, [flagged]);
 
-  const allListeningQuestions = useMemo(() => getAllListeningExamQuestions(), []);
+  const allListeningQuestions = useMemo(
+    () => getAllListeningQuestionsFromParts(listeningParts),
+    [listeningParts]
+  );
   const readingPassages = examContent?.reading.passages ?? [];
   const allReadingQuestions = useMemo(
     () => readingPassages.flatMap((p) => p.questions),
@@ -305,14 +345,18 @@ export default function MockExamEngine({
     [saveProgress]
   );
 
-  const beginExam = useCallback(() => {
-    setPhase("listening");
-    setSectionTimeLeft(SECTION_DURATIONS.listening);
-    setListeningPartIdx(0);
-    setListeningBlockIdx(0);
-    setListeningStep("intro");
-    setActiveListeningQ(0);
-  }, []);
+  const beginExam = useCallback(
+    (meta: { examReference: string; examDateTime: string }) => {
+      examMetaRef.current = meta;
+      setPhase("listening");
+      setSectionTimeLeft(SECTION_DURATIONS.listening);
+      setListeningPartIdx(0);
+      setListeningBlockIdx(0);
+      setListeningStep("intro");
+      setActiveListeningQ(0);
+    },
+    []
+  );
 
   const beginSection = useCallback((section: MockSection) => {
     setPhase(section);
@@ -343,7 +387,7 @@ export default function MockExamEngine({
     submittingRef.current = true;
     setPhase("submitting");
 
-    const listening = scoreListening(answersRef.current);
+    const listening = scoreListening(answersRef.current, listeningParts);
     const reading = isGeneral
       ? scoreGtReadingFromMockContent(answersRef.current, examContent)
       : scoreReading(answersRef.current, examContent);
@@ -369,7 +413,22 @@ export default function MockExamEngine({
       examVariant: variant,
       mockNumber,
       readingSectionBreakdown,
-      examContent,
+      examContent: isGeneral
+        ? examContent
+        : {
+            ...(typeof examContent === "object" && examContent
+              ? (examContent as Record<string, unknown>)
+              : {}),
+            reading: examContent?.reading,
+            listeningParts,
+            writingTasks,
+            speakingParts,
+            mockNumber,
+          },
+      studentName,
+      examReference: examMetaRef.current?.examReference,
+      examDateTime: examMetaRef.current?.examDateTime,
+      completedAt: new Date().toISOString(),
       writingMeta: isGeneral
         ? {
             letterType: (writingTasks.task1 as { letter?: { letterType?: string } }).letter
@@ -439,7 +498,7 @@ export default function MockExamEngine({
         ? `/dashboard/ielts-general/student/mock-exam/results?attemptId=${encodeURIComponent(id)}`
         : `/mock-test/results/${id}`);
     router.replace(destination);
-  }, [attemptId, examContent, router, variant, isGeneral, writingTasks, resultsPath, mockNumber]);
+  }, [attemptId, examContent, router, variant, isGeneral, writingTasks, resultsPath, mockNumber, studentName]);
 
   const handleSectionTimeUp = useCallback(() => {
     if (phase === "listening") startTransition("listening");
@@ -487,8 +546,9 @@ export default function MockExamEngine({
     if (advancingListeningRef.current) return;
     advancingListeningRef.current = true;
 
+    const parts = listeningPartsRef.current;
     setListeningPartIdx((idx) => {
-      if (idx >= LISTENING_EXAM_PARTS.length - 1) {
+      if (idx >= parts.length - 1) {
         startTransition("listening");
         return idx;
       }
@@ -504,14 +564,24 @@ export default function MockExamEngine({
   }, [startTransition]);
 
   const onAudioComplete = useCallback(() => {
-    const part = LISTENING_EXAM_PARTS[listeningPartIdx];
-    if (listeningBlockIdx < part.blocks.length - 1) {
-      setListeningBlockIdx((i) => i + 1);
+    const partIdx = listeningPartIdxRef.current;
+    const blockIdx = listeningBlockIdxRef.current;
+    const part = listeningPartsRef.current[partIdx];
+    if (!part?.blocks?.length) return;
+
+    if (blockIdx < part.blocks.length - 1) {
+      const nextIdx = blockIdx + 1;
+      const nextBlock = part.blocks[nextIdx];
+      listeningBlockIdxRef.current = nextIdx;
+      setListeningBlockIdx(nextIdx);
+      setActiveListeningQ(Math.max(0, nextBlock.questionStart - 1));
+      setCountdownLeft(LISTENING_PREP_SECONDS);
       setListeningStep("break");
     } else {
+      setCountdownLeft(LISTENING_CHECK_SECONDS);
       setListeningStep("check");
     }
-  }, [listeningPartIdx, listeningBlockIdx]);
+  }, []);
 
   useEffect(() => {
     if (phase !== "listening") return;
@@ -612,7 +682,7 @@ export default function MockExamEngine({
     }
     if (phase === "speaking") {
       const items: NavigatorItem[] = [];
-      SPEAKING_PARTS.forEach((part) => {
+      speakingParts.forEach((part) => {
         if (part.part === 2) {
           items.push({ id: "speaking-p2", label: "P2", answered: recordedKeys.has("speaking-p2"), flagged: flagged.has("speaking-p2") });
         } else {
@@ -634,7 +704,7 @@ export default function MockExamEngine({
     if (phase === "speaking") {
       let idx = 0;
       for (let p = 0; p < speakingPartIdx; p++) {
-        idx += SPEAKING_PARTS[p].part === 2 ? 1 : SPEAKING_PARTS[p].questions.length;
+        idx += speakingParts[p].part === 2 ? 1 : speakingParts[p].questions.length;
       }
       idx += speakingQIdx;
       return idx;
@@ -659,38 +729,49 @@ export default function MockExamEngine({
 
   const listeningBanner = useMemo(() => {
     if (phase !== "listening") return null;
-    const part = LISTENING_EXAM_PARTS[listeningPartIdx];
+    const part = listeningParts[listeningPartIdx];
     const block = part?.blocks[listeningBlockIdx];
     if (listeningStep === "prep" && block?.prepMessage)
-      return <PrepBanner message={block.prepMessage} secondsLeft={countdownLeft} />;
+      return (
+        <MockListeningInstructorBanner
+          message={block.prepMessage}
+          secondsLeft={countdownLeft}
+        />
+      );
     if (listeningStep === "break" && block?.breakMessage)
-      return <PrepBanner message={block.breakMessage} secondsLeft={countdownLeft} />;
+      return (
+        <MockListeningInstructorBanner
+          message={block.breakMessage}
+          secondsLeft={countdownLeft}
+        />
+      );
     if (listeningStep === "check")
       return (
-        <PrepBanner
+        <MockListeningInstructorBanner
           message="You now have 30 seconds to check your answers."
           secondsLeft={countdownLeft}
         />
       );
     return null;
-  }, [phase, listeningStep, listeningPartIdx, listeningBlockIdx, countdownLeft]);
+  }, [phase, listeningStep, listeningPartIdx, listeningBlockIdx, countdownLeft, listeningParts]);
+
+  const listeningInputsEnabled =
+    listeningStep === "audio" || listeningStep === "check";
+
+  const visibleListeningBlockGroups = useMemo(() => {
+    if (phase !== "listening") return [];
+    const part = listeningParts[listeningPartIdx];
+    if (!part) return [];
+    return getVisibleListeningBlockGroups(part, listeningStep, listeningBlockIdx);
+  }, [phase, listeningPartIdx, listeningBlockIdx, listeningStep, listeningParts]);
 
   const visibleListeningQuestions = useMemo(() => {
-    if (phase !== "listening") return [];
-    const part = LISTENING_EXAM_PARTS[listeningPartIdx];
-    if (!part) return [];
-    if (listeningStep === "check") return part.questions;
-    if (listeningStep === "intro") return [];
-    const block = part.blocks[listeningBlockIdx];
-    if (!block) return part.questions;
-    return part.questions.filter(
-      (q) => q.number >= block.questionStart && q.number <= block.questionEnd
-    );
-  }, [phase, listeningPartIdx, listeningBlockIdx, listeningStep]);
+    return visibleListeningBlockGroups.flatMap((g) => g.questions);
+  }, [visibleListeningBlockGroups]);
 
   const listeningStickyStats = useMemo(() => {
     if (phase !== "listening" || listeningStep !== "check") return null;
-    const part = LISTENING_EXAM_PARTS[listeningPartIdx];
+    const part = listeningParts[listeningPartIdx];
     if (!part?.questions.length) return null;
     const total = part.questions.length;
     const answered = part.questions.filter((q) => Boolean(answers[q.id]?.trim())).length;
@@ -702,8 +783,17 @@ export default function MockExamEngine({
       <MockExamWelcome
         studentName={studentName}
         packName={packName}
+        programme={isGeneral ? "general" : "academic"}
         onBegin={beginExam}
       />
+    );
+  }
+
+  if (!isGeneral && !academicBundle) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">
+        Loading mock exam content…
+      </div>
     );
   }
 
@@ -727,7 +817,7 @@ export default function MockExamEngine({
   const displayTime = phase === "writing" ? writingTaskTimeLeft : sectionTimeLeft;
   const passage = readingPassages[readingPassageIdx];
   const readingQ = allReadingQuestions[readingQIdx];
-  const speakingPart = SPEAKING_PARTS[speakingPartIdx];
+  const speakingPart = speakingParts[speakingPartIdx];
   const speakingKey =
     speakingPart.part === 2
       ? "speaking-p2"
@@ -750,20 +840,21 @@ export default function MockExamEngine({
       onNavigate={handleNavigate}
       onFlag={() => toggleFlag(activeQuestionId)}
       isFlagged={flagged.has(activeQuestionId)}
-      banner={listeningBanner}
+      banner={phase === "listening" ? null : listeningBanner}
     >
       {phase === "listening" && readyFlags.listening.ready && (
         <div className="h-full overflow-y-auto p-4">
           {listeningStep === "intro" && (
             <div className="mx-auto max-w-2xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
               <p className="text-sm leading-relaxed text-slate-700">
-                {LISTENING_EXAM_PARTS[listeningPartIdx].introText}
+                {listeningParts[listeningPartIdx].introText}
               </p>
               <button
                 type="button"
                 onClick={() => {
-                  const block = LISTENING_EXAM_PARTS[listeningPartIdx].blocks[0];
+                  const block = listeningParts[listeningPartIdx].blocks[0];
                   setActiveListeningQ(block.questionStart - 1);
+                  setCountdownLeft(LISTENING_PREP_SECONDS);
                   setListeningStep("prep");
                 }}
                 className="mt-6 rounded-lg bg-[#0d1b35] px-6 py-2.5 text-sm font-bold text-white"
@@ -773,18 +864,43 @@ export default function MockExamEngine({
             </div>
           )}
 
+          {(listeningStep === "prep" ||
+            listeningStep === "break" ||
+            listeningStep === "check") &&
+            listeningBanner && (
+            <div className="sticky top-0 z-10 mx-auto mb-4 max-w-2xl overflow-hidden rounded-lg shadow-md">
+              {listeningBanner}
+            </div>
+          )}
+
           {listeningStep === "audio" && (
             <MockListeningAudio
               key={`${listeningPartIdx}-${listeningBlockIdx}`}
               transcript={
-                LISTENING_EXAM_PARTS[listeningPartIdx].blocks[listeningBlockIdx]
+                listeningParts[listeningPartIdx].blocks[listeningBlockIdx]
                   .transcript
               }
               voice={
-                LISTENING_EXAM_PARTS[listeningPartIdx].blocks[listeningBlockIdx]
+                listeningParts[listeningPartIdx].blocks[listeningBlockIdx]
                   .voice
               }
-              sectionNumber={LISTENING_EXAM_PARTS[listeningPartIdx].partNumber}
+              sectionNumber={listeningParts[listeningPartIdx].partNumber}
+              mockNumber={mockNumber}
+              speakers={listeningParts[listeningPartIdx].speakers}
+              questions={listeningParts[listeningPartIdx].questions
+                .filter((q) => {
+                  const block =
+                    listeningParts[listeningPartIdx].blocks[listeningBlockIdx];
+                  return (
+                    q.number >= block.questionStart &&
+                    q.number <= block.questionEnd
+                  );
+                })
+                .map((q) => ({
+                  questionNumber: q.number,
+                  type: q.type,
+                  answer: q.correct,
+                }))}
               onComplete={onAudioComplete}
             />
           )}
@@ -794,32 +910,21 @@ export default function MockExamEngine({
               sectionId={`mock-listening-part-${listeningPartIdx}`}
               highlights={listeningHighlights}
               onHighlightsChange={setListeningHighlights}
-              className="mx-auto max-w-2xl space-y-3"
+              className="mx-auto max-w-2xl space-y-6"
               toolbarClassName="mb-3"
             >
-              {visibleListeningQuestions.map((q) => (
-                <div
-                  key={q.id}
-                  id={`lq-${q.number}`}
-                  className={`rounded-xl border bg-white p-4 shadow-sm ${
-                    activeListeningQ === q.number - 1
-                      ? "border-[#c9972c]"
-                      : "border-slate-200"
-                  }`}
-                >
-                  <p className="text-xs font-bold text-[#c9972c]">Question {q.number}</p>
-                  <p className="mt-1 text-sm text-[#0d1b35]">
-                    <HighlightableInlineText
-                      blockId={`mock-lq-${q.id}`}
-                      text={`${q.number}. ${q.prompt}`}
-                    />
-                  </p>
-                  <ListeningQuestionField
-                    q={q}
-                    value={answers[q.id] ?? ""}
-                    onChange={(v) => setAnswer(q.id, v)}
-                  />
-                </div>
+              {visibleListeningBlockGroups.map((group, groupIdx) => (
+                <MockListeningBlockPanel
+                  key={`${listeningPartIdx}-${group.block.questionStart}-${group.block.questionEnd}`}
+                  partNumber={listeningParts[listeningPartIdx].partNumber}
+                  block={group.block}
+                  questions={group.questions}
+                  answers={answers}
+                  inputsEnabled={listeningInputsEnabled}
+                  onAnswer={setAnswer}
+                  showSectionBadge={groupIdx === 0}
+                  isFollowOnBlock={groupIdx > 0}
+                />
               ))}
             </ExamHighlightSection>
           )}
@@ -961,9 +1066,12 @@ export default function MockExamEngine({
                 {taskWords} words {taskWords < taskMin && `(minimum ${taskMin})`}
               </p>
             </div>
-            {writingTask === 1 && !isGeneral && (
-              <MockWritingChart data={WRITING_TASK1.chartData} />
-            )}
+            {writingTask === 1 &&
+              !isGeneral &&
+              "chartData" in writingTasks.task1 &&
+              writingTasks.task1.chartData ? (
+              <MockWritingChart data={writingTasks.task1.chartData} />
+            ) : null}
             {writingTask === 1 && isGeneral && (
               <GeneralMockLetterPrompt
                 task={
@@ -1083,7 +1191,7 @@ export default function MockExamEngine({
                 type="button"
                 onClick={() => {
                   if (speakingPart.part === 2) {
-                    if (speakingPartIdx < SPEAKING_PARTS.length - 1) {
+                    if (speakingPartIdx < speakingParts.length - 1) {
                       setSpeakingPartIdx((i) => i + 1);
                       setSpeakingQIdx(0);
                     } else finishExam();
@@ -1091,8 +1199,8 @@ export default function MockExamEngine({
                   }
                   if (speakingQIdx < speakingPart.questions.length - 1) {
                     setSpeakingQIdx((i) => i + 1);
-                  } else if (speakingPartIdx < SPEAKING_PARTS.length - 1) {
-                    const next = SPEAKING_PARTS[speakingPartIdx + 1];
+                  } else if (speakingPartIdx < speakingParts.length - 1) {
+                    const next = speakingParts[speakingPartIdx + 1];
                     setSpeakingPartIdx((i) => i + 1);
                     setSpeakingQIdx(0);
                     if (next.prepSeconds) {

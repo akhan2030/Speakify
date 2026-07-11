@@ -60,6 +60,24 @@ function applyPlanTypesToQuestions(
 
     const type = normalizeType(block?.type ?? q.type ?? "");
 
+    if (type === "multiple-choice") {
+      const raw = q.options ?? [];
+      const trimmed = raw.slice(0, 3).map((opt, i) => ({
+        label: String(opt.label ?? String.fromCharCode(65 + i)).toUpperCase(),
+        text: String(opt.text ?? opt.label ?? opt).trim(),
+      }));
+      return { ...q, type, options: trimmed };
+    }
+
+    if (type === "table-completion") {
+      return {
+        ...q,
+        type,
+        options: [],
+        tableHeaders: q.tableHeaders ?? ["Item", "Detail"],
+      };
+    }
+
     return {
 
       ...q,
@@ -70,16 +88,30 @@ function applyPlanTypesToQuestions(
 
         ? []
 
-        : type === "multiple-choice"
-
-          ? q.options ?? []
-
-          : q.options,
+        : q.options,
 
     };
 
   });
 
+}
+
+/** Instructions/header type derived from actual question payloads (not plan alone). */
+export function resolveEffectiveGroupType(group: QuestionGroup): string {
+  const sample = group.questions[0];
+  if (!sample) return group.type;
+
+  const sampleType = normalizeType(sample.type);
+  if (sampleType === "multiple-choice" && (sample.options?.length ?? 0) >= 2) {
+    return "multiple-choice";
+  }
+  if (sampleType === "table-completion") return "table-completion";
+  if (isGapFillQuestionType(sampleType)) return sampleType;
+  if (sampleType === "matching" && (sample.options?.length ?? 0) >= 2) {
+    return "matching";
+  }
+  if (group.type === "matching") return "sentence-completion";
+  return group.type;
 }
 
 

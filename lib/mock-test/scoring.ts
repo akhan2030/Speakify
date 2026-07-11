@@ -1,22 +1,14 @@
+import type { ListeningExamPart } from "./listeningExam";
 import { LISTENING_EXAM_PARTS, getAllListeningExamQuestions } from "./listeningExam";
 import type { MockExamContent } from "./types";
 import { buildReadingAnswerKey } from "./generateReadingContent";
 import { answersMatch } from "./utils";
 
+import { listeningRawToBand } from "../listeningBandScore.js";
+
 /** Official IELTS Listening raw-score → band (out of 40). */
 export function listeningCorrectToBand(correct: number): number {
-  if (correct >= 39) return 9.0;
-  if (correct >= 37) return 8.5;
-  if (correct >= 35) return 8.0;
-  if (correct >= 33) return 7.5;
-  if (correct >= 30) return 7.0;
-  if (correct >= 27) return 6.5;
-  if (correct >= 23) return 6.0;
-  if (correct >= 20) return 5.5;
-  if (correct >= 16) return 5.0;
-  if (correct >= 13) return 4.5;
-  if (correct >= 10) return 4.0;
-  return 3.5;
+  return listeningRawToBand(correct, 40);
 }
 
 /** Map a 0–9 raw score to the nearest IELTS half-band */
@@ -65,12 +57,15 @@ function scoreItems(
   return { correct, total, accuracy, band };
 }
 
-export function scoreListening(answers: Record<string, string>) {
-  const items = getAllListeningExamQuestions();
+export function scoreListening(
+  answers: Record<string, string>,
+  listeningParts: ListeningExamPart[] = LISTENING_EXAM_PARTS
+) {
+  const items = listeningParts.flatMap((p) => p.questions);
   const base = scoreItems(answers, items, true);
   const band = listeningCorrectToBand(base.correct);
 
-  const sectionBreakdown = LISTENING_EXAM_PARTS.map((part) => {
+  const sectionBreakdown = listeningParts.map((part) => {
     const partItems = part.questions.map((q) => ({
       id: q.id,
       correct: q.correct,
