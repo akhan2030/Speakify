@@ -778,6 +778,21 @@ export default function MockExamEngine({
     return { total, answered };
   }, [phase, listeningStep, listeningPartIdx, answers]);
 
+  const mockListeningBlockQuestions = useMemo(() => {
+    const part = listeningParts[listeningPartIdx];
+    const block = part?.blocks[listeningBlockIdx];
+    if (!part || !block) return [];
+    return part.questions
+      .filter(
+        (q) => q.number >= block.questionStart && q.number <= block.questionEnd
+      )
+      .map((q) => ({
+        questionNumber: q.number,
+        type: q.type,
+        answer: q.correct,
+      }));
+  }, [listeningParts, listeningPartIdx, listeningBlockIdx]);
+
   if (phase === "welcome") {
     return (
       <MockExamWelcome
@@ -887,20 +902,7 @@ export default function MockExamEngine({
               sectionNumber={listeningParts[listeningPartIdx].partNumber}
               mockNumber={mockNumber}
               speakers={listeningParts[listeningPartIdx].speakers}
-              questions={listeningParts[listeningPartIdx].questions
-                .filter((q) => {
-                  const block =
-                    listeningParts[listeningPartIdx].blocks[listeningBlockIdx];
-                  return (
-                    q.number >= block.questionStart &&
-                    q.number <= block.questionEnd
-                  );
-                })
-                .map((q) => ({
-                  questionNumber: q.number,
-                  type: q.type,
-                  answer: q.correct,
-                }))}
+              questions={mockListeningBlockQuestions}
               onComplete={onAudioComplete}
             />
           )}

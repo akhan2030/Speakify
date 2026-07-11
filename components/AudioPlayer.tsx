@@ -7,6 +7,12 @@ import {
   ExamWaveformBars,
 } from "@/components/listening/listeningAudioPlayerUi";
 import {
+  buildListeningTtsRequestKey,
+  playListeningBrowserFallback,
+  requestListeningTtsBlob,
+  stopListeningPlayback,
+} from "@/lib/listeningTtsClient";
+import {
   buildSpeakerTimeline,
   getActiveSpeakerEntryAtTime,
   getSpeakerDotColor,
@@ -212,6 +218,7 @@ export default function AudioPlayer({
 
   const [state, setState] = useState<PlayerState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [usingDeviceVoice, setUsingDeviceVoice] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(() => estimateDurationSeconds(transcript));
   const [activeSpeakerName, setActiveSpeakerName] = useState<string | null>(
@@ -238,6 +245,7 @@ export default function AudioPlayer({
   const onStartRef = useRef(onStart);
   const hasStartedRef = useRef(false);
   const autoStartPendingRef = useRef(false);
+  const browserModeRef = useRef(false);
 
   onCompleteRef.current = onComplete;
   onStartRef.current = onStart;
@@ -292,28 +300,30 @@ export default function AudioPlayer({
 
     setState("loading");
     setErrorMessage(null);
+    setUsingDeviceVoice(false);
+    browserModeRef.current = false;
     revokeBlob();
+    stopListeningPlayback();
 
     try {
-      const res = await fetch("/api/listening/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: transcript,
-          sectionNumber,
-          audioPart,
-          questions,
-          speakers,
-          ...(voice ? { voice, speed } : { speed }),
-        }),
+      const apiResult = await requestListeningTtsBlob({
+        transcript,
+        sectionNumber,
+        audioPart,
+        questions,
+        speakers,
+        voice,
+        speed,
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? `Audio generation failed (${res.status})`);
+      if (!apiResult) {
+        browserModeRef.current = true;
+        setDuration(estimateDurationSeconds(transcript));
+        setState("ready");
+        return;
       }
 
-      const timelineHeader = res.headers.get("X-Speaker-Timeline");
+      const timelineHeader = apiResult.timelineHeader;
       if (timelineHeader) {
         try {
           const parsed = JSON.parse(decodeURIComponent(timelineHeader));
@@ -325,8 +335,7 @@ export default function AudioPlayer({
         }
       }
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(apiResult.blob);
       blobUrlRef.current = url;
 
       const audio = new Audio(url);
@@ -369,11 +378,10 @@ export default function AudioPlayer({
       });
 
       setState("ready");
-    } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to load audio"
-      );
-      setState("error");
+    } catch {
+      browserModeRef.current = true;
+      setDuration(estimateDurationSeconds(transcript));
+      setState("ready");
     }
   }, [
     transcript,
@@ -386,7 +394,18 @@ export default function AudioPlayer({
     revokeBlob,
     audioPart,
     questions,
+    speakers,
   ]);
+
+  const ttsRequestKey = buildListeningTtsRequestKey({
+    transcript,
+    sectionNumber,
+    audioPart,
+    questions,
+    speakers,
+    voice,
+    speed,
+  });
 
   useEffect(() => {
     if (!canReplay && wasPlayedThisSession()) {
@@ -394,6 +413,7 @@ export default function AudioPlayer({
       return () => {
         clearTimer();
         revokeBlob();
+        stopListeningPlayback();
       };
     }
 
@@ -401,6 +421,7 @@ export default function AudioPlayer({
 
     return () => {
       clearTimer();
+      stopListeningPlayback();
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
@@ -408,19 +429,47 @@ export default function AudioPlayer({
       }
       revokeBlob();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load when section/transcript changes
-  }, [transcript, sectionNumber, sessionId, voice, speed, canReplay, audioPart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable serialized payload
+  }, [ttsRequestKey, sessionId, canReplay]);
 
   const startPlayback = useCallback(async () => {
-    const audio = audioRef.current;
     if (
-      !audio ||
       state === "playing" ||
       state === "buffering" ||
       state === "completed"
     ) {
       return;
     }
+
+    if (browserModeRef.current) {
+      if (!hasStartedRef.current) {
+        hasStartedRef.current = true;
+        onStartRef.current();
+      }
+      setUsingDeviceVoice(true);
+      setState("playing");
+      setElapsed(0);
+      clearTimer();
+      timerRef.current = setInterval(() => {
+        setElapsed((prev) => Math.min(duration, prev + 1));
+      }, 1000);
+      try {
+        await playListeningBrowserFallback(transcript);
+        clearTimer();
+        setElapsed(duration);
+        markPlayed();
+        setState("completed");
+        onCompleteRef.current();
+      } catch {
+        clearTimer();
+        setErrorMessage("Device voice playback failed. Try again.");
+        setState("error");
+      }
+      return;
+    }
+
+    const audio = audioRef.current;
+    if (!audio) return;
 
     if (!hasStartedRef.current) {
       hasStartedRef.current = true;
@@ -450,7 +499,7 @@ export default function AudioPlayer({
       setErrorMessage("Playback was blocked. Check your browser audio settings.");
       setState("error");
     }
-  }, [state, clearTimer]);
+  }, [state, clearTimer, transcript, duration, markPlayed]);
 
   useEffect(() => {
     if (!autoStart) {
@@ -517,7 +566,9 @@ export default function AudioPlayer({
           : state === "buffering"
             ? `Buffering — Section ${sectionNumber}`
             : state === "playing"
-              ? `Now playing Section ${sectionNumber}`
+              ? usingDeviceVoice
+                ? `Playing with device voice — Section ${sectionNumber}`
+                : `Now playing Section ${sectionNumber}`
               : state === "completed"
                 ? `Section ${sectionNumber} audio complete`
                 : "Audio unavailable";

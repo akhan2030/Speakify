@@ -19,6 +19,7 @@ import PracticeQuestionField, {
 } from "@/components/accelerator/PracticeQuestionField";
 import { ExamHighlightSection } from "@/components/exam/ExamHighlightSection";
 import type { TextHighlight } from "@/lib/examHighlight";
+import { requestListeningTtsBlob } from "@/lib/listeningTtsClient";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
@@ -173,31 +174,20 @@ function SectionAudio({ section }: { section: NormalizedListeningSection }) {
     if (audioUrl) return audioUrl;
 
     const { transcript, voice, id: sectionNumber, speakers, questions } = section;
-    const response = await fetch("/api/listening/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        transcript,
-        text: transcript,
-        voice,
-        mockTest: true,
-        sectionNumber,
-        speakers,
-        questions: questions.map((q) => q.raw),
-      }),
+    const apiResult = await requestListeningTtsBlob({
+      transcript,
+      voice,
+      mockTest: true,
+      sectionNumber,
+      speakers,
+      questions: questions.map((q) => q.raw),
     });
 
-    const contentType = response.headers.get("content-type") ?? "";
-    if (!response.ok || !contentType.includes("audio")) {
-      const errJson = contentType.includes("application/json")
-        ? await response.json().catch(() => ({}))
-        : {};
-      throw new Error(String(errJson.error ?? "TTS failed"));
+    if (!apiResult) {
+      throw new Error("TTS failed");
     }
 
-    const blob = await response.blob();
-    if (!blob.size) throw new Error("Empty audio");
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(apiResult.blob);
     blobUrlRef.current = url;
     return url;
   }

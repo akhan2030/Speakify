@@ -10,6 +10,7 @@ import { assertNoQuestionZeroInUserText } from "@/lib/listeningUserFacingValidat
 import { friendlyOpenAiError, isOpenAiQuotaError } from "@/lib/openaiErrors.js";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const MAX_TEXT_LENGTH = 12000;
 
@@ -134,7 +135,8 @@ export async function POST(request) {
         openai,
         speakText,
         sectionNumber,
-        speakers
+        speakers,
+        isMockTest ? { model: "tts-1" } : undefined
       );
       buffer = result.buffer;
       timeline = result.timeline ?? [];

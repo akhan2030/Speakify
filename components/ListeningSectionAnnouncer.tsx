@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { playListeningBrowserFallback, requestListeningTtsBlob } from "@/lib/listeningTtsClient";
 
 /**
  * Plays the official IELTS section announcement (alloy voice) once, then calls onComplete.
@@ -22,36 +23,32 @@ export default function ListeningSectionAnnouncer({
 
     async function play() {
       try {
-        const res = await fetch("/api/listening/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text,
-            voice: "alloy",
-            speed: 0.95,
-            announcement: true,
-          }),
+        const apiResult = await requestListeningTtsBlob({
+          transcript: text,
+          voice: "alloy",
+          speed: 0.95,
+          announcement: true,
         });
 
-        if (!res.ok || cancelled) {
-          if (!cancelled) onCompleteRef.current();
+        if (cancelled) return;
+
+        if (apiResult) {
+          blobUrl = URL.createObjectURL(apiResult.blob);
+          audio = new Audio(blobUrl);
+
+          audio.onended = () => {
+            if (!cancelled) onCompleteRef.current();
+          };
+          audio.onerror = () => {
+            if (!cancelled) onCompleteRef.current();
+          };
+
+          await audio.play();
           return;
         }
 
-        const blob = await res.blob();
-        if (cancelled) return;
-
-        blobUrl = URL.createObjectURL(blob);
-        audio = new Audio(blobUrl);
-
-        audio.onended = () => {
-          if (!cancelled) onCompleteRef.current();
-        };
-        audio.onerror = () => {
-          if (!cancelled) onCompleteRef.current();
-        };
-
-        await audio.play();
+        await playListeningBrowserFallback(text, { announcement: true });
+        if (!cancelled) onCompleteRef.current();
       } catch {
         if (!cancelled) onCompleteRef.current();
       }

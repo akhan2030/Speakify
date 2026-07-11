@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { playListeningBrowserFallback, requestListeningTtsBlob } from "@/lib/listeningTtsClient";
 import ListeningExamPrepBanner from "@/components/ListeningExamPrepBanner";
 
 /**
@@ -27,25 +28,23 @@ export default function MockListeningInstructorBanner({
 
     async function play() {
       try {
-        const res = await fetch("/api/listening/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: key,
-            voice: "alloy",
-            speed: 0.95,
-            announcement: true,
-          }),
+        const apiResult = await requestListeningTtsBlob({
+          transcript: key,
+          voice: "alloy",
+          speed: 0.95,
+          announcement: true,
         });
 
-        if (!res.ok || cancelled) return;
-
-        const blob = await res.blob();
         if (cancelled) return;
 
-        blobUrl = URL.createObjectURL(blob);
-        audio = new Audio(blobUrl);
-        await audio.play();
+        if (apiResult) {
+          blobUrl = URL.createObjectURL(apiResult.blob);
+          audio = new Audio(blobUrl);
+          await audio.play();
+          return;
+        }
+
+        await playListeningBrowserFallback(key, { announcement: true });
       } catch {
         // Banner text remains visible if TTS fails.
       }

@@ -1,6 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  buildListeningTtsRequestKey,
+  playListeningBrowserFallback,
+  requestListeningTtsBlob,
+  stopListeningPlayback,
+  type ListeningTtsPayload,
+} from "@/lib/listeningTtsClient";
 
 export type MockAudioStatus = "idle" | "loading" | "ready" | "playing" | "complete" | "error";
 
@@ -41,6 +48,7 @@ export default function MockListeningAudio({
   onStatusChange,
 }: Props) {
   const [status, setStatus] = useState<MockAudioStatus>("loading");
+  const [usingDeviceVoice, setUsingDeviceVoice] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const blobUrlRef = useRef<string | null>(null);
   const hasPlayedRef = useRef(false);
@@ -62,6 +70,7 @@ export default function MockListeningAudio({
   }, []);
 
   const cleanup = useCallback(() => {
+    stopListeningPlayback();
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.onended = null;
@@ -87,10 +96,24 @@ export default function MockListeningAudio({
     }
   }, [updateStatus]);
 
+  const ttsPayload: ListeningTtsPayload = {
+    transcript,
+    voice,
+    mockTest: true,
+    sectionNumber,
+    speakers,
+    questions,
+    testId: `mock-${mockNumber}-s${sectionNumber}`,
+  };
+  const requestKey = buildListeningTtsRequestKey(ttsPayload);
+
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+
     hasPlayedRef.current = false;
     autoplayAttemptedRef.current = false;
+    setUsingDeviceVoice(false);
     updateStatus("loading");
     cleanup();
 
@@ -102,44 +125,38 @@ export default function MockListeningAudio({
       }
 
       try {
-        const response = await fetch("/api/listening/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            transcript: transcriptText,
-            text: transcriptText,
-            voice,
-            mockTest: true,
-            sectionNumber,
-            speakers,
-            questions,
-            testId: `mock-${mockNumber}-s${sectionNumber}`,
-          }),
+        const apiResult = await requestListeningTtsBlob(ttsPayload, {
+          signal: controller.signal,
         });
 
-        if (!response.ok || cancelled) {
-          if (!cancelled) updateStatus("error");
+        if (cancelled) return;
+
+        if (apiResult) {
+          const audioUrl = URL.createObjectURL(apiResult.blob);
+          blobUrlRef.current = audioUrl;
+          const audio = new Audio(audioUrl);
+          audioRef.current = audio;
+
+          audio.onended = () => {
+            if (cancelled) return;
+            updateStatus("complete");
+            onCompleteRef.current();
+          };
+          audio.onerror = () => {
+            if (!cancelled) updateStatus("error");
+          };
+
+          updateStatus("ready");
           return;
         }
 
-        const audioBlob = await response.blob();
+        setUsingDeviceVoice(true);
+        updateStatus("playing");
+        hasPlayedRef.current = true;
+        await playListeningBrowserFallback(transcriptText);
         if (cancelled) return;
-
-        const audioUrl = URL.createObjectURL(audioBlob);
-        blobUrlRef.current = audioUrl;
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
-
-        audio.onended = () => {
-          if (cancelled) return;
-          updateStatus("complete");
-          onCompleteRef.current();
-        };
-        audio.onerror = () => {
-          if (!cancelled) updateStatus("error");
-        };
-
-        if (!cancelled) updateStatus("ready");
+        updateStatus("complete");
+        onCompleteRef.current();
       } catch {
         if (!cancelled) updateStatus("error");
       }
@@ -149,18 +166,12 @@ export default function MockListeningAudio({
 
     return () => {
       cancelled = true;
+      controller.abort();
       cleanup();
     };
-  }, [
-    transcript,
-    voice,
-    sectionNumber,
-    mockNumber,
-    speakers,
-    questions,
-    cleanup,
-    updateStatus,
-  ]);
+    // Only reload when the actual TTS payload changes — not on parent timer re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestKey]);
 
   useEffect(() => {
     if (status !== "ready" || autoplayAttemptedRef.current) return;
@@ -172,9 +183,13 @@ export default function MockListeningAudio({
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-center text-sm font-semibold text-[#0d1b35]">
       {status === "loading" && "Generating audio…"}
       {status === "ready" && "Starting audio…"}
-      {status === "playing" && "🔊 Audio playing — listen carefully. No replay available."}
+      {status === "playing" &&
+        (usingDeviceVoice
+          ? "🔊 Playing with device voice — listen carefully. No replay available."
+          : "🔊 Audio playing — listen carefully. No replay available.")}
       {status === "complete" && "Audio finished — no replay available."}
-      {status === "error" && "Audio unavailable — please check your connection and refresh."}
+      {status === "error" &&
+        "Audio unavailable — please check your connection and refresh."}
     </div>
   );
 }
