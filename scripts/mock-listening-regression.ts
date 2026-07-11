@@ -16,6 +16,8 @@ import {
   resolveEffectiveBlockType,
 } from "../lib/mock-test/listeningQuestionAlign";
 import { listeningRawToBand } from "../lib/listeningBandScore.js";
+import { bindSpeakersForMultiVoice } from "../lib/listeningMultiVoiceBind.js";
+import { MALE_VOICES, FEMALE_VOICES } from "../lib/listeningSpeakerProfiles.js";
 
 let failed = 0;
 
@@ -159,6 +161,46 @@ test("0/10 section score maps to Band 1.0 (not 3.5 floor)", () => {
 test("mock parts include per-section speaker profiles for multi-voice TTS", () => {
   const parts = getListeningPartsForMock(1);
   assert.ok((parts[0].speakers?.length ?? 0) >= 2, "Section 1 needs 2 speakers");
+});
+
+test("Mock #1 S1 binds Caller (James) to a male TTS voice distinct from Coordinator", () => {
+  const parts = getListeningPartsForMock(1);
+  const transcript = parts[0].blocks.map((b) => b.transcript).join("\n");
+  const bound = bindSpeakersForMultiVoice(transcript, 1, parts[0].speakers);
+  assert.ok(bound.length >= 2);
+  const caller = bound.find((s) => /caller/i.test(String(s.label)));
+  assert.ok(caller, "Caller label required");
+  assert.equal(caller.gender, "male");
+  assert.ok(MALE_VOICES.has(caller.voice), `Caller voice ${caller.voice}`);
+  const voices = new Set(bound.map((s) => s.voice));
+  assert.equal(voices.size, bound.length, "each speaker needs a distinct voice");
+});
+
+test("Mock #1 S3 binds three distinct gendered voices (Tutor/Hannah/Patrick)", () => {
+  const parts = getListeningPartsForMock(1);
+  const transcript = parts[2].blocks.map((b) => b.transcript).join("\n");
+  const bound = bindSpeakersForMultiVoice(transcript, 3, parts[2].speakers);
+  assert.ok(bound.length >= 3);
+  const hannah = bound.find((s) => /hannah/i.test(String(s.label)));
+  const patrick = bound.find((s) => /patrick/i.test(String(s.label)));
+  assert.equal(hannah?.gender, "female");
+  assert.ok(hannah && FEMALE_VOICES.has(hannah.voice));
+  assert.equal(patrick?.gender, "male");
+  assert.ok(patrick && MALE_VOICES.has(patrick.voice));
+  assert.equal(new Set(bound.map((s) => s.voice)).size, bound.length);
+});
+
+test("Mock #1 S2 and S4 stay single-speaker monologues", () => {
+  const parts = getListeningPartsForMock(1);
+  for (const idx of [1, 3] as const) {
+    const transcript = parts[idx].blocks.map((b) => b.transcript).join("\n");
+    const bound = bindSpeakersForMultiVoice(
+      transcript,
+      parts[idx].partNumber,
+      parts[idx].speakers
+    );
+    assert.equal(bound.length, 1, `Section ${parts[idx].partNumber} monologue`);
+  }
 });
 
 console.log(failed ? `\n${failed} check(s) failed.\n` : "\nAll checks passed.\n");

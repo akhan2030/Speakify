@@ -112,7 +112,16 @@ export async function requestListeningTtsBlob(
 /** Speak transcript with device voices when OpenAI TTS is unavailable. */
 export async function playListeningBrowserFallback(
   transcript: string,
-  options?: { announcement?: boolean }
+  options?: {
+    announcement?: boolean;
+    speakers?: Array<{
+      label?: string;
+      name?: string;
+      gender?: string;
+      voice?: string;
+    }>;
+    sectionNumber?: number;
+  }
 ): Promise<void> {
   const text = String(transcript ?? "").trim();
   if (!text) {
@@ -132,7 +141,10 @@ export async function playListeningBrowserFallback(
     return;
   }
 
-  await speakDialogueWithBrowser(text);
+  await speakDialogueWithBrowser(text, {
+    speakers: options?.speakers,
+    sectionNumber: options?.sectionNumber,
+  });
 }
 
 /**

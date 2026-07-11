@@ -153,7 +153,10 @@ export default function MockListeningAudio({
         setUsingDeviceVoice(true);
         updateStatus("playing");
         hasPlayedRef.current = true;
-        await playListeningBrowserFallback(transcriptText);
+        await playListeningBrowserFallback(transcriptText, {
+          speakers,
+          sectionNumber,
+        });
         if (cancelled) return;
         updateStatus("complete");
         onCompleteRef.current();

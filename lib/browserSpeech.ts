@@ -399,73 +399,21 @@ export function parseDialogueTranscript(transcript: string): DialogueTurn[] {
   return turns;
 }
 
-function pickTwoDistinctVoices(
+function pickGenderedVoicePool(
   voices: SpeechSynthesisVoice[]
-): [SpeechSynthesisVoice | undefined, SpeechSynthesisVoice | undefined] {
+): { male: SpeechSynthesisVoice[]; female: SpeechSynthesisVoice[]; all: SpeechSynthesisVoice[] } {
   const enPool = voices.filter((v) => normalizeLang(v.lang).startsWith("en"));
-  if (enPool.length === 0) return [undefined, undefined];
-
-  const preferLocal = (candidates: SpeechSynthesisVoice[]) =>
-    candidates.find((v) => v.localService) ?? candidates[0];
-
-  const females = enPool.filter(isFemaleVoice);
-  const males = enPool.filter(isMaleVoice);
-
-  const voiceA = preferLocal(females.length > 0 ? females : enPool);
-  const maleCandidates = males.filter((v) => v.name !== voiceA?.name);
-  const otherCandidates = enPool.filter((v) => v.name !== voiceA?.name);
-  const voiceB = preferLocal(
-    maleCandidates.length > 0
-      ? maleCandidates
-      : otherCandidates.length > 0
-        ? otherCandidates
-        : enPool
-  );
-
-  return [voiceA, voiceB];
+  return {
+    male: enPool.filter(isMaleVoice),
+    female: enPool.filter(isFemaleVoice),
+    all: enPool,
+  };
 }
 
-const SPEAKER_VOICE_HINT: Record<string, "a" | "b"> = {
-  student: "a",
-  customer: "a",
-  caller: "a",
-  patient: "a",
-  woman: "a",
-  female: "a",
-  mary: "a",
-  sara: "a",
-  administrator: "b",
-  admin: "b",
-  agent: "b",
-  professor: "b",
-  lecturer: "b",
-  manager: "b",
-  teacher: "b",
-  interviewer: "b",
-  man: "b",
-  male: "b",
-  david: "b",
-  john: "b",
-};
-
-function voiceForSpeaker(
-  speaker: string,
-  speakerIndex: number,
-  voiceA: SpeechSynthesisVoice | undefined,
-  voiceB: SpeechSynthesisVoice | undefined,
-  assigned: Map<string, SpeechSynthesisVoice | undefined>
+function preferLocalVoice(
+  candidates: SpeechSynthesisVoice[]
 ): SpeechSynthesisVoice | undefined {
-  const existing = assigned.get(speaker);
-  if (existing) return existing;
-
-  const normalized = speaker.toLowerCase().replace(/[^a-z\s]/g, "").trim();
-  const hint =
-    SPEAKER_VOICE_HINT[normalized] ??
-    (speakerIndex % 2 === 0 ? "a" : "b");
-
-  const voice = hint === "a" ? voiceA : voiceB;
-  assigned.set(speaker, voice);
-  return voice;
+  return candidates.find((v) => v.localService) ?? candidates[0];
 }
 
 function pauseMs(ms: number): Promise<void> {
@@ -473,10 +421,21 @@ function pauseMs(ms: number): Promise<void> {
 }
 
 /**
- * Speak a multi-speaker dialogue with alternating voices.
+ * Speak a multi-speaker dialogue with distinct gendered voices.
  * Speaker labels (e.g. "Student:") are not read aloud.
  */
-export async function speakDialogueWithBrowser(transcript: string): Promise<void> {
+export async function speakDialogueWithBrowser(
+  transcript: string,
+  options?: {
+    speakers?: Array<{
+      label?: string;
+      name?: string;
+      gender?: string;
+      voice?: string;
+    }>;
+    sectionNumber?: number;
+  }
+): Promise<void> {
   if (!canUseBrowserSpeech()) {
     return Promise.reject(new Error("Browser speech is not supported on this device."));
   }
@@ -500,13 +459,68 @@ export async function speakDialogueWithBrowser(transcript: string): Promise<void
     return speakWithAttempts(synth, text, "en-US", voices);
   }
 
-  const [voiceA, voiceB] = pickTwoDistinctVoices(voices);
+  const pool = pickGenderedVoicePool(voices);
   const assigned = new Map<string, SpeechSynthesisVoice | undefined>();
+  const usedVoiceNames = new Set<string>();
   let prevSpeaker = "";
+
+  const speakersMeta = options?.speakers ?? [];
+
+  const genderForSpeaker = (
+    speaker: string,
+    index: number
+  ): "male" | "female" => {
+    const key = speaker.toLowerCase().trim();
+    const meta = speakersMeta.find(
+      (s) => String(s.label ?? "").trim().toLowerCase() === key
+    );
+    if (meta?.gender === "male" || meta?.gender === "female") return meta.gender;
+
+    const metaByName = speakersMeta.find((s) => {
+      const name = String(s.name ?? "").trim().toLowerCase();
+      return name === key || name.split(/\s+/)[0] === key;
+    });
+    if (metaByName?.gender === "male" || metaByName?.gender === "female") {
+      return metaByName.gender;
+    }
+
+    if (
+      /\b(james|david|michael|robert|tom|john|patrick|oliver|nathan|mark|tutor|lecturer|guide)\b/i.test(
+        speaker
+      )
+    ) {
+      return "male";
+    }
+    if (
+      /\b(hannah|emily|sarah|emma|lisa|nova|sophie)\b/i.test(speaker)
+    ) {
+      return "female";
+    }
+    return index % 2 === 0 ? "male" : "female";
+  };
+
+  const pickVoice = (
+    gender: "male" | "female"
+  ): SpeechSynthesisVoice | undefined => {
+    const preferred = gender === "female" ? pool.female : pool.male;
+    const unusedPreferred = preferred.filter((v) => !usedVoiceNames.has(v.name));
+    const pick =
+      preferLocalVoice(unusedPreferred) ??
+      preferLocalVoice(preferred) ??
+      preferLocalVoice(pool.all.filter((v) => !usedVoiceNames.has(v.name))) ??
+      preferLocalVoice(pool.all);
+    if (pick) usedVoiceNames.add(pick.name);
+    return pick;
+  };
 
   for (let i = 0; i < turns.length; i++) {
     const turn = turns[i];
-    const voice = voiceForSpeaker(turn.speaker, i, voiceA, voiceB, assigned);
+    let voice = assigned.get(turn.speaker);
+    if (!voice) {
+      const gender = genderForSpeaker(turn.speaker, i);
+      voice = pickVoice(gender);
+      assigned.set(turn.speaker, voice);
+    }
     const utterance = buildUtterance(turn.text, "en-US", voice);
     utterance.rate = turn.speaker.toLowerCase().includes("student") ? 0.95 : 0.9;
 

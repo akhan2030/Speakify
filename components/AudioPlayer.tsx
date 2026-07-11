@@ -454,7 +454,10 @@ export default function AudioPlayer({
         setElapsed((prev) => Math.min(duration, prev + 1));
       }, 1000);
       try {
-        await playListeningBrowserFallback(transcript);
+        await playListeningBrowserFallback(transcript, {
+          speakers,
+          sectionNumber,
+        });
         clearTimer();
         setElapsed(duration);
         markPlayed();
@@ -499,7 +502,7 @@ export default function AudioPlayer({
       setErrorMessage("Playback was blocked. Check your browser audio settings.");
       setState("error");
     }
-  }, [state, clearTimer, transcript, duration, markPlayed]);
+  }, [state, clearTimer, transcript, duration, markPlayed, speakers, sectionNumber]);
 
   useEffect(() => {
     if (!autoStart) {

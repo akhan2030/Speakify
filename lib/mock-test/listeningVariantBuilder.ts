@@ -7,6 +7,7 @@ import {
 } from "./mockListeningDisplay";
 import { alignQuestionsToSectionPlan } from "./listeningQuestionAlign";
 import { pickSpeakersForSection } from "../listeningSpeakerAssignment.js";
+import { bindSpeakersForMultiVoice } from "../listeningMultiVoiceBind.js";
 
 type QSpec = [
   number,
@@ -87,10 +88,17 @@ export function buildListeningPartsFromVariant(
       }
     );
 
+    const partTranscript = partBlocks.map((b) => b.transcript).join("\n");
+    const boundSpeakers = bindSpeakersForMultiVoice(
+      partTranscript,
+      partNumber,
+      speakerPick.speakers
+    );
+
     return {
       partNumber,
       introText: variant.introTexts[partNumber - 1],
-      speakers: speakerPick.speakers as ListeningExamPart["speakers"],
+      speakers: boundSpeakers as ListeningExamPart["speakers"],
       blocks: partBlocks.map((b, blockIndex) => {
         const questionType =
           b.questionType ?? getTypeForQuestionNumber(partNumber, b.questionStart);
