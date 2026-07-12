@@ -277,8 +277,8 @@ function shuffleMcqOptions(question, targetIndex) {
   const options = Array.isArray(question.options)
     ? question.options.map(String)
     : [];
-  if (options.length !== 4) {
-    throw new Error("multiple_choice must have exactly 4 options");
+  if (options.length !== 3) {
+    throw new Error("multiple_choice must have exactly 3 options");
   }
 
   const correctText = String(question.correct_answer ?? "").trim();
@@ -334,7 +334,10 @@ function normalizeQuestions(questions) {
       normalized.options = Array.isArray(q.options)
         ? q.options.map(String).slice(0, 4)
         : [];
-      while (normalized.options.length < 4) normalized.options.push("");
+      while (normalized.options.length < 3) normalized.options.push("");
+      if (normalized.options.length > 3) {
+        normalized.options = normalized.options.slice(0, 3);
+      }
       normalized = shuffleMcqOptions(
         normalized,
         MCQ_INDEX_TARGETS[mcqSlot % MCQ_INDEX_TARGETS.length]
@@ -410,7 +413,7 @@ Assigned speakers (use these exact names — gender must match voice):
 ${JSON.stringify(speakerJson, null, 2)}
 
 Include a MIX of question types:
-1. multiple_choice — exactly 4 options, correct_answer is full text of correct option
+1. multiple_choice — exactly 3 options (A, B, C), correct_answer is full text of correct option
 2. gap_fill — fill in a missing word/phrase heard in the audio
 3. short_answer — brief factual answer from the transcript
 

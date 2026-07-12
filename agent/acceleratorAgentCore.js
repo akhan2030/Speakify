@@ -9,7 +9,7 @@ const crypto = require("crypto");
 const dotenv = require("dotenv");
 const OpenAI = require("openai");
 const { createClient } = require("@supabase/supabase-js");
-const { LISTENING_TRANSCRIPT_SPELLING_RULES } = require("./listeningTranscriptRules.js");
+const { LISTENING_TRANSCRIPT_AUTHENTICITY_RULES } = require("./listeningTranscriptRules.js");
 
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 
@@ -99,7 +99,7 @@ STRICT RULES:
 - Correct answers must be distributed across A/B/C/D — never all one letter
 - Model answers demonstrate Band 5.5 quality — good effort but not perfect
 - Listening transcripts: slow deliberate delivery, clear signposting
-${LISTENING_TRANSCRIPT_SPELLING_RULES}
+${LISTENING_TRANSCRIPT_AUTHENTICITY_RULES}
 - Return ONLY valid JSON — no markdown, no explanation outside JSON`,
 
   plus: `You are a senior IELTS examiner creating a complete Plus level mock test for students targeting Band 6.0-6.5. Students are B2 level English learners, many are Saudi Arabic speakers preparing for university or professional life.
@@ -120,7 +120,7 @@ STRICT RULES:
 - Topics: Vision 2030, university life, career, Gulf society
 - All answers must appear word-for-word in the text or transcript
 - MCQ correct answers distributed across A/B/C/D
-${LISTENING_TRANSCRIPT_SPELLING_RULES}
+${LISTENING_TRANSCRIPT_AUTHENTICITY_RULES}
 - Return ONLY valid JSON — no markdown, no explanation outside JSON`,
 
   elite: `You are a senior IELTS examiner creating a complete Elite level mock test for students targeting Band 7.0+. Students are C1 level English learners.
@@ -142,7 +142,7 @@ STRICT RULES:
 - Topics: global policy, ethics, cultural identity, academic discourse
 - All answers must appear word-for-word in the text or transcript
 - MCQ correct answers distributed across A/B/C/D
-${LISTENING_TRANSCRIPT_SPELLING_RULES}
+${LISTENING_TRANSCRIPT_AUTHENTICITY_RULES}
 - Return ONLY valid JSON — no markdown, no explanation outside JSON`,
 };
 
@@ -362,7 +362,7 @@ Use question_text (not prompt alone) and options (not choices alone).
 
 MCQ RULE (mandatory): Every multiple choice question must have exactly 4 options labeled A, B, C, D. Never 3 options. Never 2 options. Always 4.
 
-${LISTENING_TRANSCRIPT_SPELLING_RULES}`;
+${LISTENING_TRANSCRIPT_AUTHENTICITY_RULES}`;
 }
 
 function collectListeningQuestions(listening) {

@@ -29,7 +29,10 @@ Coordinator: And your surname?
 Caller: Henderson — that's H-E-N-D-E-R-S-O-N.
 Coordinator: Thank you, Mr Henderson. And a contact telephone number?
 Caller: Oh seven seven, zero zero, nine zero zero, one two three.
-Coordinator: The registration fee is three hundred and fifty pounds, including lunch.
+Coordinator: The registration fee is three hundred and eighty pounds, including lunch.
+Caller: Three hundred and eighty?
+Coordinator: Sorry — actually three hundred and fifty. I was looking at the late-registration rate.
+Caller: Three hundred and fifty — fine.
 Coordinator: May I have your email address for the confirmation?
 Caller: james dot henderson at outlook dot com.`,
         voice: "onyx",
@@ -82,7 +85,9 @@ Hannah: We're comparing supervised and unsupervised models on medical imaging da
 Patrick: I suggested using the university GPU cluster for training.
 Tutor: Which datasets?
 Hannah: The public chest X-ray set and our anonymised local sample.
-Patrick: We expect convolutional models to outperform by at least twelve percent.
+Patrick: We expect convolutional models to outperform by at least twenty percent.
+Hannah: Er — wait. Patrick, didn't we agree on twelve percent in the draft?
+Patrick: Oh — sorry, actually twelve percent. Twenty was from the pilot study only.
 Tutor: Submit your draft report by the twenty-second.`,
         voice: "nova",
       },
@@ -105,7 +110,8 @@ Hannah: Final presentations are scheduled in Lab C.`,
         transcript: `Today's lecture examines deep learning fundamentals. Artificial neural networks mimic biological neurons through layered nodes.
 Backpropagation adjusts weights using gradient descent. Convolutional layers excel at spatial pattern recognition in images.
 Recurrent networks handle sequential data such as speech and text. Transformers use attention mechanisms for long-range dependencies.
-Overfitting occurs when models memorise training data; dropout and regularisation mitigate this.`,
+Overfitting occurs when models memorise training data; dropout and regularisation mitigate this.
+Monitoring should be done monthly during early training — sorry, I mean weekly checks catch instability earlier.`,
         voice: "shimmer",
       },
       {
@@ -141,11 +147,11 @@ International standards for medical AI are still evolving rapidly.`,
       [18, "matching", "Wheelchair access:", "west entrance"],
       [19, "matching", "Computing archive:", "basement"],
       [20, "matching", "Drone area:", "south pavilion"],
-      [21, "mcq", "Project compares:", "Supervised and unsupervised models", ["Two hospitals only", "Supervised and unsupervised models", "Hardware costs", "Survey methods"]],
-      [22, "mcq", "Training location:", "GPU cluster", ["Home laptops", "GPU cluster", "Library PCs", "Cloud only"]],
-      [23, "mcq", "Dataset NOT used:", "Social media posts", ["Chest X-ray set", "Local sample", "Social media posts", "Anonymised data"]],
-      [24, "mcq", "Expected improvement:", "12%", ["5%", "8%", "12%", "20%"]],
-      [25, "mcq", "Report deadline:", "The twenty-second", ["The twelfth", "The eighteenth", "The twenty-second", "The twenty-eighth"]],
+      [21, "mcq", "Project compares:", "Supervised and unsupervised models", ["Two hospitals only", "Supervised and unsupervised models", "Hardware costs"]],
+      [22, "mcq", "Training location:", "GPU cluster", ["Home laptops", "GPU cluster", "Library PCs"]],
+      [23, "mcq", "Dataset NOT used:", "Social media posts", ["Chest X-ray set", "Local sample", "Social media posts"]],
+      [24, "mcq", "Expected improvement:", "12%", ["5%", "8%", "12%"]],
+      [25, "mcq", "Report deadline:", "The twenty-second", ["The twelfth", "The eighteenth", "The twenty-second"]],
       [26, "matching-features", "Image classification →", "convolutional networks"],
       [27, "matching-features", "Clustering →", "unsupervised learning"],
       [28, "matching-features", "Ethics review →", "local dataset"],
@@ -184,8 +190,10 @@ Receptionist: And your surname?
 Caller: Ward — that's W-A-R-D.
 Receptionist: A contact number, please?
 Caller: Oh seven nine, one two three, four five six seven eight nine.
-Receptionist: The first session fee is eighty-five pounds.
-Caller: Do you offer evening appointments?
+Receptionist: The first session fee is ninety-five pounds.
+Caller: Ninety-five?
+Receptionist: Sorry — actually eighty-five pounds for new clients. I quoted the follow-up rate by mistake.
+Caller: Eighty-five — thank you. Do you offer evening appointments?
 Receptionist: Yes, Thursdays until eight PM. Your email for confirmation?
 Caller: emily dot ward at gmail dot com.`,
         voice: "nova",
@@ -232,7 +240,9 @@ The staff rest area is in the basement and not open to visitors.`,
 Oliver: We're recording helping behaviour in campus common areas across three time blocks.
 Claire: Participants don't know they're being observed from behind tinted glass.
 Supervisor: Sample size?
-Oliver: We aim for sixty interactions per location.
+Oliver: We aim for ninety interactions per location.
+Claire: Um — Oliver, the proposal says sixty.
+Oliver: Oh — sorry, actually sixty. Ninety was last year's pilot target.
 Claire: We'll code responses using the bystander framework from the textbook.
 Supervisor: Ethics approval is required before you start filming.`,
         voice: "onyx",
@@ -288,11 +298,11 @@ Evidence-based practice combines clinical judgement with replicated findings.`,
       [18, "matching", "Accessible toilets:", "beside the lift"],
       [19, "matching", "Therapy gym:", "west annex"],
       [20, "matching", "Staff rest area:", "basement"],
-      [21, "mcq", "Study measures:", "Helping behaviour", ["Exam scores", "Helping behaviour", "Sleep quality", "Diet choices"]],
-      [22, "mcq", "Observation method:", "Behind tinted glass", ["Online surveys", "Phone interviews", "Behind tinted glass", "Public questionnaires"]],
-      [23, "mcq", "Interactions per site:", "60", ["30", "45", "60", "90"]],
-      [24, "mcq", "Coding framework:", "Bystander", ["Attachment", "Bystander", "Cognitive dissonance", "Maslow"]],
-      [25, "mcq", "Required approval:", "Ethics", ["Funding", "Ethics", "Marketing", "Library"]],
+      [21, "mcq", "Study measures:", "Helping behaviour", ["Exam scores", "Helping behaviour", "Sleep quality"]],
+      [22, "mcq", "Observation method:", "Behind tinted glass", ["Online surveys", "Phone interviews", "Behind tinted glass"]],
+      [23, "mcq", "Interactions per site:", "60", ["30", "45", "60"]],
+      [24, "mcq", "Coding framework:", "Bystander", ["Attachment", "Bystander", "Cognitive dissonance"]],
+      [25, "mcq", "Required approval:", "Ethics", ["Funding", "Ethics", "Marketing"]],
       [26, "matching-features", "Time blocks →", "independent schedule"],
       [27, "matching-features", "Helping acts →", "dependent behaviour"],
       [28, "matching-features", "Tinted glass →", "anonymity"],

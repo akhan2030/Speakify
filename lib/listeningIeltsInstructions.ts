@@ -1,3 +1,5 @@
+import { wordLimitPhrase } from "@/lib/listeningAuthenticityContract";
+
 export type InstructionPart = {
   text: string;
   emphasis?: "limit" | "normal";
@@ -10,93 +12,106 @@ function normalizeType(type: string) {
     .replace(/_/g, "-");
 }
 
+function limitParts(
+  maxWords: 1 | 2 | 3,
+  includeNumber = true
+): InstructionPart[] {
+  return [
+    {
+      text: wordLimitPhrase(maxWords, { includeNumber }),
+      emphasis: "limit",
+    },
+  ];
+}
+
 /**
  * Official IELTS instruction text parts for a question type.
  */
 export function getOfficialInstructionParts(
   questionType: string,
-  options?: { chooseCount?: number }
+  options?: {
+    chooseCount?: number;
+    /** Override default word limit (1 / 2 / 3) */
+    maxWords?: 1 | 2 | 3;
+    matchingRange?: string;
+  }
 ): InstructionPart[] {
   const type = normalizeType(questionType);
   const choose = options?.chooseCount ?? 1;
-
-  const twoWords: InstructionPart[] = [
-    { text: "NO MORE THAN TWO WORDS AND/OR A NUMBER", emphasis: "limit" },
-  ];
-  const twoWordsOnly: InstructionPart[] = [
-    { text: "NO MORE THAN TWO WORDS", emphasis: "limit" },
-  ];
-  const threeWords: InstructionPart[] = [
-    { text: "NO MORE THAN THREE WORDS AND/OR A NUMBER", emphasis: "limit" },
-  ];
+  const maxWords = options?.maxWords ?? (type === "short-answer" ? 3 : 2);
+  const matchingRange = options?.matchingRange ?? "A–G";
 
   switch (type) {
     case "form-completion":
       return [
         { text: "Complete the form below.\nWrite " },
-        ...twoWords,
+        ...limitParts(maxWords),
         { text: " for each answer." },
       ];
     case "note-completion":
       return [
         { text: "Complete the notes below.\nWrite " },
-        ...twoWords,
+        ...limitParts(maxWords),
         { text: " for each answer." },
       ];
     case "table-completion":
       return [
         { text: "Complete the table below.\nWrite " },
-        ...twoWords,
+        ...limitParts(maxWords),
         { text: " for each answer." },
       ];
     case "summary-completion":
       return [
         { text: "Complete the summary below.\nWrite " },
-        ...twoWords,
+        ...limitParts(maxWords),
         { text: " for each answer." },
       ];
     case "sentence-completion":
       return [
         { text: "Complete the sentences below.\nWrite " },
-        ...twoWords,
+        ...limitParts(maxWords),
         { text: " for each answer." },
       ];
     case "short-answer":
       return [
         { text: "Answer the questions below.\nWrite " },
-        ...threeWords,
+        ...limitParts(maxWords),
         { text: " for each answer." },
       ];
     case "multiple-choice":
       if (choose > 1) {
         return [
           {
-            text: `Choose ${choose === 2 ? "TWO" : String(choose)} letters from A-E.`,
+            text: `Choose ${choose === 2 ? "TWO" : String(choose)} letters from A–E.`,
           },
         ];
       }
-      return [{ text: "Choose the correct letter A, B or C." }];
+      return [{ text: "Choose the correct letter, A, B or C." }];
     case "matching":
-      return [{ text: "Choose your answers from the box." }];
+      return [
+        {
+          text: `Choose the correct answer from the box and write the correct letter, ${matchingRange}, next to the questions.`,
+        },
+      ];
     case "plan-map-diagram":
     case "map-labelling":
     case "plan-labelling":
     case "diagram-labelling":
       return [
-        { text: "Label the diagram. Write " },
-        ...twoWordsOnly,
-        { text: " for each answer." },
+        {
+          text: `Label the plan/map/diagram below. Choose the correct letter, ${matchingRange}, for each answer.`,
+        },
       ];
     case "flowchart-completion":
       return [
         { text: "Complete the flow chart below.\nWrite " },
-        ...twoWordsOnly,
+        ...limitParts(maxWords, false),
         { text: " for each answer." },
       ];
     default:
       return [
         { text: "Write " },
-        ...twoWords,
+        ...limitParts(maxWords),
         { text: " for each answer." },
       ];
   }
@@ -117,7 +132,10 @@ export function formatQuestionTypeLabel(questionType: string): string {
     "plan-map-diagram": "Plan / Map / Diagram",
     "flowchart-completion": "Flowchart Completion",
   };
-  return labels[type] ?? questionType.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return (
+    labels[type] ??
+    questionType.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }
 
 export function getGlobalQuestionRange(sectionNumber: number) {
@@ -146,16 +164,16 @@ export function getBreakInstructionLine(questionType: string): string {
   const type = normalizeType(questionType);
   switch (type) {
     case "multiple-choice":
-      return "Choose the correct letter A, B or C.";
+      return "Choose the correct letter, A, B or C.";
     case "matching":
-      return "Choose your answers from the box.";
+      return "Choose the correct letter from the box.";
     case "plan-map-diagram":
     case "map-labelling":
     case "plan-labelling":
     case "diagram-labelling":
-      return "Label the diagram. Write NO MORE THAN TWO WORDS.";
+      return "Label the map. Choose the correct letter for each answer.";
     case "short-answer":
-      return "Write NO MORE THAN TWO WORDS AND/OR A NUMBER.";
+      return "Write NO MORE THAN THREE WORDS AND/OR A NUMBER.";
     case "form-completion":
     case "note-completion":
     case "table-completion":

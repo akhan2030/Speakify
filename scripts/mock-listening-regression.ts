@@ -18,6 +18,11 @@ import {
 import { listeningRawToBand } from "../lib/listeningBandScore.js";
 import { bindSpeakersForMultiVoice } from "../lib/listeningMultiVoiceBind.js";
 import { MALE_VOICES, FEMALE_VOICES } from "../lib/listeningSpeakerProfiles.js";
+import {
+  SPELLING_PATTERN,
+  SELF_CORRECTION_PATTERN,
+  validateListeningAuthenticity,
+} from "../lib/listeningAuthenticityContract.js";
 
 let failed = 0;
 
@@ -200,6 +205,31 @@ test("Mock #1 S2 and S4 stay single-speaker monologues", () => {
       parts[idx].speakers
     );
     assert.equal(bound.length, 1, `Section ${parts[idx].partNumber} monologue`);
+  }
+});
+
+test("all curated mocks S1 have letter-spelling + self-correction", () => {
+  for (let mock = 1; mock <= 5; mock += 1) {
+    const parts = getListeningPartsForMock(mock);
+    const transcript = parts[0].blocks.map((b) => b.transcript).join("\n");
+    assert.ok(SPELLING_PATTERN.test(transcript), `Mock ${mock} S1 spelling`);
+    assert.ok(
+      SELF_CORRECTION_PATTERN.test(transcript),
+      `Mock ${mock} S1 self-correction`
+    );
+    const check = validateListeningAuthenticity(transcript, 1);
+    assert.equal(check.ok, true, `Mock ${mock}: ${check.errors.join("; ")}`);
+  }
+});
+
+test("Mock #1–2 S3 include self-correction of a tested detail", () => {
+  for (const mock of [1, 2]) {
+    const parts = getListeningPartsForMock(mock);
+    const transcript = parts[2].blocks.map((b) => b.transcript).join("\n");
+    assert.ok(
+      SELF_CORRECTION_PATTERN.test(transcript),
+      `Mock ${mock} S3 self-correction`
+    );
   }
 });
 

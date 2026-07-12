@@ -85,7 +85,7 @@ NO multiple-choice. options must be [].`,
         type: "matching",
         count: 5,
         promptHint:
-          "Questions 16–20: matching — match places/features to descriptions (provide matching options list in questions).",
+          "Questions 16–20: matching — provide a lettered box (A–E). Each answer MUST be a single letter. Match places/features to descriptions.",
       },
     ],
   },

@@ -22,8 +22,10 @@ Admissions: And your surname?
 Student: Clarke — that's C-L-A-R-K-E.
 Admissions: Contact number?
 Student: Oh seven seven, zero zero, nine zero zero, four five six.
-Admissions: Tuition deposit is two thousand pounds.
-Student: I'll pay by bank transfer.
+Admissions: Tuition deposit is two thousand five hundred pounds.
+Student: Two thousand five hundred?
+Admissions: Sorry — actually two thousand pounds for early applicants. I had the standard deposit open.
+Student: Two thousand — I'll pay by bank transfer.
 Admissions: Email for your student portal?
 Student: sophie dot clarke at bristol dot ac dot uk.`,
         voice: "nova",
@@ -33,7 +35,7 @@ Student: sophie dot clarke at bristol dot ac dot uk.`,
         breakMessage: "You now have 30 seconds to look at Questions 6 to 10.",
         transcript: `Admissions: Will you need on-campus housing?
 Student: Yes, a single room please.
-Admissions: Halls open from the twenty-eighth of August. Meal plan is optional at eight hundred riyals per semester.
+Admissions: Halls open from the twenty-eighth of August. Meal plan is optional at eight hundred pounds per semester.
 Student: I'd like the meal plan. Any disability support?
 Admissions: Contact the access office before the fifteenth of August.
 Student: When is orientation week?
@@ -68,7 +70,9 @@ The café is on the ground floor, facing the courtyard.`,
 Omar: I'll research platform adoption statistics.
 Lina: I'll interview two lecturers about hybrid classrooms.
 Tutor: Deadline?
-Omar: Slides due on the ninth of November.
+Omar: Slides due on the ninth of November — wait, no.
+Lina: The brief says the twelfth.
+Omar: Oh — sorry, actually the twelfth of November. I mixed it up with the rehearsal date.
 Lina: We'll rehearse in the practice room on the eighth.
 Tutor: Include a critical evaluation of student engagement data.`,
         voice: "onyx",
@@ -117,8 +121,8 @@ Motivation theories distinguish intrinsic interest from external rewards. Digita
       [20, "matching", "Café:", "ground floor courtyard"],
       [21, "mcq", "Omar's section:", "Platform statistics", ["Interview quotes", "Platform statistics", "APA guide", "Café menu"]],
       [22, "mcq", "Lina's section:", "Lecturer interviews", ["National survey", "Lecturer interviews", "IT support", "Meal plan"]],
-      [23, "mcq", "Slides deadline:", "9 November", ["9 October", "9 November", "9 December", "9 January"]],
-      [24, "mcq", "Rehearsal date:", "8 November", ["8 October", "8 November", "8 December", "15 November"]],
+      [23, "mcq", "Slides deadline:", "12 November", ["9 November", "12 November", "15 November"]],
+      [24, "mcq", "Rehearsal date:", "8 November", ["8 October", "8 November", "15 November"]],
       [25, "mcq", "Required analysis:", "Student engagement", ["Café revenue", "Student engagement", "Parking data", "Staff salaries"]],
       [26, "matching-features", "Statistics →", "national survey"],
       [27, "matching-features", "Quotes →", "education faculty"],
@@ -158,8 +162,10 @@ Booking: And your surname?
 Caller: Brooks — that's B-R-O-O-K-S.
 Booking: Phone number?
 Caller: Oh seven eight, one two three, four five six seven eight.
-Booking: Each ticket is thirty-two pounds, including telescope access.
-Caller: We'll arrive by train from central London.
+Booking: Each ticket is thirty-eight pounds, including telescope access.
+Caller: Thirty-eight?
+Booking: Sorry — actually thirty-two pounds online. The desk price is higher.
+Caller: Thirty-two — fine. We'll arrive by train from central London.
 Booking: Email for the confirmation?
 Caller: daniel dot brooks at outlook dot com.`,
         voice: "onyx",
@@ -296,8 +302,10 @@ Gallery: And your surname?
 Caller: Bennett — that's B-E-N-N-E-T-T.
 Gallery: Student ID and phone number?
 Caller: ID two zero two four five six, phone oh seven nine, one one two, two two three three four four.
-Gallery: Student membership is forty-five pounds annually.
-Caller: Does it include exhibition entry?
+Gallery: Student membership is fifty-five pounds annually.
+Caller: Fifty-five?
+Gallery: Sorry — actually forty-five pounds with a valid student card. I quoted the adult rate.
+Caller: Forty-five — perfect. Does it include exhibition entry?
 Gallery: Yes, unlimited entry and one guest pass per month.
 Caller: Email address?
 Caller: laura dot bennett at edinburgh dot ac dot uk.`,
@@ -312,7 +320,7 @@ Gallery: Members receive twenty percent off all studio workshops.
 Caller: When is the new sculpture exhibition opening?
 Gallery: The opening reception is on the fifth of October at six PM.
 Caller: Is parking available?
-Gallery: Underground parking is fifteen riyals flat rate for members.
+Gallery: Underground parking is fifteen pounds flat rate for members.
 Caller: Can I cancel membership?
 Gallery: You may cancel anytime; refunds are not provided after thirty days.`,
         voice: "nova",
