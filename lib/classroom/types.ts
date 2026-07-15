@@ -55,9 +55,6 @@ export type SectionType =
   | "example"
   | "practice";
 
-/** @deprecated Prefer SectionType — kept for existing pilot unit content. */
-export type ClassroomSectionType = SectionType;
-
 export type QuizQuestionType =
   | "mcq"
   | "true_false"
@@ -159,51 +156,3 @@ export interface ClassroomMedia {
   labels?: string[] | Record<string, unknown>;
   createdAt?: string;
 }
-
-/** Default nav order for the in-class unit reader (pilot-compatible). */
-export const SECTION_ORDER: SectionType[] = [
-  "objectives",
-  "warm_up",
-  "reading",
-  "comprehension",
-  "vocabulary",
-  "grammar",
-  "listening",
-  "speaking",
-  "writing",
-  "quiz",
-  "cultural_bridge",
-  "reflection",
-];
-
-export const SECTION_LABELS: Partial<Record<SectionType, string>> = {
-  objectives: "Learning Objectives",
-  warm_up: "Warm-Up",
-  reading: "Reading",
-  comprehension: "Comprehension",
-  vocabulary: "Vocabulary",
-  vocab: "Vocabulary",
-  grammar: "Grammar",
-  listening: "Listening",
-  speaking: "Speaking",
-  writing: "Writing",
-  mcq: "Multiple Choice",
-  fill_blank: "Fill in the Blank",
-  gap_fill: "Gap Fill",
-  matching: "Matching",
-  true_false: "True / False",
-  task: "Task",
-  post_task: "Post-Task",
-  pre_task: "Pre-Task",
-  word_search: "Word Search",
-  wordlist: "Word List",
-  reflection: "Reflection",
-  discussion: "Discussion",
-  cultural_bridge: "Cultural Bridge",
-  quiz: "Quiz",
-  answer_key: "Answer Key",
-  teacher_notes: "Teacher Notes",
-  instructions: "Instructions",
-  example: "Example",
-  practice: "Practice",
-};
