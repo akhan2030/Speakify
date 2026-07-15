@@ -76,6 +76,12 @@ function MockQuestionInput({
   value: string;
   onChange: (value: string) => void;
 }) {
+  // Normalize as string so practice-only kinds aren't blocked by MockQuestion's narrower union.
+  const kind = String(question.kind ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-");
+
   if (isMcqQuestion(question, question.typeSlug)) {
     return (
       <div className="mt-3 space-y-2">
@@ -94,7 +100,7 @@ function MockQuestionInput({
     );
   }
 
-  if (question.kind === "true-false-not-given") {
+  if (kind === "true-false-not-given") {
     return (
       <HighlightableTfngOptions
         blockIdPrefix={`rq-tfng-${question.id}`}
@@ -106,7 +112,7 @@ function MockQuestionInput({
     );
   }
 
-  if (question.kind === "matching-headings" && question.headings) {
+  if (kind === "matching-headings" && question.headings) {
     return (
       <select
         value={value}
@@ -123,7 +129,7 @@ function MockQuestionInput({
     );
   }
 
-  if (question.kind === "matching-information") {
+  if (kind === "matching-information") {
     const letters =
       question.options?.map((o) => o.key) ??
       ["A", "B", "C", "D", "E", "F", "G"];
@@ -143,7 +149,7 @@ function MockQuestionInput({
     );
   }
 
-  if (question.kind === "classification") {
+  if (kind === "classification") {
     const categories = question.options?.length
       ? question.options
       : ["A", "B", "C", "D"].map((key) => ({ key, label: key }));
@@ -163,7 +169,7 @@ function MockQuestionInput({
     );
   }
 
-  if (question.kind === "matching-sentence-endings") {
+  if (kind === "matching-sentence-endings") {
     const endings = question.options?.length
       ? question.options
       : ["A", "B", "C", "D", "E", "F"].map((key) => ({ key, label: key }));
@@ -183,7 +189,7 @@ function MockQuestionInput({
     );
   }
 
-  if (question.kind === "matching-features") {
+  if (kind === "matching-features") {
     const features = question.options?.length
       ? question.options
       : ["A", "B", "C", "D", "E"].map((key) => ({ key, label: key }));
