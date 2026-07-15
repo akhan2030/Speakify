@@ -70,19 +70,19 @@ export const TASK1_PROMPT_BANK: Task1Question[] = [
     },
   },
   {
-    id: "saudi-internet-age",
+    id: "uk-internet-age",
     visualType: "bar",
     title: "Internet usage by age",
-    summary: "Daily internet use among Saudi residents by age group (2020 vs 2024)",
-    chartTitle: "Daily internet usage by age group in Saudi Arabia (%)",
+    summary: "Daily internet use in the United Kingdom by age group (2020 vs 2024)",
+    chartTitle: "Daily internet usage by age group in the United Kingdom (%)",
     prompt:
-      "The bar chart below shows the percentage of people in different age groups in Saudi Arabia who used the internet daily in 2020 and 2024.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "The bar chart below shows the percentage of people in different age groups in the United Kingdom who used the internet daily in 2020 and 2024.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
     bar: {
       categories: ["16–24", "25–34", "35–44", "45–54", "55–64", "65+"],
       yAxisLabel: "Percentage (%)",
       series: [
-        { name: "2020", color: "#0d9488", values: [96, 94, 88, 76, 58, 32] },
-        { name: "2024", color: "#c9972c", values: [99, 97, 93, 84, 68, 45] },
+        { name: "2020", color: "#0d9488", values: [98, 96, 92, 84, 68, 38] },
+        { name: "2024", color: "#c9972c", values: [99, 98, 95, 88, 74, 52] },
       ],
     },
   },

@@ -100,6 +100,7 @@ export async function POST(request) {
     const questionType = body?.questionType;
     const answers = body?.answers ?? {};
     const correctAnswers = body?.correctAnswers ?? {};
+    const alternativesById = body?.alternativesById ?? {};
     const timeTakenSeconds = Number(body?.timeTakenSeconds ?? 0);
     const timedOut = Boolean(body?.timedOut);
     const passageBreakdown = body?.passageBreakdown ?? [];
@@ -114,7 +115,8 @@ export async function POST(request) {
 
     const { score, total, accuracy, estimatedBand } = scoreReadingAttempt(
       answers,
-      correctAnswers
+      correctAnswers,
+      { alternativesById }
     );
 
     const hasSupabase =

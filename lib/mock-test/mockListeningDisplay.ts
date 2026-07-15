@@ -192,6 +192,14 @@ export function validateMockListeningParts(
       });
     }
 
+    if (part.partNumber === 4 && part.blocks.length < 3) {
+      issues.push({
+        mockNumber,
+        partNumber: 4,
+        message: "section 4 requires three question-type blocks (two mid pauses)",
+      });
+    }
+
     if (part.partNumber === 1 && part.blocks.length >= 2) {
       const t0 = resolveBlockQuestionType(part.partNumber, part.blocks[0]);
       const t1 = resolveBlockQuestionType(part.partNumber, part.blocks[1]);

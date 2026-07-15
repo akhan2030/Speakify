@@ -57,6 +57,9 @@ export async function POST(request) {
 
     const answers = body?.answers ?? {};
     const correctAnswers = body?.correctAnswers ?? {};
+    const questionMeta = Array.isArray(body?.questionMeta)
+      ? body.questionMeta
+      : [];
     const questionTypeId = String(body?.questionType ?? "");
     const sectionNumber = Number(body?.sectionNumber ?? 0);
     const testType = String(body?.testType ?? "section").toLowerCase();
@@ -74,7 +77,25 @@ export async function POST(request) {
       (key) => answers[key] ?? answers[String(key)] ?? ""
     );
 
-    const scored = scoreListeningAnswers(studentList, correctList);
+    // Align optional metadata with sorted answer keys (by question number / id)
+    const metaByKey = new Map();
+    for (const row of questionMeta) {
+      if (!row || typeof row !== "object") continue;
+      if (row.id != null && row.id !== "") {
+        metaByKey.set(String(row.id), row);
+      }
+      if (row.questionNumber != null && row.questionNumber !== "") {
+        metaByKey.set(String(row.questionNumber), row);
+      }
+    }
+    const metaList = sortedKeys.map(
+      (key) =>
+        metaByKey.get(String(key)) ??
+        metaByKey.get(String(Number(key))) ??
+        {}
+    );
+
+    const scored = scoreListeningAnswers(studentList, correctList, metaList);
     const band = calculateListeningBand(scored.score, scored.total);
     const sectionScores =
       testType === "mock"

@@ -3,6 +3,7 @@ export type AdminActivePage =
   | "users"
   | "programmes"
   | "courses"
+  | "classroom"
   | "teachers"
   | "reports"
   | "settings";
@@ -41,6 +42,13 @@ export const ADMIN_NAV_ITEMS: {
     href: "/dashboard/admin/courses",
     icon: "🗂",
     description: "Catalog & content",
+  },
+  {
+    id: "classroom",
+    label: "Classroom",
+    href: "/admin/classroom",
+    icon: "📘",
+    description: "In-person textbooks",
   },
   {
     id: "teachers",

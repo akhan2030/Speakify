@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import { PageShell } from "@/components/student/PageFetchStates";
 import {
   ACCELERATOR_TRACKS,
@@ -12,6 +13,7 @@ import {
   loadProgress,
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
+import { resolveIeltsProgramVariant } from "@/lib/programs/ieltsProgramIdentity";
 
 function WeekCard({
   trackId,
@@ -21,6 +23,7 @@ function WeekCard({
   locked,
   expanded,
   onToggle,
+  variant,
 }: {
   trackId: AcceleratorTrackId;
   weekNum: number;
@@ -29,8 +32,9 @@ function WeekCard({
   locked: boolean;
   expanded: boolean;
   onToggle: () => void;
+  variant: ReturnType<typeof resolveIeltsProgramVariant>;
 }) {
-  const days = getWeekDays(trackId, weekNum);
+  const days = getWeekDays(trackId, weekNum, variant);
   const isCurrent = weekNum === currentWeek;
   const isPast = weekNum < currentWeek;
 
@@ -108,6 +112,16 @@ function WeekCard({
 export default function AcceleratorTrackPage() {
   const params = useParams();
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const variant = useMemo(
+    () =>
+      resolveIeltsProgramVariant({
+        programType: (session?.user as { programType?: string })?.programType,
+        enrolledPrograms: (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms,
+        programSelected: (session?.user as { programSelected?: string })?.programSelected,
+      }),
+    [session]
+  );
   const trackParam = String(params.track);
   const trackId = isValidTrack(trackParam) ? trackParam : "plus";
   const track = ACCELERATOR_TRACKS[trackId];
@@ -212,6 +226,7 @@ export default function AcceleratorTrackPage() {
                 locked={locked}
                 expanded={expanded}
                 onToggle={() => setExpandedWeek(expanded ? null : weekNum)}
+                variant={variant}
               />
             );
           })}

@@ -382,9 +382,12 @@ export default function GeneralStudentDashboard() {
             </ul>
 
             <div className="mt-5">
-              <div className="mb-1 flex justify-between text-xs text-slate-500">
+              <div className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                 <span>
                   {data.today.completedCount}/{data.today.totalCount} tasks completed today
+                </span>
+                <span className="text-slate-300" aria-hidden>
+                  ·
                 </span>
                 <span>~{data.today.remainingMinutes} minutes left today</span>
               </div>

@@ -9,6 +9,7 @@ import DailyLimitReached from "@/components/DailyLimitReached";
 import ListeningExamPrepBanner from "@/components/ListeningExamPrepBanner";
 import ListeningSectionAnnouncer from "@/components/ListeningSectionAnnouncer";
 import { ListeningQuestionsColumn } from "@/components/listening/ListeningQuestionsColumn";
+import { syncPrepMessageSeconds } from "@/lib/mock-test/prepMessageSync";
 import type { TextHighlight } from "@/lib/examHighlight";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
@@ -31,22 +32,15 @@ import {
 import { buildQuestionGroups, type QuestionGroup } from "@/lib/listeningQuestionGroups";
 import { getSectionPlan } from "@/lib/listeningSectionTypes";
 import { sectionHasPlaceholderQuestions } from "@/lib/listeningQuestionContent.js";
+import { buildListeningQuestionMeta } from "@/lib/buildListeningQuestionMeta.js";
+import ListeningAnswerReview from "@/components/listening/ListeningAnswerReview";
+import type {
+  ListeningQuestion as SharedListeningQuestion,
+  QuestionResult,
+} from "@/components/ListeningQuestions";
 
-type ListeningQuestion = {
-  id: number;
-  questionNumber: number;
-  type: string;
-  text: string;
-  options?: { label: string; text: string }[];
-  chooseCount?: number;
+type ListeningQuestion = SharedListeningQuestion & {
   answer?: string;
-  wordLimit?: string;
-};
-
-type QuestionResult = {
-  correct: boolean;
-  studentAnswer: string;
-  correctAnswer: string;
 };
 
 type SectionData = {
@@ -58,6 +52,11 @@ type SectionData = {
   questionType: string;
   wordLimit?: string;
   questions: ListeningQuestion[];
+  example?: {
+    questionText?: string;
+    answerText?: string;
+    answer?: string;
+  } | null;
   fromBank?: boolean;
   testId?: string;
   contentType?: string;
@@ -135,6 +134,7 @@ function ListeningSectionExam() {
 
   const [phase, setPhase] = useState<ExamFlowPhase | "loading">("loading");
   const [timerSeconds, setTimerSeconds] = useState(PREP_SECONDS);
+  const [prepLookReady, setPrepLookReady] = useState(false);
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [sectionData, setSectionData] = useState<SectionData | null>(null);
   const [answers, setAnswers] = useState<Record<string | number, string>>({});
@@ -251,6 +251,12 @@ function ListeningSectionExam() {
   const onAnnouncementComplete = useCallback(() => {
     setPhase("prep");
     setTimerSeconds(PREP_SECONDS);
+    setPrepLookReady(true);
+  }, []);
+
+  const onMidPrepAnnouncementComplete = useCallback(() => {
+    setTimerSeconds(PREP_SECONDS);
+    setPrepLookReady(true);
   }, []);
 
   const handleSubmitRef = useRef<(timedOut: boolean) => void>(() => {});
@@ -266,14 +272,19 @@ function ListeningSectionExam() {
 
     setPhase("loading");
     setLoadError(null);
+    setSectionData(null);
     setAnswers({});
     setHighlights([]);
     setResults(null);
     submittedRef.current = false;
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 90_000);
+
     try {
       const res = await fetch(
-        `/api/listening/generate?section=${sectionNumber}&studentId=${encodeURIComponent(studentId)}`
+        `/api/listening/generate?section=${sectionNumber}&studentId=${encodeURIComponent(studentId)}`,
+        { signal: controller.signal }
       );
       const data = await res.json().catch(() => null);
 
@@ -285,7 +296,7 @@ function ListeningSectionExam() {
       }
 
       if (!res.ok || !data?.success) {
-        throw new Error(data?.error ?? "Failed to load section");
+        throw new Error(data?.error ?? `Failed to load section (HTTP ${res.status})`);
       }
 
       if (sectionHasPlaceholderQuestions(data.questions)) {
@@ -299,8 +310,18 @@ function ListeningSectionExam() {
       setActiveGroupIndex(0);
       setPhase("announcement");
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load section");
+      const message =
+        err instanceof Error && err.name === "AbortError"
+          ? "Listening generation timed out after 90 seconds. Please try again."
+          : err instanceof Error
+            ? err.message
+            : "Failed to load section";
+      setLoadError(message);
+      setSectionData(null);
+      // Stay out of endless loading spinner — show error UI
       setPhase("prep");
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }, [studentId, sectionNumber]);
 
@@ -318,6 +339,12 @@ function ListeningSectionExam() {
         {} as Record<number, string>
       );
 
+      const questionMeta = buildListeningQuestionMeta(sectionData.questions, {
+        transcript: sectionData.transcript,
+        sectionWordLimit: sectionData.wordLimit,
+        answerKey: "id",
+      });
+
       const checkSecs = getCheckSeconds(sectionNumber);
 
       try {
@@ -330,6 +357,7 @@ function ListeningSectionExam() {
             questionType: sectionData.questionType,
             answers,
             correctAnswers,
+            questionMeta,
             timeTakenSeconds:
               PREP_SECONDS * Math.max(1, questionGroups.length) + checkSecs,
             timedOut,
@@ -396,7 +424,22 @@ function ListeningSectionExam() {
   }, [status, studentId, sectionNumber, attemptKey, loadSection]);
 
   useEffect(() => {
+    if (phase === "prep") {
+      setTimerSeconds(PREP_SECONDS);
+      setPrepLookReady(activeGroupIndex === 0);
+      return;
+    }
+    if (phase === "checking") {
+      setTimerSeconds(getCheckSeconds(sectionNumber));
+      setPrepLookReady(true);
+      return;
+    }
+    setPrepLookReady(false);
+  }, [phase, activeGroupIndex, sectionNumber]);
+
+  useEffect(() => {
     if (!TIMED_PHASES.includes(phase as ExamFlowPhase)) return;
+    if (!prepLookReady) return;
 
     if (timerSeconds <= 0) {
       advanceFromTimer();
@@ -408,7 +451,7 @@ function ListeningSectionExam() {
     }, 1000);
 
     return () => clearInterval(id);
-  }, [phase, timerSeconds, advanceFromTimer, sectionNumber]);
+  }, [phase, timerSeconds, advanceFromTimer, sectionNumber, prepLookReady]);
 
   const handleAnswerChange = useCallback(
     (questionId: number | string, value: string) => {
@@ -444,6 +487,7 @@ function ListeningSectionExam() {
     const next = activeGroupIndex + 1;
     if (usesGroupPrep && next < questionGroups.length) {
       setActiveGroupIndex(next);
+      setPrepLookReady(false);
       setPhase("prep");
       setTimerSeconds(PREP_SECONDS);
       return;
@@ -519,39 +563,12 @@ function ListeningSectionExam() {
               </div>
             </div>
 
-            <section className="mt-10">
-              <h2 className="text-xl font-bold text-[#0d1b35]">Answer Review</h2>
-              <div className="mt-4 space-y-4">
-                {sectionData.questions.map((q, i) => {
-                  const r = results.results[i];
-                  const correct = r?.correct;
-                  return (
-                    <div
-                      key={q.id}
-                      className={`rounded-xl border p-4 ${
-                        correct
-                          ? "border-green-200 bg-green-50"
-                          : "border-red-200 bg-red-50"
-                      }`}
-                    >
-                      <p className="font-semibold text-[#0d1b35]">
-                        Q{q.questionNumber}. {q.text}
-                      </p>
-                      <p className="mt-2 text-sm">
-                        <span className="font-medium">Your answer:</span>{" "}
-                        {r?.studentAnswer || "—"}
-                      </p>
-                      {!correct ? (
-                        <p className="mt-1 text-sm text-green-700">
-                          <span className="font-medium">Correct answer:</span>{" "}
-                          {r?.correctAnswer ?? q.answer}
-                        </p>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+            <ListeningAnswerReview
+              questions={sectionData.questions}
+              results={results.results}
+              transcript={sectionData.transcript}
+              title="Answer Review"
+            />
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
@@ -647,7 +664,7 @@ function ListeningSectionExam() {
                 <div className="mt-4">
                   <ListeningSectionAnnouncer
                     text={prepAnnouncementConfig.text}
-                    onComplete={() => {}}
+                    onComplete={onMidPrepAnnouncementComplete}
                   />
                 </div>
               ) : null}
@@ -655,8 +672,12 @@ function ListeningSectionExam() {
               {prepBannerConfig ? (
                 <div className="mt-4 overflow-hidden rounded-xl">
                   <ListeningExamPrepBanner
-                    message={prepBannerConfig.message}
+                    message={syncPrepMessageSeconds(
+                      prepBannerConfig.message,
+                      timerSeconds
+                    )}
                     secondsLeft={timerSeconds}
+                    secondsOnly
                   />
                 </div>
               ) : null}
@@ -664,8 +685,12 @@ function ListeningSectionExam() {
               {checkBannerConfig ? (
                 <div className="mt-4 overflow-hidden rounded-xl">
                   <ListeningExamPrepBanner
-                    message={checkBannerConfig.message}
+                    message={syncPrepMessageSeconds(
+                      checkBannerConfig.message,
+                      timerSeconds
+                    )}
                     secondsLeft={timerSeconds}
+                    secondsOnly
                   />
                 </div>
               ) : null}
@@ -707,6 +732,7 @@ function ListeningSectionExam() {
                   sectionTitle={sectionData.title}
                   highlights={highlights}
                   onHighlightsChange={setHighlights}
+                  example={sectionData.example}
                 />
 
               </div>

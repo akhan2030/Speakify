@@ -47,6 +47,12 @@ export async function computePlacementFinishFromDb(
     });
   }
 
+  const ieltsModule: TestState["ieltsModule"] = answers.some(
+    (a) => a.questionId === "write-task1-letter"
+  )
+    ? "general_training"
+    : "academic";
+
   const state: TestState = {
     currentBand: 5,
     confidence: Math.min(100, Math.max(40, answers.length * 3)),
@@ -56,6 +62,7 @@ export async function computePlacementFinishFromDb(
     questionsAsked: answers.length,
     maxQuestions: Math.max(answers.length, 28),
     speakingCompleted: true,
+    ieltsModule,
   };
 
   return buildPlacementResult(state);

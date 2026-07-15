@@ -114,11 +114,16 @@ export default function TodayMissionPage() {
           {data.dayName} — {data.todayDate}
         </h1>
         <p className="mt-2 text-sm text-slate-600">{data.subtitle}</p>
-        <div className="mt-4 flex flex-wrap gap-4 text-sm">
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <span className="font-semibold text-[#c9972c]">
             🔥 {data.streak.current}-day streak
           </span>
-          <span className="text-slate-500">~{data.remainingMinutes} min remaining</span>
+          <span className="text-slate-300" aria-hidden>
+            ·
+          </span>
+          <span className="text-slate-500">
+            ~{data.remainingMinutes} min remaining
+          </span>
         </div>
       </header>
 
@@ -158,7 +163,7 @@ export default function TodayMissionPage() {
         <p className="text-sm text-slate-600">{data.tomorrow.subtitle}</p>
         <ul className="mt-3 space-y-1 text-sm text-slate-700">
           {data.tomorrow.tasks.map((t) => (
-            <li key={t.id} className="flex justify-between gap-2">
+            <li key={t.id} className="flex items-center gap-2">
               <span>{t.title}</span>
               <span className="shrink-0 text-xs text-slate-400">{t.minutes}m</span>
             </li>

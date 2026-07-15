@@ -1,0 +1,140 @@
+{
+  "title": "Unit 1 Quiz — Smart Cities, Sustainable Future",
+  "questions": [
+    {
+      "id": 1,
+      "type": "mcq",
+      "prompt": "Sustainable mainly means…",
+      "options": [
+        "expensive and rare",
+        "able to continue without harming the future environment",
+        "only used in airports",
+        "temporary and experimental"
+      ],
+      "answer": "able to continue without harming the future environment"
+    },
+    {
+      "id": 2,
+      "type": "mcq",
+      "prompt": "Choose Present Continuous for a temporary project:",
+      "options": [
+        "The city has three metro lines.",
+        "People usually take the bus.",
+        "Engineers are installing new sensors this month.",
+        "Water is important."
+      ],
+      "answer": "Engineers are installing new sensors this month."
+    },
+    {
+      "id": 3,
+      "type": "mcq",
+      "prompt": "A congested road is…",
+      "options": ["empty", "full of traffic", "made of solar panels", "underground only"],
+      "answer": "full of traffic"
+    },
+    {
+      "id": 4,
+      "type": "true_false",
+      "prompt": "Accessible spaces are designed so more people can use them easily.",
+      "answer": "true"
+    },
+    {
+      "id": 5,
+      "type": "true_false",
+      "prompt": "Renewable energy comes from sources that will run out quickly.",
+      "answer": "false"
+    },
+    {
+      "id": 6,
+      "type": "gap_fill",
+      "prompt": "Electric buses are often _____ (quiet) than diesel buses.",
+      "answer": "quieter"
+    },
+    {
+      "id": 7,
+      "type": "mcq",
+      "prompt": "Infrastructure includes…",
+      "options": [
+        "only shopping malls",
+        "basic systems such as roads, power, and water",
+        "only mobile phones",
+        "weather forecasts"
+      ],
+      "answer": "basic systems such as roads, power, and water"
+    },
+    {
+      "id": 8,
+      "type": "mcq",
+      "prompt": "According to the unit reading idea, technology works best when…",
+      "options": [
+        "citizens never use apps",
+        "design ignores climate",
+        "citizens use tools and design respects culture and climate",
+        "only cars are prioritised"
+      ],
+      "answer": "citizens use tools and design respects culture and climate"
+    },
+    {
+      "id": 9,
+      "type": "gap_fill",
+      "prompt": "Right now the council _____ (plan) a shaded walking route.",
+      "answer": "is planning"
+    },
+    {
+      "id": 10,
+      "type": "mcq",
+      "prompt": "Innovation means…",
+      "options": ["an old tradition", "a new idea or method", "a traffic jam", "a type of bus ticket"],
+      "answer": "a new idea or method"
+    },
+    {
+      "id": 11,
+      "type": "mcq",
+      "prompt": "A compact neighbourhood is…",
+      "options": ["spread over a huge desert area", "using space carefully", "only for tourists", "closed at night"],
+      "answer": "using space carefully"
+    },
+    {
+      "id": 12,
+      "type": "true_false",
+      "prompt": "Comparatives compare two things; superlatives show the top of a group.",
+      "answer": "true"
+    },
+    {
+      "id": 13,
+      "type": "mcq",
+      "prompt": "In the listening, Dana reviews…",
+      "options": [
+        "hotel menus",
+        "smart bins and street sensors",
+        "football scores",
+        "airport flights"
+      ],
+      "answer": "smart bins and street sensors"
+    },
+    {
+      "id": 14,
+      "type": "mcq",
+      "prompt": "A good campaign poster should include…",
+      "options": [
+        "a clear slogan and call to action",
+        "only long paragraphs",
+        "private medical data",
+        "no English words"
+      ],
+      "answer": "a clear slogan and call to action"
+    },
+    {
+      "id": 15,
+      "type": "mcq",
+      "prompt": "Citizen in this unit means…",
+      "options": [
+        "only a company owner",
+        "a person who lives in a city/country and has rights there",
+        "a robot sensor",
+        "a type of renewable energy"
+      ],
+      "answer": "a person who lives in a city/country and has rights there"
+    }
+  ]
+}

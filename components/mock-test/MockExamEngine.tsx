@@ -25,6 +25,7 @@ import {
 import { getVisibleListeningBlockGroups } from "@/lib/mock-test/mockListeningDisplay";
 import type { TextHighlight } from "@/lib/examHighlight";
 import MockWritingChart from "@/components/mock-test/MockWritingChart";
+import WritingTaskVisual from "@/components/writing/WritingTaskVisual";
 import StickySubmitBar from "@/components/accelerator/StickySubmitBar";
 import SectionTransition, {
   ExamCompleteScreen,
@@ -32,6 +33,7 @@ import SectionTransition, {
 import {
   LISTENING_CHECK_SECONDS,
   LISTENING_PREP_SECONDS,
+  LISTENING_SECTION4_CHECK_SECONDS,
   SECTION_DURATIONS,
   SECTION_LABELS,
   SECTION_ORDER,
@@ -148,6 +150,7 @@ export default function MockExamEngine({
   const [listeningBlockIdx, setListeningBlockIdx] = useState(0);
   const [listeningStep, setListeningStep] = useState<ListeningStep>("intro");
   const [countdownLeft, setCountdownLeft] = useState(LISTENING_PREP_SECONDS);
+  const [prepLookReady, setPrepLookReady] = useState(false);
   const [activeListeningQ, setActiveListeningQ] = useState(0);
 
   const [readingPassageIdx, setReadingPassageIdx] = useState(0);
@@ -547,21 +550,45 @@ export default function MockExamEngine({
     advancingListeningRef.current = true;
 
     const parts = listeningPartsRef.current;
-    setListeningPartIdx((idx) => {
-      if (idx >= parts.length - 1) {
-        startTransition("listening");
-        return idx;
-      }
-      return idx + 1;
-    });
+    const idx = listeningPartIdxRef.current;
 
-    setListeningBlockIdx(0);
-    setListeningStep("intro");
+    if (idx >= parts.length - 1) {
+      startTransition("listening");
+    } else {
+      const nextIdx = idx + 1;
+      const firstBlock = parts[nextIdx]?.blocks?.[0];
+      if (firstBlock) {
+        setActiveListeningQ(Math.max(0, firstBlock.questionStart - 1));
+      }
+      setListeningBlockIdx(0);
+      setListeningPartIdx(nextIdx);
+      // Real IELTS Listening is continuous — no manual Continue between sections.
+      setCountdownLeft(LISTENING_PREP_SECONDS);
+      setListeningStep("prep");
+    }
 
     window.setTimeout(() => {
       advancingListeningRef.current = false;
     }, 800);
   }, [startTransition]);
+
+  /** Auto-start section prep from intro (no Continue click — continuous exam feel). */
+  useEffect(() => {
+    if (phase !== "listening" || listeningStep !== "intro") return;
+    const part = listeningParts[listeningPartIdx];
+    const block = part?.blocks?.[0];
+    if (!block) return;
+
+    setActiveListeningQ(Math.max(0, block.questionStart - 1));
+    setCountdownLeft(LISTENING_PREP_SECONDS);
+
+    // Brief pause so the section intro line can be read, then flow into prep/audio.
+    const delayMs = listeningPartIdx === 0 ? 1800 : 1400;
+    const id = window.setTimeout(() => {
+      setListeningStep("prep");
+    }, delayMs);
+    return () => window.clearTimeout(id);
+  }, [phase, listeningStep, listeningPartIdx, listeningParts]);
 
   const onAudioComplete = useCallback(() => {
     const partIdx = listeningPartIdxRef.current;
@@ -588,6 +615,15 @@ export default function MockExamEngine({
     if (listeningStep !== "prep" && listeningStep !== "break") return;
 
     setCountdownLeft(LISTENING_PREP_SECONDS);
+    setPrepLookReady(false);
+  }, [phase, listeningPartIdx, listeningBlockIdx, listeningStep]);
+
+  useEffect(() => {
+    if (phase !== "listening") return;
+    if (listeningStep !== "prep" && listeningStep !== "break") return;
+    if (!prepLookReady) return;
+
+    setCountdownLeft(LISTENING_PREP_SECONDS);
     let left = LISTENING_PREP_SECONDS;
 
     const id = window.setInterval(() => {
@@ -600,13 +636,29 @@ export default function MockExamEngine({
     }, 1000);
 
     return () => window.clearInterval(id);
-  }, [phase, listeningPartIdx, listeningBlockIdx, listeningStep]);
+  }, [phase, listeningPartIdx, listeningBlockIdx, listeningStep, prepLookReady]);
 
   useEffect(() => {
     if (phase !== "listening" || listeningStep !== "check") return;
 
-    setCountdownLeft(LISTENING_CHECK_SECONDS);
-    let left = LISTENING_CHECK_SECONDS;
+    const checkSecs =
+      listeningParts[listeningPartIdx]?.partNumber === 4
+        ? LISTENING_SECTION4_CHECK_SECONDS
+        : LISTENING_CHECK_SECONDS;
+    setCountdownLeft(checkSecs);
+    setPrepLookReady(false);
+  }, [phase, listeningPartIdx, listeningStep, listeningParts]);
+
+  useEffect(() => {
+    if (phase !== "listening" || listeningStep !== "check") return;
+    if (!prepLookReady) return;
+
+    const checkSecs =
+      listeningParts[listeningPartIdx]?.partNumber === 4
+        ? LISTENING_SECTION4_CHECK_SECONDS
+        : LISTENING_CHECK_SECONDS;
+    setCountdownLeft(checkSecs);
+    let left = checkSecs;
 
     const id = window.setInterval(() => {
       left -= 1;
@@ -618,7 +670,7 @@ export default function MockExamEngine({
     }, 1000);
 
     return () => window.clearInterval(id);
-  }, [phase, listeningPartIdx, listeningStep, advanceAfterCheck]);
+  }, [phase, listeningPartIdx, listeningStep, prepLookReady, advanceAfterCheck, listeningParts]);
 
   useEffect(() => {
     if (phase !== "speaking" || !speakingInPrep) return;
@@ -727,6 +779,10 @@ export default function MockExamEngine({
     if (phase === "writing") setWritingTask(index === 0 ? 1 : 2);
   };
 
+  const onPrepAnnouncementComplete = useCallback(() => {
+    setPrepLookReady(true);
+  }, []);
+
   const listeningBanner = useMemo(() => {
     if (phase !== "listening") return null;
     const part = listeningParts[listeningPartIdx];
@@ -736,6 +792,7 @@ export default function MockExamEngine({
         <MockListeningInstructorBanner
           message={block.prepMessage}
           secondsLeft={countdownLeft}
+          onAnnouncementComplete={onPrepAnnouncementComplete}
         />
       );
     if (listeningStep === "break" && block?.breakMessage)
@@ -743,6 +800,7 @@ export default function MockExamEngine({
         <MockListeningInstructorBanner
           message={block.breakMessage}
           secondsLeft={countdownLeft}
+          onAnnouncementComplete={onPrepAnnouncementComplete}
         />
       );
     if (listeningStep === "check")
@@ -750,10 +808,19 @@ export default function MockExamEngine({
         <MockListeningInstructorBanner
           message="You now have 30 seconds to check your answers."
           secondsLeft={countdownLeft}
+          onAnnouncementComplete={onPrepAnnouncementComplete}
         />
       );
     return null;
-  }, [phase, listeningStep, listeningPartIdx, listeningBlockIdx, countdownLeft, listeningParts]);
+  }, [
+    phase,
+    listeningStep,
+    listeningPartIdx,
+    listeningBlockIdx,
+    countdownLeft,
+    listeningParts,
+    onPrepAnnouncementComplete,
+  ]);
 
   const listeningInputsEnabled =
     listeningStep === "audio" || listeningStep === "check";
@@ -864,18 +931,9 @@ export default function MockExamEngine({
               <p className="text-sm leading-relaxed text-slate-700">
                 {listeningParts[listeningPartIdx].introText}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  const block = listeningParts[listeningPartIdx].blocks[0];
-                  setActiveListeningQ(block.questionStart - 1);
-                  setCountdownLeft(LISTENING_PREP_SECONDS);
-                  setListeningStep("prep");
-                }}
-                className="mt-6 rounded-lg bg-[#0d1b35] px-6 py-2.5 text-sm font-bold text-white"
-              >
-                Continue
-              </button>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#c9972c]">
+                Starting automatically…
+              </p>
             </div>
           )}
 
@@ -1068,11 +1126,19 @@ export default function MockExamEngine({
                 {taskWords} words {taskWords < taskMin && `(minimum ${taskMin})`}
               </p>
             </div>
-            {writingTask === 1 &&
-              !isGeneral &&
-              "chartData" in writingTasks.task1 &&
-              writingTasks.task1.chartData ? (
-              <MockWritingChart data={writingTasks.task1.chartData} />
+            {writingTask === 1 && !isGeneral ? (
+              <>
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                    {writingTasks.task1.prompt}
+                  </p>
+                </div>
+                {"task1Visual" in writingTasks.task1 && writingTasks.task1.task1Visual ? (
+                  <WritingTaskVisual question={writingTasks.task1.task1Visual} />
+                ) : "chartData" in writingTasks.task1 && writingTasks.task1.chartData ? (
+                  <MockWritingChart data={writingTasks.task1.chartData} />
+                ) : null}
+              </>
             ) : null}
             {writingTask === 1 && isGeneral && (
               <GeneralMockLetterPrompt
@@ -1082,9 +1148,9 @@ export default function MockExamEngine({
               />
             )}
             <div className="rounded-xl border border-slate-200 bg-white p-4">
-              {(!isGeneral || writingTask !== 1) && (
+              {writingTask === 2 && (
                 <p className="whitespace-pre-wrap text-sm text-slate-700">
-                  {writingTask === 1 ? writingTasks.task1.prompt : writingTasks.task2.prompt}
+                  {writingTasks.task2.prompt}
                 </p>
               )}
               <textarea

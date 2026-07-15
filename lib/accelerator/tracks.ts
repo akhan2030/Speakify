@@ -1,3 +1,6 @@
+import type { IeltsProgramVariant } from "@/lib/programs/ieltsProgramIdentity";
+import { getIeltsSkillHref, getIeltsWritingHref } from "@/lib/ielts/studentSkillHrefs";
+
 export type AcceleratorTrackId = "foundation" | "plus" | "elite";
 
 export type AcceleratorDay = {
@@ -112,7 +115,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
   },
 };
 
-const MODULE_LINKS = {
+const LEGACY_MODULE_LINKS = {
   readingStrategies: "/dashboard/student/reading/strategies",
   readingPractice: "/dashboard/student/reading/practice",
   readingTest: "/dashboard/student/reading/test",
@@ -128,11 +131,35 @@ const MODULE_LINKS = {
   grammarPractice: "/dashboard/student/grammar/practice",
 };
 
+function getModuleLinks(variant: IeltsProgramVariant = "ielts") {
+  if (variant === "ielts") {
+    return LEGACY_MODULE_LINKS;
+  }
+
+  return {
+    readingStrategies: getIeltsSkillHref(variant, "reading"),
+    readingPractice: getIeltsSkillHref(variant, "reading"),
+    readingTest: getIeltsSkillHref(variant, "reading"),
+    listeningPractice: getIeltsSkillHref(variant, "listening"),
+    listeningTest: `${getIeltsSkillHref(variant, "listening")}/test`,
+    writing: getIeltsWritingHref(variant),
+    speaking: getIeltsSkillHref(variant, "speaking"),
+    speakingPart1: `${getIeltsSkillHref(variant, "speaking")}/part1`,
+    speakingPart2: `${getIeltsSkillHref(variant, "speaking")}/part2`,
+    speakingMock: `${getIeltsSkillHref(variant, "speaking")}/mock`,
+    vocabulary: getIeltsSkillHref(variant, "vocabulary"),
+    grammar: getIeltsSkillHref(variant, "grammar"),
+    grammarPractice: `${getIeltsSkillHref(variant, "grammar")}/practice`,
+  };
+}
+
 /** IELTS-specific daily tasks with links to existing modules */
 export function getWeekDays(
   trackId: AcceleratorTrackId,
-  weekNum: number
+  weekNum: number,
+  variant: IeltsProgramVariant = "ielts"
 ): AcceleratorDay[] {
+  const MODULE_LINKS = getModuleLinks(variant);
   const w = Math.min(Math.max(weekNum, 1), 6);
 
   const weekFocus: Record<AcceleratorTrackId, string[]> = {

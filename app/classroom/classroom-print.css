@@ -1,0 +1,24 @@
+/* Classroom print / PDF (browser print) */
+@media print {
+  header,
+  nav,
+  .print\:hidden,
+  button,
+  aside {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .classroom-print-area {
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}

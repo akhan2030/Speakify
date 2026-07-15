@@ -27,6 +27,8 @@
     "agent:step-research": "node agent/stepResearchAgent.js",
     "agent:step-questions": "node agent/stepQuestionAgent.js",
     "test:listening": "node scripts/listening-regression-check.mjs",
+    "test:listening-answers": "node scripts/listening-answer-engine-regression.mjs",
+    "test:listening-integrity": "node scripts/listening-integrity-regression.mjs",
     "test:mock-listening": "npx tsx scripts/mock-listening-regression.ts",
     "audit:listening": "npx tsx scripts/audit-listening-content-bank.ts",
     "test:speaking-scoring": "node --experimental-strip-types scripts/speaking-scoring-regression.ts",
@@ -53,7 +55,11 @@
     "setup:accelerator": "node scripts/setupAcceleratorContent.js",
     "setup:student-content-usage": "node scripts/setupStudentContentUsage.js",
     "setup:student-content-usage:verify": "node scripts/setupStudentContentUsage.js verify",
-    "verify:content-usage-live": "node scripts/verify-content-usage-live.mjs"
+    "verify:content-usage-live": "node scripts/verify-content-usage-live.mjs",
+    "classroom:validate": "npx tsx scripts/classroom/validateContent.mjs",
+    "classroom:seed": "node scripts/classroom/seedClassroomContent.mjs",
+    "classroom:pdf:unit": "node scripts/classroom/exportUnitPdf.mjs",
+    "classroom:pdf:level": "node scripts/classroom/exportFullTextbookPdf.mjs"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.11.2",
@@ -70,7 +76,8 @@
     "openai": "^6.39.1",
     "react": "^18",
     "react-dom": "^18",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

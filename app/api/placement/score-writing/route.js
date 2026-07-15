@@ -21,8 +21,12 @@ export async function POST(request) {
       body.taskType === "task1" || body.taskType === "task2"
         ? body.taskType
         : "task2";
+    const ieltsModule =
+      body.ieltsModule === "general_training" ? "general_training" : "academic";
 
-    const result = await scoreWriting(prompt, studentAnswer, targetBand, taskType);
+    const result = await scoreWriting(prompt, studentAnswer, targetBand, taskType, {
+      ieltsModule,
+    });
 
     return NextResponse.json(result);
   } catch (err) {

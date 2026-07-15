@@ -40,10 +40,48 @@ export function correctOutOf40ToBand(correct: number, total = 40): number {
   return listeningCorrectToBand(scaled);
 }
 
-function scoreItems(
+function scoreListeningItems(
   answers: Record<string, string>,
-  items: { id: string; correct: string }[],
-  useListeningTable = false
+  items: {
+    id: string;
+    correct: string;
+    eitherOrderGroup?: string;
+    wordLimit?: string;
+  }[]
+) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const {
+    scoreListeningAnswersWithFeedback,
+  } = require("@/lib/listeningAnswerEngine.js") as {
+    scoreListeningAnswersWithFeedback: (
+      student: string[],
+      correct: string[],
+      meta?: object[]
+    ) => { score: number; total: number; accuracy: number };
+  };
+
+  const studentList = items.map((item) => answers[item.id] ?? "");
+  const correctList = items.map((item) => item.correct);
+  const metaList = items.map((item) => ({
+    eitherOrderGroup: item.eitherOrderGroup,
+    wordLimit: item.wordLimit,
+  }));
+
+  const scored = scoreListeningAnswersWithFeedback(
+    studentList,
+    correctList,
+    metaList
+  );
+  const correct = scored.score;
+  const total = scored.total;
+  const accuracy = total ? correct / total : 0;
+  const band = correctOutOf40ToBand(correct, total);
+  return { correct, total, accuracy, band };
+}
+
+function scoreReadingItems(
+  answers: Record<string, string>,
+  items: { id: string; correct: string }[]
 ) {
   let correct = 0;
   for (const item of items) {
@@ -51,9 +89,7 @@ function scoreItems(
   }
   const total = items.length;
   const accuracy = total ? correct / total : 0;
-  const band = useListeningTable
-    ? correctOutOf40ToBand(correct, total)
-    : correctOutOf40ToBand(correct, total);
+  const band = correctOutOf40ToBand(correct, total);
   return { correct, total, accuracy, band };
 }
 
@@ -61,16 +97,23 @@ export function scoreListening(
   answers: Record<string, string>,
   listeningParts: ListeningExamPart[] = LISTENING_EXAM_PARTS
 ) {
-  const items = listeningParts.flatMap((p) => p.questions);
-  const base = scoreItems(answers, items, true);
+  const items = listeningParts.flatMap((p) =>
+    p.questions.map((q) => ({
+      id: q.id,
+      correct: q.correct,
+      eitherOrderGroup: q.eitherOrderGroup,
+    }))
+  );
+  const base = scoreListeningItems(answers, items);
   const band = listeningCorrectToBand(base.correct);
 
   const sectionBreakdown = listeningParts.map((part) => {
     const partItems = part.questions.map((q) => ({
       id: q.id,
       correct: q.correct,
+      eitherOrderGroup: q.eitherOrderGroup,
     }));
-    const scored = scoreItems(answers, partItems, true);
+    const scored = scoreListeningItems(answers, partItems);
     return {
       label: `Section ${part.partNumber}`,
       correct: scored.correct,
@@ -82,16 +125,20 @@ export function scoreListening(
     };
   });
 
-  const byType: Record<string, { id: string; correct: string }[]> = {};
-  for (const q of items) {
+  const byType: Record<string, { id: string; correct: string; eitherOrderGroup?: string }[]> = {};
+  for (const q of listeningParts.flatMap((p) => p.questions)) {
     const type = q.type ?? "other";
     if (!byType[type]) byType[type] = [];
-    byType[type].push({ id: q.id, correct: q.correct });
+    byType[type].push({
+      id: q.id,
+      correct: q.correct,
+      eitherOrderGroup: q.eitherOrderGroup,
+    });
   }
 
   const typeScores = Object.entries(byType).map(([type, typeItems]) => ({
     type,
-    ...scoreItems(answers, typeItems, true),
+    ...scoreListeningItems(answers, typeItems),
   }));
   typeScores.sort((a, b) => b.accuracy - a.accuracy);
   const strongestQuestionType = typeScores[0]?.type ?? "form completion";
@@ -132,7 +179,7 @@ export function scoreReading(
       }[],
     };
   }
-  const base = scoreItems(answers, items, true);
+  const base = scoreReadingItems(answers, items);
   const band = listeningCorrectToBand(base.correct);
 
   const passageBreakdown =
@@ -141,7 +188,7 @@ export function scoreReading(
         id: q.id,
         correct: q.correct ?? "",
       }));
-      const scored = scoreItems(answers, passageItems, true);
+      const scored = scoreReadingItems(answers, passageItems);
       return {
         label: `Passage ${p.index}`,
         correct: scored.correct,

@@ -4,6 +4,7 @@ import {
   resolveStudentProgramType,
   type ProgramType,
 } from "@/lib/programType";
+import { classroomLoginOverride } from "@/lib/classroom/studentTypeRouter";
 import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
 import { STEP_ROUTES } from "@/lib/step/paths";
 
@@ -11,6 +12,7 @@ const KNOWN_PROGRAMS: ProgramType[] = [
   "ielts",
   "ielts_general",
   "pathway",
+  "classroom",
   "business_english",
   "legal_english",
   "kids_english",
@@ -141,11 +143,19 @@ export function dashboardPathForStudentUser(user: {
   enrolledPrograms?: unknown;
   stepEnrolled?: boolean;
   programSelected?: unknown;
+  studentType?: unknown;
 }): string {
   const role = normalizeRole(user.role);
   if (role === "teacher") return "/dashboard/teacher";
   if (role === "admin") return "/dashboard/admin";
   if (role !== "student") return "/login";
+
+  const classroomPath = classroomLoginOverride({
+    role,
+    studentType: user.studentType,
+    programType: user.programType,
+  });
+  if (classroomPath) return classroomPath;
 
   return resolveStudentDashboardPath({
     programType: user.programType,

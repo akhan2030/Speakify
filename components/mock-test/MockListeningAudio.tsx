@@ -184,7 +184,7 @@ export default function MockListeningAudio({
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-center text-sm font-semibold text-[#0d1b35]">
-      {status === "loading" && "Generating audio…"}
+      {status === "loading" && "Starting audio…"}
       {status === "ready" && "Starting audio…"}
       {status === "playing" &&
         (usingDeviceVoice

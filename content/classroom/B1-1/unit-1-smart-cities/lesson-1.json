@@ -1,0 +1,100 @@
+{
+  "lessonNumber": 1,
+  "title": "Word Builder + Grammar Builder 1",
+  "type": "lesson",
+  "sections": [
+    {
+      "sectionType": "vocab",
+      "title": "Smart city words",
+      "orderIndex": 1,
+      "content": {
+        "instruction": "Tap a card to see the meaning. Use Listen for pronunciation.",
+        "items": [
+          {
+            "word": "sustainable",
+            "definition": "Able to continue without harming the environment for the future",
+            "example": "Riyadh is investing in sustainable transport.",
+            "collocation": "sustainable development / sustainable city",
+            "arabicHint": "مستدام"
+          },
+          {
+            "word": "infrastructure",
+            "definition": "Basic systems a city needs such as roads, power, and water",
+            "example": "Good infrastructure helps people travel safely.",
+            "collocation": "urban infrastructure",
+            "arabicHint": "بنية تحتية"
+          },
+          {
+            "word": "sensor",
+            "definition": "A device that detects light, movement, heat, or other signals",
+            "example": "Street sensors measure traffic in real time.",
+            "collocation": "smart sensor",
+            "arabicHint": "مستشعر"
+          },
+          {
+            "word": "efficient",
+            "definition": "Working well without wasting time, money, or energy",
+            "example": "An efficient metro saves people time.",
+            "collocation": "energy-efficient",
+            "arabicHint": "فعّال / كفء"
+          },
+          {
+            "word": "citizen",
+            "definition": "A person who lives in a city or country and has rights there",
+            "example": "Citizens can report problems through a city app.",
+            "collocation": "local citizens",
+            "arabicHint": "مواطن"
+          },
+          {
+            "word": "innovation",
+            "definition": "A new idea, method, or invention",
+            "example": "NEOM shows large-scale innovation in urban design.",
+            "collocation": "technological innovation",
+            "arabicHint": "ابتكار"
+          }
+        ]
+      }
+    },
+    {
+      "sectionType": "grammar",
+      "title": "Present Simple vs Present Continuous",
+      "orderIndex": 2,
+      "content": {
+        "explanation": [
+          "Use Present Simple for facts and regular routines about cities.",
+          "Use Present Continuous for temporary projects happening around now.",
+          "Signal words: usually / every day → Present Simple; currently / this month → Present Continuous."
+        ],
+        "examples": [
+          { "simple": "Jeddah has a long coastline.", "continuous": "The city is expanding coastal parks this year." },
+          { "simple": "Buses run every fifteen minutes.", "continuous": "Engineers are testing a new sensor system." }
+        ]
+      }
+    },
+    {
+      "sectionType": "mcq",
+      "title": "Quick check",
+      "orderIndex": 3,
+      "content": {
+        "id": "l1-mcq-1",
+        "prompt": "Choose the best sentence about a temporary city project:",
+        "options": [
+          "The council builds parks every year.",
+          "The council is building a park near our school this spring.",
+          "The council built parks in 1990.",
+          "The council build a park now."
+        ],
+        "correctAnswer": "The council is building a park near our school this spring."
+      }
+    },
+    {
+      "sectionType": "fill_blank",
+      "title": "Complete",
+      "orderIndex": 4,
+      "content": {
+        "prompt": "Right now, many Gulf cities _____ (invest) in smart transport apps.",
+        "answer": "are investing"
+      }
+    }
+  ]
+}

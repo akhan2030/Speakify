@@ -6,35 +6,38 @@ import { getOfficialInstructionParts } from "@/lib/listeningIeltsInstructions";
 export default function ListeningIeltsInstruction({
   questionType,
   chooseCount,
+  matchingRange,
+  maxWords,
 }: {
   questionType: string;
   chooseCount?: number;
+  matchingRange?: string;
+  maxWords?: 1 | 2 | 3;
 }) {
-  const parts = getOfficialInstructionParts(questionType, { chooseCount });
+  const parts = getOfficialInstructionParts(questionType, {
+    chooseCount,
+    matchingRange,
+    maxWords,
+  });
 
   return (
-    <div className="rounded-r-lg border-l-[3px] border-[#0d1b35] bg-[#c9972c]/15 px-4 py-3">
-      <p className="text-xs font-bold uppercase tracking-wide text-[#c9972c]">
-        Instructions:
-      </p>
-      <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[#0d1b35]">
-        {parts.map((part, i) =>
-          part.emphasis === "limit" ? (
-            <strong key={i} className="font-bold text-red-600">
-              <HighlightableInlineText
-                blockId={`li-${questionType}-p-${i}`}
-                text={part.text}
-              />
-            </strong>
-          ) : (
+    <p className="whitespace-pre-line text-sm leading-relaxed text-[#1a1a1a]">
+      {parts.map((part, i) =>
+        part.emphasis === "limit" ? (
+          <strong key={i} className="font-bold text-[#1a1a1a]">
             <HighlightableInlineText
-              key={i}
               blockId={`li-${questionType}-p-${i}`}
               text={part.text}
             />
-          )
-        )}
-      </p>
-    </div>
+          </strong>
+        ) : (
+          <HighlightableInlineText
+            key={i}
+            blockId={`li-${questionType}-p-${i}`}
+            text={part.text}
+          />
+        )
+      )}
+    </p>
   );
 }

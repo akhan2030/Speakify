@@ -21,7 +21,8 @@ export async function scoreWriting(
   prompt: string,
   studentAnswer: string,
   targetBand: number,
-  taskType: "task1" | "task2" = "task2"
+  taskType: "task1" | "task2" = "task2",
+  options?: { ieltsModule?: "academic" | "general_training" }
 ): Promise<WritingScore> {
   const fallback: WritingScore = {
     taskAchievement: targetBand,
@@ -44,6 +45,12 @@ export async function scoreWriting(
     taskType === "task1" ? "Task Achievement (TA)" : "Task Response (TR)";
   const jsonFirstKey =
     taskType === "task1" ? "taskAchievement" : "taskResponse";
+  const gtLetterContext =
+    taskType === "task1" && options?.ieltsModule === "general_training"
+      ? " This is IELTS General Training Task 1 — a letter. Judge appropriate tone/register, whether the opening addresses the situation, and semi-formal letter conventions."
+      : taskType === "task1"
+        ? " This is IELTS Academic Task 1 — a data description or report."
+        : "";
 
   try {
     const completion = await openai.chat.completions.create({
@@ -53,7 +60,7 @@ export async function scoreWriting(
         {
           role: "system",
           content: `You are an expert IELTS examiner with 15 years experience.
-Score this IELTS Writing ${taskType === "task1" ? "Task 1" : "Task 2"} response strictly on official band descriptors.
+Score this IELTS Writing ${taskType === "task1" ? "Task 1" : "Task 2"} response strictly on official band descriptors.${gtLetterContext}
 First criterion: ${firstCriterion}. The other three are Coherence and Cohesion, Lexical Resource, Grammatical Range and Accuracy.
 Return ONLY valid JSON, no markdown, no explanation outside JSON.
 Saudi Arabic speaker context: watch for article omission,

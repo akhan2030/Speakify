@@ -1,4 +1,8 @@
-import { studentDashboardPath, type ProgramType } from "@/lib/programType";
+import {
+  isIeltsVariantProgram,
+  studentDashboardPath,
+  type ProgramType,
+} from "@/lib/programType";
 
 const LEGACY_STUDENT_PREFIX = "/dashboard/student";
 
@@ -25,11 +29,28 @@ export function resolveLegacyStudentRedirect(
     return home;
   }
 
+  if (rest.startsWith("/accelerator")) {
+    if (programType === "ielts_general") {
+      return `${home}/progress`;
+    }
+    if (programType === "ielts") {
+      if (rest === "/accelerator" || rest === "/accelerator/") {
+        return `${home}/accelerator`;
+      }
+      return `${home}${rest}`;
+    }
+    return home;
+  }
+
   if (rest === "/study-plan") {
     if (programType === "pathway") {
       return "/dashboard/pathway/student/study-plan";
     }
     return `${home}/weekly-plan`;
+  }
+
+  if (isIeltsVariantProgram(programType)) {
+    return `${home}${rest}`;
   }
 
   return `${home}${rest}`;

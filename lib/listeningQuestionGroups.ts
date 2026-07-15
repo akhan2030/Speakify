@@ -108,9 +108,17 @@ export function resolveEffectiveGroupType(group: QuestionGroup): string {
   if (sampleType === "table-completion") return "table-completion";
   if (isGapFillQuestionType(sampleType)) return sampleType;
   if (sampleType === "matching" && (sample.options?.length ?? 0) >= 2) {
-    return "matching";
+    return group.type === "plan-map-diagram" ? "plan-map-diagram" : "matching";
   }
-  if (group.type === "matching") return "sentence-completion";
+  if (
+    (sampleType === "plan-map-diagram" || group.type === "plan-map-diagram") &&
+    (sample.options?.length ?? 0) >= 2
+  ) {
+    return "plan-map-diagram";
+  }
+  if (group.type === "matching" || group.type === "plan-map-diagram") {
+    return "sentence-completion";
+  }
   return group.type;
 }
 

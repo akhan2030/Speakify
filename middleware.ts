@@ -4,12 +4,14 @@ import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
 import { dashboardPathForStudentUser, normalizeEnrolledPrograms } from "@/lib/studentLoginRedirect";
 import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
 import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
+import { resolveLegacyStudentRedirect } from "@/lib/legacyStudentRoutes";
 import {
   normalizeProgramType,
   resolveStudentProgramType,
   mirrorIeltsStudentDashboardPath,
   isIeltsVariantProgram,
 } from "@/lib/programType";
+import { isInPersonStudent } from "@/lib/classroom/studentTypeRouter";
 
 function paymentContextFromToken(token: {
   role?: string;
@@ -47,6 +49,7 @@ export default withAuth(
       paymentStatus?: string;
       paymentCompedUntil?: string;
       programSelected?: string;
+      studentType?: string;
     };
     const role = normalizeRole(token?.role);
     const mustChangePassword = token?.mustChangePassword === true;
@@ -102,7 +105,11 @@ export default withAuth(
       }
     }
 
-    if (pathname.startsWith("/dashboard/admin") && role !== "admin") {
+    if (
+      (pathname.startsWith("/dashboard/admin") ||
+        pathname.startsWith("/admin/classroom")) &&
+      role !== "admin"
+    ) {
       const fallback = dashboardPathForRole(role) ?? "/login";
       return NextResponse.redirect(new URL(fallback, req.url));
     }
@@ -110,6 +117,49 @@ export default withAuth(
     if (pathname.startsWith("/dashboard/teacher") && role !== "teacher") {
       const fallback = dashboardPathForRole(role) ?? "/login";
       return NextResponse.redirect(new URL(fallback, req.url));
+    }
+
+    if (
+      (pathname.startsWith("/classroom-teacher") ||
+        pathname.startsWith("/classroom/teacher")) &&
+      role !== "teacher" &&
+      role !== "admin"
+    ) {
+      const fallback = dashboardPathForRole(role) ?? "/login";
+      return NextResponse.redirect(new URL(fallback, req.url));
+    }
+
+    if (
+      pathname.startsWith("/classroom") &&
+      !pathname.startsWith("/classroom/teacher") &&
+      !pathname.startsWith("/classroom-teacher") &&
+      role === "student"
+    ) {
+      const inPerson = isInPersonStudent(token?.studentType, {
+        programType: token?.programType,
+      });
+      if (!inPerson) {
+        const home = dashboardPathForStudentUser({
+          role,
+          programType: token?.programType,
+          enrolledPrograms: token?.enrolledPrograms,
+          stepEnrolled: token?.stepEnrolled,
+          programSelected: token?.programSelected,
+          studentType: token?.studentType,
+        });
+        return NextResponse.redirect(new URL(home, req.url));
+      }
+    }
+
+    // In-person students stay in /classroom (never the self-study LMS)
+    if (
+      role === "student" &&
+      isInPersonStudent(token?.studentType, {
+        programType: token?.programType,
+      }) &&
+      pathname.startsWith("/dashboard")
+    ) {
+      return NextResponse.redirect(new URL("/classroom", req.url));
     }
 
     if (pathname === "/dashboard/home" && role === "admin") {
@@ -123,10 +173,21 @@ export default withAuth(
         programSelected: token?.programSelected,
       });
 
+      if (pathname.startsWith("/dashboard/student")) {
+        const legacyTarget = resolveLegacyStudentRedirect(pathname, programType);
+        if (legacyTarget && legacyTarget !== pathname) {
+          const url = new URL(legacyTarget, req.url);
+          url.search = req.nextUrl.search;
+          return NextResponse.redirect(url);
+        }
+      }
+
       if (isIeltsVariantProgram(programType)) {
         const mirrored = mirrorIeltsStudentDashboardPath(pathname, programType);
         if (mirrored !== pathname) {
-          return NextResponse.redirect(new URL(mirrored, req.url));
+          const url = new URL(mirrored, req.url);
+          url.search = req.nextUrl.search;
+          return NextResponse.redirect(url);
         }
       }
     }
@@ -150,5 +211,17 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/change-password", "/onboarding", "/checkout", "/checkout/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/classroom/:path*",
+    "/classroom",
+    "/classroom-teacher",
+    "/classroom-teacher/:path*",
+    "/admin/classroom/:path*",
+    "/admin/classroom",
+    "/change-password",
+    "/onboarding",
+    "/checkout",
+    "/checkout/:path*",
+  ],
 };

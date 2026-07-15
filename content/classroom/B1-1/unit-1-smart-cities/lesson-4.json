@@ -1,0 +1,47 @@
+{
+  "lessonNumber": 4,
+  "title": "Reading, Vocabulary Check & Writing",
+  "type": "lesson",
+  "sections": [
+    {
+      "sectionType": "reading",
+      "title": "A walkable neighbourhood near you",
+      "orderIndex": 1,
+      "content": {
+        "passage": "Many Gulf cities are growing quickly, and planners want streets that feel safe and useful for people, not only for cars. A walkable neighbourhood usually has shade, clear crossings, shops within a short distance, and public transport nearby. Technology can help: sensors watch pollution, apps show the next bus, and maps highlight the coolest walking routes in summer. However, smart tools work best when citizens use them and when the design respects local culture and climate. In hotter months, people prefer short outdoor walks early or late in the day. That is why seating, trees, and covered walkways matter as much as any app. A sustainable future is not only about futuristic towers. It is also about everyday routines — how students reach school, where families meet, and how communities share public spaces respectfully.",
+        "glossary": [
+          { "word": "walkable", "definition": "Easy and pleasant to walk in" },
+          { "word": "pollution", "definition": "Dirty air, water, or land caused by waste or smoke" },
+          { "word": "climate", "definition": "The usual weather conditions in a place" }
+        ]
+      }
+    },
+    {
+      "sectionType": "mcq",
+      "title": "Reading check",
+      "orderIndex": 2,
+      "content": {
+        "id": "l4-mcq-1",
+        "prompt": "According to the text, smart tools work best when…",
+        "options": [
+          "only tourists use them",
+          "citizens use them and design respects local culture and climate",
+          "cars are banned everywhere",
+          "there are no outdoor spaces"
+        ],
+        "correctAnswer": "citizens use them and design respects local culture and climate"
+      }
+    },
+    {
+      "sectionType": "writing",
+      "title": "Short opinion paragraph",
+      "orderIndex": 3,
+      "content": {
+        "wordCount": "100–120 words",
+        "targetWords": 110,
+        "prompt": "Write a short paragraph: What is one change that would make your neighbourhood more sustainable? Use at least two target words from this unit and one comparative structure.",
+        "teacherReviewNote": "Teacher collects for written feedback (not AI scoring)."
+      }
+    }
+  ]
+}

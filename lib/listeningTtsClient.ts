@@ -5,7 +5,8 @@ import {
   stopBrowserSpeech,
 } from "@/lib/browserSpeech";
 
-export const LISTENING_TTS_TIMEOUT_MS = 45_000;
+/** Hard deadline: if OpenAI TTS is not ready, fall back to device voice. */
+export const LISTENING_TTS_TIMEOUT_MS = 5_000;
 
 export type ListeningTtsPayload = {
   transcript: string;
@@ -39,9 +40,37 @@ export function buildListeningTtsRequestKey(payload: ListeningTtsPayload): strin
     placement: Boolean(payload.placement),
     announcement: Boolean(payload.announcement),
     audioPart: payload.audioPart ?? "full",
-    speakers: payload.speakers ?? [],
-    questions: payload.questions ?? [],
+    // Speakers/questions identities matter for server slice — keep compact
+    speakers: summarizeForKey(payload.speakers),
+    questions: summarizeQuestionsForKey(payload.questions),
     testId: payload.testId ?? "",
+  });
+}
+
+function summarizeForKey(value: unknown): unknown {
+  if (!Array.isArray(value)) return [];
+  return value.map((row) => {
+    if (!row || typeof row !== "object") return row;
+    const r = row as Record<string, unknown>;
+    return {
+      label: r.label ?? "",
+      name: r.name ?? r.displayName ?? "",
+      gender: r.gender ?? "",
+      voice: r.voice ?? "",
+    };
+  });
+}
+
+function summarizeQuestionsForKey(value: unknown): unknown {
+  if (!Array.isArray(value)) return [];
+  return value.map((row) => {
+    if (!row || typeof row !== "object") return row;
+    const r = row as Record<string, unknown>;
+    return {
+      questionNumber: r.questionNumber ?? r.number ?? r.id ?? "",
+      answer: r.answer ?? r.correct ?? "",
+      type: r.type ?? "",
+    };
   });
 }
 
@@ -60,15 +89,35 @@ function buildRequestBody(payload: ListeningTtsPayload) {
     speakers: payload.speakers,
     questions: payload.questions,
     testId: payload.testId,
+    /** Ask server for the fast model path */
+    fast: true,
   };
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = window.setTimeout(() => {
+      reject(new Error(`${label} timed out after ${ms}ms`));
+    }, ms);
+    promise.then(
+      (v) => {
+        window.clearTimeout(id);
+        resolve(v);
+      },
+      (err) => {
+        window.clearTimeout(id);
+        reject(err);
+      }
+    );
+  });
+}
+
 /**
- * Fetch OpenAI TTS audio. Returns null when the API is unavailable (quota, timeout, etc.).
+ * Fetch OpenAI TTS audio. Returns null when the API is unavailable or exceeds the deadline.
  */
 export async function requestListeningTtsBlob(
   payload: ListeningTtsPayload,
-  options?: { signal?: AbortSignal; timeoutMs?: number }
+  options?: { signal?: AbortController["signal"]; timeoutMs?: number }
 ): Promise<ListeningTtsBlobResult | null> {
   const text = String(payload.transcript ?? "").trim();
   if (!text) return null;
@@ -94,7 +143,8 @@ export async function requestListeningTtsBlob(
       return null;
     }
 
-    const blob = await response.blob();
+    // Blob download can also hang — keep it inside the remaining budget
+    const blob = await withTimeout(response.blob(), timeoutMs, "TTS download");
     if (!blob.size) return null;
 
     return {

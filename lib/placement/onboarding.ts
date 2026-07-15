@@ -1,9 +1,13 @@
+export type PlacementIeltsModule = "academic" | "general_training";
+
 export type PlacementOnboarding = {
   fullName: string;
   email: string;
   phone: string;
   educationLevel: string;
   fieldOfStudy: string;
+  /** Academic (charts/graphs) vs General Training (letters). */
+  ieltsModule: PlacementIeltsModule;
   ieltsPurpose: string;
   targetBandScore: string;
   scoreDeadline: string;
@@ -44,12 +48,22 @@ export const DEADLINE_OPTIONS = [
   { value: "custom_date", label: "Specific date" },
 ] as const;
 
+export const IELTS_MODULE_OPTIONS = [
+  { value: "academic" as const, label: "IELTS Academic", hint: "University — graphs, charts & essays" },
+  {
+    value: "general_training" as const,
+    label: "IELTS General Training",
+    hint: "Migration, work & residency — letters & essays",
+  },
+];
+
 export const EMPTY_ONBOARDING: PlacementOnboarding = {
   fullName: "",
   email: "",
   phone: "",
   educationLevel: "",
   fieldOfStudy: "",
+  ieltsModule: "academic",
   ieltsPurpose: "",
   targetBandScore: "",
   scoreDeadline: "",
@@ -86,6 +100,7 @@ export function validateOnboardingStep1(o: PlacementOnboarding): string | null {
 }
 
 export function validateOnboardingStep2(o: PlacementOnboarding): string | null {
+  if (!o.ieltsModule) return "Select whether you are preparing for Academic or General Training.";
   if (!o.ieltsPurpose) return "Select your IELTS purpose.";
   if (!o.targetBandScore) return "Select your required band score.";
   if (!o.scoreDeadline) return "Select a deadline.";

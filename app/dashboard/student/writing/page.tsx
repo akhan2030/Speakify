@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import WritingPracticeForm from "@/components/writing/WritingPracticeForm";
+import { resolveStudentProgramType } from "@/lib/programType";
 import {
   getFirstWritingCriterion,
   type WritingTaskType,
@@ -868,7 +869,13 @@ function EvaluationDisplay({
 export default function StudentWritingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status } = useSession();
+  const { status, data: session } = useSession();
+
+  const programType = resolveStudentProgramType({
+    programType: (session?.user as { programType?: string })?.programType,
+    enrolledPrograms: (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms,
+    programSelected: (session?.user as { programSelected?: string })?.programSelected,
+  });
 
   const [taskType, setTaskType] = useState<"task1" | "task2">("task2");
   const [essay, setEssay] = useState("");
@@ -897,8 +904,15 @@ export default function StudentWritingPage() {
     if (status === "loading") return;
     if (status === "unauthenticated") {
       router.replace("/login");
+      return;
     }
-  }, [status, router]);
+    if (programType === "ielts_general") {
+      const query = searchParams.toString();
+      router.replace(
+        `/dashboard/ielts-general/student/writing${query ? `?${query}` : ""}`
+      );
+    }
+  }, [status, programType, router, searchParams]);
 
   useEffect(() => {
     const requested = searchParams.get("task");
@@ -957,7 +971,7 @@ export default function StudentWritingPage() {
     setTaskType("task2");
   }
 
-  if (status === "loading" || status === "unauthenticated") {
+  if (status === "loading" || status === "unauthenticated" || programType === "ielts_general") {
     return <PageSpinner />;
   }
 

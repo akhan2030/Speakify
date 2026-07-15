@@ -8,6 +8,8 @@ import { getRandomTopic } from "../../../../lib/listeningGenerator.js";
 import { sectionHasPlaceholderQuestions } from "../../../../lib/listeningQuestionContent.js";
 
 export const runtime = "nodejs";
+/** Live LLM generation can take multiple attempts — allow up to 60s on Vercel. */
+export const maxDuration = 60;
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")
@@ -32,11 +34,18 @@ function resolveStudentId(session, queryStudentId) {
 }
 
 export async function GET(request) {
+  const startedAt = Date.now();
+  let sectionNumber = null;
+
   try {
     const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     const studentId = resolveStudentId(session, searchParams.get("studentId"));
-    const sectionNumber = Number(searchParams.get("section"));
+    sectionNumber = Number(searchParams.get("section"));
+
+    console.info(
+      `[listening/generate] start section=${sectionNumber} student=${studentId ? "yes" : "no"}`
+    );
 
     if (!studentId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,9 +58,22 @@ export async function GET(request) {
       );
     }
 
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("[listening/generate] OPENAI_API_KEY missing");
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Listening generation is not configured (missing OPENAI_API_KEY). Please contact support.",
+        },
+        { status: 503 }
+      );
+    }
+
     const supabase = getSupabase();
 
     if (supabase) {
+      console.info(`[listening/generate] section=${sectionNumber} checking bank…`);
       const banked = await pickSectionPracticeContent(
         supabase,
         studentId,
@@ -67,6 +89,9 @@ export async function GET(request) {
             `[listening/generate] bank row ${bankRowId ?? testNumber} has placeholder questions — regenerating live`
           );
         } else {
+          console.info(
+            `[listening/generate] section=${sectionNumber} from bank in ${Date.now() - startedAt}ms`
+          );
           return NextResponse.json({
             success: true,
             fromBank: true,
@@ -77,17 +102,33 @@ export async function GET(request) {
             ...payload,
           });
         }
+      } else {
+        console.info(
+          `[listening/generate] section=${sectionNumber} bank miss — live generate`
+        );
       }
+    } else {
+      console.warn(
+        "[listening/generate] Supabase not configured — live generate only"
+      );
     }
 
-    const MAX_LIVE_ATTEMPTS = 5;
+    // Generator already retries internally; keep outer attempts low to avoid Vercel timeout.
+    const MAX_LIVE_ATTEMPTS = 2;
     let lastError = null;
 
     for (let attempt = 1; attempt <= MAX_LIVE_ATTEMPTS; attempt += 1) {
       try {
+        console.info(
+          `[listening/generate] section=${sectionNumber} live attempt ${attempt}/${MAX_LIVE_ATTEMPTS}`
+        );
         const generated = await generateValidatedListeningSection(
           sectionNumber,
           getRandomTopic(sectionNumber, [])
+        );
+
+        console.info(
+          `[listening/generate] section=${sectionNumber} live ok in ${Date.now() - startedAt}ms`
         );
 
         return NextResponse.json({
@@ -114,12 +155,20 @@ export async function GET(request) {
 
     throw lastError ?? new Error("Generation failed");
   } catch (err) {
-    console.error("[listening/generate]", err);
+    console.error(
+      `[listening/generate] section=${sectionNumber} failed after ${Date.now() - startedAt}ms`,
+      err
+    );
     const raw = err instanceof Error ? err.message : "Generation failed";
-    const userMessage = raw.includes("Listening validation failed") ||
+    const userMessage =
+      raw.includes("Listening validation failed") ||
       raw.includes("validation failed")
-      ? "We couldn't prepare this listening section right now. Please tap Try Again — a fresh section will be generated."
-      : raw;
+        ? "We couldn't prepare this listening section right now. Please tap Try Again — a fresh section will be generated."
+        : raw.includes("OPENAI_API_KEY")
+          ? raw
+          : raw.includes("timeout") || raw.includes("Timeout")
+            ? "Listening generation timed out. Please try again."
+            : raw;
     return NextResponse.json(
       {
         success: false,

@@ -9,6 +9,11 @@ export type ListeningSectionData = {
   questionType: string;
   wordLimit?: string;
   questions: ListeningQuestion[];
+  example?: {
+    questionText?: string;
+    answerText?: string;
+    answer?: string;
+  } | null;
 };
 
 export type SectionScoreEntry = {

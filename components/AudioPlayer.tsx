@@ -12,6 +12,8 @@ import {
   requestListeningTtsBlob,
   stopListeningPlayback,
 } from "@/lib/listeningTtsClient";
+import { buildQuestionGroups } from "@/lib/listeningQuestionGroups";
+import { resolveTranscriptAudioSlice } from "@/lib/listeningTranscriptSplit";
 import {
   buildSpeakerTimeline,
   getActiveSpeakerEntryAtTime,
@@ -220,15 +222,36 @@ export default function AudioPlayer({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [usingDeviceVoice, setUsingDeviceVoice] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [duration, setDuration] = useState(() => estimateDurationSeconds(transcript));
+  const [duration, setDuration] = useState(() =>
+    estimateDurationSeconds(transcript)
+  );
   const [activeSpeakerName, setActiveSpeakerName] = useState<string | null>(
     null
   );
 
+  /** Exact dialogue for this group/part — must match on-screen questions */
+  const speakText = useMemo(() => {
+    const full = String(transcript ?? "").trim();
+    if (!full) return "";
+    if (String(audioPart).toLowerCase() === "full" || sectionNumber === 4) {
+      return full;
+    }
+    const groups = buildQuestionGroups(
+      (questions ?? []) as Parameters<typeof buildQuestionGroups>[0],
+      sectionNumber
+    );
+    return resolveTranscriptAudioSlice(
+      full,
+      questions ?? [],
+      audioPart,
+      groups
+    );
+  }, [transcript, audioPart, sectionNumber, questions]);
+
   const estimatedTimeline = useMemo(() => {
-    const segments = parseTranscriptIntoSegments(transcript, sectionNumber);
+    const segments = parseTranscriptIntoSegments(speakText || transcript, sectionNumber);
     return buildSpeakerTimeline(segments, sectionNumber);
-  }, [transcript, sectionNumber]);
+  }, [speakText, transcript, sectionNumber]);
 
   const speakerTimelineRef = useRef<SpeakerTimelineEntry[]>(
     estimatedTimeline as SpeakerTimelineEntry[]
@@ -292,7 +315,7 @@ export default function AudioPlayer({
   }, [playKey]);
 
   const loadAudio = useCallback(async () => {
-    if (!transcript.trim()) {
+    if (!speakText.trim() && !transcript.trim()) {
       setErrorMessage("No transcript provided for audio generation.");
       setState("error");
       return;
@@ -305,6 +328,19 @@ export default function AudioPlayer({
     revokeBlob();
     stopListeningPlayback();
 
+    let settled = false;
+    const forceBrowser = () => {
+      if (settled) return;
+      settled = true;
+      browserModeRef.current = true;
+      setUsingDeviceVoice(true);
+      setDuration(estimateDurationSeconds(speakText || transcript));
+      setState("ready");
+    };
+
+    // Hard UI deadline — never leave students on "Preparing audio…" past 5s
+    const forceId = window.setTimeout(forceBrowser, 5_000);
+
     try {
       const apiResult = await requestListeningTtsBlob({
         transcript,
@@ -316,12 +352,15 @@ export default function AudioPlayer({
         speed,
       });
 
+      if (settled) return;
+
       if (!apiResult) {
-        browserModeRef.current = true;
-        setDuration(estimateDurationSeconds(transcript));
-        setState("ready");
+        forceBrowser();
         return;
       }
+
+      settled = true;
+      window.clearTimeout(forceId);
 
       const timelineHeader = apiResult.timelineHeader;
       if (timelineHeader) {
@@ -361,8 +400,13 @@ export default function AudioPlayer({
 
       audio.onerror = () => {
         clearTimer();
-        setErrorMessage("Failed to play audio.");
-        setState("error");
+        // Prefer device voice over a dead player
+        browserModeRef.current = true;
+        setUsingDeviceVoice(true);
+        setDuration(estimateDurationSeconds(speakText || transcript));
+        revokeBlob();
+        audioRef.current = null;
+        setState("ready");
       };
 
       audio.addEventListener("waiting", () => {
@@ -379,12 +423,13 @@ export default function AudioPlayer({
 
       setState("ready");
     } catch {
-      browserModeRef.current = true;
-      setDuration(estimateDurationSeconds(transcript));
-      setState("ready");
+      forceBrowser();
+    } finally {
+      window.clearTimeout(forceId);
     }
   }, [
     transcript,
+    speakText,
     voice,
     sectionNumber,
     speed,
@@ -454,7 +499,7 @@ export default function AudioPlayer({
         setElapsed((prev) => Math.min(duration, prev + 1));
       }, 1000);
       try {
-        await playListeningBrowserFallback(transcript, {
+        await playListeningBrowserFallback(speakText || transcript, {
           speakers,
           sectionNumber,
         });
@@ -502,7 +547,7 @@ export default function AudioPlayer({
       setErrorMessage("Playback was blocked. Check your browser audio settings.");
       setState("error");
     }
-  }, [state, clearTimer, transcript, duration, markPlayed, speakers, sectionNumber]);
+  }, [state, clearTimer, transcript, speakText, duration, markPlayed, speakers, sectionNumber]);
 
   useEffect(() => {
     if (!autoStart) {
@@ -591,7 +636,7 @@ export default function AudioPlayer({
           <>
             <p className="mt-6 text-lg font-semibold text-white">{statusLabel}</p>
             <p className="mt-2 text-sm text-slate-400">
-              This may take 10–20 seconds
+              Starting in a moment…
             </p>
           </>
         )}

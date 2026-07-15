@@ -12,7 +12,9 @@ export const WRITING_TASK2_SECONDS = 40 * 60;
 
 export const TRANSITION_SECONDS = 10;
 export const LISTENING_PREP_SECONDS = 30;
+/** Default mid/end check look-time; Section 4 uses 60s (official transfer/check window). */
 export const LISTENING_CHECK_SECONDS = 30;
+export const LISTENING_SECTION4_CHECK_SECONDS = 60;
 
 export const SECTION_ORDER: MockSection[] = [
   "listening",

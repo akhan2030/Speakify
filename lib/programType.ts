@@ -5,7 +5,7 @@ import {
 
 export { mirrorIeltsStudentDashboardPath } from "@/lib/ieltsStudentRouteMirror";
 
-export type CoreProgramType = "pathway" | "ielts" | "ielts_general";
+export type CoreProgramType = "pathway" | "ielts" | "ielts_general" | "classroom";
 export type ProgramType = CoreProgramType | SpecialtyProgramId;
 
 const SPECIALTY_SET = new Set<string>(SPECIALTY_PROGRAM_IDS);
@@ -23,6 +23,14 @@ export function normalizeProgramType(value: unknown): ProgramType {
   if (v === "pathway" || v === "english_pathway" || v === "english-pathway") {
     return "pathway";
   }
+  if (
+    v === "classroom" ||
+    v === "in_person" ||
+    v === "in-person" ||
+    v === "textbook"
+  ) {
+    return "classroom";
+  }
   if (v === "ielts_general" || v === "ielts general" || v === "general") {
     return "ielts_general";
   }
@@ -35,6 +43,8 @@ export function normalizeProgramType(value: unknown): ProgramType {
 
 export function studentDashboardPath(programType: ProgramType): string {
   switch (programType) {
+    case "classroom":
+      return "/classroom";
     case "pathway":
       return "/dashboard/pathway/student";
     case "ielts_general":
@@ -65,7 +75,11 @@ export function dashboardPathForUser(
 }
 
 export function isProgramStudentPath(pathname: string): boolean {
+  const isClassroomStudentPath =
+    (pathname === "/classroom" || pathname.startsWith("/classroom/")) &&
+    !pathname.startsWith("/classroom/teacher");
   return (
+    isClassroomStudentPath ||
     pathname.startsWith("/dashboard/pathway/student") ||
     pathname.startsWith("/dashboard/ielts/student") ||
     pathname.startsWith("/dashboard/ielts-general/student") ||

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import {
   ACCELERATOR_TRACKS,
@@ -16,6 +17,7 @@ import {
   type AcceleratorDay,
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
+import { resolveIeltsProgramVariant } from "@/lib/programs/ieltsProgramIdentity";
 
 const DAY_ICONS: Record<string, string> = {
   monday: "📖",
@@ -87,6 +89,16 @@ function DayCard({
 function WeeklyContentInner() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const variant = useMemo(
+    () =>
+      resolveIeltsProgramVariant({
+        programType: (session?.user as { programType?: string })?.programType,
+        enrolledPrograms: (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms,
+        programSelected: (session?.user as { programSelected?: string })?.programSelected,
+      }),
+    [session]
+  );
   const trackParam = String(params.track);
   const weekParam = Number(params.weekNum);
   const dayFilter = searchParams.get("day");
@@ -130,7 +142,7 @@ function WeeklyContentInner() {
   if (!ready) return <PageSpinner />;
 
   const locked = weekNum > currentWeek;
-  const days = getWeekDays(trackId, weekNum);
+  const days = getWeekDays(trackId, weekNum, variant);
   const weekTitle = track.weekTitles[weekNum - 1] ?? `Week ${weekNum}`;
   const filteredDays = dayFilter
     ? days.filter((d) => d.key === dayFilter)

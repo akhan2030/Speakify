@@ -136,7 +136,10 @@ export async function POST(request) {
         speakText,
         sectionNumber,
         speakers,
-        isMockTest ? { model: "tts-1" } : undefined
+        {
+          // Prefer fast tts-1 unless explicitly requesting HD
+          model: body?.fast === false || body?.quality === "hd" ? "tts-1-hd" : "tts-1",
+        }
       );
       buffer = result.buffer;
       timeline = result.timeline ?? [];

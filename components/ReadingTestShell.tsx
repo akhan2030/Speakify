@@ -123,6 +123,86 @@ function MockQuestionInput({
     );
   }
 
+  if (question.kind === "matching-information") {
+    const letters =
+      question.options?.map((o) => o.key) ??
+      ["A", "B", "C", "D", "E", "F", "G"];
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+      >
+        <option value="">Select a paragraph…</option>
+        {letters.map((letter) => (
+          <option key={letter} value={letter}>
+            {letter}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (question.kind === "classification") {
+    const categories = question.options?.length
+      ? question.options
+      : ["A", "B", "C", "D"].map((key) => ({ key, label: key }));
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+      >
+        <option value="">Select a category…</option>
+        {categories.map((cat) => (
+          <option key={cat.key} value={cat.key}>
+            {cat.key}. {cat.label.replace(/^[A-D]\.\s*/, "")}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (question.kind === "matching-sentence-endings") {
+    const endings = question.options?.length
+      ? question.options
+      : ["A", "B", "C", "D", "E", "F"].map((key) => ({ key, label: key }));
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+      >
+        <option value="">Select an ending…</option>
+        {endings.map((ending) => (
+          <option key={ending.key} value={ending.key}>
+            {ending.key}. {ending.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (question.kind === "matching-features") {
+    const features = question.options?.length
+      ? question.options
+      : ["A", "B", "C", "D", "E"].map((key) => ({ key, label: key }));
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+      >
+        <option value="">Select a feature…</option>
+        {features.map((feature) => (
+          <option key={feature.key} value={feature.key}>
+            {feature.key}. {feature.label.replace(/^[A-F]\.\s*/, "")}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   return (
     <input
       type="text"

@@ -1,0 +1,81 @@
+{
+  "lessonNumber": 3,
+  "title": "Word Builder + Grammar Builder 2",
+  "type": "lesson",
+  "sections": [
+    {
+      "sectionType": "vocab",
+      "title": "Comparing city ideas",
+      "orderIndex": 1,
+      "content": {
+        "items": [
+          {
+            "word": "compact",
+            "definition": "Using space carefully; not spread out",
+            "example": "A compact neighbourhood is easier to walk in.",
+            "collocation": "compact city",
+            "arabicHint": "مدمج / مكثّف"
+          },
+          {
+            "word": "renewable",
+            "definition": "Energy from sources that do not run out, such as sun or wind",
+            "example": "Solar panels provide renewable energy.",
+            "collocation": "renewable energy",
+            "arabicHint": "متجدد"
+          },
+          {
+            "word": "congested",
+            "definition": "Full of traffic or too many people",
+            "example": "The ring road is congested at rush hour.",
+            "collocation": "congested roads",
+            "arabicHint": "مزدحم"
+          },
+          {
+            "word": "accessible",
+            "definition": "Easy for people to reach or use, including people with disabilities",
+            "example": "Accessible pavements help everyone.",
+            "collocation": "accessible public transport",
+            "arabicHint": "يسهل الوصول إليه"
+          }
+        ]
+      }
+    },
+    {
+      "sectionType": "grammar",
+      "title": "Comparatives and superlatives",
+      "orderIndex": 2,
+      "content": {
+        "explanation": [
+          "Comparative: compare two things — cleaner, more efficient, less congested.",
+          "Superlative: the top of a group — the cleanest, the most innovative.",
+          "Use than after comparatives: Metro trains are faster than cars in rush hour."
+        ],
+        "examples": [
+          { "simple": "Walking is healthier than short car trips.", "continuous": "This district is becoming quieter than before." }
+        ]
+      }
+    },
+    {
+      "sectionType": "matching",
+      "title": "Match the idea",
+      "orderIndex": 3,
+      "content": {
+        "pairs": [
+          { "left": "renewable", "right": "from the sun or wind" },
+          { "left": "congested", "right": "full of traffic" },
+          { "left": "accessible", "right": "easy for everyone to use" },
+          { "left": "compact", "right": "not spread over a large area" }
+        ]
+      }
+    },
+    {
+      "sectionType": "fill_blank",
+      "title": "Comparative practice",
+      "orderIndex": 4,
+      "content": {
+        "prompt": "Electric buses are often _____ (quiet) than old diesel buses.",
+        "answer": "quieter"
+      }
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { isProgramStudentPath } from "@/lib/programType";
+import { isProgramStudentPath, resolveStudentProgramType } from "@/lib/programType";
+import { getIeltsWritingHref } from "@/lib/ielts/studentSkillHrefs";
 import { normalizeRole } from "@/lib/roles";
 
 export type ActivePage =
@@ -76,6 +78,18 @@ export default function StudentSidebar({
   if (isProgramStudentPath(pathname)) {
     return null;
   }
+  const programType = resolveStudentProgramType({
+    programType: (session?.user as { programType?: string })?.programType,
+    enrolledPrograms: (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms,
+    programSelected: (session?.user as { programSelected?: string })?.programSelected,
+  });
+  const navItems = useMemo(() => {
+    if (programType !== "ielts_general") return NAV_ITEMS;
+    const writingHref = getIeltsWritingHref("ielts_general");
+    return NAV_ITEMS.map((item) =>
+      item.id === "writing" ? { ...item, href: writingHref } : item
+    );
+  }, [programType]);
   const studentName = session?.user?.name ?? "Student";
   const initials = getInitials(studentName);
   const roleLabel = getRoleLabel((session?.user as { role?: string })?.role);
@@ -99,21 +113,21 @@ export default function StudentSidebar({
       </div>
 
       <nav className="mt-8 flex-1 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive = item.id === activePage;
           return (
             <Link
               key={item.id}
               href={item.href}
-              className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                 isActive
                   ? "bg-[#c9972c]/20 font-semibold text-[#c9972c]"
                   : "text-slate-300 hover:bg-white/5 hover:text-white"
               }`}
             >
-              <span>{item.label}</span>
+              <span className="min-w-0 truncate">{item.label}</span>
               {item.badge ? (
-                <span className="rounded bg-[#c9972c] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0d1b35]">
+                <span className="shrink-0 rounded bg-[#c9972c] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0d1b35]">
                   {item.badge}
                 </span>
               ) : null}

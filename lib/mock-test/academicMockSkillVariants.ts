@@ -1,3 +1,4 @@
+import { getTask1PromptById } from "@/lib/ielts/writingTaskData";
 import type { SpeakingPart, WritingTaskDef } from "./types";
 import {
   buildListeningPartsFromVariant,
@@ -5,35 +6,44 @@ import {
 } from "./listeningVariantBuilder";
 import type { ListeningExamPart } from "./listeningExam";
 import { LISTENING_VARIANTS_3_TO_5 } from "./academicListeningVariants3to5";
+import { writingTask1FromQuestion } from "./academicWritingTask1";
+
+function mockTask1(promptId: string, taskId: string): WritingTaskDef {
+  const question = getTask1PromptById(promptId);
+  if (!question) {
+    throw new Error(`Academic mock Task 1 prompt not found: ${promptId}`);
+  }
+  return writingTask1FromQuestion(question, taskId);
+}
 
 const LISTENING_VARIANTS: CompactListeningVariant[] = [
   {
     mockNumber: 1,
     introTexts: [
-      "Section 1 of 4 — Listening. You will hear a conversation about registering for a technology conference in London. First, look at Questions 1 to 5.",
-      "Section 2 of 4 — Listening. You will hear a talk about a science museum robotics exhibition. Look at Questions 11 to 15.",
-      "Section 3 of 4 — Listening. You will hear students discussing a machine-learning assignment. Look at Questions 21 to 25.",
-      "Section 4 of 4 — Listening. You will hear a lecture on neural networks. Look at Questions 31 to 40.",
+      "Section 1 of 4 — Listening. You will hear a conversation about booking a holiday cottage. First, look at Questions 1 to 5.",
+      "Section 2 of 4 — Listening. You will hear a talk about a riverside sports centre. Look at Questions 11 to 17.",
+      "Section 3 of 4 — Listening. You will hear students discussing a journal submission. Look at Questions 21 to 25.",
+      "Section 4 of 4 — Listening. You will hear a lecture on soil science. Look at Questions 31 to 33.",
     ],
     blocks: [
       {
         questionStart: 1,
         questionEnd: 5,
-        formTitle: "FutureTech Conference — Registration Form",
+        formTitle: "Seaside Cottage — Booking Form",
         prepMessage: "You have 30 seconds to look at Questions 1 to 5.",
-        transcript: `Coordinator: Good morning, FutureTech Conference registration desk in London. How can I help you?
-Caller: Hello, I'd like to register for the AI Research Summit on the fifteenth of March.
+        transcript: `Coordinator: Good morning, Cornwall Cottages. How can I help you?
+Caller: Hello, I'd like to book Seaside Cottage for the weekend of the fifteenth of March.
 Coordinator: Of course. Can I take your first name?
 Caller: James.
 Coordinator: And your surname?
 Caller: Henderson — that's H-E-N-D-E-R-S-O-N.
 Coordinator: Thank you, Mr Henderson. And a contact telephone number?
 Caller: Oh seven seven, zero zero, nine zero zero, one two three.
-Coordinator: The registration fee is three hundred and eighty pounds, including lunch.
+Coordinator: The weekend rate is three hundred and eighty pounds.
 Caller: Three hundred and eighty?
-Coordinator: Sorry — actually three hundred and fifty. I was looking at the late-registration rate.
+Coordinator: Sorry — actually three hundred and fifty. I was looking at the bank-holiday tariff.
 Caller: Three hundred and fifty — fine.
-Coordinator: May I have your email address for the confirmation?
+Coordinator: May I have your email for the confirmation?
 Caller: james dot henderson at outlook dot com.`,
         voice: "onyx",
       },
@@ -41,88 +51,99 @@ Caller: james dot henderson at outlook dot com.`,
         questionStart: 6,
         questionEnd: 10,
         breakMessage: "You now have 30 seconds to look at Questions 6 to 10.",
-        transcript: `Coordinator: I'll complete the rest of the form with you now.
-Caller: Will I need parking at the venue?
-Coordinator: Parking is included for speakers — one vehicle.
-Caller: Do you require accommodation?
-Coordinator: A single room for the fourteenth and fifteenth, please.
-Coordinator: The partner hotel offers rooms from one hundred and twenty pounds per night.
-Caller: I'd prefer a quiet room on an upper floor.
-Coordinator: Check-in is from three PM. Your badge can be collected at Gate B.
-Caller: What time does the keynote begin on the fifteenth?
-Coordinator: The opening keynote starts at nine thirty AM in the main auditorium.`,
+        transcript: `Coordinator: A few more details about the property, then.
+Caller: What's the kitchen worktop made of?
+Coordinator: It's solid oak — not laminate, though some online photos look like that.
+Caller: And the dining table seats how many?
+Coordinator: Six normally. People sometimes ask for eight; we don't have that extension.
+Caller: Deposit?
+Coordinator: Sixty-five pounds — sixty-five — held until checkout.
+Caller: Colour of the bedroom curtains?
+Coordinator: Cream. A few guests say beige, but the inventory lists cream.
+Caller: And the nearest shop?
+Coordinator: On Harbour Street — that's Harbour, one word.`,
         voice: "onyx",
       },
       {
         questionStart: 11,
-        questionEnd: 15,
-        prepMessage: "You have 30 seconds to look at Questions 11 to 15.",
-        transcript: `Welcome to the National Science Centre robotics exhibition. The gallery opens at ten AM daily, except Tuesdays.
-Adult tickets cost forty-five pounds; students with ID pay twenty-five pounds. Children under seven enter free.
-The interactive AI demo zone is on the third floor, open until five PM.
-Guided tours in English run at eleven AM and two PM from the main atrium.
-The café closes at four thirty PM; the souvenir shop is beside the north exit.`,
+        questionEnd: 17,
+        prepMessage: "You have 30 seconds to look at Questions 11 to 17.",
+        transcript: `Welcome to the Riverside Sports Centre. If you look at the map in your booklet, I'll point out the main facilities.
+Start at the south entrance. Directly opposite the ticket barriers you'll see the bike racks — that's letter A on your plan. Don't confuse them with the overflow car park further west.
+Moving clockwise, the café sits beside the atrium fountain — letter B. It's popular after morning classes.
+The swimming pool occupies the whole east wing — letter C. Changing rooms are next door to the west of the pool, letter E — not beside reception.
+Reception itself is letter D, just inside the main doors, next to the information screen.
+Tennis courts are outdoors on the north edge of the site — letter F. The climbing wall is indoors in the far north-west corner — letter J — and the gym faces the river on the west side — letter I.
+Finally, the first-aid room is marked H, behind reception. The large car park on the west boundary is letter G if you need it later.`,
         voice: "fable",
       },
       {
-        questionStart: 16,
+        questionStart: 18,
         questionEnd: 20,
-        breakMessage: "You now have 30 seconds to look at Questions 16 to 20.",
-        transcript: `Match each facility to its location on the map.
-The coding workshop studio is in the east wing, next to the planetarium entrance.
-The children's maker space is on the ground floor, opposite the ticket machines.
-Wheelchair access is through the west entrance, where lifts serve all levels.
-The historical computing archive is in the basement, open by appointment.
-The outdoor drone demonstration area is behind the south pavilion and closes at sunset.`,
+        breakMessage: "You now have 30 seconds to look at Questions 18 to 20.",
+        transcript: `A few practical points about opening times and weekend services.
+The centre opens at seven AM on weekdays. On Sundays we open later — at nine AM, not eight as some old posters still say.
+Membership includes unlimited gym access. If you're asking which extra services run on Sundays, note carefully: the café stays open, and the swimming pool has public lanes all day. Tennis coaching does not run on Sundays, and the climbing wall is staffed only on Saturdays. Bike hire is weekdays only.
+So for Sunday services, remember café and pool — those two.`,
         voice: "fable",
       },
       {
         questionStart: 21,
         questionEnd: 25,
         prepMessage: "You have 30 seconds to look at Questions 21 to 25.",
-        transcript: `Tutor: For your neural network project, what's your focus?
-Hannah: We're comparing supervised and unsupervised models on medical imaging data.
-Patrick: I suggested using the university GPU cluster for training.
-Tutor: Which datasets?
-Hannah: The public chest X-ray set and our anonymised local sample.
-Patrick: We expect convolutional models to outperform by at least twenty percent.
-Hannah: Er — wait. Patrick, didn't we agree on twelve percent in the draft?
-Patrick: Oh — sorry, actually twelve percent. Twenty was from the pilot study only.
-Tutor: Submit your draft report by the twenty-second.`,
+        transcript: `Tutor: Before you submit to the journal, let's check your manuscript checklist.
+Hannah: We've finished the abstract — one hundred and fifty words.
+Patrick: And we still need better key words — sorry, keywords — for the online form.
+Tutor: Good. Have you attached the final draft?
+Hannah: Yes, the final draft is in the shared folder.
+Patrick: Style guide — which one?
+Tutor: Use the journal style guide, not the faculty handbook. The handbook is for essays only.
+Hannah: Er — wait. Patrick, didn't we say the word limit was eight thousand?
+Patrick: Oh — sorry, actually six thousand. Eight thousand was last year's special issue.
+Tutor: Also include a short cover letter with author affiliations.`,
         voice: "nova",
       },
       {
         questionStart: 26,
         questionEnd: 30,
         breakMessage: "You have 30 seconds to look at Questions 26 to 30.",
-        transcript: `Tutor: Match each project feature to the correct model type.
-Hannah: Image classification suits convolutional networks best.
-Patrick: Clustering patient groups uses unsupervised learning.
-Hannah: The ethics review applies to the local dataset only.
-Patrick: Hyperparameter tuning runs on the GPU cluster.
-Hannah: Final presentations are scheduled in Lab C.`,
+        transcript: `Tutor: Now the submission flow-chart — follow each box in order.
+Patrick: First we submit the manuscript online.
+Hannah: Then we check email for the acknowledgment — usually within twenty-four hours.
+Tutor: After that comes peer review. Reviewers may request major changes.
+Patrick: Possible outcomes are accept, revise, or reject. We shouldn't assume accept.
+Hannah: If we get revise, we revise the paper and upload a response letter.
+Tutor: Exactly. Don't skip the response letter — editors look for it.
+Patrick: And if it's reject?
+Tutor: Then you may submit elsewhere, but that's outside this chart.`,
         voice: "alloy",
       },
       {
         questionStart: 31,
-        questionEnd: 35,
-        prepMessage: "You have 30 seconds to look at Questions 31 to 35.",
-        transcript: `Today's lecture examines deep learning fundamentals. Artificial neural networks mimic biological neurons through layered nodes.
-Backpropagation adjusts weights using gradient descent. Convolutional layers excel at spatial pattern recognition in images.
-Recurrent networks handle sequential data such as speech and text. Transformers use attention mechanisms for long-range dependencies.
-Overfitting occurs when models memorise training data; dropout and regularisation mitigate this.
-Monitoring should be done monthly during early training — sorry, I mean weekly checks catch instability earlier.`,
+        questionEnd: 33,
+        prepMessage: "You have 30 seconds to look at Questions 31 to 33.",
+        transcript: `Today's lecture examines soil science for sustainable farming. Healthy soil supports plant roots and stores water during dry periods.
+Organic matter improves structure and feeds microorganisms. Farmers who ignore soil health often see declining yields within a decade.
+We will also compare conventional and organic systems later in the hour.`,
         voice: "shimmer",
       },
       {
-        questionStart: 36,
+        questionStart: 34,
+        questionEnd: 36,
+        breakMessage: "You now have 30 seconds to look at Questions 34 to 36.",
+        transcript: `Look at the soil-profile diagram. The top layer is the topsoil, rich in organic matter — label that clearly.
+Below it lies the subsoil, which holds minerals but fewer living organisms.
+At the base of the diagram is the bedrock, the weathered parent material. Some textbooks call the middle layer \"mineral soil\"; in this course we use subsoil.`,
+        voice: "shimmer",
+      },
+      {
+        questionStart: 37,
         questionEnd: 40,
-        breakMessage: "You now have 30 seconds to look at Questions 36 to 40.",
-        transcript: `Transfer learning reuses pretrained models on new tasks, saving time and data in specialised domains.
-Ethical AI requires transparency, fairness, and careful validation before clinical deployment.
-Researchers must document bias testing and maintain human oversight in high-stakes decisions.
-Explainability tools help clinicians understand model recommendations.
-International standards for medical AI are still evolving rapidly.`,
+        breakMessage: "You now have 30 seconds to look at Questions 37 to 40.",
+        transcript: `Finally, problems and comparisons. Compaction from heavy machinery reduces aeration — that is a major problem on clay soils.
+Nutrient runoff after heavy rain pollutes nearby streams.
+Conventional systems often rely on synthetic fertiliser, while organic systems favour compost and crop rotation.
+One further note: erosion on steep slopes remains a shared risk for both systems if ground cover is removed.`,
         voice: "shimmer",
       },
     ],
@@ -130,52 +151,52 @@ International standards for medical AI are still evolving rapidly.`,
       [1, "form", "First name:", "James"],
       [2, "form", "Surname:", "Henderson"],
       [3, "form", "Phone number:", "07700900123"],
-      [4, "form", "Event date:", "15 March"],
-      [5, "form", "Registration fee:", "350"],
-      [6, "note", "Parking:", "included for speakers"],
-      [7, "note", "Room nights:", "2"],
-      [8, "note", "Room rate from:", "120"],
-      [9, "note", "Badge collection:", "Gate B"],
-      [10, "note", "Keynote time:", "9:30 AM"],
-      [11, "mcq", "Gallery opening time:", "10 AM", ["9 AM", "10 AM", "11 AM"]],
-      [12, "mcq", "Adult ticket:", "45", ["25", "35", "45"]],
-      [13, "mcq", "Free entry under age:", "7", ["5", "6", "7"]],
-      [14, "mcq", "AI demo zone floor:", "Third floor", ["First floor", "Second floor", "Third floor"]],
-      [15, "mcq", "Tour times:", "11 AM and 2 PM", ["10 AM and 1 PM", "11 AM and 2 PM", "12 PM and 3 PM"]],
-      [16, "matching", "Coding workshop:", "east wing"],
-      [17, "matching", "Maker space:", "opposite ticket machines"],
-      [18, "matching", "Wheelchair access:", "west entrance"],
-      [19, "matching", "Computing archive:", "basement"],
-      [20, "matching", "Drone area:", "south pavilion"],
-      [21, "mcq", "Project compares:", "Supervised and unsupervised models", ["Two hospitals only", "Supervised and unsupervised models", "Hardware costs"]],
-      [22, "mcq", "Training location:", "GPU cluster", ["Home laptops", "GPU cluster", "Library PCs"]],
-      [23, "mcq", "Dataset NOT used:", "Social media posts", ["Chest X-ray set", "Local sample", "Social media posts"]],
-      [24, "mcq", "Expected improvement:", "12%", ["5%", "8%", "12%"]],
-      [25, "mcq", "Report deadline:", "The twenty-second", ["The twelfth", "The eighteenth", "The twenty-second"]],
-      [26, "matching-features", "Image classification →", "convolutional networks"],
-      [27, "matching-features", "Clustering →", "unsupervised learning"],
-      [28, "matching-features", "Ethics review →", "local dataset"],
-      [29, "matching-features", "Hyperparameter tuning →", "GPU cluster"],
-      [30, "matching-features", "Presentations →", "Lab C"],
-      [31, "note", "Weight adjustment method:", "backpropagation"],
-      [32, "note", "Layers for image patterns:", "convolutional"],
-      [33, "note", "Networks for sequences:", "recurrent"],
-      [34, "note", "Mechanism in transformers:", "attention"],
-      [35, "note", "Problem when memorising data:", "overfitting"],
-      [36, "summary", "Reusing pretrained models:", "transfer learning"],
-      [37, "summary", "Ethical pillar mentioned:", "fairness"],
-      [38, "summary", "Required before clinical use:", "validation"],
-      [39, "summary", "Helps clinicians understand models:", "explainability"],
-      [40, "summary", "Still evolving for medical AI:", "standards"],
+      [4, "form", "Arrival date:", "15 March/(the) 15(th) March"],
+      [5, "form", "Weekend rate:", "£350/350 pounds/three hundred and fifty"],
+      [6, "note", "Worktop material:", "oak"],
+      [7, "note", "Dining seats:", "6/six"],
+      [8, "note", "Deposit:", "65/sixty-five"],
+      [9, "note", "Curtain colour:", "cream"],
+      [10, "note", "Shop location:", "Harbour Street/Harbour St"],
+      [11, "matching", "Bike racks:", "A", ["bike racks", "café", "swimming pool", "reception", "changing rooms", "tennis courts", "car park", "first-aid room", "gym", "climbing wall"]],
+      [12, "matching", "Café:", "B", ["bike racks", "café", "swimming pool", "reception", "changing rooms", "tennis courts", "car park", "first-aid room", "gym", "climbing wall"]],
+      [13, "matching", "Swimming pool:", "C", ["bike racks", "café", "swimming pool", "reception", "changing rooms", "tennis courts", "car park", "first-aid room", "gym", "climbing wall"]],
+      [14, "matching", "Reception:", "D", ["bike racks", "café", "swimming pool", "reception", "changing rooms", "tennis courts", "car park", "first-aid room", "gym", "climbing wall"]],
+      [15, "matching", "Changing rooms:", "E", ["bike racks", "café", "swimming pool", "reception", "changing rooms", "tennis courts", "car park", "first-aid room", "gym", "climbing wall"]],
+      [16, "matching", "Tennis courts:", "F", ["bike racks", "café", "swimming pool", "reception", "changing rooms", "tennis courts", "car park", "first-aid room", "gym", "climbing wall"]],
+      [17, "matching", "Climbing wall:", "J", ["bike racks", "café", "swimming pool", "reception", "changing rooms", "tennis courts", "car park", "first-aid room", "gym", "climbing wall"]],
+      [18, "mcq", "Sunday opening time:", "9 AM", ["7 AM", "8 AM", "9 AM"]],
+      [19, "mcq", "Which TWO Sunday services are available?", "D", ["tennis coaching", "climbing wall", "bike hire", "café", "swimming pool"], { chooseCount: 2, eitherOrderGroup: "mock1-s2-19-20" }],
+      [20, "mcq", "Which TWO Sunday services are available?", "E", ["tennis coaching", "climbing wall", "bike hire", "café", "swimming pool"], { chooseCount: 2, eitherOrderGroup: "mock1-s2-19-20" }],
+      [21, "note", "Checklist — short summary:", "abstract"],
+      [22, "note", "Online form needs:", "key words/keywords"],
+      [23, "note", "Upload the:", "(the) final draft/final draft"],
+      [24, "note", "Follow the journal:", "style guide"],
+      [25, "note", "Maximum words:", "6000/six thousand"],
+      [26, "flowchart", "1. _____ the manuscript online", "submit"],
+      [27, "flowchart", "2. Check _____ for acknowledgment", "email"],
+      [28, "flowchart", "3. Stage of expert reading:", "peer review"],
+      [29, "flowchart", "4. Possible results: accept / _____ / reject", "revise"],
+      [30, "flowchart", "5. If revise → _____ the paper", "revise"],
+      [31, "summary", "Healthy soil stores:", "water"],
+      [32, "summary", "Organic matter feeds:", "microorganisms"],
+      [33, "summary", "Ignoring soil health → falling:", "yields"],
+      [34, "diagram", "Top layer:", "topsoil"],
+      [35, "diagram", "Middle layer:", "subsoil"],
+      [36, "diagram", "Base layer:", "bedrock"],
+      [37, "note", "Machinery problem:", "compaction"],
+      [38, "note", "Rain causes nutrient:", "runoff"],
+      [39, "note", "Conventional systems use synthetic:", "fertiliser/fertilizer"],
+      [40, "note", "Organic systems favour:", "compost"],
     ],
   },
   {
     mockNumber: 2,
     introTexts: [
       "Section 1 of 4 — Listening. You will hear a call to a psychology clinic. Look at Questions 1 to 5.",
-      "Section 2 of 4 — Listening. You will hear a talk about a community wellbeing centre. Look at Questions 11 to 15.",
-      "Section 3 of 4 — Listening. You will hear students discussing a behaviour study. Look at Questions 21 to 25.",
-      "Section 4 of 4 — Listening. You will hear a lecture on cognitive psychology. Look at Questions 31 to 40.",
+      "Section 2 of 4 — Listening. You will hear a talk about a community wellbeing centre. Look at Questions 11 to 17.",
+      "Section 3 of 4 — Listening. You will hear students planning a research ethics submission. Look at Questions 21 to 25.",
+      "Section 4 of 4 — Listening. You will hear a lecture on memory systems. Look at Questions 31 to 33.",
     ],
     blocks: [
       {
@@ -193,187 +214,164 @@ Caller: Oh seven nine, one two three, four five six seven eight nine.
 Receptionist: The first session fee is ninety-five pounds.
 Caller: Ninety-five?
 Receptionist: Sorry — actually eighty-five pounds for new clients. I quoted the follow-up rate by mistake.
-Caller: Eighty-five — thank you. Do you offer evening appointments?
-Receptionist: Yes, Thursdays until eight PM. Your email for confirmation?
+Caller: Eighty-five — thank you.
+Receptionist: Your email for confirmation?
 Caller: emily dot ward at gmail dot com.`,
         voice: "nova",
       },
       {
         questionStart: 6, questionEnd: 10,
         breakMessage: "You now have 30 seconds to look at Questions 6 to 10.",
-        transcript: `Receptionist: Is this your first visit to our clinic?
-Caller: Yes.
-Receptionist: Please arrive fifteen minutes early to complete intake forms.
-Caller: I prefer a female therapist if possible.
-Receptionist: Dr Emily Ward has availability at four thirty PM.
-Caller: Is parking available?
-Receptionist: Underground parking is free for clients for ninety minutes.
-Caller: What is your cancellation policy?
-Receptionist: Please give twenty-four hours notice to avoid a fifty percent charge.`,
+        transcript: `Receptionist: A couple of practical points before we confirm.
+Caller: This is my first visit.
+Receptionist: Noted. Parking?
+Receptionist: Client parking is free for ninety minutes underground. Street meters nearby cost about two pounds an hour.
+Caller: Arrival?
+Receptionist: Come fifteen minutes early for forms — fifteen.
+Caller: Therapist preference?
+Receptionist: We can offer a female therapist on Thursdays.
+Caller: Address for the clinic?
+Receptionist: Fourteen Willow Lane — Willow Lane.
+Caller: Cancellation?
+Receptionist: Twenty-four hours' notice or you pay half the fee.`,
         voice: "nova",
       },
       {
-        questionStart: 11, questionEnd: 15,
-        prepMessage: "You have 30 seconds to look at Questions 11 to 15.",
-        transcript: `Welcome to the Riverside Wellbeing Centre. We open Monday to Saturday, nine AM to seven PM.
-Drop-in mindfulness sessions are free and run at ten AM and four PM in Studio 2.
-Membership costs one hundred and twenty pounds per month and includes two group workshops.
-The family support programme meets every Wednesday at six PM in Room 4.
-Our library of self-help resources is on the first floor, open until six PM.`,
+        questionStart: 11, questionEnd: 17,
+        prepMessage: "You have 30 seconds to look at Questions 11 to 17.",
+        transcript: `Welcome to the Riverside Wellbeing Centre. Please look at the site map.
+Accessible toilets are letter A — beside the lift on each floor. Reception has a drinking fountain opposite the desk; that is not the toilets.
+The occupational therapy gym is letter B, in the west annex facing the car park.
+Youth counselling is letter C, upstairs on the second floor above reception.
+The meditation garden is letter D, behind the main building near the river path.
+The staff rest area is letter E in the basement — not for clients, though visitors sometimes ask for a \"quiet room\".
+Family support meets in letter F, Room 4 on the ground floor east corridor.
+The resource library is letter G on the first floor. Mindfulness studio 2 is letter H next to the courtyard doors.
+Roof terrace — letter I — is staff-only now. The main car park entrance is letter J on the west boundary.`,
         voice: "echo",
       },
       {
-        questionStart: 16, questionEnd: 20,
-        breakMessage: "You now have 30 seconds to look at Questions 16 to 20.",
-        transcript: `Now match each service to its location.
-The meditation garden is behind the main building, near the river path.
-The youth counselling suite is on the second floor, above the reception desk.
-Accessible toilets are located beside the lift on each floor.
-The occupational therapy gym is in the west annex, opposite the car park.
-The staff rest area is in the basement and not open to visitors.`,
+        questionStart: 18, questionEnd: 20,
+        breakMessage: "You now have 30 seconds to look at Questions 18 to 20.",
+        transcript: `Opening hours and weekend programmes next.
+We're open Monday to Saturday, nine AM to seven PM — closed Sundays for deep cleaning, not for private hire as some websites claim.
+Which two drop-in activities run without booking? Mindfulness in Studio 2, and the self-help library browsing hour. Family support needs a referral, youth counselling is appointment-only, and the therapy gym requires staff induction first.
+So the two no-booking options are mindfulness and the library hour.`,
         voice: "echo",
       },
       {
         questionStart: 21, questionEnd: 25,
         prepMessage: "You have 30 seconds to look at Questions 21 to 25.",
-        transcript: `Supervisor: Describe your observational study design.
-Oliver: We're recording helping behaviour in campus common areas across three time blocks.
-Claire: Participants don't know they're being observed from behind tinted glass.
-Supervisor: Sample size?
-Oliver: We aim for ninety interactions per location.
-Claire: Um — Oliver, the proposal says sixty.
-Oliver: Oh — sorry, actually sixty. Ninety was last year's pilot target.
-Claire: We'll code responses using the bystander framework from the textbook.
-Supervisor: Ethics approval is required before you start filming.`,
+        transcript: `Supervisor: Walk me through your ethics checklist before filming.
+Oliver: We've written the participant information sheet.
+Claire: And the consent form — adults only for this pilot.
+Supervisor: Data storage?
+Oliver: Encrypted drive on the department server.
+Claire: Um — Oliver, the proposal said cloud backup was optional.
+Oliver: Oh — sorry, actually encrypted drive only. Cloud was last year's method.
+Claire: We still need the risk assessment signed.
+Supervisor: And cite the university ethics code in the appendix.`,
         voice: "onyx",
       },
       {
         questionStart: 26, questionEnd: 30,
         breakMessage: "You have 30 seconds to look at Questions 26 to 30.",
-        transcript: `Supervisor: Match each study element to the correct category.
-Oliver: Time blocks represent the independent schedule variable.
-Claire: Helping acts are the dependent behaviour measure.
-Oliver: Tinted glass ensures participant anonymity.
-Claire: The coding sheet comes from chapter seven.
-Oliver: Pilot testing begins next Monday in Building D.`,
+        transcript: `Supervisor: Here's the approval flow-chart.
+Claire: First, complete the online form.
+Oliver: Then upload supporting documents — information sheet and consent form.
+Supervisor: The committee screens for completeness. Incomplete packs are returned.
+Claire: After screening comes the panel meeting.
+Oliver: Outcomes are approve, revise, or defer. We hope for approve.
+Claire: If revise, we amend the protocol and resubmit within two weeks.
+Supervisor: Don't skip the resubmit box on the chart.`,
         voice: "alloy",
       },
       {
-        questionStart: 31, questionEnd: 35,
-        prepMessage: "You have 30 seconds to look at Questions 31 to 35.",
-        transcript: `This lecture introduces cognitive psychology. Perception filters sensory input before conscious awareness.
-Working memory holds limited information for brief periods during problem solving. Long-term memory stores schemas that influence interpretation.
-Heuristics are mental shortcuts that can produce systematic biases. Confirmation bias leads people to favour evidence supporting existing beliefs.`,
+        questionStart: 31, questionEnd: 33,
+        prepMessage: "You have 30 seconds to look at Questions 31 to 33.",
+        transcript: `This lecture introduces memory systems in cognitive psychology. Working memory holds limited information briefly during problem solving.
+Long-term memory stores schemas that shape how we interpret new events. Attention acts as a gatekeeper before encoding begins.`,
         voice: "shimmer",
       },
       {
-        questionStart: 36, questionEnd: 40,
-        breakMessage: "You now have 30 seconds to look at Questions 36 to 40.",
-        transcript: `Cognitive behavioural therapy targets unhelpful thought patterns to change emotional responses.
-Neuroplasticity shows the brain can reorganise after experience and structured practice.
-Mindfulness training may strengthen attention control in anxious populations.
-Researchers debate how much unconscious processing shapes everyday decisions.
-Evidence-based practice combines clinical judgement with replicated findings.`,
+        questionStart: 34, questionEnd: 36,
+        breakMessage: "You now have 30 seconds to look at Questions 34 to 36.",
+        transcript: `On the multi-store diagram, sensory memory is the first box — fleeting visual or auditory traces.
+The middle box is short-term memory, often called working memory in newer models; label it short-term for this diagram.
+The final store is long-term memory, with effectively unlimited capacity.`,
+        voice: "shimmer",
+      },
+      {
+        questionStart: 37, questionEnd: 40,
+        breakMessage: "You now have 30 seconds to look at Questions 37 to 40.",
+        transcript: `Common problems: interference from similar material can block retrieval.
+Decay over time weakens unused traces.
+Rehearsal strengthens short-term items; elaborative rehearsal helps long-term learning.
+Finally, context cues — such as returning to the original room — often improve recall in experiments.`,
         voice: "shimmer",
       },
     ],
     questions: [
       [1, "form", "First name:", "Emily"],
       [2, "form", "Surname:", "Ward"],
-      [3, "form", "Appointment date:", "3 May"],
+      [3, "form", "Appointment date:", "3 May/(the) 3(rd) May"],
       [4, "form", "Phone number:", "079123456789"],
-      [5, "form", "Session fee:", "85"],
+      [5, "form", "Session fee:", "£85/85 pounds/eighty-five"],
       [6, "note", "First visit:", "yes"],
-      [7, "note", "Arrival time:", "15 minutes early"],
-      [8, "note", "Therapist:", "Dr Emily Ward"],
-      [9, "note", "Parking:", "free 90 minutes"],
-      [10, "note", "Cancellation notice:", "24 hours"],
-      [11, "mcq", "Centre hours:", "9 AM to 7 PM", ["8 AM to 6 PM", "9 AM to 7 PM", "10 AM to 8 PM"]],
-      [12, "mcq", "Mindfulness sessions:", "Free", ["10", "25", "Free"]],
-      [13, "mcq", "Monthly membership:", "120", ["80", "100", "120"]],
-      [14, "mcq", "Family programme day:", "Wednesday", ["Monday", "Tuesday", "Wednesday"]],
-      [15, "mcq", "Library floor:", "First floor", ["Ground floor", "First floor", "Second floor"]],
-      [16, "matching", "Meditation garden:", "behind main building"],
-      [17, "matching", "Youth counselling:", "second floor"],
-      [18, "matching", "Accessible toilets:", "beside the lift"],
-      [19, "matching", "Therapy gym:", "west annex"],
-      [20, "matching", "Staff rest area:", "basement"],
-      [21, "mcq", "Study measures:", "Helping behaviour", ["Exam scores", "Helping behaviour", "Sleep quality"]],
-      [22, "mcq", "Observation method:", "Behind tinted glass", ["Online surveys", "Phone interviews", "Behind tinted glass"]],
-      [23, "mcq", "Interactions per site:", "60", ["30", "45", "60"]],
-      [24, "mcq", "Coding framework:", "Bystander", ["Attachment", "Bystander", "Cognitive dissonance"]],
-      [25, "mcq", "Required approval:", "Ethics", ["Funding", "Ethics", "Marketing"]],
-      [26, "matching-features", "Time blocks →", "independent schedule"],
-      [27, "matching-features", "Helping acts →", "dependent behaviour"],
-      [28, "matching-features", "Tinted glass →", "anonymity"],
-      [29, "matching-features", "Coding sheet →", "chapter seven"],
-      [30, "matching-features", "Pilot testing →", "Building D"],
-      [31, "summary", "Brief problem-solving store:", "working memory"],
-      [32, "summary", "Mental shortcuts:", "heuristics"],
-      [33, "summary", "Favouring existing beliefs:", "confirmation bias"],
-      [34, "summary", "Therapy targeting thoughts:", "cognitive behavioural"],
-      [35, "summary", "Brain reorganisation:", "neuroplasticity"],
-      [36, "summary", "Influences interpretation:", "schemas"],
-      [37, "summary", "Filters sensory input:", "perception"],
-      [38, "summary", "Long-term store type:", "long-term memory"],
-      [39, "summary", "Systematic bias source:", "heuristics"],
-      [40, "summary", "Changes emotional responses:", "therapy"],
+      [7, "note", "Arrive early (minutes):", "15/fifteen"],
+      [8, "note", "Therapist preference:", "female"],
+      [9, "note", "Clinic street:", "Willow Lane"],
+      [10, "note", "Cancellation notice (hours):", "24/twenty-four"],
+      [11, "matching", "Accessible toilets:", "A", ["beside the lift", "west annex", "second floor", "behind main building", "basement", "Room 4", "first-floor library", "Studio 2", "roof terrace", "west car park"]],
+      [12, "matching", "Therapy gym:", "B", ["beside the lift", "west annex", "second floor", "behind main building", "basement", "Room 4", "first-floor library", "Studio 2", "roof terrace", "west car park"]],
+      [13, "matching", "Youth counselling:", "C", ["beside the lift", "west annex", "second floor", "behind main building", "basement", "Room 4", "first-floor library", "Studio 2", "roof terrace", "west car park"]],
+      [14, "matching", "Meditation garden:", "D", ["beside the lift", "west annex", "second floor", "behind main building", "basement", "Room 4", "first-floor library", "Studio 2", "roof terrace", "west car park"]],
+      [15, "matching", "Staff rest area:", "E", ["beside the lift", "west annex", "second floor", "behind main building", "basement", "Room 4", "first-floor library", "Studio 2", "roof terrace", "west car park"]],
+      [16, "matching", "Family support room:", "F", ["beside the lift", "west annex", "second floor", "behind main building", "basement", "Room 4", "first-floor library", "Studio 2", "roof terrace", "west car park"]],
+      [17, "matching", "Resource library:", "G", ["beside the lift", "west annex", "second floor", "behind main building", "basement", "Room 4", "first-floor library", "Studio 2", "roof terrace", "west car park"]],
+      [18, "mcq", "Sunday status:", "Closed", ["Open 9–7", "Open until noon", "Closed"]],
+      [19, "mcq", "Which TWO activities need no booking?", "D", ["family support", "youth counselling", "therapy gym", "mindfulness", "library hour"], { chooseCount: 2, eitherOrderGroup: "mock2-s2-19-20" }],
+      [20, "mcq", "Which TWO activities need no booking?", "E", ["family support", "youth counselling", "therapy gym", "mindfulness", "library hour"], { chooseCount: 2, eitherOrderGroup: "mock2-s2-19-20" }],
+      [21, "note", "Checklist — participant:", "information sheet"],
+      [22, "note", "Adults sign a:", "consent form"],
+      [23, "note", "Data kept on:", "encrypted drive"],
+      [24, "note", "Must complete a:", "risk assessment"],
+      [25, "note", "Cite the ethics:", "code"],
+      [26, "flowchart", "1. Complete the online _____", "form"],
+      [27, "flowchart", "2. Upload supporting _____", "documents"],
+      [28, "flowchart", "3. Committee _____ for completeness", "screens/screening"],
+      [29, "flowchart", "4. Attend the panel _____", "meeting"],
+      [30, "flowchart", "5. If revise → _____ the protocol", "amend/resubmit"],
+      [31, "summary", "Brief store during problem solving:", "working memory"],
+      [32, "summary", "Long-term stores:", "schemas"],
+      [33, "summary", "Gatekeeper before encoding:", "attention"],
+      [34, "diagram", "First store:", "sensory memory/sensory"],
+      [35, "diagram", "Middle store:", "short-term memory/short-term"],
+      [36, "diagram", "Final store:", "long-term memory/long-term"],
+      [37, "note", "Similar material causes:", "interference"],
+      [38, "note", "Unused traces undergo:", "decay"],
+      [39, "note", "Strengthens short-term items:", "rehearsal"],
+      [40, "note", "Returning to a room provides:", "context cues"],
     ],
   },
   ...LISTENING_VARIANTS_3_TO_5,
 ];
 
+/** Authentic Academic Task 1 visuals — UK / Australia / Canada / USA contexts from the validated prompt bank. */
 const WRITING_VARIANTS: Array<{ task1: WritingTaskDef; task2: WritingTaskDef }> = [
   {
-    task1: {
-      id: "mock-w1-t1",
-      title: "Task 1",
-      prompt: `The table below shows AI research publications from four Saudi universities in 2022 and 2025.
-
-King Saud University: 120 → 185
-KAUST: 95 → 160
-King Abdulaziz University: 88 → 142
-Imam University: 45 → 78
-
-Write a report of at least 150 words summarising the main trends.`,
-      minWords: 150,
-      chartData: {
-        title: "AI research publications",
-        countries: ["KSU", "KAUST", "KAU", "Imam"],
-        years: [2022, 2025],
-        values: [[120, 185], [95, 160], [88, 142], [45, 78]],
-      },
-    },
+    task1: mockTask1("library-membership", "mock-w1-t1"),
     task2: {
       id: "mock-w1-t2",
       title: "Task 2",
-      prompt: `Some believe artificial intelligence will create more jobs than it destroys. Others fear widespread unemployment.
+      prompt: `Some people believe that university education should be free for all students. To what extent do you agree or disagree?
 
-Discuss both views and give your own opinion. Write at least 250 words.`,
+Write at least 250 words.`,
       minWords: 250,
     },
   },
   {
-    task1: {
-      id: "mock-w2-t1",
-      title: "Task 1",
-      prompt: `The chart shows average weekly hours spent on social media by age group in 2024.
-
-Ages 16–24: 28 hours
-Ages 25–34: 22 hours
-Ages 35–44: 15 hours
-Ages 45–54: 9 hours
-Ages 55+: 5 hours
-
-Write a report of at least 150 words describing the data.`,
-      minWords: 150,
-      chartData: {
-        title: "Weekly social media hours by age",
-        countries: ["16–24", "25–34", "35–44", "45–54", "55+"],
-        years: [2024],
-        values: [[28], [22], [15], [9], [5]],
-      },
-    },
+    task1: mockTask1("housing-england-wales", "mock-w2-t1"),
     task2: {
       id: "mock-w2-t2",
       title: "Task 2",
@@ -384,23 +382,7 @@ Write at least 250 words.`,
     },
   },
   {
-    task1: {
-      id: "mock-w3-t1",
-      title: "Task 1",
-      prompt: `The graph shows student enrolment in online versus campus courses at a Saudi university (2019–2025).
-
-Online: 1,200 → 4,800
-Campus: 8,500 → 7,100
-
-Write at least 150 words comparing the trends.`,
-      minWords: 150,
-      chartData: {
-        title: "Course enrolment (online vs campus)",
-        countries: ["Online", "Campus"],
-        years: [2019, 2025],
-        values: [[1200, 4800], [8500, 7100]],
-      },
-    },
+    task1: mockTask1("renewable-energy", "mock-w3-t1"),
     task2: {
       id: "mock-w3-t2",
       title: "Task 2",
@@ -411,58 +393,22 @@ Discuss both views and give your opinion. Write at least 250 words.`,
     },
   },
   {
-    task1: {
-      id: "mock-w4-t1",
-      title: "Task 1",
-      prompt: `The diagram data shows space-related research funding (million SAR) in four countries (2020 vs 2024).
-
-Saudi Arabia: 180 → 320
-UAE: 150 → 260
-Qatar: 90 → 140
-Kuwait: 60 → 95
-
-Write at least 150 words.`,
-      minWords: 150,
-      chartData: {
-        title: "Space research funding (M SAR)",
-        countries: ["Saudi", "UAE", "Qatar", "Kuwait"],
-        years: [2020, 2024],
-        values: [[180, 320], [150, 260], [90, 140], [60, 95]],
-      },
-    },
+    task1: mockTask1("museum-visitors", "mock-w4-t1"),
     task2: {
       id: "mock-w4-t2",
       title: "Task 2",
-      prompt: `Governments should spend more on space exploration. To what extent do you agree?
+      prompt: `Governments should spend more money on the arts (museums, theatres, music). To what extent do you agree or disagree?
 
 Write at least 250 words.`,
       minWords: 250,
     },
   },
   {
-    task1: {
-      id: "mock-w5-t1",
-      title: "Task 1",
-      prompt: `The bar chart shows annual visitors (thousands) to four Saudi cultural venues in 2023 and 2025.
-
-National Museum: 420 → 580
-Art Jameel: 180 → 310
-Ithra: 350 → 490
-Heritage Village: 260 → 340
-
-Write at least 150 words.`,
-      minWords: 150,
-      chartData: {
-        title: "Cultural venue visitors (thousands)",
-        countries: ["National Museum", "Art Jameel", "Ithra", "Heritage Village"],
-        years: [2023, 2025],
-        values: [[420, 580], [180, 310], [350, 490], [260, 340]],
-      },
-    },
+    task1: mockTask1("town-development", "mock-w5-t1"),
     task2: {
       id: "mock-w5-t2",
       title: "Task 2",
-      prompt: `Art and culture are essential for modern society. Do you agree?
+      prompt: `In many countries, more people are choosing to live in large cities. Do the advantages of living in a big city outweigh the disadvantages?
 
 Write at least 250 words.`,
       minWords: 250,

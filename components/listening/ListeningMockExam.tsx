@@ -9,6 +9,7 @@ import DailyLimitReached from "@/components/DailyLimitReached";
 import ListeningExamPrepBanner from "@/components/ListeningExamPrepBanner";
 import ListeningSectionAnnouncer from "@/components/ListeningSectionAnnouncer";
 import { ListeningQuestionsColumn } from "@/components/listening/ListeningQuestionsColumn";
+import { syncPrepMessageSeconds } from "@/lib/mock-test/prepMessageSync";
 import type { TextHighlight } from "@/lib/examHighlight";
 import {
   LISTENING_SECTION_META,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/listeningIeltsInstructions";
 import { buildQuestionGroups } from "@/lib/listeningQuestionGroups";
 import { getSectionPlan } from "@/lib/listeningSectionTypes";
+import { buildMockListeningQuestionMeta } from "@/lib/buildListeningQuestionMeta.js";
 import {
   BANK_SETUP_HINT,
   POOL_EXHAUSTED_MESSAGE,
@@ -73,6 +75,7 @@ export default function ListeningMockExam() {
     Record<number, TextHighlight[]>
   >({});
   const [timerSeconds, setTimerSeconds] = useState(PREP_SECONDS);
+  const [prepLookReady, setPrepLookReady] = useState(false);
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [limitBlocked, setLimitBlocked] = useState(false);
@@ -232,6 +235,15 @@ export default function ListeningMockExam() {
         {} as Record<string, string>
       );
 
+      const questionMeta = buildMockListeningQuestionMeta(
+        SECTION_NUMBERS.map((n) => ({
+          section: n,
+          transcript: sectionsData[n]?.transcript,
+          wordLimit: sectionsData[n]?.wordLimit,
+          questions: sectionsData[n]?.questions ?? [],
+        }))
+      );
+
       try {
         const res = await fetch("/api/listening/submit", {
           method: "POST",
@@ -242,6 +254,7 @@ export default function ListeningMockExam() {
             questionType: "full-mock",
             answers: payloadAnswers,
             correctAnswers,
+            questionMeta,
             timeTakenSeconds: elapsedSeconds,
             timedOut,
             testType: "mock",
@@ -299,9 +312,13 @@ export default function ListeningMockExam() {
     examStartedRef.current = false;
     setElapsedSeconds(0);
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 120_000);
+
     try {
       const res = await fetch(
-        `/api/listening/mock-test?studentId=${encodeURIComponent(studentId)}`
+        `/api/listening/mock-test?studentId=${encodeURIComponent(studentId)}`,
+        { signal: controller.signal }
       );
       const data = await res.json().catch(() => null);
 
@@ -320,7 +337,7 @@ export default function ListeningMockExam() {
       }
 
       if (!res.ok || !data?.success) {
-        throw new Error(data?.error ?? "Failed to load mock test");
+        throw new Error(data?.error ?? `Failed to load mock test (HTTP ${res.status})`);
       }
 
       const map: Record<number, ListeningSectionData> = {};
@@ -337,10 +354,16 @@ export default function ListeningMockExam() {
       setPhase("announcement");
       setTimerSeconds(PREP_SECONDS);
     } catch (err) {
-      setLoadError(
-        err instanceof Error ? err.message : "Failed to load mock test"
-      );
+      const message =
+        err instanceof Error && err.name === "AbortError"
+          ? "Full mock generation timed out. Please try again — if this keeps happening, the content bank may need replenishing."
+          : err instanceof Error
+            ? err.message
+            : "Failed to load mock test";
+      setLoadError(message);
       setPhase("loading");
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }, [studentId]);
 
@@ -405,7 +428,24 @@ export default function ListeningMockExam() {
   }, [phase]);
 
   useEffect(() => {
+    if (phase === "prep") {
+      setTimerSeconds(PREP_SECONDS);
+      // Group 1: section announcer already finished before entering prep.
+      // Later groups: wait for mid-section prep announcer TTS.
+      setPrepLookReady(activeGroupIndex === 0);
+      return;
+    }
+    if (phase === "checking") {
+      setTimerSeconds(getCheckSeconds(currentSection));
+      setPrepLookReady(true);
+      return;
+    }
+    setPrepLookReady(false);
+  }, [phase, activeGroupIndex, currentSection]);
+
+  useEffect(() => {
     if (!TIMED_PHASES.includes(phase as ExamFlowPhase)) return;
+    if (!prepLookReady) return;
 
     if (timerSeconds <= 0) {
       advanceFromTimer();
@@ -417,17 +457,24 @@ export default function ListeningMockExam() {
     }, 1000);
 
     return () => clearInterval(id);
-  }, [phase, timerSeconds, advanceFromTimer]);
+  }, [phase, timerSeconds, advanceFromTimer, prepLookReady]);
 
   const onAnnouncementComplete = useCallback(() => {
     setPhase("prep");
     setTimerSeconds(PREP_SECONDS);
+    setPrepLookReady(true);
+  }, []);
+
+  const onMidPrepAnnouncementComplete = useCallback(() => {
+    setTimerSeconds(PREP_SECONDS);
+    setPrepLookReady(true);
   }, []);
 
   const onGroupAudioComplete = useCallback(() => {
     const next = activeGroupIndex + 1;
     if (usesGroupPrep && next < questionGroups.length) {
       setActiveGroupIndex(next);
+      setPrepLookReady(false);
       setPhase("prep");
       setTimerSeconds(PREP_SECONDS);
       return;
@@ -656,7 +703,7 @@ export default function ListeningMockExam() {
                 <div className="mt-4">
                   <ListeningSectionAnnouncer
                     text={prepAnnouncementConfig.text}
-                    onComplete={() => {}}
+                    onComplete={onMidPrepAnnouncementComplete}
                   />
                 </div>
               ) : null}
@@ -664,8 +711,12 @@ export default function ListeningMockExam() {
               {prepBannerConfig ? (
                 <div className="mt-4 overflow-hidden rounded-xl">
                   <ListeningExamPrepBanner
-                    message={prepBannerConfig.message}
+                    message={syncPrepMessageSeconds(
+                      prepBannerConfig.message,
+                      timerSeconds
+                    )}
                     secondsLeft={timerSeconds}
+                    secondsOnly
                   />
                 </div>
               ) : null}
@@ -673,8 +724,12 @@ export default function ListeningMockExam() {
               {checkBannerConfig ? (
                 <div className="mt-4 overflow-hidden rounded-xl">
                   <ListeningExamPrepBanner
-                    message={checkBannerConfig.message}
+                    message={syncPrepMessageSeconds(
+                      checkBannerConfig.message,
+                      timerSeconds
+                    )}
                     secondsLeft={timerSeconds}
+                    secondsOnly
                   />
                 </div>
               ) : null}
@@ -724,6 +779,7 @@ export default function ListeningMockExam() {
                       [currentSection]: next,
                     }))
                   }
+                  example={sectionData.example}
                 />
 
               </div>

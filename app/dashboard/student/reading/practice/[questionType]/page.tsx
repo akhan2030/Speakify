@@ -14,6 +14,12 @@ import { initDailyLimit, fetchPassage } from "@/lib/useDailyLimitGate";
 import type { DailyLimitState } from "@/lib/useDailyLimitGate";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
 import MatchingHeadingsPanel from "@/components/reading/MatchingHeadingsPanel";
+import MatchingInformationPanel from "@/components/reading/MatchingInformationPanel";
+import ClassificationPanel from "@/components/reading/ClassificationPanel";
+import MatchingSentenceEndingsPanel from "@/components/reading/MatchingSentenceEndingsPanel";
+import MatchingFeaturesPanel from "@/components/reading/MatchingFeaturesPanel";
+import DiagramCompletionPanel from "@/components/reading/DiagramCompletionPanel";
+import { isWithinIeltsWordLimit } from "@/lib/readingQuestionContent.js";
 import {
   ExamHighlightQuestionText,
   ExamHighlightSection,
@@ -23,6 +29,7 @@ import {
 } from "@/components/exam/ExamHighlightSection";
 import type { TextHighlight } from "@/lib/examHighlight";
 import { usePathwayStudentContext } from "@/components/pathway/usePathwayStudentContext";
+import { answersMatchFlexible } from "@/lib/readingScorer.js";
 
 const PRACTICE_DURATION_SECONDS = 1200;
 
@@ -34,6 +41,7 @@ type PracticeQuestion = {
   text: string;
   options?: { key: string; label: string }[];
   headings?: { key: string; label: string }[];
+  alternatives?: string[];
 };
 
 type PracticeContent = {
@@ -46,6 +54,19 @@ type PracticeContent = {
   paragraphs: { id: string; label: string; text: string }[];
   questions: PracticeQuestion[];
   headings?: { key: string; label: string }[];
+  categories?: { key: string; label: string }[];
+  endings?: { key: string; label: string }[];
+  features?: { key: string; label: string }[];
+  diagram?: {
+    title?: string;
+    orientation?: "vertical" | "horizontal";
+    nodes: Array<{
+      id: string;
+      kind: "fixed" | "blank";
+      text?: string;
+      answer?: string;
+    }>;
+  };
 };
 
 const DIFFICULTY_CLASS: Record<Difficulty, string> = {
@@ -60,10 +81,12 @@ function QuestionInputs({
   content,
   answers,
   onChange,
+  feedback,
 }: {
   content: PracticeContent;
   answers: Record<string, string>;
   onChange: (id: string, value: string) => void;
+  feedback?: Record<string, { correct: boolean; correctAnswer: string }> | null;
 }) {
   const sharedHeadings =
     content.headings ??
@@ -77,6 +100,86 @@ function QuestionInputs({
         questions={content.questions}
         answers={answers}
         onChange={onChange}
+      />
+    );
+  }
+
+  if (content.slug === "matching-information") {
+    const paragraphLetters = content.paragraphs
+      .map((p) => String(p.label).match(/\b([A-G])\b/i)?.[1]?.toUpperCase())
+      .filter((letter): letter is string => Boolean(letter));
+    return (
+      <MatchingInformationPanel
+        paragraphLetters={[...new Set(paragraphLetters)]}
+        questions={content.questions}
+        answers={answers}
+        onChange={onChange}
+        feedback={feedback}
+      />
+    );
+  }
+
+  if (content.slug === "classification") {
+    const categories =
+      content.categories ??
+      content.questions.find((q) => q.options?.length)?.options?.map((o) => ({
+        key: o.key,
+        label: o.label.replace(/^[A-D]\.\s*/, ""),
+      })) ??
+      [];
+    return (
+      <ClassificationPanel
+        categories={categories}
+        questions={content.questions}
+        answers={answers}
+        onChange={onChange}
+        feedback={feedback}
+      />
+    );
+  }
+
+  if (content.slug === "matching-sentence-endings") {
+    const endings =
+      content.endings ??
+      content.questions.find((q) => q.options?.length)?.options ??
+      [];
+    return (
+      <MatchingSentenceEndingsPanel
+        endings={endings}
+        questions={content.questions}
+        answers={answers}
+        onChange={onChange}
+        feedback={feedback}
+      />
+    );
+  }
+
+  if (content.slug === "matching-features") {
+    const features =
+      content.features ??
+      content.questions.find((q) => q.options?.length)?.options?.map((o) => ({
+        key: o.key,
+        label: o.label.replace(/^[A-F]\.\s*/, ""),
+      })) ??
+      [];
+    return (
+      <MatchingFeaturesPanel
+        features={features}
+        questions={content.questions}
+        answers={answers}
+        onChange={onChange}
+        feedback={feedback}
+      />
+    );
+  }
+
+  if (content.slug === "diagram-completion" && content.diagram?.nodes?.length) {
+    return (
+      <DiagramCompletionPanel
+        diagram={content.diagram}
+        answers={answers}
+        onChange={onChange}
+        feedback={feedback}
       />
     );
   }
@@ -153,6 +256,11 @@ function QuestionInputs({
           {question.kind !== "multiple-choice" &&
           question.kind !== "true-false-not-given" &&
           question.kind !== "matching-headings" &&
+          question.kind !== "matching-information" &&
+          question.kind !== "classification" &&
+          question.kind !== "matching-sentence-endings" &&
+          question.kind !== "matching-features" &&
+          question.kind !== "diagram-completion" &&
           question.kind !== "sentence-completion" &&
           question.kind !== "short-answer" ? (
             <input
@@ -195,6 +303,10 @@ export default function ReadingPracticePage() {
     accuracy: number;
     estimatedBand: number;
   } | null>(null);
+  const [answerFeedback, setAnswerFeedback] = useState<Record<
+    string,
+    { correct: boolean; correctAnswer: string }
+  > | null>(null);
   const [showScreenLock, setShowScreenLock] = useState(false);
 
   const answersRef = useRef(answers);
@@ -225,6 +337,7 @@ export default function ReadingPracticePage() {
       setAnswers({});
       setHighlights([]);
       setResult(null);
+      setAnswerFeedback(null);
       setShowScreenLock(false);
       submittedRef.current = false;
       startTimeRef.current = Date.now();
@@ -295,6 +408,9 @@ export default function ReadingPracticePage() {
             questionType: slug,
             answers: answersRef.current,
             correctAnswers,
+            alternativesById: Object.fromEntries(
+              content.questions.map((q) => [q.id, q.alternatives ?? []])
+            ),
             timeTakenSeconds,
             timedOut,
           }),
@@ -308,6 +424,23 @@ export default function ReadingPracticePage() {
             accuracy: data.accuracy,
             estimatedBand: data.estimatedBand,
           });
+          const studentAnswers = answersRef.current;
+          const feedback: Record<
+            string,
+            { correct: boolean; correctAnswer: string }
+          > = {};
+          for (const [id, correct] of Object.entries(correctAnswers)) {
+            const q = content?.questions.find((row) => row.id === id);
+            feedback[id] = {
+              correct: answersMatchFlexible(
+                studentAnswers[id] ?? "",
+                correct,
+                q?.alternatives
+              ),
+              correctAnswer: correct,
+            };
+          }
+          setAnswerFeedback(feedback);
           if (timedOut) setShowScreenLock(true);
         }
       } catch {
@@ -331,7 +464,14 @@ export default function ReadingPracticePage() {
 
   const allAnswered = useMemo(() => {
     if (!content) return false;
-    return content.questions.every((q) => Boolean(answers[q.id]?.trim()));
+    return content.questions.every((q) => {
+      const value = answers[q.id]?.trim() ?? "";
+      if (!value) return false;
+      if (content.slug === "diagram-completion") {
+        return isWithinIeltsWordLimit(value, 2);
+      }
+      return true;
+    });
   }, [content, answers]);
 
   if (status === "loading" || status === "unauthenticated") {
@@ -499,6 +639,7 @@ export default function ReadingPracticePage() {
                 <QuestionInputs
                   content={content}
                   answers={answers}
+                  feedback={answerFeedback}
                   onChange={(id, value) =>
                     setAnswers((prev) => ({ ...prev, [id]: value }))
                   }
@@ -517,11 +658,15 @@ export default function ReadingPracticePage() {
 
                 <button
                   type="button"
-                  disabled={!allAnswered || submitting || timer.isTimedOut}
+                  disabled={!allAnswered || submitting || timer.isTimedOut || Boolean(result)}
                   onClick={() => submitAnswers(false)}
                   className="mt-4 w-full rounded-xl bg-[#0d1b35] py-3 text-sm font-bold text-white transition-colors hover:bg-[#152a4d] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {submitting ? "Submitting…" : "Submit Answers"}
+                  {submitting
+                    ? "Submitting…"
+                    : result
+                      ? "Submitted"
+                      : "Submit Answers"}
                 </button>
               </div>
             </div>

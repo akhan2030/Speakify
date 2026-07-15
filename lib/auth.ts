@@ -102,6 +102,8 @@ type DbUser = {
 
   programSelected: string | null;
 
+  studentType: string;
+
 };
 
 
@@ -152,7 +154,7 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     .from("users")
 
-    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, payment_comped_until, program_selected")
+    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, payment_comped_until, program_selected, student_type")
 
     .eq("email", normalizedEmail)
 
@@ -231,7 +233,9 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
   const programSelected = data.program_selected ?? null;
 
-
+  const studentType = String(
+    (data as { student_type?: string | null }).student_type ?? "self_study"
+  );
 
   return {
 
@@ -256,6 +260,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
     paymentCompedUntil,
 
     programSelected,
+
+    studentType,
 
   };
 
@@ -547,6 +553,8 @@ export const authOptions: NextAuthOptions = {
 
           (token as any).programSelected = dbUser.programSelected;
 
+          (token as any).studentType = (dbUser as { studentType?: string }).studentType ?? "self_study";
+
           (token as any).hasDashboardAccess = hasDashboardAccess({
             role: dbUser.role,
             paymentStatus: dbUser.paymentStatus,
@@ -657,6 +665,8 @@ export const authOptions: NextAuthOptions = {
         (token as any).mustChangePassword === true;
 
       (session.user as any).programType = programType;
+
+      (session.user as any).studentType = (token as any).studentType ?? "self_study";
 
       (session.user as any).enrolledPrograms = enrolledPrograms;
 

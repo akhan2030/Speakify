@@ -29,6 +29,7 @@ import {
 } from "@/components/exam/ExamHighlightSection";
 import type { TextHighlight } from "@/lib/examHighlight";
 import { getWritingTaskLabel } from "@/lib/placement/bank/writing";
+import PlacementGtLetterPrompt from "@/components/placement/PlacementGtLetterPrompt";
 
 const GUEST_KEY = "speakify_placement_guest_id";
 const RESULT_KEY = "speakify_placement_result";
@@ -63,18 +64,18 @@ function getGuestId(): string {
 
 function TourismBarChart() {
   const bars = [
-    { year: "2019", value: 18 },
-    { year: "2020", value: 19 },
-    { year: "2021", value: 21 },
-    { year: "2022", value: 24 },
-    { year: "2023", value: 27 },
+    { year: "2019", value: 39 },
+    { year: "2020", value: 11 },
+    { year: "2021", value: 6 },
+    { year: "2022", value: 30 },
+    { year: "2023", value: 37 },
   ];
-  const max = 30;
+  const max = 42;
 
   return (
     <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
       <p className="text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
-        Tourists visiting Saudi Arabia (millions)
+        International tourists visiting the United Kingdom (millions)
       </p>
       <div className="mt-4 flex items-end justify-center gap-3 sm:gap-5">
         {bars.map((bar) => (
@@ -510,13 +511,29 @@ export default function PlacementTestPage() {
     if (!currentQuestion || checking) return;
     setChecking(true);
     try {
+      const isTask1 =
+        currentQuestion.id === "write-task1-data" ||
+        currentQuestion.id === "write-task1-letter";
+      const scoringPrompt = currentQuestion.letterPrompt
+        ? [
+            `IELTS General Training Task 1 — semi-formal letter to ${currentQuestion.letterPrompt.writeTo}.`,
+            currentQuestion.letterPrompt.situation,
+            "In your letter:",
+            ...currentQuestion.letterPrompt.bulletPoints.map((b) => `- ${b}`),
+            `Begin as: ${currentQuestion.letterPrompt.beginAs}`,
+            currentQuestion.question,
+          ].join("\n\n")
+        : currentQuestion.question;
+
       const res = await fetch("/api/placement/score-writing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: currentQuestion.question,
+          prompt: scoringPrompt,
           studentAnswer: answerInput,
           targetBand: currentQuestion.band,
+          taskType: isTask1 ? "task1" : "task2",
+          ieltsModule: testState?.ieltsModule,
         }),
       });
       const json = await res.json();
@@ -550,7 +567,7 @@ export default function PlacementTestPage() {
     }
     setAttemptId(json.attemptId);
 
-    const state = initTestState(35);
+    const state = initTestState(35, profile.ieltsModule);
     const first = selectNextValidQuestion(state);
     if (!first) return;
 
@@ -812,9 +829,14 @@ export default function PlacementTestPage() {
               </p>
             ) : null}
             {currentQuestion?.id === "write-task1-data" ? <TourismBarChart /> : null}
+            {currentQuestion?.letterPrompt ? (
+              <PlacementGtLetterPrompt letterPrompt={currentQuestion.letterPrompt} />
+            ) : null}
             <p
               className={`whitespace-pre-wrap text-base leading-relaxed text-[#0d1b35] ${
-                currentQuestion?.id === "write-task1-data" ? "mt-4" : ""
+                currentQuestion?.id === "write-task1-data" || currentQuestion?.letterPrompt
+                  ? "mt-4"
+                  : ""
               }`}
             >
               {currentQuestion?.question ? (

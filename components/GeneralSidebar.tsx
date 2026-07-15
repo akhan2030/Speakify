@@ -209,19 +209,21 @@ function NavLink({
     <Link
       href={item.href}
       title={title}
-      className={`flex items-center justify-between gap-2 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors ${
+      className={`flex items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors ${
         isActive
           ? "border-l-[#c9972c] bg-[#152a4d] font-semibold text-white"
           : "border-l-transparent text-slate-300 hover:bg-white/5 hover:text-white"
       }`}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="shrink-0">{item.icon}</span>
-        <span className="truncate">{item.label}</span>
-      </span>
+      <span className="shrink-0">{item.icon}</span>
+      <span className="min-w-0 truncate">{item.label}</span>
       {badge ? (
         <span
-          className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#c9972c]"
+          className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+            badge === "NEW"
+              ? "bg-[#c9972c] text-[#0d1b35]"
+              : "bg-white/10 text-[#c9972c]"
+          }`}
           title={badge}
         >
           {badge}

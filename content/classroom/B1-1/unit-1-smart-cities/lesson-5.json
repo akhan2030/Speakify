@@ -1,0 +1,40 @@
+{
+  "lessonNumber": 5,
+  "title": "Project Task: Sustainability Poster",
+  "type": "lesson",
+  "sections": [
+    {
+      "sectionType": "pre_task",
+      "title": "Pre-task: Choose your message",
+      "orderIndex": 1,
+      "content": {
+        "instruction": "In pairs, choose ONE local campaign idea (water, litter, walking, energy, or school transport). List three key facts you already know.",
+        "prompts": [
+          "Who is your audience (students, families, drivers)?",
+          "What action do you want them to take?",
+          "Which two English words from the unit will appear on the poster?"
+        ]
+      }
+    },
+    {
+      "sectionType": "task",
+      "title": "Task: Build your campaign poster",
+      "orderIndex": 2,
+      "content": {
+        "instruction": "Use the poster builder. Keep language clear and polite. Include a slogan, three bullets, and a call to action."
+      }
+    },
+    {
+      "sectionType": "post_task",
+      "title": "Post-task: Gallery walk",
+      "orderIndex": 3,
+      "content": {
+        "instruction": "Groups walk around and read two other posters. Write one compliment and one polite suggestion for each.",
+        "prompts": [
+          "Which slogan was clearest?",
+          "Which poster used the best comparative language?"
+        ]
+      }
+    }
+  ]
+}

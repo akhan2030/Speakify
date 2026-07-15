@@ -1,0 +1,25 @@
+{
+  "levelCode": "B1.1",
+  "unitNumber": 1,
+  "slug": "unit-1-smart-cities",
+  "title": "Smart Cities, Sustainable Future",
+  "theme": "Urban innovation, sustainability, and civic life in the Gulf",
+  "grammarPoint1": "Present Simple vs Present Continuous (review and extend)",
+  "grammarPoint2": "Comparatives and superlatives for describing cities",
+  "objectives": [
+    "Talk about smart-city features in clear B1 English",
+    "Compare traditional and modern urban solutions respectfully",
+    "Use target vocabulary of technology and sustainability",
+    "Complete a short reading and listening task about city life",
+    "Plan a simple awareness poster for a local sustainability campaign"
+  ],
+  "status": "published",
+  "lessons": [
+    { "lessonNumber": 1, "title": "Word Builder + Grammar Builder 1", "type": "lesson", "file": "lesson-1.json" },
+    { "lessonNumber": 2, "title": "Communication: Listening & Speaking", "type": "lesson", "file": "lesson-2.json" },
+    { "lessonNumber": 3, "title": "Word Builder + Grammar Builder 2", "type": "lesson", "file": "lesson-3.json" },
+    { "lessonNumber": 4, "title": "Reading, Vocabulary Check & Writing", "type": "lesson", "file": "lesson-4.json" },
+    { "lessonNumber": 5, "title": "Project Task: Sustainability Poster", "type": "lesson", "file": "lesson-5.json" },
+    { "lessonNumber": 0, "title": "Extra Activities", "type": "extra_activities", "file": "extra-activities.json" }
+  ]
+}

@@ -22,16 +22,23 @@ export default function GeneralMockLetterPrompt({
         <span className="text-xs text-slate-500">{letter.label}</span>
       </div>
       <p className="mt-3 text-sm font-medium text-[#0d1b35]">{letter.situation}</p>
-      <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        In your letter:
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Write a letter to {letter.writeTo}. In your letter, you should:
       </p>
       <ul className="mt-1 list-inside list-disc text-sm text-slate-700">
         {letter.bulletPoints.map((b) => (
           <li key={b}>{b}</li>
         ))}
       </ul>
+      <div className="mt-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+        <p className="text-xs font-semibold uppercase text-slate-500">
+          Begin your letter as follows:
+        </p>
+        <p className="mt-1 font-medium text-[#0d1b35]">{letter.beginAs}</p>
+      </div>
       <p className="mt-3 text-xs text-slate-500">
-        Write at least 150 words. Do not describe a chart or graph — this is a letter only.
+        Write at least 150 words. You do not need to write any addresses. Do not describe a chart
+        or graph — this is a letter only.
       </p>
     </div>
   );

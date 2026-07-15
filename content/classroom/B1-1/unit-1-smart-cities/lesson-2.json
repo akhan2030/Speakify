@@ -1,0 +1,54 @@
+{
+  "lessonNumber": 2,
+  "title": "Communication: Listening & Speaking",
+  "type": "lesson",
+  "sections": [
+    {
+      "sectionType": "listening",
+      "title": "A city planner talks about smart services",
+      "orderIndex": 1,
+      "content": {
+        "audioUrl": null,
+        "audioNote": "Teacher plays audio when available, or reads the transcript aloud.",
+        "transcript": "Host: Welcome to City Voices. Today we speak with Dana, an urban planner in Riyadh.\nDana: Thank you. I usually visit neighbourhoods on Sundays, and this month I am reviewing how smart bins and street sensors help cleaning teams. Citizens report problems in an app, and we respond faster. The goal is not technology for its own sake — it is a cleaner, safer city for everyone.",
+        "prediction": ["What smart services might a city planner mention?"],
+        "whileListening": [
+          { "id": "l2a", "prompt": "When does Dana usually visit neighbourhoods?", "answer": "on Sundays" },
+          { "id": "l2b", "prompt": "What is she reviewing this month?", "answer": "smart bins and street sensors" }
+        ]
+      }
+    },
+    {
+      "sectionType": "speaking",
+      "title": "Neighbourhood services role-play",
+      "orderIndex": 2,
+      "content": {
+        "pairWork": {
+          "title": "Resident + planner",
+          "steps": [
+            "Student A is a resident. Describe one local problem (traffic, litter, heat, parking).",
+            "Student B is a planner. Suggest one smart or simple solution and one question.",
+            "Swap roles after 2 minutes."
+          ]
+        },
+        "groupDiscussion": {
+          "title": "What makes a city ‘smart’?",
+          "prompt": "In groups of 3–4, agree on the top THREE features of a smart city for Saudi students your age. Be ready to report to the class."
+        },
+        "rolePlay": {
+          "title": "Community meeting",
+          "roles": [
+            "Chairperson: Welcome people and keep time.",
+            "Resident: Explain a problem clearly.",
+            "Planner: Offer a respectful solution and invite ideas."
+          ],
+          "successCriteria": [
+            "Clear roles",
+            "Polite turn-taking",
+            "One Present Simple fact + one Present Continuous temporary action"
+          ]
+        }
+      }
+    }
+  ]
+}

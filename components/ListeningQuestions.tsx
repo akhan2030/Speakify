@@ -13,6 +13,7 @@ export type ListeningQuestion = {
   text: string;
   options?: { label: string; text: string }[];
   chooseCount?: number;
+  eitherOrderGroup?: string;
   answer?: string;
   wordLimit?: string;
   explanation?: string;
@@ -25,6 +26,19 @@ export type QuestionResult = {
   correct: boolean;
   studentAnswer: string;
   correctAnswer: string;
+  category?: string;
+  acceptedVariants?: string[];
+  feedback?: {
+    whyIncorrect?: string;
+    correctAnswer?: string;
+    explanation?: string;
+    coachingNote?: string;
+    lossReason?: string;
+    skillTested?: string;
+    commonTrap?: string;
+    studyTip?: string;
+    transcriptEvidence?: string | null;
+  } | null;
 };
 
 export type ListeningQuestionsProps = {
@@ -38,6 +52,8 @@ export type ListeningQuestionsProps = {
   /** Highlight answered questions with a green left border during playback */
   highlightAnswered?: boolean;
   answeredIds?: Set<number | string>;
+  /** Dark header bar title (form / table / notes) — official paper style */
+  groupTitle?: string;
 };
 
 function QuestionPromptText({
@@ -90,15 +106,25 @@ function WordLimitHint({ limit }: { limit?: string }) {
   return <p className="mt-1 text-xs text-slate-500">{limit}</p>;
 }
 
-/** IELTS answer sheet — label and input stay visually paired (no stretched 1fr gap). */
-const ANSWER_SHEET_CONTAINER =
-  "mx-auto w-full max-w-3xl rounded-xl border border-slate-200 bg-white p-4 sm:p-5";
+/** Official IELTS paper palette (British Council reference). */
+const OFFICIAL_HEADER = "bg-[#3d3d3d] px-4 py-2.5 text-sm font-bold text-white";
+const OFFICIAL_PANEL =
+  "overflow-hidden rounded-lg border border-slate-300 bg-white";
+const OFFICIAL_ROW_ODD = "bg-[#f0f0f0]";
+const OFFICIAL_ROW_EVEN = "bg-white";
+const OFFICIAL_QUESTIONS_BOX =
+  "overflow-hidden rounded-lg border border-slate-300 bg-[#f0f0f0]";
+
+const INLINE_INPUT =
+  "mx-1 inline-block min-w-[7rem] border-0 border-b-2 border-dotted border-slate-500 bg-transparent px-1 py-0.5 text-sm text-[#1a1a1a] outline-none focus:border-[#c9972c] focus:ring-0 disabled:text-slate-500";
+
+const ANSWER_SHEET_CONTAINER = `${OFFICIAL_PANEL}`;
 
 const ANSWER_ROW =
-  "grid grid-cols-1 gap-2 py-3 sm:grid-cols-[minmax(0,20rem)_12.5rem] sm:items-start sm:gap-x-5 md:grid-cols-[minmax(0,22rem)_14rem] md:gap-x-6";
+  "grid grid-cols-1 gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-center sm:gap-x-4";
 
 const ANSWER_ROW_MATCHING =
-  "grid grid-cols-1 gap-2 py-3 sm:grid-cols-[minmax(0,20rem)_10rem] sm:items-center sm:gap-x-5 md:grid-cols-[minmax(0,22rem)_11rem] md:gap-x-6";
+  "grid grid-cols-1 gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_5rem] sm:items-center sm:gap-x-4";
 
 function TextInput({
   q,
@@ -141,32 +167,42 @@ function FormCompletionQuestions(props: ListeningQuestionsProps) {
     disabled = false,
     showResults,
     results,
+    groupTitle,
   } = props;
   return (
-    <div className={`${ANSWER_SHEET_CONTAINER} divide-y divide-slate-100`}>
-      {questions.map((q, i) => {
-        const result = results?.[i];
-        return (
-          <div
-            key={q.id}
-            className={answeredWrapClass(q.id, props, ANSWER_ROW)}
-          >
-            <label className="text-sm font-medium leading-snug text-[#0d1b35]">
-              <QuestionPromptText q={q} />
-            </label>
-            <div className="w-full min-w-0 sm:max-w-[14rem]">
-            <TextInput
-              q={q}
-              value={answers[q.id] ?? ""}
-              onChange={(v) => onChange(q.id, v)}
-              disabled={disabled}
-              showResults={showResults}
-              result={result}
-            />
+    <div className={ANSWER_SHEET_CONTAINER}>
+      {groupTitle ? (
+        <div className={`${OFFICIAL_HEADER} text-center`}>{groupTitle}</div>
+      ) : null}
+      <div className="divide-y divide-white">
+        {questions.map((q, i) => {
+          const result = results?.[i];
+          const rowBg = i % 2 === 0 ? OFFICIAL_ROW_ODD : OFFICIAL_ROW_EVEN;
+          return (
+            <div
+              key={q.id}
+              className={`${rowBg} px-4 py-3 text-sm leading-relaxed text-[#1a1a1a] ${answeredWrapClass(q.id, props)}`}
+            >
+              <span>{q.text.replace(/:\s*$/, "")}</span>{" "}
+              <strong className="text-[#1a1a1a]">({q.questionNumber})</strong>
+              <input
+                type="text"
+                value={answers[q.id] ?? ""}
+                disabled={disabled}
+                onChange={(e) => onChange(q.id, e.target.value)}
+                className={`${INLINE_INPUT} ${
+                  showResults && result?.correct
+                    ? "border-green-500 text-green-800"
+                    : showResults && result && !result.correct
+                      ? "border-red-500 text-red-800"
+                      : ""
+                }`}
+                aria-label={`Answer for question ${q.questionNumber}`}
+              />
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -211,74 +247,75 @@ function MultipleChoiceQuestions(props: ListeningQuestionsProps) {
     results,
   } = props;
   return (
-    <div className="space-y-4">
-      {questions.map((q, i) => {
-        const result = results?.[i];
-        const chooseCount = Math.max(1, Number(q.chooseCount ?? 1));
-        const isMultiSelect = chooseCount > 1;
-        const rawSelected = answers[q.id] ?? "";
-        const selectedLetters = isMultiSelect
-          ? parseSelectedLetters(rawSelected)
-          : new Set(rawSelected ? [rawSelected.toUpperCase()] : []);
-        const options = q.options ?? [];
+    <div className={OFFICIAL_QUESTIONS_BOX}>
+      <div className={OFFICIAL_HEADER}>Questions</div>
+      <div className="divide-y divide-white">
+        {questions.map((q, i) => {
+          const result = results?.[i];
+          const chooseCount = Math.max(1, Number(q.chooseCount ?? 1));
+          const isMultiSelect = chooseCount > 1;
+          const rawSelected = answers[q.id] ?? "";
+          const selectedLetters = isMultiSelect
+            ? parseSelectedLetters(rawSelected)
+            : new Set(rawSelected ? [rawSelected.toUpperCase()] : []);
+          const options = q.options ?? [];
 
-        const toggleMulti = (letter: string) => {
-          const next = new Set(selectedLetters);
-          if (next.has(letter)) {
-            next.delete(letter);
-          } else if (next.size < chooseCount) {
-            next.add(letter);
-          }
-          onChange(q.id, formatSelectedLetters(next));
-        };
+          const toggleMulti = (letter: string) => {
+            const next = new Set(selectedLetters);
+            if (next.has(letter)) {
+              next.delete(letter);
+            } else if (next.size < chooseCount) {
+              next.add(letter);
+            }
+            onChange(q.id, formatSelectedLetters(next));
+          };
 
-        return (
-          <div
-            key={q.id}
-            className={`rounded-xl border bg-white p-4 shadow-sm ${
-              rawSelected ? "border-[#c9972c]" : "border-slate-200"
-            } ${showResults && result?.correct ? "border-green-400 bg-green-50/30" : ""} ${
-              showResults && result && !result.correct ? "border-red-400 bg-red-50/30" : ""
-            } ${answeredWrapClass(q.id, props)}`}
-          >
-            <p className="font-bold text-[#0d1b35]">
-              <QuestionPromptText q={q} />
-            </p>
-            {isMultiSelect ? (
-              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Select {chooseCount} answers
+          return (
+            <div
+              key={q.id}
+              className={`px-4 py-4 ${
+                showResults && result?.correct ? "bg-green-50/50" : ""
+              } ${showResults && result && !result.correct ? "bg-red-50/50" : ""} ${answeredWrapClass(q.id, props)}`}
+            >
+              <p className="font-bold text-[#1a1a1a]">
+                <QuestionPromptText q={q} />
               </p>
-            ) : null}
-            <div className="mt-3 space-y-2">
-              {options.map((opt) => {
-                const letter = String(opt.label ?? "").trim().toUpperCase();
-                const optionText = displayOptionText(opt.text);
-                const isSelected = selectedLetters.has(letter);
-                return (
-                  <HighlightableMcqOption
-                    key={`${q.id}-${letter || optionText}`}
-                    blockId={`lq-${q.id}-opt-${letter || optionText.slice(0, 24)}`}
-                    letter={letter || "?"}
-                    text={optionText}
-                    name={`q-${q.id}`}
-                    checked={isSelected}
-                    disabled={disabled}
-                    multiSelect={isMultiSelect}
-                    onSelect={() =>
-                      isMultiSelect ? toggleMulti(letter) : onChange(q.id, letter)
-                    }
-                    className={
-                      isSelected
-                        ? "border-[#c9972c] bg-[#c9972c]/10"
-                        : "border-slate-200"
-                    }
-                  />
-                );
-              })}
+              {isMultiSelect ? (
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Select {chooseCount} answers
+                </p>
+              ) : null}
+              <div className="mt-2 space-y-1.5 pl-1">
+                {options.map((opt) => {
+                  const letter = String(opt.label ?? "").trim().toUpperCase();
+                  const optionText = displayOptionText(opt.text);
+                  const isSelected = selectedLetters.has(letter);
+                  return (
+                    <HighlightableMcqOption
+                      key={`${q.id}-${letter || optionText}`}
+                      blockId={`lq-${q.id}-opt-${letter || optionText.slice(0, 24)}`}
+                      letter={letter || "?"}
+                      text={optionText}
+                      name={`q-${q.id}`}
+                      checked={isSelected}
+                      disabled={disabled}
+                      multiSelect={isMultiSelect}
+                      onSelect={() =>
+                        isMultiSelect ? toggleMulti(letter) : onChange(q.id, letter)
+                      }
+                      className={
+                        isSelected
+                          ? "border-[#c9972c] bg-white"
+                          : "border-transparent bg-transparent"
+                      }
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -292,43 +329,69 @@ function MatchingQuestions(props: ListeningQuestionsProps) {
     showResults,
     results,
   } = props;
-  const optionLetters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
+  const boxOptions =
+    questions.find((q) => (q.options?.length ?? 0) >= 2)?.options ?? [];
+
   return (
-    <div className={`${ANSWER_SHEET_CONTAINER} divide-y divide-slate-100`}>
-      {questions.map((q, i) => {
-        const result = results?.[i];
-        return (
-          <div
-            key={q.id}
-            className={`rounded-lg border border-slate-200 bg-white px-4 ${
-              showResults && result?.correct ? "border-green-400 bg-green-50/40" : ""
-            } ${showResults && result && !result.correct ? "border-red-400 bg-red-50/40" : ""} ${answeredWrapClass(q.id, props, ANSWER_ROW_MATCHING)}`}
-          >
-            <span className="text-sm leading-snug text-slate-700">
-              <QuestionPromptText q={q} />
-            </span>
-            <select
-              value={answers[q.id] ?? ""}
-              disabled={disabled}
-              onChange={(e) => onChange(q.id, e.target.value)}
-              className={`w-full min-w-0 ${inputClass(
-                disabled,
-                !!(showResults && result?.correct),
-                !!(showResults && result && !result.correct)
-              )}`}
-            >
-              <option value="">Select…</option>
-              {(q.options?.length ? q.options.map((o) => o.label) : optionLetters).map(
-                (letter) => (
-                  <option key={letter} value={letter}>
-                    {letter}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-        );
-      })}
+    <div className="space-y-4">
+      {boxOptions.length > 0 ? (
+        <div className={OFFICIAL_PANEL}>
+          <table className="w-full text-sm">
+            <tbody>
+              {boxOptions.map((opt, idx) => (
+                <tr
+                  key={opt.label}
+                  className={idx % 2 === 0 ? OFFICIAL_ROW_ODD : OFFICIAL_ROW_EVEN}
+                >
+                  <td className="w-12 px-4 py-2 font-bold text-[#1a1a1a]">
+                    {opt.label}
+                  </td>
+                  <td className="px-4 py-2 text-[#1a1a1a]">{opt.text}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      <div className={OFFICIAL_QUESTIONS_BOX}>
+        <div className={`${OFFICIAL_HEADER} text-red-600`}>Questions</div>
+        <div className="divide-y divide-white">
+          {questions.map((q, i) => {
+            const result = results?.[i];
+            return (
+              <div
+                key={q.id}
+                className={`px-4 py-3 text-sm ${
+                  showResults && result?.correct ? "bg-green-50/50" : ""
+                } ${showResults && result && !result.correct ? "bg-red-50/50" : ""} ${answeredWrapClass(q.id, props, ANSWER_ROW_MATCHING)}`}
+              >
+                <span className="leading-snug text-[#1a1a1a]">
+                  <QuestionPromptText q={q} />
+                </span>
+                <input
+                  type="text"
+                  maxLength={1}
+                  value={answers[q.id] ?? ""}
+                  disabled={disabled}
+                  onChange={(e) =>
+                    onChange(q.id, e.target.value.toUpperCase().replace(/[^A-J]/g, ""))
+                  }
+                  className={`${INLINE_INPUT} w-12 min-w-[3rem] text-center uppercase ${
+                    showResults && result?.correct
+                      ? "border-green-500"
+                      : showResults && result && !result.correct
+                        ? "border-red-500"
+                        : ""
+                  }`}
+                  aria-label={`Letter answer for question ${q.questionNumber}`}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -341,67 +404,87 @@ function NoteStyleQuestions(props: ListeningQuestionsProps) {
     disabled = false,
     showResults,
     results,
+    groupTitle,
   } = props;
   return (
-    <div className={`${ANSWER_SHEET_CONTAINER} space-y-4 bg-slate-50`}>
-      {questions.map((q, i) => {
-        const result = results?.[i];
-        const parts = q.text.split(/(\[_{3,}\]|_{3,}|\[\s*\])/);
-        let gapIndex = 0;
-        return (
-          <div
-            key={q.id}
-            className={`text-sm leading-loose text-slate-700 ${
-              showResults && result?.correct ? "rounded-lg bg-green-50/60 p-2" : ""
-            } ${showResults && result && !result.correct ? "rounded-lg bg-red-50/60 p-2" : ""} ${answeredWrapClass(q.id, props)}`}
-          >
-            <span className="mr-2 font-bold text-[#0d1b35]">{q.questionNumber}.</span>
-            {parts.map((part, idx) => {
-              const isGap = /\[_{3,}\]|_{3,}|\[\s*\]/.test(part);
-              if (!isGap) {
-                return (
-                  <HighlightableInlineText
-                    key={idx}
-                    blockId={`lq-${q.id}-p-${idx}`}
-                    text={part}
+    <div className={ANSWER_SHEET_CONTAINER}>
+      {groupTitle ? (
+        <div className={`${OFFICIAL_HEADER} text-center`}>{groupTitle}</div>
+      ) : (
+        <div className={OFFICIAL_HEADER}>Questions</div>
+      )}
+      <div className="divide-y divide-white">
+        {questions.map((q, i) => {
+          const result = results?.[i];
+          const parts = q.text.split(/(\[_{3,}\]|_{3,}|\[\s*\])/);
+          let gapIndex = 0;
+          const rowBg = i % 2 === 0 ? OFFICIAL_ROW_ODD : OFFICIAL_ROW_EVEN;
+          const hasInlineGap = /\[_{3,}\]|_{3,}|\[\s*\]/.test(q.text);
+          return (
+            <div
+              key={q.id}
+              className={`${rowBg} px-4 py-3 text-sm leading-relaxed text-[#1a1a1a] ${
+                showResults && result?.correct ? "bg-green-50/60" : ""
+              } ${showResults && result && !result.correct ? "bg-red-50/60" : ""} ${answeredWrapClass(q.id, props)}`}
+            >
+              {!hasInlineGap ? (
+                <>
+                  <span>{q.text.replace(/:\s*$/, "")}</span>{" "}
+                  <strong>({q.questionNumber})</strong>
+                  <input
+                    type="text"
+                    value={answers[q.id] ?? ""}
+                    disabled={disabled}
+                    onChange={(e) => onChange(q.id, e.target.value)}
+                    className={`${INLINE_INPUT} ${
+                      showResults && result?.correct
+                        ? "border-green-500"
+                        : showResults && result && !result.correct
+                          ? "border-red-500"
+                          : ""
+                    }`}
                   />
-                );
-              }
-              gapIndex += 1;
-              const gapId = `${q.id}-${gapIndex}`;
-              return (
-                <input
-                  key={idx}
-                  type="text"
-                  value={answers[gapId] ?? answers[q.id] ?? ""}
-                  disabled={disabled}
-                  onChange={(e) =>
-                    onChange(gapIndex === 1 ? q.id : gapId, e.target.value)
+                </>
+              ) : (
+                parts.map((part, idx) => {
+                  const isGap = /\[_{3,}\]|_{3,}|\[\s*\]/.test(part);
+                  if (!isGap) {
+                    return (
+                      <HighlightableInlineText
+                        key={idx}
+                        blockId={`lq-${q.id}-p-${idx}`}
+                        text={part}
+                      />
+                    );
                   }
-                  className={`mx-1 inline-block w-28 ${inputClass(
-                    disabled,
-                    !!(showResults && result?.correct),
-                    !!(showResults && result && !result.correct)
-                  )}`}
-                />
-              );
-            })}
-            {!/\[_{3,}\]|_{3,}|\[\s*\]/.test(q.text) ? (
-              <input
-                type="text"
-                value={answers[q.id] ?? ""}
-                disabled={disabled}
-                onChange={(e) => onChange(q.id, e.target.value)}
-                className={`mt-1 w-full max-w-xs ${inputClass(
-                  disabled,
-                  !!(showResults && result?.correct),
-                  !!(showResults && result && !result.correct)
-                )}`}
-              />
-            ) : null}
-          </div>
-        );
-      })}
+                  gapIndex += 1;
+                  const gapId = `${q.id}-${gapIndex}`;
+                  return (
+                    <span key={idx}>
+                      <strong>({q.questionNumber})</strong>
+                      <input
+                        type="text"
+                        value={answers[gapId] ?? answers[q.id] ?? ""}
+                        disabled={disabled}
+                        onChange={(e) =>
+                          onChange(gapIndex === 1 ? q.id : gapId, e.target.value)
+                        }
+                        className={`${INLINE_INPUT} ${
+                          showResults && result?.correct
+                            ? "border-green-500"
+                            : showResults && result && !result.correct
+                              ? "border-red-500"
+                              : ""
+                        }`}
+                      />
+                    </span>
+                  );
+                })
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -414,17 +497,21 @@ function TableCompletionQuestions(props: ListeningQuestionsProps) {
     disabled = false,
     showResults,
     results,
+    groupTitle,
   } = props;
   const headers =
     questions[0]?.tableHeaders ??
-    ["Item", "Detail", "Notes"];
+    ["Item", "Detail"];
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className={`${OFFICIAL_PANEL} overflow-x-auto`}>
+      {groupTitle ? (
+        <div className={`${OFFICIAL_HEADER} text-center`}>{groupTitle}</div>
+      ) : null}
       <table className="w-full min-w-[480px] text-sm">
         <thead>
-          <tr className="bg-slate-50">
+          <tr className="bg-[#3d3d3d] text-white">
             {headers.map((h) => (
-              <th key={h} className="border-b border-slate-200 px-4 py-3 text-left font-semibold text-[#0d1b35]">
+              <th key={h} className="px-4 py-2.5 text-left font-bold">
                 {h}
               </th>
             ))}
@@ -433,25 +520,29 @@ function TableCompletionQuestions(props: ListeningQuestionsProps) {
         <tbody>
           {questions.map((q, i) => {
             const result = results?.[i];
+            const rowBg = i % 2 === 0 ? OFFICIAL_ROW_ODD : OFFICIAL_ROW_EVEN;
             return (
               <tr
                 key={q.id}
-                className={`border-b border-slate-100 ${answeredWrapClass(q.id, props)}`}
+                className={`${rowBg} ${answeredWrapClass(q.id, props)}`}
               >
-                <td className="px-4 py-3 text-slate-600">
-                  <QuestionPromptText q={q} />
+                <td className="px-4 py-3 text-[#1a1a1a]">
+                  {q.text.replace(/:\s*$/, "")}
                 </td>
                 <td className="px-4 py-3" colSpan={Math.max(1, headers.length - 1)}>
+                  <strong>({q.questionNumber})</strong>
                   <input
                     type="text"
                     value={answers[q.id] ?? ""}
                     disabled={disabled}
                     onChange={(e) => onChange(q.id, e.target.value)}
-                    className={`w-full ${inputClass(
-                      disabled,
-                      !!(showResults && result?.correct),
-                      !!(showResults && result && !result.correct)
-                    )} border-[#c9972c]/50`}
+                    className={`${INLINE_INPUT} min-w-[10rem] ${
+                      showResults && result?.correct
+                        ? "border-green-500"
+                        : showResults && result && !result.correct
+                          ? "border-red-500"
+                          : ""
+                    }`}
                   />
                 </td>
               </tr>
@@ -476,13 +567,19 @@ function FlowchartQuestions(props: ListeningQuestionsProps) {
     <div className="flex flex-col items-center gap-2">
       {questions.map((q, i) => {
         const result = results?.[i];
+        const raw = String(q.text ?? "").trim();
+        // Never render a flowchart step as a closed question with no input
+        const label = raw
+          .replace(/_{2,}/g, "…")
+          .replace(/\.{3,}|…/g, "…")
+          .trim();
         return (
           <div
             key={q.id}
             className={`flex w-full max-w-md flex-col items-center ${answeredWrapClass(q.id, props)}`}
           >
             <div
-              className={`w-full rounded-lg border-2 px-4 py-3 text-center text-sm ${
+              className={`w-full rounded-lg border-2 px-4 py-3 text-sm ${
                 showResults && result?.correct
                   ? "border-green-400 bg-green-50"
                   : showResults && result && !result.correct
@@ -490,26 +587,27 @@ function FlowchartQuestions(props: ListeningQuestionsProps) {
                     : "border-[#0d1b35] bg-white"
               }`}
             >
-              <p className="mb-2 text-left text-sm font-bold text-[#0d1b35]">
-                {q.questionNumber}.
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Step ({q.questionNumber})
               </p>
-              {q.text && !q.text.includes("___") ? (
-                <p className="text-slate-700">
-                  <HighlightableInlineText blockId={`lq-${q.id}`} text={q.text} />
+              {label ? (
+                <p className="mb-2 text-left text-[#1a1a1a]">
+                  <HighlightableInlineText blockId={`lq-${q.id}`} text={label} />
                 </p>
-              ) : (
-                <input
-                  type="text"
-                  value={answers[q.id] ?? ""}
-                  disabled={disabled}
-                  onChange={(e) => onChange(q.id, e.target.value)}
-                  className={`w-full ${inputClass(
-                    disabled,
-                    !!(showResults && result?.correct),
-                    !!(showResults && result && !result.correct)
-                  )}`}
-                />
-              )}
+              ) : null}
+              <input
+                type="text"
+                value={answers[q.id] ?? ""}
+                disabled={disabled}
+                onChange={(e) => onChange(q.id, e.target.value)}
+                placeholder="Write your answer…"
+                aria-label={`Flow chart step ${q.questionNumber}`}
+                className={`w-full ${inputClass(
+                  disabled,
+                  !!(showResults && result?.correct),
+                  !!(showResults && result && !result.correct)
+                )}`}
+              />
             </div>
             {i < questions.length - 1 ? (
               <svg className="my-1 h-6 w-6 text-[#c9972c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -581,6 +679,7 @@ export default function ListeningQuestions(props: ListeningQuestionsProps) {
       return <TableCompletionQuestions {...props} />;
     case "flowchart-completion":
       return <FlowchartQuestions {...props} />;
+    case "diagram-labelling":
     case "summary-completion":
     case "note-completion":
       return <NoteStyleQuestions {...props} />;

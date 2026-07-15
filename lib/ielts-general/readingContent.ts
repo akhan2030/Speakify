@@ -484,150 +484,148 @@ Standard shifts are 07:00–15:00 or 15:00–23:00. Overtime requires written ap
   {
     id: "gt_c_001",
     section: "C",
-    title: "Preserving Saudi Heritage in a Digital Age",
-    text: `Preserving Saudi Heritage in a Digital Age
+    title: "The Voices Above the Souq",
+    text: `The Voices Above the Souq
 
-Saudi Arabia's cultural heritage spans thousands of years, from Nabataean tombs at Hegra to the mud-brick architecture of Diriyah. As Vision 2030 accelerates urban development and international tourism, heritage experts face a delicate balance: how to protect the past while welcoming the future.
+Fahad al-Mutairi, 71, still climbs the narrow stairs to the flat roof of his family's building in Jeddah's Al-Balad district three nights a week. "My father watched ships from here," he told journalist Maha Al-Qahtani in March last year. "Now I watch the construction cranes — but I also listen."
 
-Digital documentation has become a cornerstone of this effort. Teams from the Heritage Commission use 3D laser scanning to create precise records of archaeological sites before restoration work begins. These models allow researchers worldwide to study structures remotely and help planners avoid accidental damage during nearby construction.
+Al-Mutairi is one of forty residents interviewed for a private oral-history project run by Dr. Lina Al-Harbi, a linguist at a Riyadh university. Volunteers record elders describing recipes, wedding songs, and the informal rules that once governed neighbourhood life before air-conditioned malls replaced evening strolls. Dr. Al-Harbi argues that these recordings are not nostalgia: "When a word for a fishing net disappears, young people stop asking how nets were repaired. Language carries practical knowledge."
 
-Community involvement is equally important. In Al-Ula, local guides now lead visitors through heritage trails that combine oral history with smartphone apps. Young Saudis trained as cultural ambassadors report higher pride in regional identity, suggesting that tourism can strengthen rather than weaken tradition when managed carefully.
+The project began after a fire damaged three traditional houses in 2022. Builders wanted rapid demolition; neighbours protested that the timber framing held lessons no photograph could explain. Architect Omar Al-Faraj, hired to assess the site, spent two weeks interviewing carpenters who had worked on similar buildings fifty years earlier. One recalled soaking nails in lime water to prevent rust in humid coastal air — a detail absent from modern repair manuals.
 
-Critics argue that mass tourism risks commercialising sacred sites. To address this, authorities have introduced visitor caps at sensitive locations and require advance booking during peak seasons. Revenue from tourism fees is partly reinvested in conservation programmes and scholarships for Saudi students studying archaeology and museum studies.
+Not everyone welcomes the attention. Shopkeeper Hassan Mohammed complains that microphones make customers nervous. "They think we are on television," he said. Dr. Al-Harbi accepts the concern but insists recordings happen only with consent, usually over tea in people's living rooms rather than on the street.
 
-Technology alone cannot preserve culture. Elderly residents in historic neighbourhoods still hold knowledge that no scanner can capture. Interview projects led by universities in Riyadh and Jeddah record memories of traditional crafts, festivals, and family life before they disappear. Policymakers increasingly treat these oral archives as valuable as physical monuments.
+The team has no government budget. Funding comes from a small cultural grant and from students who transcribe tapes in exchange for course credit. Al-Mutairi's sessions now fill three hard drives. His wife, Safiya, often joins to correct his memory or add a detail he has forgotten. "She remembers the songs better than I do," he laughs. "I remember the prices."
 
-The challenge ahead is integration. Heritage must inform school curricula, city planning, and digital entertainment so that younger generations see the past as relevant rather than remote. Saudi Arabia's experiment — blending high-tech tools with community storytelling — may offer lessons for other rapidly developing nations.`,
+The work remains unfinished. Al-Harbi estimates that two hundred elders still hold unrepeated stories in the district alone. She hopes schools will eventually use short clips in history lessons — not to replace textbooks, but to show that the past still has living witnesses.`,
     saudiContext: true,
     questions: [
       {
         id: "gt_c_001_q1",
         number: 1,
         type: "multiple_choice",
-        question: "What technology does the Heritage Commission use for site records?",
-        options: [
-          "Satellite imaging only",
-          "3D laser scanning",
-          "Hand-drawn architectural plans",
-          "Drone photography alone",
-        ],
-        answer: "3D laser scanning",
-        explanation: "Teams use 3D laser scanning to create precise records.",
+        question: "How often does Fahad al-Mutairi climb to the roof of his building?",
+        options: ["Every night", "Three nights a week", "Once a month", "Only in summer"],
+        answer: "Three nights a week",
+        explanation: "The text says he climbs to the roof three nights a week.",
       },
       {
         id: "gt_c_001_q2",
         number: 2,
         type: "true_false_not_given",
-        question: "All heritage sites in Saudi Arabia allow unlimited visitors.",
+        question: "Fahad's father watched construction cranes from the roof.",
         answer: "FALSE",
-        explanation: "Visitor caps exist at sensitive locations.",
+        explanation: "His father watched ships, not cranes.",
       },
       {
         id: "gt_c_001_q3",
         number: 3,
         type: "short_answer",
-        question: "Which ancient site is mentioned alongside Diriyah?",
-        answer: "Hegra",
-        explanation: "Nabataean tombs at Hegra are mentioned in the opening paragraph.",
+        question: "Who runs the oral-history project?",
+        answer: "Dr. Lina Al-Harbi",
+        explanation: "Dr. Lina Al-Harbi runs the private oral-history project.",
       },
       {
         id: "gt_c_001_q4",
         number: 4,
         type: "matching_features",
-        question: "Who leads interview projects recording traditional crafts and festivals?",
-        options: ["Local guides", "Universities", "Tourism companies", "The Heritage Commission"],
-        answer: "Universities",
-        explanation: "Interview projects are led by universities in Riyadh and Jeddah.",
+        question: "According to Dr. Al-Harbi, what happens when a word disappears?",
+        options: [
+          "Young people stop asking related practical questions",
+          "Tourism increases in Al-Balad",
+          "Schools replace textbooks",
+          "Builders demolish old houses",
+        ],
+        answer: "Young people stop asking related practical questions",
+        explanation:
+          "She says young people stop asking how nets were repaired when a word disappears.",
       },
       {
         id: "gt_c_001_q5",
         number: 5,
         type: "sentence_completion",
-        question: "In Al-Ula, visitors use heritage trails combined with ______ apps.",
-        answer: "smartphone",
-        explanation: "Trails combine oral history with smartphone apps.",
+        question: "The project began after a ______ damaged three traditional houses.",
+        answer: "fire",
+        explanation: "The project began after a fire in 2022.",
       },
       {
         id: "gt_c_001_q6",
         number: 6,
         type: "true_false_not_given",
-        question: "The author believes technology is sufficient on its own to preserve culture.",
+        question: "Omar Al-Faraj wanted the damaged houses demolished quickly.",
         answer: "FALSE",
-        explanation: "The text states technology alone cannot preserve culture.",
+        explanation:
+          "Builders wanted rapid demolition; Omar assessed the site and interviewed carpenters instead.",
       },
       {
         id: "gt_c_001_q7",
         number: 7,
-        type: "multiple_choice",
-        question: "What is partly funded by tourism fees?",
-        options: [
-          "Metro construction",
-          "Conservation programmes",
-          "Private hotels only",
-          "International flights",
-        ],
-        answer: "Conservation programmes",
-        explanation: "Revenue from tourism fees is partly reinvested in conservation programmes.",
+        type: "short_answer",
+        question: "What did a carpenter soak nails in to prevent rust?",
+        answer: "lime water/limewater",
+        explanation: "One carpenter recalled soaking nails in lime water.",
       },
       {
         id: "gt_c_001_q8",
         number: 8,
-        type: "short_answer",
-        question: "Which national development plan is mentioned in the first paragraph?",
-        answer: "Vision 2030",
-        explanation: "Vision 2030 is mentioned in the opening paragraph.",
+        type: "multiple_choice",
+        question: "Why does Hassan Mohammed complain about the project?",
+        options: [
+          "He was not paid for interviews",
+          "Microphones make his customers nervous",
+          "The grant was too small",
+          "Recordings are only made on the street",
+        ],
+        answer: "Microphones make his customers nervous",
+        explanation: "He says microphones make customers nervous.",
       },
       {
         id: "gt_c_001_q9",
         number: 9,
         type: "sentence_completion",
-        question: "Young Saudis trained as cultural ambassadors report higher pride in ______ identity.",
-        answer: "regional",
-        explanation: "They report higher pride in regional identity.",
+        question: "Recordings usually take place over ______ in people's living rooms.",
+        answer: "tea",
+        explanation: "Recordings usually happen over tea in living rooms.",
       },
       {
         id: "gt_c_001_q10",
         number: 10,
         type: "true_false_not_given",
-        question: "Critics support unlimited tourism at all heritage sites.",
+        question: "The oral-history project receives large government funding.",
         answer: "FALSE",
-        explanation: "Critics argue mass tourism risks commercialising sacred sites.",
+        explanation: "The team has no government budget.",
       },
       {
         id: "gt_c_001_q11",
         number: 11,
         type: "matching_features",
-        question: "Who uses 3D laser scanning before restoration work?",
-        options: [
-          "Local guides",
-          "The Heritage Commission",
-          "Tourism companies",
-          "School teachers",
-        ],
-        answer: "The Heritage Commission",
-        explanation: "Teams from the Heritage Commission use 3D laser scanning.",
+        question: "Who often corrects Fahad's memory during recordings?",
+        options: ["Maha Al-Qahtani", "Safiya", "Hassan Mohammed", "Omar Al-Faraj"],
+        answer: "Safiya",
+        explanation: "His wife Safiya often joins to correct his memory.",
       },
       {
         id: "gt_c_001_q12",
         number: 12,
         type: "short_answer",
-        question: "Besides physical monuments, what other archives are now valued by policymakers?",
-        answer: "oral archives",
-        explanation: "Oral archives are treated as valuable as physical monuments.",
+        question: "How many elders does Al-Harbi estimate still hold unrepeated stories in the district?",
+        answer: "two hundred/200",
+        explanation: "She estimates two hundred elders still hold unrepeated stories.",
       },
       {
         id: "gt_c_001_q13",
         number: 13,
         type: "multiple_choice",
-        question: "What is the main challenge described in the final paragraph?",
+        question: "How does Al-Harbi hope schools will use the recorded clips?",
         options: [
-          "Building more hotels",
-          "Integration of heritage into modern life",
-          "Banning all tourism",
-          "Replacing oral history with apps",
+          "To replace history textbooks entirely",
+          "To show the past still has living witnesses",
+          "To train shopkeepers in interview skills",
+          "To promote tourism in Al-Balad",
         ],
-        answer: "Integration of heritage into modern life",
-        explanation: "The challenge ahead is integration into curricula, planning, and entertainment.",
+        answer: "To show the past still has living witnesses",
+        explanation:
+          "She hopes clips show the past still has living witnesses, not replace textbooks.",
       },
     ],
   },

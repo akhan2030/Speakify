@@ -12,8 +12,12 @@ export type ListeningAudioBlock = {
   questionType?: string;
   /** Form title shown above Q1–5 in Section 1 */
   formTitle?: string;
+  /** Shared title bar for form / table / note blocks (official paper style) */
+  contentTitle?: string;
   /** Column headers for table-completion blocks */
   tableHeaders?: string[];
+  /** Lettered site/floor map for plan-map labelling */
+  mapVisual?: import("./listeningMapVisual").ListeningMapVisual;
 };
 
 export type ListeningExamPart = {
@@ -142,11 +146,11 @@ Finally, the outdoor sculpture park extends behind the east wing and closes at s
       q(13, 2, "mcq", "Free entry for children under:", "8", ["6", "7", "8", "10"]),
       q(14, 2, "mcq", "Special exhibition location:", "Second floor", ["Ground floor", "First floor", "Second floor", "Basement"]),
       q(15, 2, "mcq", "Guided tours start at:", "11 AM and 3 PM", ["10 AM and 2 PM", "11 AM and 3 PM", "12 PM and 4 PM", "1 PM and 5 PM"]),
-      q(16, 2, "matching", "Children's discovery room:", "west wing"),
-      q(17, 2, "matching", "Lecture theatre:", "opposite ticket office"),
-      q(18, 2, "matching", "Wheelchair access:", "south entrance"),
-      q(19, 2, "matching", "City archive:", "basement reading room"),
-      q(20, 2, "matching", "Sculpture park:", "behind east wing"),
+      q(16, 2, "matching", "Children's discovery room:", "A", ["west wing", "opposite ticket office", "south entrance", "basement reading room", "behind east wing", "north cafe"]),
+      q(17, 2, "matching", "Lecture theatre:", "B", ["west wing", "opposite ticket office", "south entrance", "basement reading room", "behind east wing", "north cafe"]),
+      q(18, 2, "matching", "Wheelchair access:", "C", ["west wing", "opposite ticket office", "south entrance", "basement reading room", "behind east wing", "north cafe"]),
+      q(19, 2, "matching", "City archive:", "D", ["west wing", "opposite ticket office", "south entrance", "basement reading room", "behind east wing", "north cafe"]),
+      q(20, 2, "matching", "Sculpture park:", "E", ["west wing", "opposite ticket office", "south entrance", "basement reading room", "behind east wing", "north cafe"]),
     ],
   },
   {
@@ -188,11 +192,11 @@ Layla: Produce delivery by bicycle serves Al-Naseem residents.`,
       q(23, 3, "mcq", "Which district is NOT included?", "Industrial zone", ["Downtown", "Al-Naseem", "Industrial zone", "University quarter"]),
       q(24, 3, "mcq", "Expected water reduction:", "40%", ["20%", "30%", "40%", "50%"]),
       q(25, 3, "mcq", "Presentation date:", "The eighteenth", ["The eighth", "The fifteenth", "The eighteenth", "The twenty-second"]),
-      q(26, 3, "matching-features", "Soil-based growing →", "rooftop gardens"),
-      q(27, 3, "matching-features", "LED lighting →", "vertical farms"),
-      q(28, 3, "matching-features", "Community workshops →", "university quarter"),
-      q(29, 3, "matching-features", "Rainwater harvesting →", "downtown"),
-      q(30, 3, "matching-features", "Bicycle delivery →", "Al-Naseem"),
+      q(26, 3, "matching-features", "Soil-based growing →", "A", ["rooftop gardens", "vertical farms", "university quarter", "downtown", "Al-Naseem", "industrial zone"]),
+      q(27, 3, "matching-features", "LED lighting →", "B", ["rooftop gardens", "vertical farms", "university quarter", "downtown", "Al-Naseem", "industrial zone"]),
+      q(28, 3, "matching-features", "Community workshops →", "C", ["rooftop gardens", "vertical farms", "university quarter", "downtown", "Al-Naseem", "industrial zone"]),
+      q(29, 3, "matching-features", "Rainwater harvesting →", "D", ["rooftop gardens", "vertical farms", "university quarter", "downtown", "Al-Naseem", "industrial zone"]),
+      q(30, 3, "matching-features", "Bicycle delivery →", "E", ["rooftop gardens", "vertical farms", "university quarter", "downtown", "Al-Naseem", "industrial zone"]),
     ],
   },
   {

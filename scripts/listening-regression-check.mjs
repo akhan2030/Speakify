@@ -60,10 +60,15 @@ test("Section 1 blocks are 1–5 and 6–10", () => {
   assert.equal(blocks[1].end, 10);
 });
 
-test("Section 4 blocks are 31–35 and 36–40", () => {
+test("Section 4 blocks are 31–33, 34–36, and 37–40", () => {
   const blocks = getSectionQuestionBlocks(4);
+  assert.equal(blocks.length, 3);
   assert.equal(blocks[0].start, 31);
-  assert.equal(blocks[1].end, 40);
+  assert.equal(blocks[0].end, 33);
+  assert.equal(blocks[1].start, 34);
+  assert.equal(blocks[1].end, 36);
+  assert.equal(blocks[2].start, 37);
+  assert.equal(blocks[2].end, 40);
 });
 
 for (let s = 1; s <= 4; s += 1) {
@@ -314,11 +319,12 @@ test("normalize reading-style { key, label } MCQ options", () => {
 });
 
 test("normalizeSectionQuestions coerces bank MCQ strings", () => {
+  // Section 2 hosts MCQ at Q18–20; section 3 is gap-fill only and would strip options.
   const normalized = normalizeSectionQuestions(
     [
       {
-        id: 1,
-        questionNumber: 21,
+        id: 8,
+        questionNumber: 18,
         type: "multiple-choice",
         text: "What is Emma's dissertation topic?",
         answer: "A",
@@ -329,9 +335,9 @@ test("normalizeSectionQuestions coerces bank MCQ strings", () => {
         ],
       },
     ],
-    3
+    2
   );
-  const mcq = normalized.find((q) => q.questionNumber === 21);
+  const mcq = normalized.find((q) => q.questionNumber === 18);
   assert.ok(mcq);
   assert.equal(mcq.options[0].label, "A");
   assert.equal(mcq.options[0].text, "Urban heat islands");
@@ -342,18 +348,18 @@ test("reject MCQ with empty option text after normalization", () => {
   const normalized = normalizeSectionQuestions(
     [
       {
-        questionNumber: 21,
+        questionNumber: 18,
         type: "multiple-choice",
         text: "What methodology does Tom consider?",
         answer: "B",
         options: [{ label: "A" }, { label: "B" }, { label: "C" }],
       },
     ],
-    3
+    2
   );
-  const mcq = normalized.find((q) => q.questionNumber === 21);
+  const mcq = normalized.find((q) => q.questionNumber === 18);
   assert.ok(isListeningPlaceholderQuestion(mcq));
-  const check = validateListeningQuestionContent([mcq], 3);
+  const check = validateListeningQuestionContent([mcq], 2);
   assert.ok(!check.valid);
 });
 
@@ -397,7 +403,7 @@ test("coalesce correct_answer and object-map MCQ options", () => {
   const hydrated = hydrateListeningQuestionsFromPayload(
     [
       {
-        questionNumber: 21,
+        questionNumber: 18,
         type: "multiple-choice",
         text: "What main topic did Natalie suggest?",
         correct_answer: "A",
@@ -416,12 +422,11 @@ test("coalesce correct_answer and object-map MCQ options", () => {
     { 26: "C", 27: "B" }
   );
   assert.equal(hydrated[0].answer, "A");
-  const normalized = normalizeSectionQuestions(hydrated, 3);
-  const mcq = normalized.find((q) => q.questionNumber === 21);
-  const match = normalized.find((q) => q.questionNumber === 26);
+  assert.equal(coalesceQuestionAnswer(hydrated[1]), "C");
+  const normalized = normalizeSectionQuestions([hydrated[0]], 2);
+  const mcq = normalized.find((q) => q.questionNumber === 18);
   assert.equal(mcq?.options?.[0]?.text, "Urban planning");
   assert.ok(!isListeningPlaceholderQuestion(mcq));
-  assert.equal(coalesceQuestionAnswer(match), "C");
 });
 
 test("unwrap nested MCQ option text objects (no [object Object])", () => {
@@ -440,16 +445,20 @@ test("reject MCQ options that still coerce to [object Object]", () => {
   const bad = normalizeSectionQuestions(
     [
       {
-        questionNumber: 22,
+        questionNumber: 19,
         type: "multiple-choice",
         text: "What methodology does Tom consider?",
         answer: "A",
-        options: [{ label: "A", text: { nested: { broken: true } } }],
+        options: [
+          { label: "A", text: { nested: { broken: true } } },
+          { label: "B", text: { nested: { broken: true } } },
+          { label: "C", text: { nested: { broken: true } } },
+        ],
       },
     ],
-    3
+    2
   );
-  const mcq = bad.find((q) => q.questionNumber === 22);
+  const mcq = bad.find((q) => q.questionNumber === 19);
   assert.ok(isListeningPlaceholderQuestion(mcq));
 });
 

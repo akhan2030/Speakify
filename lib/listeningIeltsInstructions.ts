@@ -82,7 +82,7 @@ export function getOfficialInstructionParts(
       if (choose > 1) {
         return [
           {
-            text: `Choose ${choose === 2 ? "TWO" : String(choose)} letters from A–E.`,
+            text: `Choose ${choose === 2 ? "TWO" : String(choose)} letters, A–E.\nAnswers may be written in either order.`,
           },
         ];
       }
@@ -95,11 +95,21 @@ export function getOfficialInstructionParts(
       ];
     case "plan-map-diagram":
     case "map-labelling":
+      return [
+        {
+          text: `Label the map below. Choose the correct letter, ${matchingRange}, for each answer.`,
+        },
+      ];
     case "plan-labelling":
+      return [
+        {
+          text: `Label the plan below. Choose the correct letter, ${matchingRange}, for each answer.`,
+        },
+      ];
     case "diagram-labelling":
       return [
         {
-          text: `Label the plan/map/diagram below. Choose the correct letter, ${matchingRange}, for each answer.`,
+          text: `Label the diagram below. Choose the correct letter, ${matchingRange}, for each answer.`,
         },
       ];
     case "flowchart-completion":
@@ -129,7 +139,10 @@ export function formatQuestionTypeLabel(questionType: string): string {
     "short-answer": "Short Answer",
     "multiple-choice": "Multiple Choice",
     matching: "Matching",
-    "plan-map-diagram": "Plan / Map / Diagram",
+    "plan-map-diagram": "Map Labelling",
+    "map-labelling": "Map Labelling",
+    "plan-labelling": "Plan Labelling",
+    "diagram-labelling": "Diagram Labelling",
     "flowchart-completion": "Flowchart Completion",
   };
   return (

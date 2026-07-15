@@ -16,16 +16,25 @@ function normalizeAnswer(value: string): string {
     .replace(/[.,;:!?'"()]/g, "");
 }
 
+function matchesOneCorrectForm(student: string, correct: string): boolean {
+  if (!student || !correct) return false;
+  if (student === correct) return true;
+  if (student.replace(/\s/g, "") === correct.replace(/\s/g, "")) return true;
+  if (correct.includes(student) && student.length >= 2) return true;
+  if (student.includes(correct) && correct.length >= 2) return true;
+  return false;
+}
+
 export function checkGtReadingAnswer(
   studentAnswer: string,
   correctAnswer: string,
   type?: string
 ): boolean {
   const student = normalizeAnswer(studentAnswer);
-  const correct = normalizeAnswer(correctAnswer);
+  const correctRaw = String(correctAnswer ?? "").trim();
 
-  if (!student && !correct) return true;
-  if (!student || !correct) return false;
+  if (!student && !correctRaw) return true;
+  if (!student || !correctRaw) return false;
 
   if (type === "true_false_not_given") {
     const raw = String(studentAnswer ?? "").trim().toUpperCase().replace(/\s+/g, " ");
@@ -37,17 +46,19 @@ export function checkGtReadingAnswer(
           : raw === "NG" || raw === "NOT GIVEN" || raw === "NOTGIVEN"
             ? "NOT GIVEN"
             : raw;
-    const correctTfng = String(correctAnswer ?? "")
-      .trim()
-      .toUpperCase()
-      .replace(/\s+/g, " ");
+    const correctTfng = correctRaw.toUpperCase().replace(/\s+/g, " ");
     return studentTfng === correctTfng;
   }
 
-  if (student === correct) return true;
-  if (student.replace(/\s/g, "") === correct.replace(/\s/g, "")) return true;
-  if (correct.includes(student) && student.length >= 2) return true;
-  if (student.includes(correct) && correct.length >= 2) return true;
+  // Official-style alternates: "lime water/limewater", "two hundred/200"
+  const alternates = correctRaw
+    .split("/")
+    .map((part) => normalizeAnswer(part))
+    .filter(Boolean);
+
+  for (const correct of alternates.length ? alternates : [normalizeAnswer(correctRaw)]) {
+    if (matchesOneCorrectForm(student, correct)) return true;
+  }
 
   return false;
 }

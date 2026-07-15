@@ -1,4 +1,4 @@
-import { WRITING_QUESTION_ORDER } from "./bank/writing";
+import { placementTask1QuestionId } from "./bank/writing";
 import { QUESTION_BANK, getQuestionById } from "./questionBank";
 import { isValidQuestion } from "./isValidQuestion";
 import { presentQuestion } from "./shuffleOptions";
@@ -10,7 +10,10 @@ const SECTION_LIMIT = 10;
 /** Vocab 6 + grammar 6 + reading 6 + listening 4 + writing 2 */
 export const BANK_QUESTIONS_BEFORE_SPEAKING = 24;
 
-export function initTestState(maxQuestions = 35): TestState {
+export function initTestState(
+  maxQuestions = 35,
+  ieltsModule: TestState["ieltsModule"] = "academic"
+): TestState {
   return {
     currentBand: 5.0,
     confidence: 0,
@@ -20,6 +23,7 @@ export function initTestState(maxQuestions = 35): TestState {
     questionsAsked: 0,
     maxQuestions,
     speakingCompleted: false,
+    ieltsModule,
   };
 }
 
@@ -121,7 +125,10 @@ export function selectNextQuestion(
 
   if (chosenSection === "writing_prompt") {
     const writingIdx = sectionCount(state, "writing_prompt");
-    const fixedId = WRITING_QUESTION_ORDER[writingIdx];
+    const fixedId =
+      writingIdx === 0
+        ? placementTask1QuestionId(state.ieltsModule)
+        : "write-task2-opinion";
     if (fixedId) {
       const fixed = getQuestionById(fixedId);
       if (fixed && !answered.has(fixedId)) return presentQuestion(fixed);

@@ -79,14 +79,14 @@ const FORMAL_LETTERS: GeneralLetterQuestion[] = [
   makeLetter(
     "formal-hotel-complaint",
     "formal",
-    "Hotel complaint",
-    "Noisy room and broken Wi‑Fi during a business stay",
+    "Incorrect minibar charge",
+    "Disputed minibar bill after a wedding stay in Jeddah",
     "the hotel manager",
-    "You recently stayed at a hotel for a business trip. The room was noisy and the Wi‑Fi did not work, which affected your work.",
+    "You recently stayed at a hotel in Jeddah for a friend's wedding. When you checked out, the reception charged your room for minibar items you did not consume. You disputed the charge at the desk, but the staff said the bill could not be changed.",
     [
-      "explain why you stayed at the hotel",
-      "describe the problems you experienced",
-      "say what you would like the manager to do",
+      "explain when you stayed at the hotel and why you were there",
+      "describe the minibar charge and what happened when you complained",
+      "say what you would like the manager to do about the bill",
     ],
     "Dear Sir or Madam,"
   ),
@@ -255,16 +255,16 @@ const INFORMAL_LETTERS: GeneralLetterQuestion[] = [
   makeLetter(
     "informal-friend-visit",
     "informal",
-    "Invite a friend",
-    "Invite a friend to join a hometown trip",
-    "your friend",
-    "You are planning a short trip to your hometown and would like your friend to join you.",
+    "Farewell dinner",
+    "Organise a goodbye meal before a friend moves to Dammam",
+    "your friend Nadia",
+    "Your close friend Nadia is moving from Riyadh to Dammam next month to start a new job. You want to organise a farewell dinner for her before she leaves.",
     [
-      "invite your friend to come with you",
-      "say when you plan to travel",
-      "suggest some activities you could do together",
+      "suggest having a dinner together and propose a date",
+      "explain why you want to celebrate before she moves",
+      "ask Nadia which restaurant she would prefer",
     ],
-    "Dear Alex,"
+    "Dear Nadia,"
   ),
   makeLetter(
     "informal-friend-new-job",

@@ -22,9 +22,12 @@ export function MissionProgressBar({
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
   return (
     <div>
-      <div className="mb-1 flex justify-between text-xs text-slate-500">
+      <div className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
         <span>
           {completed}/{total} tasks completed
+        </span>
+        <span className="text-slate-300" aria-hidden>
+          ·
         </span>
         <span>{percent}%</span>
       </div>
@@ -50,37 +53,35 @@ export function MissionTaskCard({
   onToggle?: (task: MissionTaskItem) => void;
 }) {
   return (
-    <li className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        {canToggle ? (
-          <button
-            type="button"
-            disabled={toggling}
-            onClick={() => onToggle?.(task)}
-            className={`shrink-0 text-xl leading-none ${task.completed ? "text-green-600" : "text-slate-300 hover:text-[#c9972c]"}`}
-            aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
-          >
-            {task.completed ? "☑" : "☐"}
-          </button>
-        ) : (
-          <span className={task.completed ? "text-green-600" : "text-slate-400"}>
-            {task.completed ? "☑" : "☐"}
-          </span>
-        )}
-        <div className="min-w-0">
-          <p
-            className={`font-medium ${task.completed ? "text-slate-400 line-through" : "text-[#0d1b35]"}`}
-          >
-            {task.title}
-          </p>
-          <p className="text-xs text-slate-500">
-            {task.minutes} min · {task.taskType}
-          </p>
-        </div>
+    <li className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      {canToggle ? (
+        <button
+          type="button"
+          disabled={toggling}
+          onClick={() => onToggle?.(task)}
+          className={`shrink-0 text-xl leading-none ${task.completed ? "text-green-600" : "text-slate-300 hover:text-[#c9972c]"}`}
+          aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+        >
+          {task.completed ? "☑" : "☐"}
+        </button>
+      ) : (
+        <span className={task.completed ? "text-green-600" : "text-slate-400"}>
+          {task.completed ? "☑" : "☐"}
+        </span>
+      )}
+      <div className="min-w-0">
+        <p
+          className={`font-medium ${task.completed ? "text-slate-400 line-through" : "text-[#0d1b35]"}`}
+        >
+          {task.title}
+        </p>
+        <p className="text-xs text-slate-500">
+          {task.minutes} min · {task.taskType}
+        </p>
       </div>
       <Link
         href={task.href}
-        className="shrink-0 rounded-lg bg-[#c9972c] px-3 py-1.5 text-xs font-bold text-[#0d1b35] hover:opacity-95"
+        className="ml-1 shrink-0 rounded-lg bg-[#c9972c] px-3 py-1.5 text-xs font-bold text-[#0d1b35] hover:opacity-95"
       >
         {task.completed ? "Review" : "Start"}
       </Link>

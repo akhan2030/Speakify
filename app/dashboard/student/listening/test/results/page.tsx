@@ -12,6 +12,7 @@ import type {
 } from "@/components/listening/types";
 import { LISTENING_SECTION_META } from "@/components/listening/types";
 import StudentSidebar, { PageSpinner } from "@/components/StudentSidebar";
+import ListeningAnswerReview from "@/components/listening/ListeningAnswerReview";
 
 type StoredMockPayload = {
   result: ListeningSubmitResult;
@@ -28,19 +29,6 @@ function formatElapsed(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function StatusIcon({ correct }: { correct: boolean }) {
-  return (
-    <span
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-bold ${
-        correct ? "bg-green-600 text-white" : "bg-red-600 text-white"
-      }`}
-      aria-hidden
-    >
-      {correct ? "✓" : "✗"}
-    </span>
-  );
 }
 
 function ListeningMockResultsContent() {
@@ -104,7 +92,7 @@ function ListeningMockResultsContent() {
     );
   }
 
-  const { result, sections, answers, elapsedSeconds } = payload;
+  const { result, sections, elapsedSeconds } = payload;
   const allQuestions = [1, 2, 3, 4].flatMap(
     (n) => sections[n]?.questions ?? []
   );
@@ -208,63 +196,11 @@ function ListeningMockResultsContent() {
             </section>
           ) : null}
 
-          <section className="mt-10">
-            <h2 className="text-lg font-bold text-[#0d1b35]">
-              Answer Review (Questions 1–40)
-            </h2>
-            <div className="mt-4 space-y-3">
-              {allQuestions.map((q, i) => {
-                const r = result.results[i];
-                const correct = Boolean(r?.correct);
-                const studentAnswer =
-                  answers[String(q.questionNumber)] ??
-                  r?.studentAnswer ??
-                  "";
-                const correctAnswer = r?.correctAnswer ?? q.answer ?? "";
-
-                return (
-                  <div
-                    key={q.questionNumber}
-                    className={`flex gap-3 rounded-xl border p-4 ${
-                      correct
-                        ? "border-green-300 bg-green-50"
-                        : "border-red-300 bg-red-50"
-                    }`}
-                  >
-                    <StatusIcon correct={correct} />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-[#0d1b35]">
-                        Question {q.questionNumber}
-                      </p>
-                      <p className="mt-1 text-sm text-slate-600">{q.text}</p>
-                      <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                        <p>
-                          <span className="font-medium text-slate-700">
-                            Your answer:
-                          </span>{" "}
-                          <span
-                            className={
-                              correct ? "text-green-800" : "text-red-800"
-                            }
-                          >
-                            {studentAnswer || "—"}
-                          </span>
-                        </p>
-                        <p>
-                          <span className="font-medium text-slate-700">
-                            Correct answer:
-                          </span>{" "}
-                          <span className="text-green-800">
-                            {correctAnswer || "—"}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+          <ListeningAnswerReview
+            questions={allQuestions}
+            results={result.results}
+            title="Answer Review (Questions 1–40)"
+          />
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link

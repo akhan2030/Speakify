@@ -7,6 +7,7 @@ import {
   DEADLINE_OPTIONS,
   EDUCATION_LEVELS,
   EMPTY_ONBOARDING,
+  IELTS_MODULE_OPTIONS,
   IELTS_PURPOSES,
   TARGET_BAND_OPTIONS,
   validateOnboardingStep1,
@@ -197,6 +198,33 @@ export default function PlacementOnboarding({ initial, onStart }: Props) {
             </h1>
 
             <div className="mt-8 space-y-5 text-left">
+              <div>
+                <label className={labelClass}>
+                  Which IELTS test are you preparing for?{" "}
+                  <span className="text-[#c9972c]">*</span>
+                </label>
+                <div className="mt-2 space-y-2">
+                  {IELTS_MODULE_OPTIONS.map((option) => {
+                    const selected = form.ieltsModule === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => patch({ ieltsModule: option.value })}
+                        className={`w-full rounded-xl border px-4 py-3 text-left transition-colors ${
+                          selected
+                            ? "border-[#c9972c] bg-[#c9972c]/15"
+                            : "border-white/20 bg-white/5 hover:bg-white/10"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold text-white">{option.label}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">{option.hint}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div>
                 <label className={labelClass}>
                   Purpose <span className="text-[#c9972c]">*</span>

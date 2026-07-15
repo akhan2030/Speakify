@@ -35,6 +35,14 @@ export type Question = {
   topic: string;
   /** Listening-only: spoken transcript for TTS playback */
   audioScript?: string;
+  /** GT placement letter — shown with beginAs / bullets UI */
+  letterPrompt?: {
+    letterType: "formal" | "semi_formal" | "informal";
+    situation: string;
+    writeTo: string;
+    bulletPoints: string[];
+    beginAs: string;
+  };
 };
 
 export type Answer = {
@@ -54,6 +62,7 @@ export type TestState = {
   questionsAsked: number;
   maxQuestions: number;
   speakingCompleted: boolean;
+  ieltsModule: "academic" | "general_training";
 };
 
 export type PlacementResult = {

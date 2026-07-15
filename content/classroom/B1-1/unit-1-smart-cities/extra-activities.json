@@ -1,0 +1,48 @@
+{
+  "title": "Extra Activities",
+  "type": "extra_activities",
+  "sections": [
+    {
+      "sectionType": "discussion",
+      "title": "Real-world discussion",
+      "orderIndex": 1,
+      "content": {
+        "prompts": [
+          "Which smart-city idea would help your school day most?",
+          "Can a city be modern and still protect traditional meeting places? How?",
+          "What is one technology you would NOT want in every street? Why?"
+        ],
+        "teacherNote": "Keep the tone respectful; celebrate thoughtful disagreement."
+      }
+    },
+    {
+      "sectionType": "wordlist",
+      "title": "Unit wordlist",
+      "orderIndex": 2,
+      "content": {
+        "words": [
+          "sustainable",
+          "infrastructure",
+          "sensor",
+          "efficient",
+          "citizen",
+          "innovation",
+          "compact",
+          "renewable",
+          "congested",
+          "accessible",
+          "walkable",
+          "pollution"
+        ]
+      }
+    },
+    {
+      "sectionType": "reflection",
+      "title": "Self-reflection",
+      "orderIndex": 3,
+      "content": {
+        "instruction": "Rate your confidence after this unit. Be honest — this helps your teacher plan review."
+      }
+    }
+  ]
+}
