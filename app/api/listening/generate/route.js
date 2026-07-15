@@ -8,8 +8,8 @@ import { getRandomTopic } from "../../../../lib/listeningGenerator.js";
 import { sectionHasPlaceholderQuestions } from "../../../../lib/listeningQuestionContent.js";
 
 export const runtime = "nodejs";
-/** Live LLM generation can take multiple attempts — allow up to 60s on Vercel. */
-export const maxDuration = 60;
+/** Live LLM generation + authenticity retries often exceed 60s on Section 4. */
+export const maxDuration = 300;
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")
