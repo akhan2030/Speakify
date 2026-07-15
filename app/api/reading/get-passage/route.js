@@ -9,6 +9,8 @@ import {
 } from "../../../../lib/readingPassageTypes.js";
 
 export const runtime = "nodejs";
+/** Matching-information (and similar) may need several OpenAI+validation retries. */
+export const maxDuration = 300;
 
 /**
  * @param {object|null|undefined} session
@@ -54,8 +56,13 @@ export async function GET(request) {
     });
   } catch (err) {
     console.error("[reading/get-passage]", err);
+    const raw = err?.message ?? "Failed to load passage";
+    const userMessage =
+      /failed validation|forced 1-to-1|OpenAI|timeout|Timed out/i.test(raw)
+        ? "We couldn't prepare this reading practice yet. Please tap Try Again — a fresh passage will be generated."
+        : raw;
     return NextResponse.json(
-      { error: err?.message ?? "Failed to load passage" },
+      { error: userMessage },
       { status: 500 }
     );
   }
