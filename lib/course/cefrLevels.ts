@@ -19,6 +19,8 @@ export const CEFR_SUB_LEVELS: CefrSubLevel[] = [
   { slug: "b2-2", code: "B2.2", name: "Upper-Intermediate Plus", description: "Timed tasks, collocation, mock sections.", cefr: "B2", weekCount: 4, sortOrder: 8 },
   { slug: "c1-1", code: "C1.1", name: "Advanced Core", description: "Nuanced grammar, academic writing, band 7+ skills.", cefr: "C1", weekCount: 4, sortOrder: 9 },
   { slug: "c1-2", code: "C1.2", name: "Advanced Mastery", description: "Exam polish, high-stakes strategy, graduation ready.", cefr: "C1", weekCount: 4, sortOrder: 10 },
+  { slug: "c2-1", code: "C2.1", name: "Proficiency Core", description: "Near-native range, nuanced register, academic and literary texts.", cefr: "C2", weekCount: 4, sortOrder: 11 },
+  { slug: "c2-2", code: "C2.2", name: "Proficiency Mastery", description: "Full mastery — complex argumentation, style control, and fluency under pressure.", cefr: "C2", weekCount: 4, sortOrder: 12 },
 ];
 
 /** Normalize URL/db id to hyphen slug (b2_1 → b2-1) */
@@ -58,5 +60,7 @@ export function bandToCefrSubLevelSlug(band: number): string {
   if (band < 7.0) return "b2-1";
   if (band < 7.5) return "b2-2";
   if (band < 8.0) return "c1-1";
-  return "c1-2";
+  if (band < 8.5) return "c1-2";
+  if (band < 9.0) return "c2-1";
+  return "c2-2";
 }

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { NAV_DROPDOWNS, type NavCourseLink, type NavDropdownSection } from "@/lib/courses/catalog";
 import ProgramSignInLink from "@/components/marketing/ProgramSignInLink";
+import LanguageSwitcher from "@/components/marketing/LanguageSwitcher";
+import { useMarketingLocale } from "@/components/marketing/MarketingLocale";
 
 type NavCourse = NavCourseLink;
 
@@ -98,6 +100,7 @@ function NavDropdown({
 
 export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useMarketingLocale();
 
   return (
     <header className="border-b border-white/10 bg-[#0d1b35]">
@@ -118,30 +121,36 @@ export default function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
-          <ProgramSignInLink className="rounded-lg px-4 py-2 text-sm font-medium text-slate-200 hover:text-white" />
+        <div className="hidden items-center gap-3 lg:flex">
+          <LanguageSwitcher />
+          <ProgramSignInLink className="rounded-lg px-4 py-2 text-sm font-medium text-slate-200 hover:text-white">
+            {t("nav.signIn")}
+          </ProgramSignInLink>
           <Link
             href="/register"
             className="rounded-lg bg-[#c9972c] px-4 py-2 text-sm font-semibold text-[#0d1b35] hover:opacity-95"
           >
-            Register
+            {t("nav.register")}
           </Link>
         </div>
 
-        <button
-          type="button"
-          className="rounded-lg p-2 text-white lg:hidden"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label="Toggle menu"
-        >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            {mobileOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
+        <div className="flex items-center gap-2 lg:hidden">
+          <LanguageSwitcher />
+          <button
+            type="button"
+            className="rounded-lg p-2 text-white"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              {mobileOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       {mobileOpen ? (
@@ -185,7 +194,7 @@ export default function SiteHeader() {
                   onClick={() => setMobileOpen(false)}
                   className="block rounded-lg px-3 py-2 text-sm font-semibold text-[#c9972c]"
                 >
-                  View All Programs
+                  {t("nav.viewAll")}
                 </Link>
               </div>
             </div>
@@ -194,13 +203,15 @@ export default function SiteHeader() {
             <ProgramSignInLink
               onClick={() => setMobileOpen(false)}
               className="flex-1 rounded-lg border border-white/20 py-2 text-center text-sm text-white"
-            />
+            >
+              {t("nav.signIn")}
+            </ProgramSignInLink>
             <Link
               href="/register"
               onClick={() => setMobileOpen(false)}
               className="flex-1 rounded-lg bg-[#c9972c] py-2 text-center text-sm font-semibold text-[#0d1b35]"
             >
-              Register
+              {t("nav.register")}
             </Link>
           </div>
         </div>

@@ -23,7 +23,10 @@ export type CourseCatalogItem = {
   ctaLabel: "Start Learning" | "View Course";
   ctaHref: string;
   highlights: string[];
+  /** Always store as “N weeks”, “N weeks per level”, or “Self-paced” */
   duration?: string;
+  /** Display price e.g. "1,800 SAR" or "Starts at 900 SAR" */
+  price?: string;
   tagline?: string;
 };
 
@@ -36,7 +39,8 @@ export const COURSE_CATEGORIES: CourseCategory[] = [
   {
     id: "general-english",
     label: "General English",
-    description: "Structured CEFR progression for everyday and academic English.",
+    description:
+      "Structured CEFR pathway from A1.1 through C2.2 — 12 micro-levels with weekly lessons and certificates.",
   },
   {
     id: "specialty",
@@ -62,7 +66,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     accent: "#6366f1",
     ctaLabel: "Start Learning",
     ctaHref: "/register/ielts-accelerator?track=foundation",
-    duration: foundation.duration,
+    duration: "6 weeks",
+    price: foundation.price,
     highlights: foundation.bullets,
   },
   {
@@ -77,7 +82,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     accent: "#c9972c",
     ctaLabel: "Start Learning",
     ctaHref: "/register/ielts-accelerator?track=plus",
-    duration: plus.duration,
+    duration: "6 weeks",
+    price: plus.price,
     highlights: plus.bullets,
   },
   {
@@ -92,7 +98,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     accent: "#0d1b35",
     ctaLabel: "Start Learning",
     ctaHref: "/register/ielts-accelerator?track=elite",
-    duration: elite.duration,
+    duration: "4 weeks",
+    price: elite.price,
     highlights: elite.bullets,
   },
   {
@@ -108,6 +115,7 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     ctaLabel: "Start Learning",
     ctaHref: "/register/ielts-general",
     duration: "6 weeks",
+    price: foundation.price,
     highlights: [
       "GT format & letter types overview",
       "Formal, semi-formal & informal letter foundations",
@@ -130,6 +138,7 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     ctaLabel: "Start Learning",
     ctaHref: "/register/ielts-general",
     duration: "8 weeks",
+    price: plus.price,
     highlights: [
       "Formal letter mastery (Weeks 1–2)",
       "Semi-formal & informal letter precision",
@@ -152,6 +161,7 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     ctaLabel: "Start Learning",
     ctaHref: "/register/ielts-general",
     duration: "10 weeks",
+    price: elite.price,
     highlights: [
       "Band 7+ letter writing with sophistication",
       "Advanced GT reading under timed conditions",
@@ -185,9 +195,9 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     slug: "step-preparation",
     name: "Speakify STEP Accelerator",
     tagline: "One adaptive Qiyas course",
-    shortDescription: "Single adaptive STEP course — 4 phases to 80+.",
+    shortDescription: "Eight-week adaptive STEP course to 80+.",
     description:
-      "One comprehensive Qiyas-aligned STEP programme with 4 internal phases. Diagnostic sets your entry phase; exit checks advance you automatically through Reading, Structure, Listening, and Analysis.",
+      "One comprehensive Qiyas-aligned STEP programme over 8 weeks (four 2-week stages). Diagnostic sets your entry point; exit checks advance you through Reading, Structure, Listening, and Analysis.",
     levelBadge: "Advanced",
     category: "test-prep",
     accent: "#059669",
@@ -204,18 +214,20 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "english-pathway",
     name: "English Pathway",
-    tagline: "CEFR level progression",
-    shortDescription: "Structured CEFR English from A1 to C1.",
+    tagline: "CEFR A1.1 → C2.2",
+    shortDescription:
+      "Full CEFR pathway — 12 micro-levels from A1.1 through C2.2.",
     description:
-      "Structured general English from A1 to C1 with weekly lessons, skill practice, level assessments, and graduation certificates.",
+      "Structured general English from A1.1 to C2.2 across 12 micro-levels. Each level is about 4 weeks with weekly lessons, skill practice, readiness checks, and graduation certificates.",
     levelBadge: "Beginner",
     category: "general-english",
     accent: "#0d9488",
     ctaLabel: "Start Learning",
     ctaHref: "/register/pathway",
-    duration: "Self-paced levels",
+    duration: "4 weeks per level",
+    price: "Starts at 900 SAR",
     highlights: [
-      "CEFR level progression (A1 → C1)",
+      "CEFR progression A1.1 → C2.2 (12 micro-levels)",
       "Weekly grammar & vocabulary focus",
       "Speaking, reading, listening & writing practice",
       "Level readiness checks & certificates",
@@ -273,7 +285,7 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     accent: "#f59e0b",
     ctaLabel: "Start Learning",
     ctaHref: "/register/kids-english",
-    duration: "Ongoing levels",
+    duration: "Self-paced",
     highlights: [
       "Phonics & pronunciation foundations",
       "Story-based vocabulary building",

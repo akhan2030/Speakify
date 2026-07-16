@@ -62,6 +62,16 @@ const DISPLAY: Record<string, PathwayLevelDisplay> = {
     focusAreas: "Professional communication, complex texts, graduation readiness",
     weekCount: 5,
   },
+  "C2.1": {
+    displayName: "Proficiency I",
+    focusAreas: "Near-native range, nuanced register, academic and literary texts",
+    weekCount: 4,
+  },
+  "C2.2": {
+    displayName: "Proficiency Mastery",
+    focusAreas: "Full mastery — complex argumentation, style control, fluency under pressure",
+    weekCount: 4,
+  },
 };
 
 export function getPathwayLevelDisplay(code: string, description?: string) {

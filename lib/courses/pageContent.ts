@@ -199,25 +199,26 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
     ],
   },
   "english-pathway": {
-    targetLabel: "A1 – C1 CEFR",
+    targetLabel: "A1.1 – C2.2 CEFR",
     entryLevel: "Any level",
+    price: "Starts at 900 SAR",
     idealFor: [
       "Learners building general English step by step",
       "Students who prefer CEFR levels over exam bands",
-      "Anyone wanting certificates and level assessments",
+      "Anyone wanting certificates and level assessments through C2.2",
     ],
     outcomes: [
-      "Clear progression across CEFR levels",
+      "Clear progression across 12 CEFR micro-levels (A1.1 → C2.2)",
       "Balanced practice in all four skills",
       "Level readiness checks before advancing",
       "Graduation certificates on completion",
     ],
     skills: ["Grammar", "Vocabulary", "Speaking", "Reading", "Listening", "Writing"],
     curriculum: [
-      { week: "Level block", title: "Input Days", detail: "New language, guided examples, and controlled practice" },
-      { week: "Level block", title: "Practice Days", detail: "Skill tasks with feedback across the week" },
-      { week: "Level block", title: "Progress Check", detail: "Readiness review before the next CEFR level" },
-      { week: "Level block", title: "Graduation", detail: "Level assessment and certificate award" },
+      { week: "A1–A2", title: "Foundations", detail: "Greetings through everyday survival English (A1.1–A2.2)" },
+      { week: "B1–B2", title: "Independence", detail: "Opinions, essays, and fluent topic range (B1.1–B2.2)" },
+      { week: "C1–C2", title: "Mastery", detail: "Academic precision through near-native control (C1.1–C2.2)" },
+      { week: "Each level", title: "4-week cycle", detail: "Input, practice, progress check, and certificate" },
     ],
   },
   "business-english": {
