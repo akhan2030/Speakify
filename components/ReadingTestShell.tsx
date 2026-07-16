@@ -409,13 +409,13 @@ export default function ReadingTestShell({
         onViewResults={() => router.push(resultsHref)}
       />
 
-      {/* Top bar */}
-      <header className="fixed left-0 right-0 top-0 z-50 bg-[#0d1b35] text-white shadow-lg">
-        <div className="relative flex h-14 items-center justify-between px-4">
-          <div className="flex min-w-0 flex-1 items-center gap-4">
+      {/* Top bar — offset for IELTS sidebar (240px) so Settings/Logout stay reachable */}
+      <header className="fixed left-0 right-0 top-0 z-50 bg-[#0d1b35] text-white shadow-lg md:left-[240px]">
+        <div className="grid h-14 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(9rem,auto)] sm:gap-3 sm:px-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Link
               href={exitHref}
-              className="hidden text-sm text-slate-300 hover:text-white sm:inline"
+              className="hidden shrink-0 text-sm text-slate-300 hover:text-white sm:inline"
             >
               ← Exit
             </Link>
@@ -423,13 +423,13 @@ export default function ReadingTestShell({
               {config.title}
             </h1>
             {dailyTestsUsed !== null ? (
-              <span className="hidden rounded-full bg-[#c9972c]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#c9972c] sm:inline">
+              <span className="hidden shrink-0 rounded-full bg-[#c9972c]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#c9972c] lg:inline">
                 {dailyTestsUsed}/{dailyTestsMax} tests today
               </span>
             ) : null}
           </div>
 
-          <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center">
+          <div className="flex shrink-0 items-center justify-center">
             <ReadingTimer
               embedded
               timeRemaining={timer.timeRemaining}
@@ -439,7 +439,7 @@ export default function ReadingTestShell({
             />
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col items-end text-right text-sm">
+          <div className="flex shrink-0 flex-col items-end justify-center whitespace-nowrap text-right text-[11px] leading-tight sm:text-sm sm:leading-snug">
             <span>
               Passage {activePassage?.index ?? 1} of {config.passages.length}
             </span>
@@ -453,9 +453,9 @@ export default function ReadingTestShell({
         </p>
       </header>
 
-      {/* Passage tabs */}
+      {/* Passage tabs — free navigation (not sequentially locked); scroll on narrow widths */}
       {config.passages.length > 1 ? (
-        <nav className="fixed left-0 right-0 top-[58px] z-40 flex border-b border-slate-200 bg-white px-4">
+        <nav className="fixed left-0 right-0 top-[58px] z-40 flex overflow-x-auto border-b border-slate-200 bg-white px-2 sm:px-4 md:left-[240px]">
           {config.passages.map((passage, idx) => {
             const complete = isPassageComplete(passage);
             const active = idx === activePassageIndex;
@@ -467,7 +467,7 @@ export default function ReadingTestShell({
                   setActivePassageIndex(idx);
                   setCurrentQuestionNumber(passage.startNumber);
                 }}
-                className={`relative flex items-center gap-2 px-5 py-3 text-sm transition-colors ${
+                className={`relative flex shrink-0 items-center gap-2 px-4 py-3 text-sm transition-colors sm:px-5 ${
                   active
                     ? "font-bold text-[#0d1b35]"
                     : "text-slate-500 hover:text-[#0d1b35]"
@@ -585,7 +585,7 @@ export default function ReadingTestShell({
       </div>
 
       {/* Bottom bar */}
-      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white px-4 py-3 shadow-lg">
+      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white px-4 py-3 shadow-lg md:left-[240px]">
         <div className="mb-2 flex flex-wrap justify-center gap-1">
           {allQuestions.map((q) => {
             const answered = Boolean(answers[q.id]?.trim());

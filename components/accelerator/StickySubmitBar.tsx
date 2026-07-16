@@ -25,7 +25,7 @@ export default function StickySubmitBar({
     <>
       <div
         className={`fixed bottom-0 z-50 flex items-center justify-between border-t border-gray-200 bg-white px-6 py-4 shadow-lg ${
-          offsetSidebar ? "left-0 right-0 sm:left-[200px]" : "left-0 right-0"
+          offsetSidebar ? "left-0 right-0 sm:left-[200px] md:left-[240px]" : "left-0 right-0"
         }`}
       >
         <span className="text-sm text-gray-500">

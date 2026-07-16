@@ -82,10 +82,10 @@ export default function ReadingTimer({
         aria-live="polite"
         aria-label={`Time remaining: ${displayTime}`}
       >
-        <div className="flex items-center gap-2">
-          <ClockIcon className="h-5 w-5 text-[#c9972c]" />
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <ClockIcon className="h-4 w-4 text-[#c9972c] sm:h-5 sm:w-5" />
           <span
-            className={`text-2xl font-bold tabular-nums ${
+            className={`text-lg font-bold tabular-nums sm:text-2xl ${
               embeddedColors.pulse ? "animate-pulse" : ""
             }`}
             style={{ color: embeddedColors.text }}
@@ -94,11 +94,11 @@ export default function ReadingTimer({
           </span>
         </div>
 
-        <span className="mt-0.5 text-[11px] text-slate-400">
+        <span className="mt-0.5 hidden text-[11px] text-slate-400 sm:inline">
           Time Remaining
         </span>
 
-        <div className="mt-1.5 h-1 w-[200px] overflow-hidden rounded-full bg-white/10">
+        <div className="mt-1 hidden h-1 w-[140px] overflow-hidden rounded-full bg-white/10 sm:mt-1.5 sm:block sm:w-[200px]">
           <div
             className="h-full rounded-full bg-[#c9972c] transition-all duration-1000 ease-linear"
             style={{ width: `${progress}%` }}
