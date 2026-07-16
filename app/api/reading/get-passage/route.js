@@ -58,7 +58,7 @@ export async function GET(request) {
     console.error("[reading/get-passage]", err);
     const raw = err?.message ?? "Failed to load passage";
     const userMessage =
-      /failed validation|forced 1-to-1|OpenAI|timeout|Timed out/i.test(raw)
+      /failed validation|forced 1-to-1|OpenAI|timeout|Timed out|diversity|too similar|drifted from assigned|overused default/i.test(raw)
         ? "We couldn't prepare this reading practice yet. Please tap Try Again — a fresh passage will be generated."
         : raw;
     return NextResponse.json(
