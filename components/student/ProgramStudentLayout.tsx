@@ -13,6 +13,7 @@ import {
   type ProgramType,
 } from "@/lib/programType";
 import { normalizeRole } from "@/lib/roles";
+import { isIeltsAcademicMockPath } from "@/lib/mock-test/ieltsMockRoutes";
 
 export default function ProgramStudentLayout({
   children,
@@ -65,6 +66,9 @@ export default function ProgramStudentLayout({
 
   useEffect(() => {
     if (status !== "authenticated" || role !== "student") return;
+    if (pathname && isIeltsAcademicMockPath(pathname)) {
+      return;
+    }
     const allowed = canAccessStudentDashboard(expectedProgram, {
       programType: rawProgramType,
       enrolledPrograms,

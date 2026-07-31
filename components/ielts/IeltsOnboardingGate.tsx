@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
+import { isIeltsAcademicMockPath } from "@/lib/mock-test/ieltsMockRoutes";
 
 export const IELTS_ONBOARDING_CACHE_KEY = "ielts_onboarding_completed";
 
@@ -27,19 +28,16 @@ export default function IeltsOnboardingGate({
   const pathname = usePathname();
   const router = useRouter();
   const onOnboardingPage = pathname?.includes("/onboarding");
-  const [ready, setReady] = useState(() => readIeltsOnboardingCache() !== null);
+  const onMockExamPath = Boolean(pathname && isIeltsAcademicMockPath(pathname));
+  const [ready, setReady] = useState(() =>
+    onMockExamPath ? true : readIeltsOnboardingCache() !== null
+  );
 
   useEffect(() => {
-    const cached = readIeltsOnboardingCache();
-    if (cached !== null) {
+    if (onMockExamPath) {
       setReady(true);
-      if (!cached && !onOnboardingPage) {
-        router.replace("/dashboard/ielts/student/onboarding");
-      } else if (cached && onOnboardingPage) {
-        router.replace("/dashboard/ielts/student");
-      }
+      return;
     }
-
     let cancelled = false;
 
     async function check() {
@@ -67,7 +65,7 @@ export default function IeltsOnboardingGate({
     return () => {
       cancelled = true;
     };
-  }, [onOnboardingPage, pathname, router]);
+  }, [onOnboardingPage, onMockExamPath, pathname, router]);
 
   if (!ready) {
     return (
