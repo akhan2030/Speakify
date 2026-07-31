@@ -6,12 +6,15 @@ import {
   ACADEMIC_MOCK_CATALOG,
   ACADEMIC_MOCK_PRICING,
 } from "@/lib/mock-test/academicMockCatalog";
+import {
+  IELTS_MOCK_LOBBY_PATH,
+  ieltsMockLobbyHref,
+} from "@/lib/mock-test/ieltsMockRoutes";
 import { useMarketingLocale } from "@/components/marketing/MarketingLocale";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
 const TEAL = "#0d9488";
-const MOCK_LOBBY = "/dashboard/ielts/student/mock-exam";
 
 function buyHref(product: string, mockNumber?: number) {
   const params = new URLSearchParams({ product });
@@ -39,7 +42,10 @@ export default function MockExamsLanding() {
 
   function ctaForMock(mockNumber: number) {
     if (isLoggedIn && hasFullAccess) {
-      return { href: MOCK_LOBBY, label: t("mockExams.startMock").replace("{n}", String(mockNumber)) };
+      return {
+        href: ieltsMockLobbyHref(mockNumber),
+        label: t("mockExams.startMock").replace("{n}", String(mockNumber)),
+      };
     }
     if (isLoggedIn) {
       return {
@@ -55,7 +61,7 @@ export default function MockExamsLanding() {
 
   function packCta(product: "pack3" | "pack5") {
     if (isLoggedIn && hasFullAccess) {
-      return { href: MOCK_LOBBY, label: t("mockExams.goToLobby") };
+      return { href: IELTS_MOCK_LOBBY_PATH, label: t("mockExams.goToLobby") };
     }
     if (isLoggedIn) {
       return { href: buyHref(product), label: t(`mockExams.buy${product}`) };
@@ -169,7 +175,7 @@ export default function MockExamsLanding() {
           {isLoggedIn && hasFullAccess ? (
             <p className="mt-6 text-sm text-slate-600">
               {t("mockExams.acceleratorIncluded")}{" "}
-              <Link href={MOCK_LOBBY} className="font-semibold underline" style={{ color: TEAL }}>
+              <Link href={IELTS_MOCK_LOBBY_PATH} className="font-semibold underline" style={{ color: TEAL }}>
                 {t("mockExams.goToLobby")} →
               </Link>
             </p>

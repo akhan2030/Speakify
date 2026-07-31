@@ -17,22 +17,11 @@ import {
   gatewayIsComplete,
 } from "@/lib/auth/gatewayStatus";
 
-function isStepStudentToken(token: {
-  stepEnrolled?: boolean;
-  enrolledPrograms?: unknown;
-  programSelected?: unknown;
-}): boolean {
-  const raw = parseRawEnrolledPrograms(token.enrolledPrograms);
-  const programSelected = String(token.programSelected ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/-/g, "_");
-  return (
-    token.stepEnrolled === true ||
-    raw.includes("step") ||
-    programSelected === "step"
-  );
-}
+import { isActiveStepStudent } from "@/lib/routing/stepStudentGate";
+import {
+  IELTS_MOCK_LOBBY_PATH,
+  isIeltsAcademicMockPath,
+} from "@/lib/mock-test/ieltsMockRoutes";
 
 function paymentContextFromToken(token: {
   role?: string;
@@ -61,11 +50,6 @@ function paymentContextFromToken(token: {
   };
 }
 
-const IELTS_MOCK_EXAM_PREFIX = "/dashboard/ielts/student/mock-exam";
-
-function isIeltsMockExamPath(pathname: string): boolean {
-  return pathname === IELTS_MOCK_EXAM_PREFIX || pathname.startsWith(`${IELTS_MOCK_EXAM_PREFIX}/`);
-}
 
 export default withAuth(
   async function middleware(req) {
@@ -135,7 +119,7 @@ export default withAuth(
         requiresPayment &&
         !dashboardAccess &&
         pathname.startsWith("/dashboard") &&
-        !(isMockOnly && isIeltsMockExamPath(pathname))
+        !(isMockOnly && isIeltsAcademicMockPath(pathname))
       ) {
         return NextResponse.redirect(new URL("/checkout?reason=payment_required", req.url));
       }
@@ -219,19 +203,24 @@ export default withAuth(
     }
 
     if (role === "student" && onboardingCompleted && isMockOnly) {
-      if (pathname.startsWith("/dashboard") && !isIeltsMockExamPath(pathname)) {
-        return NextResponse.redirect(new URL(IELTS_MOCK_EXAM_PREFIX, req.url));
+      if (pathname.startsWith("/dashboard") && !isIeltsAcademicMockPath(pathname)) {
+        return NextResponse.redirect(new URL(IELTS_MOCK_LOBBY_PATH, req.url));
       }
     }
 
     if (role === "student" && onboardingCompleted) {
-      const stepStudent = isStepStudentToken({
+      const stepStudent = isActiveStepStudent({
         stepEnrolled: token?.stepEnrolled,
         enrolledPrograms: token?.enrolledPrograms,
         programSelected: token?.programSelected,
+        programType: token?.programType,
       });
 
-      if (stepStudent && pathname.startsWith("/dashboard/ielts")) {
+      if (
+        stepStudent &&
+        pathname.startsWith("/dashboard/ielts") &&
+        !isIeltsAcademicMockPath(pathname)
+      ) {
         return NextResponse.redirect(new URL("/dashboard/step/student", req.url));
       }
 

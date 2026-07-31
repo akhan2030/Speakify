@@ -4,13 +4,15 @@
 
 import Link from "next/link";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useSession } from "next-auth/react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { PageSpinner } from "@/components/StudentSidebar";
+
+import { ieltsMockExamHref } from "@/lib/mock-test/ieltsMockRoutes";
 
 
 
@@ -463,6 +465,9 @@ export default function IeltsMockExamPage() {
   const { data: session } = useSession();
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedMockNumber = Number(searchParams.get("mock"));
+  const autoStartAttempted = useRef(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -580,7 +585,7 @@ export default function IeltsMockExamPage() {
 
       const testId = mock.id != null ? String(mock.id) : String(mock.mockNumber);
 
-      const examUrl = `/dashboard/ielts/student/mock-exam/exam?testId=${encodeURIComponent(testId)}&mock=${mock.mockNumber}`;
+      const examUrl = ieltsMockExamHref({ mockNumber: mock.mockNumber, testId });
 
       console.log("Navigating to exam:", testId, examUrl);
 
@@ -598,7 +603,17 @@ export default function IeltsMockExamPage() {
 
   }
 
-
+  useEffect(() => {
+    if (loading || !pageData || autoStartAttempted.current) return;
+    if (!Number.isInteger(requestedMockNumber) || requestedMockNumber < 1 || requestedMockNumber > 5) {
+      return;
+    }
+    const mock = pageData.availableMocks.find((m) => m.mockNumber === requestedMockNumber);
+    if (!mock || mock.status === "completed") return;
+    autoStartAttempted.current = true;
+    void handleStartMock(mock);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot deep link from public landing
+  }, [loading, pageData, requestedMockNumber]);
 
   if (loading) {
 
