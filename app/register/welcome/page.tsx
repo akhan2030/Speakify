@@ -47,6 +47,8 @@ function WelcomeContent() {
 
   const programParam = searchParams.get("program")?.trim() ?? "ielts";
   const trackParam = searchParams.get("track")?.trim().toLowerCase() ?? "";
+  const checkoutProduct = searchParams.get("product")?.trim() ?? "";
+  const checkoutMock = searchParams.get("mock")?.trim() ?? "";
   const purchasedTrack: AcceleratorTrackId | null = isValidTrack(trackParam)
     ? trackParam
     : null;
@@ -61,6 +63,7 @@ function WelcomeContent() {
             : "ielts"
       );
 
+  const isMockExam = registrationProgram.slug === "mock-exam";
   const isIeltsGeneral = registrationProgram.slug === "ielts-general";
   const programType = isIeltsGeneral ? "ielts_general" : normalizeProgramType(registrationProgram.programType);
   const isPathway = programType === "pathway";
@@ -74,14 +77,24 @@ function WelcomeContent() {
   const dashboardPath =
     registrationProgram.dashboardPath ?? studentDashboardPath(programType);
   const isStep = registrationProgram.slug === "step-test";
-  const accentClass = isPathway
+  const accentClass = isMockExam
     ? "bg-[#0d9488]/20 text-[#0d9488]"
-    : isStep
-      ? "bg-emerald-500/20 text-emerald-400"
-      : isToefl
-      ? "bg-blue-500/20 text-blue-400"
-      : "bg-[#c9972c]/20 text-[#c9972c]";
+    : isPathway
+      ? "bg-[#0d9488]/20 text-[#0d9488]"
+      : isStep
+        ? "bg-emerald-500/20 text-emerald-400"
+        : isToefl
+          ? "bg-blue-500/20 text-blue-400"
+          : "bg-[#c9972c]/20 text-[#c9972c]";
 
+  const mockCheckoutPath = (() => {
+    if (!isMockExam) return null;
+    const params = new URLSearchParams();
+    if (checkoutProduct) params.set("product", checkoutProduct);
+    if (checkoutMock) params.set("mock", checkoutMock);
+    const q = params.toString();
+    return q ? `/checkout/mock?${q}` : "/courses/mock-exams";
+  })();
   const whatsappRaw =
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() || "966500000000";
   const whatsappDigits = whatsappRaw.replace(/\D/g, "");
@@ -107,8 +120,12 @@ function WelcomeContent() {
         </p>
 
         <p className="mt-6 text-base leading-relaxed text-slate-300">
-          {isPathway
+          {isMockExam
+            ? "Your account is ready. Sign in to complete payment and access your IELTS Academic mock exam — no Accelerator enrollment or placement test required."
+            : isPathway
             ? "Your English Pathway account is ready. Sign in and take the one-time placement test to find your CEFR starting level."
+            : isStep
+              ? "Your STEP Accelerator account is ready. Sign in and take the STEP diagnostic to find your starting phase."
             : isToefl
               ? "Your TOEFL Preparation account is ready. Sign in to access practice tests, skill tracking, and your personalised study plan."
               : trackMeta && isIeltsGeneral
@@ -134,6 +151,37 @@ function WelcomeContent() {
                 className="inline-flex items-center justify-center rounded-xl border-2 border-[#0d9488] bg-transparent px-8 py-3.5 text-base font-bold text-[#0d9488] transition-colors hover:bg-[#0d9488]/10"
               >
                 Sign In to Dashboard
+              </Link>
+            </>
+          ) : isStep ? (
+            <>
+              <Link
+                href={`/login?callbackUrl=${encodeURIComponent("/dashboard/step/student/diagnostic")}`}
+                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3.5 text-base font-bold text-white shadow-lg transition-opacity hover:opacity-95"
+              >
+                Sign In & Take STEP Diagnostic
+              </Link>
+              <Link
+                href={`/login?callbackUrl=${encodeURIComponent(dashboardPath)}`}
+                className="inline-flex items-center justify-center rounded-xl border-2 border-emerald-500 bg-transparent px-8 py-3.5 text-base font-bold text-emerald-400 transition-colors hover:bg-emerald-500/10"
+              >
+                Sign In to Dashboard
+              </Link>
+            </>
+          ) : isMockExam && mockCheckoutPath ? (
+            <>
+              <Link
+                href={`/login?callbackUrl=${encodeURIComponent(mockCheckoutPath)}`}
+                className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-base font-bold text-white shadow-lg transition-opacity hover:opacity-95"
+                style={{ backgroundColor: "#0d9488" }}
+              >
+                Sign In & Complete Purchase
+              </Link>
+              <Link
+                href={`/login?callbackUrl=${encodeURIComponent("/dashboard/ielts/student/mock-exam")}`}
+                className="inline-flex items-center justify-center rounded-xl border-2 border-[#0d9488] bg-transparent px-8 py-3.5 text-base font-bold text-[#0d9488] transition-colors hover:bg-[#0d9488]/10"
+              >
+                Sign In to Mock Lobby
               </Link>
             </>
           ) : (

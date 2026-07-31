@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
 import {
   getRegistrationProgram,
+  getRegistrationTrackDisplay,
   type RegistrationSlug,
 } from "@/lib/registration";
 import { buildLoginPath } from "@/lib/courses/loginPaths";
-import { ACCELERATOR_TRACKS, isValidTrack, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
+import { isValidTrack, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 
 function Spinner() {
   return (
@@ -16,21 +17,54 @@ function Spinner() {
   );
 }
 
-export default function RegisterForm({
+function resolvePurchasedTrack(
+  acceleratorTrack?: string,
+  trackFromUrl?: string | null
+): AcceleratorTrackId | undefined {
+  for (const raw of [acceleratorTrack, trackFromUrl]) {
+    const normalized = String(raw ?? "").trim().toLowerCase();
+    if (isValidTrack(normalized)) {
+      return normalized;
+    }
+  }
+  return undefined;
+}
+
+function RegisterFormInner({
   slug,
   acceleratorTrack,
+  checkoutProduct,
+  checkoutMock,
 }: {
   slug: RegistrationSlug;
   acceleratorTrack?: string;
+  checkoutProduct?: string;
+  checkoutMock?: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const program = getRegistrationProgram(slug);
-  const purchasedTrack: AcceleratorTrackId | undefined = isValidTrack(
-    String(acceleratorTrack ?? "")
-  )
-    ? (acceleratorTrack as AcceleratorTrackId)
-    : undefined;
-  const trackMeta = purchasedTrack ? ACCELERATOR_TRACKS[purchasedTrack] : null;
+  const mockCheckoutProduct =
+    checkoutProduct ?? searchParams.get("product") ?? undefined;
+  const mockCheckoutMock = checkoutMock ?? searchParams.get("mock") ?? undefined;
+  const purchasedTrack = resolvePurchasedTrack(
+    acceleratorTrack,
+    searchParams.get("track")
+  );
+  const trackDisplay = useMemo(
+    () =>
+      purchasedTrack ? getRegistrationTrackDisplay(slug, purchasedTrack) : null,
+    [slug, purchasedTrack]
+  );
+
+  const sidebarJoin = trackDisplay?.joinHeading ?? program.label;
+  const sidebarDescription = trackDisplay?.description ?? program.description;
+  const sidebarBullets = trackDisplay?.bullets ?? program.bullets;
+  const formTagline = trackDisplay?.tagline ?? program.tagline;
+  const formHeading = trackDisplay
+    ? `Register for ${trackDisplay.registerHeading}`
+    : `Register for ${program.label}`;
+  const accountLabel = trackDisplay?.accountLabel ?? program.label;
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -89,6 +123,13 @@ export default function RegisterForm({
         return;
       }
 
+      if (json.verificationDelivery && json.userId) {
+        sessionStorage.setItem(
+          `speakify:register-delivery:${json.userId}`,
+          JSON.stringify(json.verificationDelivery)
+        );
+      }
+
       const params = new URLSearchParams({
         userId: json.userId ?? "",
         name: fullName.trim(),
@@ -96,6 +137,12 @@ export default function RegisterForm({
       });
       if (purchasedTrack) {
         params.set("track", purchasedTrack);
+      }
+      if (slug === "mock-exam" && mockCheckoutProduct) {
+        params.set("product", mockCheckoutProduct);
+      }
+      if (slug === "mock-exam" && mockCheckoutMock) {
+        params.set("mock", mockCheckoutMock);
       }
       router.push(`/register/verify?${params.toString()}`);
     } catch {
@@ -109,7 +156,7 @@ export default function RegisterForm({
     "mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 shadow-sm focus:border-[#c9972c] focus:outline-none focus:ring-2 focus:ring-[#c9972c]";
 
   const buttonClass =
-    slug === "pathway"
+    slug === "pathway" || slug === "mock-exam"
       ? "bg-[#0d9488] text-white hover:opacity-95"
       : slug === "business-english" || slug === "legal-english" || slug === "kids-english"
         ? "text-white hover:opacity-95"
@@ -127,18 +174,18 @@ export default function RegisterForm({
             </div>
           </div>
           <p className="mt-8 text-xl font-semibold text-white/95">
-            Join {trackMeta ? `IELTS ${trackMeta.name}` : program.label}
+            Join {sidebarJoin}
           </p>
-          {trackMeta ? (
+          {trackDisplay ? (
             <p className="mt-2 text-sm font-semibold text-[#c9972c]">
-              Target {trackMeta.target} · {trackMeta.duration}
+              {trackDisplay.targetLine}
             </p>
           ) : null}
           <p className="mt-3 text-sm leading-relaxed text-slate-300">
-            {program.description}
+            {sidebarDescription}
           </p>
           <ul className="mt-8 space-y-4">
-            {program.bullets.map((item) => (
+            {sidebarBullets.map((item) => (
               <li key={item} className="flex items-start gap-3 text-sm text-slate-200">
                 <span
                   className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
@@ -157,11 +204,9 @@ export default function RegisterForm({
             className="text-xs font-bold uppercase tracking-wide"
             style={{ color: program.accent }}
           >
-            {program.tagline}
+            {formTagline}
           </p>
-          <h1 className="mt-2 text-2xl font-bold text-[#0d1b35]">
-            Register for {program.label}
-          </h1>
+          <h1 className="mt-2 text-2xl font-bold text-[#0d1b35]">{formHeading}</h1>
           <p className="mt-1 text-sm text-slate-500">
             Create your account to start learning
           </p>
@@ -295,7 +340,7 @@ export default function RegisterForm({
                   Creating account…
                 </>
               ) : (
-                `Create ${program.label} Account`
+                `Create ${accountLabel} Account`
               )}
             </button>
 
@@ -318,5 +363,37 @@ export default function RegisterForm({
         </div>
       </main>
     </div>
+  );
+}
+
+function RegisterFormFallback({ slug }: { slug: RegistrationSlug }) {
+  const program = getRegistrationProgram(slug);
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <p className="text-sm text-slate-600">Loading {program.label} registration…</p>
+    </div>
+  );
+}
+
+export default function RegisterForm({
+  slug,
+  acceleratorTrack,
+  checkoutProduct,
+  checkoutMock,
+}: {
+  slug: RegistrationSlug;
+  acceleratorTrack?: string;
+  checkoutProduct?: string;
+  checkoutMock?: string;
+}) {
+  return (
+    <Suspense fallback={<RegisterFormFallback slug={slug} />}>
+      <RegisterFormInner
+        slug={slug}
+        acceleratorTrack={acceleratorTrack}
+        checkoutProduct={checkoutProduct}
+        checkoutMock={checkoutMock}
+      />
+    </Suspense>
   );
 }

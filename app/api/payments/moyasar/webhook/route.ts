@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isValidTrack, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 import { grantPaidAccess } from "@/lib/payments/grantAccess";
-import { verifyMoyasarWebhookSecret } from "@/lib/payments/moyasar";
-import { trackPriceHalalas } from "@/lib/payments/moyasar";
+import { grantMockAccess } from "@/lib/payments/grantMockAccess";
+import {
+  parseMockNumbersFromMetadata,
+  trackPriceHalalas,
+  verifyMoyasarWebhookSecret,
+} from "@/lib/payments/moyasar";
+import type { MockPaymentProductType } from "@/lib/mock-test/academicMockCatalog";
 
 export const runtime = "nodejs";
 
@@ -15,9 +20,24 @@ type MoyasarWebhookEvent = {
     id?: string;
     status?: string;
     amount?: number;
-    metadata?: { student_id?: string; track?: string };
+    metadata?: {
+      student_id?: string;
+      track?: string;
+      product_type?: string;
+      mock_numbers?: string;
+    };
   };
 };
+
+const MOCK_PRODUCT_TYPES = new Set([
+  "mock_single",
+  "mock_pack3",
+  "mock_pack5",
+]);
+
+function isMockPaymentProductType(value: string): value is MockPaymentProductType {
+  return MOCK_PRODUCT_TYPES.has(value);
+}
 
 /** Browser check — Moyasar delivers real events via POST. */
 export async function GET() {
@@ -70,12 +90,22 @@ export async function POST(request: Request) {
 
     const { data: tx } = await supabase
       .from("payment_transactions")
-      .select("student_id, track, amount_halalas, status")
+      .select("student_id, track, amount_halalas, status, product_type, mock_numbers")
       .eq("moyasar_payment_id", paymentId)
       .maybeSingle();
 
     let studentId = String(payment.metadata?.student_id ?? tx?.student_id ?? "").trim();
     let trackRaw = String(payment.metadata?.track ?? tx?.track ?? "").trim().toLowerCase();
+    let productType = String(
+      payment.metadata?.product_type ?? tx?.product_type ?? "accelerator"
+    )
+      .trim()
+      .toLowerCase();
+
+    const metadataMockNumbers = parseMockNumbersFromMetadata(
+      payment.metadata?.mock_numbers ?? tx?.mock_numbers
+    );
+
     const amountHalalas =
       Number(payment.amount) ||
       Number(tx?.amount_halalas) ||
@@ -95,12 +125,12 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!studentId || !isValidTrack(trackRaw)) {
+    if (!studentId) {
       console.warn("[payments/moyasar/webhook] acknowledged without grant", {
         eventId: payload.id,
         paymentId,
         studentId,
-        trackRaw,
+        productType,
       });
       return NextResponse.json({
         ok: true,
@@ -123,6 +153,55 @@ export async function POST(request: Request) {
       });
     }
 
+    if (isMockPaymentProductType(productType)) {
+      if (metadataMockNumbers.length === 0) {
+        console.warn("[payments/moyasar/webhook] mock payment missing mock_numbers", {
+          paymentId,
+          productType,
+        });
+        return NextResponse.json({
+          ok: true,
+          acknowledged: true,
+          reason: "mock_numbers_missing",
+        });
+      }
+
+      const result = await grantMockAccess(supabase, {
+        studentId,
+        moyasarPaymentId: paymentId,
+        amountHalalas,
+        productType,
+        mockNumbers: metadataMockNumbers,
+        rawPayload: payload,
+      });
+
+      if (!result.ok) {
+        console.error("[payments/moyasar/webhook]", result.error);
+        return NextResponse.json({ error: result.error }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        ok: true,
+        alreadyPaid: result.alreadyPaid,
+        granted: "mock",
+        mockNumbers: metadataMockNumbers,
+      });
+    }
+
+    if (!isValidTrack(trackRaw)) {
+      console.warn("[payments/moyasar/webhook] acknowledged without grant", {
+        eventId: payload.id,
+        paymentId,
+        studentId,
+        trackRaw,
+      });
+      return NextResponse.json({
+        ok: true,
+        acknowledged: true,
+        reason: "payment_not_linked_to_student",
+      });
+    }
+
     const result = await grantPaidAccess(supabase, {
       studentId,
       track: trackRaw,
@@ -136,7 +215,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, alreadyPaid: result.alreadyPaid });
+    return NextResponse.json({ ok: true, alreadyPaid: result.alreadyPaid, granted: "accelerator" });
   } catch (err) {
     console.error("[payments/moyasar/webhook]", err);
     return NextResponse.json(

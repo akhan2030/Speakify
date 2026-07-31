@@ -2,8 +2,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /** Progressive selects: never drop programme fields because one optional column is missing. */
 const USER_SELECT_ATTEMPTS = [
+  "id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, payment_comped_until, program_selected, purchase_intent",
   "id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, payment_comped_until, program_selected",
-  "id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, program_selected",
   "id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed",
   "id, name, email, role, program_type, enrolled_programs, step_enrolled",
   "id, name, email, role, program_type, enrolled_programs",
@@ -23,6 +23,7 @@ export type UserRow = {
   payment_status?: string | null;
   payment_comped_until?: string | null;
   program_selected?: string | null;
+  purchase_intent?: string | null;
   password?: string;
   is_active?: boolean | null;
   must_change_password?: boolean | null;

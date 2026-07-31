@@ -12,6 +12,7 @@ export const REGISTRATION_SLUGS = [
   "pathway",
   "ielts",
   "ielts-general",
+  "mock-exam",
   "toefl",
   "step-test",
   "business-english",
@@ -66,6 +67,23 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     accent: "#c9972c",
     registerPath: "/register/ielts-accelerator",
     dashboardPath: "/dashboard/ielts/student",
+  },
+  "mock-exam": {
+    slug: "mock-exam",
+    programType: "ielts",
+    label: "IELTS Academic Mock Exam",
+    tagline: "Full mock · No course required",
+    description:
+      "Create an account to buy and take full IELTS Academic mock exams — all 4 skills, AI scoring, and human review. No Accelerator enrollment or placement test.",
+    bullets: [
+      "Full 4-skill Academic mocks (~3 hours each)",
+      "AI band prediction + human Writing/Speaking review",
+      "Buy one mock or save with a 3- or 5-mock pack",
+      "Unlimited retakes on mocks you purchase",
+    ],
+    accent: "#0d9488",
+    registerPath: "/register/mock-exam",
+    dashboardPath: "/dashboard/ielts/student/mock-exam",
   },
   "ielts-general": {
     slug: "ielts-general",
@@ -166,6 +184,79 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     dashboardPath: "/dashboard/kids-english/student",
   },
 };
+
+import {
+  ACCELERATOR_TRACKS,
+  type AcceleratorTrackId,
+} from "@/lib/accelerator/tracks";
+import { getCourseBySlug } from "@/lib/courses/catalog";
+
+const GT_TRACK_COURSE_SLUG: Record<AcceleratorTrackId, string> = {
+  foundation: "ielts-gt-foundation",
+  plus: "ielts-gt-plus",
+  elite: "ielts-gt-elite",
+};
+
+export type RegistrationTrackDisplay = {
+  joinHeading: string;
+  registerHeading: string;
+  tagline: string;
+  targetLine: string;
+  description: string;
+  bullets: string[];
+  accountLabel: string;
+};
+
+/** Tier-specific copy for accelerator registration pages (Academic + GT). */
+export function getRegistrationTrackDisplay(
+  slug: RegistrationSlug,
+  trackId: AcceleratorTrackId
+): RegistrationTrackDisplay {
+  const track = ACCELERATOR_TRACKS[trackId];
+
+  if (slug === "ielts-general") {
+    const course = getCourseBySlug(GT_TRACK_COURSE_SLUG[trackId]);
+    const heading = `IELTS General — ${track.name}`;
+    return {
+      joinHeading: heading,
+      registerHeading: heading,
+      tagline: `General Training · ${track.name}`,
+      targetLine: `Target ${track.target} · ${course?.duration ?? track.duration}`,
+      description:
+        course?.shortDescription ??
+        course?.description ??
+        REGISTRATION_PROGRAMS["ielts-general"].description,
+      bullets: course?.highlights?.length
+        ? course.highlights
+        : REGISTRATION_PROGRAMS["ielts-general"].bullets,
+      accountLabel: heading,
+    };
+  }
+
+  if (slug === "ielts") {
+    const heading = `IELTS ${track.name}`;
+    return {
+      joinHeading: heading,
+      registerHeading: heading,
+      tagline: `IELTS Academic · ${track.name}`,
+      targetLine: `Target ${track.target} · ${track.duration}`,
+      description: REGISTRATION_PROGRAMS.ielts.description,
+      bullets: track.bullets.length ? track.bullets : REGISTRATION_PROGRAMS.ielts.bullets,
+      accountLabel: heading,
+    };
+  }
+
+  const heading = track.name;
+  return {
+    joinHeading: heading,
+    registerHeading: heading,
+    tagline: "",
+    targetLine: `Target ${track.target} · ${track.duration}`,
+    description: "",
+    bullets: track.bullets,
+    accountLabel: heading,
+  };
+}
 
 export function getRegistrationProgram(slug: string): RegistrationProgramConfig {
   const key = slug.toLowerCase() as RegistrationSlug;

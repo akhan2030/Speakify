@@ -6,22 +6,22 @@ import CourseCard from "@/components/courses/CourseCard";
 import PathwayLevelGrid from "@/components/courses/PathwayLevelGrid";
 import {
   COURSE_CATEGORIES,
-  COURSE_CATALOG,
   getCoursesByCategory,
   getIeltsAcademicCourses,
   getIeltsGeneralCourses,
   getOtherTestPrepCourses,
   type CourseCatalogItem,
-  type CourseCategoryId,
   type CourseLevel,
 } from "@/lib/courses/catalog";
+import { DURATION_FILTER_OPTIONS, type DurationBucket } from "@/lib/courses/duration";
 import {
-  DURATION_FILTER_OPTIONS,
-  matchesDurationBucket,
-  type DurationBucket,
-} from "@/lib/courses/duration";
+  filterCourses,
+  type CategoryFilter,
+  type LevelFilter,
+} from "@/lib/courses/hubFilters";
 import { HUB_HERO_TRUST } from "@/lib/courses/trustStats";
 import { useMarketingLocale } from "@/components/marketing/MarketingLocale";
+import CoursesHubFork from "@/components/courses/CoursesHubFork";
 
 type Props = {
   recommended?: {
@@ -29,24 +29,6 @@ type Props = {
     placementBand: number;
   } | null;
 };
-
-type CategoryFilter = "all" | CourseCategoryId;
-type LevelFilter = "all" | CourseLevel;
-
-function courseMatchesSearch(course: CourseCatalogItem, q: string): boolean {
-  if (!q) return true;
-  const hay = [
-    course.name,
-    course.shortDescription,
-    course.tagline ?? "",
-    course.levelBadge,
-    course.category,
-    course.duration ?? "",
-  ]
-    .join(" ")
-    .toLowerCase();
-  return hay.includes(q);
-}
 
 export default function CoursesHub({ recommended = null }: Props) {
   const { t, dir } = useMarketingLocale();
@@ -58,14 +40,10 @@ export default function CoursesHub({ recommended = null }: Props) {
   const q = query.trim().toLowerCase();
   const filtering = Boolean(q || category !== "all" || level !== "all" || duration !== "all");
 
-  const filtered = useMemo(() => {
-    return COURSE_CATALOG.filter((course) => {
-      if (category !== "all" && course.category !== category) return false;
-      if (level !== "all" && course.levelBadge !== level) return false;
-      if (!matchesDurationBucket(course.duration, duration)) return false;
-      return courseMatchesSearch(course, q);
-    });
-  }, [category, level, duration, q]);
+  const filtered = useMemo(
+    () => filterCourses({ query: q, category, level, duration }),
+    [category, level, duration, q]
+  );
 
   const ieltsAcademic = getIeltsAcademicCourses().filter((c) =>
     filtered.some((f) => f.slug === c.slug)
@@ -202,6 +180,8 @@ export default function CoursesHub({ recommended = null }: Props) {
       </section>
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <CoursesHubFork />
+
         {recommended ? (
           <section className="mb-12 rounded-2xl border border-[#c9972c]/40 bg-[#fffbeb] p-6 sm:p-8">
             <p className="text-xs font-bold uppercase tracking-wider text-[#c9972c]">

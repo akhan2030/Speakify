@@ -8,7 +8,12 @@ export type PaymentAccessUser = {
   paymentCompedUntil?: string | Date | null;
   enrolledPrograms?: unknown;
   programSelected?: string | null;
+  purchaseIntent?: string | null;
 };
+
+export function isMockOnlyPurchaseIntent(value: unknown): boolean {
+  return String(value ?? "").trim().toLowerCase() === "mock_only";
+}
 
 export function normalizePaymentStatus(value: unknown): PaymentStatus {
   const v = String(value ?? "unpaid").trim().toLowerCase();
@@ -25,6 +30,7 @@ export const PAID_PROGRAMMES = ["ielts", "ielts_general"] as const;
  */
 export function requiresProgrammePayment(user: PaymentAccessUser): boolean {
   if (user.role === "admin" || user.role === "teacher") return false;
+  if (isMockOnlyPurchaseIntent(user.purchaseIntent)) return false;
 
   const selected = String(user.programSelected ?? "")
     .trim()

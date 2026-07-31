@@ -250,6 +250,48 @@ export async function GET() {
 
     const allAttempts = (mocksRes.data ?? []).map(normalizeAttemptRow);
 
+    const { data: userRow } = await supabase
+      .from("users")
+      .select(
+        "id, role, payment_status, payment_comped_until, enrolled_programs, program_selected, purchase_intent"
+      )
+      .eq("id", studentId)
+      .maybeSingle();
+
+    const { loadMockAccessContext, canStartMock } = await import(
+      "@/lib/mock-test/loadMockAccessContext"
+    );
+
+    const attemptedMockNumbers = [
+      ...new Set(
+        allAttempts
+          .map((attempt) => Number(attempt.mock_number))
+          .filter((n) => Number.isInteger(n) && n >= 1 && n <= 5)
+      ),
+    ];
+
+    const accessCtx = await loadMockAccessContext(
+      supabase,
+      userRow ?? {
+        id: studentId,
+        role: session.user?.role ?? "student",
+      },
+      {
+        hasAttemptHistory: allAttempts.length > 0,
+        attemptedMockNumbers,
+      }
+    );
+
+    if (!accessCtx.canAccessLobby) {
+      return NextResponse.json(
+        {
+          error:
+            "Purchase a mock exam or enroll in IELTS Accelerator to access mock exams.",
+        },
+        { status: 403 }
+      );
+    }
+
     const completedMocks = allAttempts.filter((m) => m.status === "completed");
 
     const attemptsByMockNumber = new Map();
@@ -334,7 +376,27 @@ export async function GET() {
 
 
 
-    const firstAvailable = availableMocks.find((m) => m.status === "available");
+    availableMocks = availableMocks
+      .filter((m) => accessCtx.visibleMockNumbers.includes(m.mockNumber))
+      .map((m) => ({
+        ...m,
+        canStart: canStartMock(accessCtx, m.mockNumber),
+      }));
+
+
+
+    if (availableMocks.length === 0) {
+      return NextResponse.json(
+        { error: "No mock exams available for your account." },
+        { status: 403 }
+      );
+    }
+
+
+
+    const firstAvailable = availableMocks.find(
+      (m) => m.status === "available" && m.canStart
+    );
 
     const inProgress = inProgressRes.data?.[0];
 
@@ -425,6 +487,12 @@ export async function GET() {
       availableMocks,
 
       currentMockNumber,
+
+      access: {
+        hasAllMocks: accessCtx.hasAllMocks,
+        purchasedMockNumbers: accessCtx.purchasedMockNumbers,
+        accessibleMockNumbers: accessCtx.accessibleMockNumbers,
+      },
 
     });
 

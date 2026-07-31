@@ -48,7 +48,7 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
     "hub.otherTestPrep": "Other test prep",
     "hub.pathwayGridTitle": "Full CEFR pathway",
     "hub.pathwayGridSubtitle":
-      "Twelve micro-levels from A1.1 to C2.2 — about 4 weeks each.",
+      "Thirteen micro-levels from AB through C2.2 — matching the classroom pathway.",
     "hub.pathwayWeeks": "4 weeks",
     "hub.pathwayCta": "Start this level",
     "category.test-prep": "Test Prep",
@@ -57,7 +57,7 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
     "categoryDesc.test-prep":
       "Exam-focused programmes with mock tests, band tracking, and AI feedback.",
     "categoryDesc.general-english":
-      "Structured CEFR pathway from A1.1 through C2.2 — 12 micro-levels with weekly lessons and certificates.",
+      "Structured CEFR pathway from AB through C2.2 — 13 micro-levels with weekly lessons and certificates.",
     "categoryDesc.specialty":
       "Purpose-built courses for professional and young learners.",
     "level.Beginner": "Beginner",
@@ -71,6 +71,47 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
     "nav.signIn": "Sign in",
     "nav.register": "Register",
     "nav.viewAll": "View All Programs",
+    "hub.forkEyebrow": "Two ways to prepare",
+    "hub.forkCoursesTitle": "Enroll in a full programme",
+    "hub.forkCoursesBody":
+      "Structured Accelerator courses with lessons, drills, vocabulary, and mock exams built in.",
+    "hub.forkCoursesMeta": "From 1,200 SAR · 6–10 weeks",
+    "hub.forkCoursesCta": "Browse courses below",
+    "hub.forkMockEyebrow": "Just want to practice?",
+    "hub.forkMockTitle": "Take a Mock Exam",
+    "hub.forkMockBody":
+      "Full IELTS Academic simulation — all 4 skills, real timing, AI scoring plus human review. Buy one mock or a pack. No course signup.",
+    "hub.forkMockMeta": "From 169 SAR · ~3 hours · 5 unique mocks",
+    "hub.forkMockCta": "View mock exams →",
+    "mockExams.heroEyebrow": "IELTS Academic · Full mock exams",
+    "mockExams.heroTitle": "Full IELTS Academic Mock Exams",
+    "mockExams.heroSubtitle":
+      "Real exam conditions. AI + human evaluation. No course enrollment required.",
+    "mockExams.heroTrust":
+      "Every Writing and Speaking result is reviewed by a certified Speakify IELTS trainer.",
+    "mockExams.individualTitle": "Choose your mock",
+    "mockExams.individualSubtitle":
+      "Five distinct Academic mocks — buy individually or save with a pack below.",
+    "mockExams.skillsLine": "40 Listening · 40 Reading · 2 Writing · Speaking",
+    "mockExams.durationLine": "~3 hours · Real exam conditions",
+    "mockExams.retakesLine": "Unlimited retakes after purchase",
+    "mockExams.buyMock": "Buy Mock #{n}",
+    "mockExams.startMock": "Start Mock #{n} →",
+    "mockExams.packsTitle": "Better value — mock packs",
+    "mockExams.packsSubtitle": "Save when you buy multiple mocks upfront.",
+    "mockExams.pack3Name": "3-Mock Pack",
+    "mockExams.pack5Name": "5-Mock Pack",
+    "mockExams.buypack3": "Buy 3-Mock Pack",
+    "mockExams.buypack5": "Buy 5-Mock Pack",
+    "mockExams.pack3Unlocks": "Unlocks Mocks #1, #2, and #3",
+    "mockExams.pack5Unlocks": "Unlocks all 5 Academic mocks · Valid 6 months",
+    "mockExams.bestValue": "Best value",
+    "mockExams.acceleratorIncluded": "Your Accelerator plan already includes all 5 mocks.",
+    "mockExams.goToLobby": "Go to mock exams",
+    "mockExams.footerNote":
+      "Mock-only purchase unlocks the mock exam lobby and the specific mock(s) you paid for — not the full Accelerator dashboard.",
+    "mockExams.acceleratorUpsell": "Want lessons and daily practice too?",
+    "mockExams.browseAccelerator": "Browse IELTS Accelerator courses",
   },
   ar: {
     "hub.eyebrow": "سبيكيفاي",
@@ -105,7 +146,7 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
     "hub.otherTestPrep": "اختبارات أخرى",
     "hub.pathwayGridTitle": "مسار CEFR الكامل",
     "hub.pathwayGridSubtitle":
-      "١٢ مستوى فرعياً من A1.1 إلى C2.2 — حوالي ٤ أسابيع لكل مستوى.",
+      "١٣ مستوى فرعياً من AB إلى C2.2 — نفس مسار نظام الفصول الدراسية.",
     "hub.pathwayWeeks": "٤ أسابيع",
     "hub.pathwayCta": "ابدأ هذا المستوى",
     "category.test-prep": "التحضير للاختبارات",
@@ -114,7 +155,7 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
     "categoryDesc.test-prep":
       "برامج مركّزة على الاختبار مع محاكاة وتتبع الباند وتغذية راجعة بالذكاء الاصطناعي.",
     "categoryDesc.general-english":
-      "مسار CEFR من A1.1 إلى C2.2 — ١٢ مستوى فرعياً مع دروس أسبوعية وشهادات.",
+      "مسار CEFR من AB إلى C2.2 — ١٣ مستوى فرعياً مع دروس أسبوعية وشهادات.",
     "categoryDesc.specialty": "دورات مخصّصة للمحترفين والمتعلمين الصغار.",
     "level.Beginner": "مبتدئ",
     "level.Intermediate": "متوسط",
@@ -127,6 +168,43 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
     "nav.signIn": "تسجيل الدخول",
     "nav.register": "سجّل",
     "nav.viewAll": "عرض كل البرامج",
+    "hub.forkEyebrow": "طريقتان للتحضير",
+    "hub.forkCoursesTitle": "سجّل في برنامج كامل",
+    "hub.forkCoursesBody":
+      "دورات Accelerator منظمة مع دروس وتدريبات ومفردات ومحاكاة مدمجة.",
+    "hub.forkCoursesMeta": "من ١٬٢٠٠ ريال · ٦–١٠ أسابيع",
+    "hub.forkCoursesCta": "تصفّح الدورات أدناه",
+    "hub.forkMockEyebrow": "تريد التدريب فقط؟",
+    "hub.forkMockTitle": "اختبار محاكاة",
+    "hub.forkMockBody":
+      "محاكاة آيلتس أكاديمي كاملة — ٤ مهارات، توقيت حقيقي، تقييم بالذكاء الاصطناعي ومراجعة بشرية. بدون التسجيل في دورة.",
+    "hub.forkMockMeta": "من ١٦٩ ريال · ~٣ ساعات · ٥ محاكاة",
+    "hub.forkMockCta": "عرض المحاكاة ←",
+    "mockExams.heroEyebrow": "آيلتس أكاديمي · محاكاة كاملة",
+    "mockExams.heroTitle": "محاكاة آيلتس أكاديمي كاملة",
+    "mockExams.heroSubtitle": "ظروف الاختبار الحقيقية. ذكاء اصطناعي + مراجعة بشرية. بدون التسجيل في دورة.",
+    "mockExams.heroTrust": "كل نتيجة كتابة وتحدث تُراجع من مدرب آيلتس معتمد في سبيكيفاي.",
+    "mockExams.individualTitle": "اختر محاكاتك",
+    "mockExams.individualSubtitle": "٥ محاكاة أكاديمية مميزة — اشترِ واحدة أو وفّر مع الباقة.",
+    "mockExams.skillsLine": "٤٠ استماع · ٤٠ قراءة · ٢ كتابة · تحدث",
+    "mockExams.durationLine": "~٣ ساعات · ظروف حقيقية",
+    "mockExams.retakesLine": "إعادة غير محدودة بعد الشراء",
+    "mockExams.buyMock": "اشترِ محاكاة #{n}",
+    "mockExams.startMock": "ابدأ محاكاة #{n} ←",
+    "mockExams.packsTitle": "قيمة أفضل — باقات المحاكاة",
+    "mockExams.packsSubtitle": "وفّر عند شراء عدة محاكاة.",
+    "mockExams.pack3Name": "باقة ٣ محاكاة",
+    "mockExams.pack5Name": "باقة ٥ محاكاة",
+    "mockExams.buypack3": "اشترِ باقة ٣",
+    "mockExams.buypack5": "اشترِ باقة ٥",
+    "mockExams.pack3Unlocks": "تفتح المحاكاة #١ و#٢ و#٣",
+    "mockExams.pack5Unlocks": "تفتح كل المحاكاة الخمس · صالحة ٦ أشهر",
+    "mockExams.bestValue": "أفضل قيمة",
+    "mockExams.acceleratorIncluded": "خطة Accelerator تشمل كل المحاكاة الخمس.",
+    "mockExams.goToLobby": "اذهب للمحاكاة",
+    "mockExams.footerNote": "شراء المحاكاة فقط يفتح lobby المحاكاة — وليس لوحة الدورة الكاملة.",
+    "mockExams.acceleratorUpsell": "تريد دروساً وتدريباً يومياً أيضاً؟",
+    "mockExams.browseAccelerator": "تصفّح دورات Accelerator",
   },
 };
 
@@ -144,6 +222,13 @@ export function MarketingLocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      const params = new URLSearchParams(window.location.search);
+      const urlLang = params.get("lang");
+      if (urlLang === "ar" || urlLang === "en") {
+        setLangState(urlLang);
+        localStorage.setItem(STORAGE_KEY, urlLang);
+        return;
+      }
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === "ar" || stored === "en") setLangState(stored);
     } catch {

@@ -60,7 +60,7 @@ export async function POST(request) {
 
     const { data: inProgress } = await supabase
       .from("mock_test_attempts")
-      .select("id, mock_number, created_at, exam_content")
+      .select("id, mock_number, created_at, exam_content, student_id")
       .eq("student_id", studentId)
       .eq("status", "in_progress")
       .order("created_at", { ascending: false })
@@ -71,6 +71,13 @@ export async function POST(request) {
       inProgress?.exam_content?.examVariant === "general" ? "general" : "academic";
 
     if (inProgress?.id && inProgressVariant === examVariant) {
+      const authSession = await getServerSession(authOptions);
+      if (
+        authSession?.user?.id &&
+        String(inProgress.student_id ?? studentId) !== String(authSession.user.id)
+      ) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
       return NextResponse.json({
         attemptId: inProgress.id,
         studentId,
@@ -78,6 +85,37 @@ export async function POST(request) {
         mockNumber: inProgress.mock_number ?? mockNumber,
         resumed: true,
       });
+    }
+
+    if (examVariant === "academic" && mockNumber) {
+      const authSession = await getServerSession(authOptions);
+      if (!authSession?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const { data: userRow } = await supabase
+        .from("users")
+        .select(
+          "id, role, payment_status, payment_comped_until, enrolled_programs, program_selected, purchase_intent"
+        )
+        .eq("id", authSession.user.id)
+        .maybeSingle();
+
+      const { loadMockAccessContext, canStartMock } = await import(
+        "@/lib/mock-test/loadMockAccessContext"
+      );
+
+      const accessCtx = await loadMockAccessContext(
+        supabase,
+        userRow ?? { id: authSession.user.id, role: authSession.user.role ?? "student" }
+      );
+
+      if (!canStartMock(accessCtx, mockNumber)) {
+        return NextResponse.json(
+          { error: "Purchase this mock exam to start a new attempt." },
+          { status: 403 }
+        );
+      }
     }
 
     let examContent = { examVariant, mockNumber };

@@ -9,6 +9,7 @@ import { hashPassword } from "@/lib/password";
 import { trackFromEnrollmentSlug } from "@/lib/accelerator/tracks";
 import { normalizeSaudiPhone } from "@/lib/auth/phone";
 import { issueRegistrationVerifications } from "@/lib/auth/verification";
+import { isStepRegistrationOpen } from "@/lib/step/launchGate";
 
 export const runtime = "nodejs";
 
@@ -100,11 +101,19 @@ export async function POST(request) {
     const normalizedPhone = normalizeSaudiPhone(phone) ?? phone.trim();
 
     const isStepRegistration = registrationSlug === "step-test";
+    if (isStepRegistration && !isStepRegistrationOpen()) {
+      return NextResponse.json(
+        { error: "STEP registration is not open yet." },
+        { status: 403 }
+      );
+    }
+    const isMockExamRegistration = registrationSlug === "mock-exam";
     const isIeltsGeneralRegistration =
       registrationSlug === "ielts-general" ||
       courseSlug === "ielts-general" ||
       courseSlug.startsWith("ielts-gt");
     const isIeltsAcademicRegistration =
+      !isMockExamRegistration &&
       !isIeltsGeneralRegistration &&
       (programType === "ielts" ||
         registrationSlug === "ielts" ||
@@ -131,7 +140,14 @@ export async function POST(request) {
           : programType,
       ...(isStepRegistration
         ? { step_enrolled: true, enrolled_programs: ["step"] }
-        : isIeltsGeneralRegistration
+        : isMockExamRegistration
+          ? {
+              enrolled_programs: ["ielts"],
+              program_selected: "ielts",
+              purchase_intent: "mock_only",
+              onboarding_completed: true,
+            }
+          : isIeltsGeneralRegistration
           ? {
               enrolled_programs: ["ielts_general"],
               ...(purchasedTrack
@@ -200,8 +216,9 @@ export async function POST(request) {
       }
     }
 
+    let verificationDelivery = null;
     try {
-      await issueRegistrationVerifications(
+      verificationDelivery = await issueRegistrationVerifications(
         supabase,
         {
           id: newUser.id,
@@ -209,7 +226,11 @@ export async function POST(request) {
           email,
           phone: normalizedPhone,
         },
-        request
+        {
+          request,
+          program: registrationSlug || courseSlug || programType,
+          track: purchasedTrack ?? undefined,
+        }
       );
     } catch (verifyErr) {
       console.error("[auth/register] verification issue", verifyErr);
@@ -221,6 +242,7 @@ export async function POST(request) {
       name: fullName,
       programType,
       requiresVerification: true,
+      verificationDelivery,
     });
   } catch (err) {
     console.error("[auth/register]", err);

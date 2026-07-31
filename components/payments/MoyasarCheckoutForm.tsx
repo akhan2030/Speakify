@@ -17,7 +17,10 @@ type MoyasarCheckoutFormProps = {
   callbackUrl: string;
   description: string;
   studentId: string;
-  track: string;
+  /** Accelerator checkout — legacy metadata.track */
+  track?: string;
+  /** Mock checkout — product_type + mock_numbers in Moyasar metadata */
+  metadata?: Record<string, string>;
   onError?: (message: string) => void;
 };
 
@@ -31,6 +34,7 @@ export function MoyasarCheckoutForm({
   description,
   studentId,
   track,
+  metadata,
   onError,
 }: MoyasarCheckoutFormProps) {
   const reactId = useId();
@@ -42,6 +46,12 @@ export function MoyasarCheckoutForm({
     if (initialized.current || !scriptReady.current || !window.Moyasar?.init) return;
     initialized.current = true;
 
+    const paymentMetadata: Record<string, string> = {
+      student_id: studentId,
+      ...(track ? { track } : {}),
+      ...metadata,
+    };
+
     try {
       window.Moyasar.init({
         element: `#${elementId}`,
@@ -52,10 +62,7 @@ export function MoyasarCheckoutForm({
         callback_url: callbackUrl,
         supported_networks: ["mada", "visa", "mastercard"],
         methods: ["creditcard", "applepay", "stcpay"],
-        metadata: {
-          student_id: studentId,
-          track,
-        },
+        metadata: paymentMetadata,
         fixed_width: false,
         on_failure: (error: unknown) => {
           const msg =

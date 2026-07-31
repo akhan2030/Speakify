@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
 import { dashboardPathForStudentUser, normalizeEnrolledPrograms, parseRawEnrolledPrograms } from "@/lib/studentLoginRedirect";
 import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
-import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
+import { hasDashboardAccess, requiresProgrammePayment, isMockOnlyPurchaseIntent } from "@/lib/payments/access";
 import { resolveLegacyStudentRedirect } from "@/lib/legacyStudentRoutes";
 import {
   normalizeProgramType,
@@ -41,6 +41,7 @@ function paymentContextFromToken(token: {
   programSelected?: string;
   programType?: string;
   enrolledPrograms?: unknown;
+  purchaseIntent?: string;
 }) {
   const role = normalizeRole(token.role);
   const programType = normalizeProgramType(token.programType);
@@ -51,11 +52,19 @@ function paymentContextFromToken(token: {
     paymentCompedUntil: token.paymentCompedUntil,
     enrolledPrograms,
     programSelected: token.programSelected,
+    purchaseIntent: token.purchaseIntent,
   };
   return {
     requiresPayment: requiresProgrammePayment(accessUser),
     hasDashboardAccess: hasDashboardAccess(accessUser),
+    isMockOnly: isMockOnlyPurchaseIntent(token.purchaseIntent),
   };
+}
+
+const IELTS_MOCK_EXAM_PREFIX = "/dashboard/ielts/student/mock-exam";
+
+function isIeltsMockExamPath(pathname: string): boolean {
+  return pathname === IELTS_MOCK_EXAM_PREFIX || pathname.startsWith(`${IELTS_MOCK_EXAM_PREFIX}/`);
 }
 
 export default withAuth(
@@ -72,11 +81,12 @@ export default withAuth(
       paymentCompedUntil?: string;
       programSelected?: string;
       studentType?: string;
+      purchaseIntent?: string;
     };
     const role = normalizeRole(token?.role);
     const mustChangePassword = token?.mustChangePassword === true;
     let onboardingCompleted = token?.onboardingCompleted === true;
-    let { requiresPayment, hasDashboardAccess: dashboardAccess } =
+    let { requiresPayment, hasDashboardAccess: dashboardAccess, isMockOnly } =
       paymentContextFromToken(token);
     const { pathname } = req.nextUrl;
 
@@ -93,6 +103,7 @@ export default withAuth(
       if (bypass) {
         dashboardAccess = bypass.hasDashboardAccess;
         requiresPayment = bypass.requiresPayment;
+        isMockOnly = bypass.isMockOnly;
       }
     }
 
@@ -123,7 +134,8 @@ export default withAuth(
         onboardingCompleted &&
         requiresPayment &&
         !dashboardAccess &&
-        pathname.startsWith("/dashboard")
+        pathname.startsWith("/dashboard") &&
+        !(isMockOnly && isIeltsMockExamPath(pathname))
       ) {
         return NextResponse.redirect(new URL("/checkout?reason=payment_required", req.url));
       }
@@ -131,7 +143,8 @@ export default withAuth(
       if (
         onboardingCompleted &&
         dashboardAccess &&
-        (pathname === "/checkout" || pathname.startsWith("/checkout/"))
+        (pathname === "/checkout" ||
+          (pathname.startsWith("/checkout/") && !pathname.startsWith("/checkout/mock")))
       ) {
         const home = dashboardPathForStudentUser({
           role,
@@ -203,6 +216,12 @@ export default withAuth(
 
     if (pathname === "/dashboard/home" && role === "admin") {
       return NextResponse.redirect(new URL("/dashboard/admin", req.url));
+    }
+
+    if (role === "student" && onboardingCompleted && isMockOnly) {
+      if (pathname.startsWith("/dashboard") && !isIeltsMockExamPath(pathname)) {
+        return NextResponse.redirect(new URL(IELTS_MOCK_EXAM_PREFIX, req.url));
+      }
     }
 
     if (role === "student" && onboardingCompleted) {

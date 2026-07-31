@@ -104,6 +104,8 @@ type DbUser = {
 
   programSelected: string | null;
 
+  purchaseIntent: string | null;
+
   studentType: string;
 
 };
@@ -153,6 +155,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
   const programSelected = data.program_selected ?? null;
 
+  const purchaseIntent = data.purchase_intent ?? null;
+
   const studentType = String(
     (data as { student_type?: string | null }).student_type ?? "self_study"
   );
@@ -181,6 +185,8 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     programSelected,
 
+    purchaseIntent,
+
     studentType,
 
   };
@@ -202,6 +208,7 @@ function applyDbUserToAuthToken(token: Record<string, unknown>, dbUser: DbUser) 
   token.paymentStatus = dbUser.paymentStatus;
   token.paymentCompedUntil = dbUser.paymentCompedUntil;
   token.programSelected = dbUser.programSelected;
+  token.purchaseIntent = dbUser.purchaseIntent;
   token.studentType = dbUser.studentType;
   token.hasDashboardAccess = hasDashboardAccess({
     role: dbUser.role,
@@ -209,11 +216,13 @@ function applyDbUserToAuthToken(token: Record<string, unknown>, dbUser: DbUser) 
     paymentCompedUntil: dbUser.paymentCompedUntil,
     enrolledPrograms: dbUser.enrolledPrograms,
     programSelected: dbUser.programSelected,
+    purchaseIntent: dbUser.purchaseIntent,
   });
   token.requiresPayment = requiresProgrammePayment({
     role: dbUser.role,
     enrolledPrograms: dbUser.enrolledPrograms,
     programSelected: dbUser.programSelected,
+    purchaseIntent: dbUser.purchaseIntent,
   });
 }
 
@@ -462,6 +471,7 @@ export const authOptions: NextAuthOptions = {
         programType
       );
       let programSelected = (token as any).programSelected ?? null;
+      let purchaseIntent = (token as any).purchaseIntent ?? null;
       let paymentStatus = (token as any).paymentStatus ?? "unpaid";
       let paymentCompedUntil = (token as any).paymentCompedUntil ?? null;
       let onboardingCompleted = (token as any).onboardingCompleted === true;
@@ -476,6 +486,7 @@ export const authOptions: NextAuthOptions = {
             dbUser.programType
           );
           programSelected = dbUser.programSelected;
+          purchaseIntent = dbUser.purchaseIntent;
           paymentStatus = dbUser.paymentStatus;
           paymentCompedUntil = dbUser.paymentCompedUntil;
           onboardingCompleted = dbUser.onboardingCompleted;
@@ -511,13 +522,17 @@ export const authOptions: NextAuthOptions = {
         paymentCompedUntil,
         enrolledPrograms,
         programSelected,
+        purchaseIntent,
       });
 
       (session.user as any).requiresPayment = requiresProgrammePayment({
         role: normalizeRole((token as any).role),
         enrolledPrograms,
         programSelected,
+        purchaseIntent,
       });
+
+      (session.user as any).purchaseIntent = purchaseIntent;
 
       (session.user as any).programSelected = programSelected;
 
