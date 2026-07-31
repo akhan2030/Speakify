@@ -6,8 +6,6 @@ import Link from "next/link";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { useSession } from "next-auth/react";
-
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { PageSpinner } from "@/components/StudentSidebar";
@@ -462,8 +460,6 @@ function MockExamCard({
 
 export default function IeltsMockExamPage() {
 
-  const { data: session } = useSession();
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedMockNumber = Number(searchParams.get("mock"));
@@ -518,18 +514,6 @@ export default function IeltsMockExamPage() {
     };
 
   }, []);
-
-
-
-  const displayName =
-
-    pageData?.studentName ||
-
-    session?.user?.name ||
-
-    session?.user?.email?.split("@")[0] ||
-
-    "Student";
 
 
 
@@ -631,10 +615,6 @@ export default function IeltsMockExamPage() {
 
 
 
-  const target = pageData?.targetBand ?? 7;
-
-  const readiness = pageData?.readinessPercent ?? 0;
-
   const mocks = pageData?.availableMocks ?? [];
 
   const currentMock = mocks.find((m) => m.isCurrent) ?? mocks.find((m) => m.status === "available");
@@ -643,74 +623,41 @@ export default function IeltsMockExamPage() {
 
   return (
 
-    <main className="min-h-screen flex-1 bg-white p-4 sm:p-6">
+    <main className="mx-auto max-w-6xl p-4 sm:p-6">
 
       <div
-
-        className="mb-6 rounded-2xl px-4 py-5 sm:px-6"
-
+        className="mb-8 rounded-2xl px-4 py-6 sm:px-6"
         style={{ backgroundColor: NAVY }}
-
       >
-
-        <p className="text-sm sm:text-base" style={{ color: GOLD }}>
-
-          Welcome back, <strong className="text-white">{displayName}</strong> — Your
-
-          target: Band <strong>{target}</strong> — Readiness:{" "}
-
-          <strong>{readiness}%</strong>
-
+        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: GOLD }}>
+          IELTS Academic · Full mock exams
         </p>
-
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/15">
-
-          <div
-
-            className="h-full rounded-full transition-all"
-
-            style={{ width: `${Math.min(100, readiness)}%`, backgroundColor: GOLD }}
-
-          />
-
-        </div>
-
+        <h1 className="mt-2 text-2xl font-extrabold text-white sm:text-3xl">
+          Your mock exam lobby
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+          Full 4-skill Academic simulations — real timing, AI scoring, and human Writing/Speaking review.
+          Choose a mock below to start or view a past report.
+        </p>
       </div>
 
-
-
       <div className="lg:flex lg:items-start lg:gap-8">
-
         <div className="min-w-0 flex-1">
 
-          <header className="mb-8">
-
-            <h1 className="text-xl font-bold sm:text-2xl lg:text-3xl" style={{ color: NAVY }}>
-
-              IELTS Mock Exams
-
-            </h1>
-
-            <p className="mt-2 max-w-2xl text-sm text-slate-500">
-
-              Full exam simulation under real IELTS conditions.
-
+          <header className="mb-6">
+            <h2 className="text-lg font-bold sm:text-xl" style={{ color: NAVY }}>
+              Available mocks
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Five distinct Academic mocks — unlimited retakes after purchase.
             </p>
-
           </header>
 
-
-
           <p
-
             className="mb-3 text-xs font-bold uppercase tracking-widest"
-
             style={{ color: TEAL }}
-
           >
-
             Exam simulation
-
           </p>
 
 
