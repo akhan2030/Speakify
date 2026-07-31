@@ -58,8 +58,7 @@ function catalogFallbackMocks() {
   return ACADEMIC_MOCK_CATALOG.map((item, index) => ({
     id: null,
     mockNumber: item.mockNumber,
-    topic: item.theme,
-    readingFocus: item.readingFocus,
+    topic: "Full IELTS Academic Mock Exam",
     generationDate: null,
     status: "available",
     overallBand: null,
@@ -193,7 +192,7 @@ export async function GET() {
       }
     }
 
-    // Always surface all 5 Academic catalog mocks with correct themes.
+    // Always surface all 5 Academic catalog mocks (numbered, no public theme labels).
     let availableMocks = ACADEMIC_MOCK_CATALOG.map((item) => {
       const row = generatedByNumber.get(item.mockNumber);
       const attempt = attemptsByMockNumber.get(item.mockNumber);
@@ -201,8 +200,7 @@ export async function GET() {
       return {
         id: row?.id ?? null,
         mockNumber: item.mockNumber,
-        topic: item.theme,
-        readingFocus: item.readingFocus,
+        topic: "Full IELTS Academic Mock Exam",
         generationDate: row?.generation_date ?? null,
         status: completed ? "completed" : "available",
         overallBand: completed ? attempt.overall_band : null,

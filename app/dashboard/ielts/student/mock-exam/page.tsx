@@ -39,7 +39,6 @@ type MockItem = {
   id: number | null;
   mockNumber: number;
   topic: string;
-  readingFocus?: string | null;
   generationDate: string | null;
   status: "available" | "completed";
   overallBand: number | null;
@@ -107,8 +106,7 @@ function catalogFallbackMocks(highlightMock?: number): MockItem[] {
   return ACADEMIC_MOCK_CATALOG.map((item) => ({
     id: null,
     mockNumber: item.mockNumber,
-    topic: item.theme,
-    readingFocus: item.readingFocus,
+    topic: "Full IELTS Academic Mock Exam",
     generationDate: null,
     status: "available" as const,
     overallBand: null,
@@ -154,10 +152,6 @@ function MockExamCard({
   const canStart = mock.canStart !== false && !isCompleted;
   const borderColor = isCurrent ? GOLD : isCompleted ? "#e2e8f0" : TEAL;
   const bgColor = isCurrent ? NAVY : isCompleted ? "#f8fafc" : "#ffffff";
-  const catalog = ACADEMIC_MOCK_CATALOG.find((c) => c.mockNumber === mock.mockNumber);
-  const topic = mock.topic || catalog?.theme || "Full IELTS Academic Mock Exam";
-  const focus = mock.readingFocus || catalog?.readingFocus || null;
-
   return (
     <div
       className="relative overflow-hidden rounded-2xl border-2 p-4 shadow-md sm:p-6"
@@ -177,17 +171,8 @@ function MockExamCard({
         className="text-lg font-bold sm:text-xl"
         style={{ color: isCurrent ? "#ffffff" : NAVY }}
       >
-        {topic}
+        Full IELTS Academic Mock Exam
       </h2>
-
-      {focus ? (
-        <p
-          className="mt-1 text-sm font-medium"
-          style={{ color: isCurrent ? "#f5e6c8" : TEAL }}
-        >
-          {focus}
-        </p>
-      ) : null}
 
       <p
         className="mt-1 text-sm"
@@ -268,7 +253,7 @@ function MockExamCard({
               Starting…
             </span>
           ) : (
-            `Start Mock ${formatMockNumber(mock.mockNumber)} — ${topic}`
+            `Start Mock Exam ${formatMockNumber(mock.mockNumber)}`
           )}
         </button>
       ) : !isCompleted ? (
@@ -446,7 +431,7 @@ export default function IeltsMockExamPage() {
               Available mocks
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Five distinct Academic mocks — each with its own theme and content.
+              Five distinct Academic mocks — unlimited retakes after purchase.
             </p>
           </header>
 

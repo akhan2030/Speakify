@@ -112,8 +112,9 @@ export default function MockExamsLanding() {
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                   Mock #{mock.mockNumber}
                 </p>
-                <h3 className="mt-2 text-base font-bold text-[#0d1b35]">{mock.theme}</h3>
-                <p className="mt-1 text-xs text-slate-500">{mock.readingFocus}</p>
+                <h3 className="mt-2 text-base font-bold text-[#0d1b35]">
+                  Full IELTS Academic Mock Exam
+                </h3>
                 <ul className="mt-4 flex-1 space-y-1 text-xs text-slate-600">
                   <li>{t("mockExams.skillsLine")}</li>
                   <li>{t("mockExams.durationLine")}</li>

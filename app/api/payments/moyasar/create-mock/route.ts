@@ -170,7 +170,7 @@ export async function POST(request: Request) {
       amountHalalas: payment.amountHalalas,
       description:
         product === "single" && mockMeta
-          ? `IELTS Academic Mock #${mockNumber} — ${mockMeta.theme}`
+          ? `IELTS Academic Mock #${mockNumber}`
           : product === "pack3"
             ? "IELTS Academic 3-Mock Pack (Mocks #1–#3)"
             : "IELTS Academic 5-Mock Pack (Mocks #1–#5)",

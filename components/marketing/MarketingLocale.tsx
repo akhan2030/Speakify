@@ -91,7 +91,7 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
       "Every Writing and Speaking result is reviewed by a certified Speakify IELTS trainer.",
     "mockExams.individualTitle": "Choose your mock",
     "mockExams.individualSubtitle":
-      "Five distinct Academic mocks — buy individually or save with a pack below.",
+      "Five Academic mocks — buy individually or save with a pack below.",
     "mockExams.skillsLine": "40 Listening · 40 Reading · 2 Writing · Speaking",
     "mockExams.durationLine": "~3 hours · Real exam conditions",
     "mockExams.retakesLine": "Unlimited retakes after purchase",
