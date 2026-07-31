@@ -1,7 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
-import { dashboardPathForStudentUser, normalizeEnrolledPrograms } from "@/lib/studentLoginRedirect";
+import { dashboardPathForStudentUser, normalizeEnrolledPrograms, parseRawEnrolledPrograms } from "@/lib/studentLoginRedirect";
 import { dashboardPathForRole, normalizeRole } from "@/lib/roles";
 import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
 import { resolveLegacyStudentRedirect } from "@/lib/legacyStudentRoutes";
@@ -12,6 +12,27 @@ import {
   isIeltsVariantProgram,
 } from "@/lib/programType";
 import { isInPersonStudent } from "@/lib/classroom/studentTypeRouter";
+import {
+  fetchGatewayBypassStatus,
+  gatewayIsComplete,
+} from "@/lib/auth/gatewayStatus";
+
+function isStepStudentToken(token: {
+  stepEnrolled?: boolean;
+  enrolledPrograms?: unknown;
+  programSelected?: unknown;
+}): boolean {
+  const raw = parseRawEnrolledPrograms(token.enrolledPrograms);
+  const programSelected = String(token.programSelected ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  return (
+    token.stepEnrolled === true ||
+    raw.includes("step") ||
+    programSelected === "step"
+  );
+}
 
 function paymentContextFromToken(token: {
   role?: string;
@@ -38,9 +59,10 @@ function paymentContextFromToken(token: {
 }
 
 export default withAuth(
-  function middleware(req) {
+  async function middleware(req) {
     const token = req.nextauth.token as {
       role?: string;
+      sub?: string;
       mustChangePassword?: boolean;
       onboardingCompleted?: boolean;
       programType?: string;
@@ -53,9 +75,26 @@ export default withAuth(
     };
     const role = normalizeRole(token?.role);
     const mustChangePassword = token?.mustChangePassword === true;
-    const onboardingCompleted = token?.onboardingCompleted === true;
-    const { requiresPayment, hasDashboardAccess } = paymentContextFromToken(token);
+    let onboardingCompleted = token?.onboardingCompleted === true;
+    let { requiresPayment, hasDashboardAccess: dashboardAccess } =
+      paymentContextFromToken(token);
     const { pathname } = req.nextUrl;
+
+    if (
+      role === "student" &&
+      token?.sub &&
+      !shouldSkipGateway(role) &&
+      (!onboardingCompleted || (requiresPayment && !dashboardAccess))
+    ) {
+      const bypass = await fetchGatewayBypassStatus(String(token.sub));
+      if (gatewayIsComplete(bypass)) {
+        onboardingCompleted = true;
+      }
+      if (bypass) {
+        dashboardAccess = bypass.hasDashboardAccess;
+        requiresPayment = bypass.requiresPayment;
+      }
+    }
 
     if (mustChangePassword && pathname !== "/change-password") {
       return NextResponse.redirect(new URL("/change-password", req.url));
@@ -67,7 +106,7 @@ export default withAuth(
       }
 
       if (onboardingCompleted && pathname === "/onboarding") {
-        if (requiresPayment && !hasDashboardAccess) {
+        if (requiresPayment && !dashboardAccess) {
           return NextResponse.redirect(new URL("/checkout", req.url));
         }
         const home = dashboardPathForStudentUser({
@@ -83,7 +122,7 @@ export default withAuth(
       if (
         onboardingCompleted &&
         requiresPayment &&
-        !hasDashboardAccess &&
+        !dashboardAccess &&
         pathname.startsWith("/dashboard")
       ) {
         return NextResponse.redirect(new URL("/checkout?reason=payment_required", req.url));
@@ -91,7 +130,7 @@ export default withAuth(
 
       if (
         onboardingCompleted &&
-        hasDashboardAccess &&
+        dashboardAccess &&
         (pathname === "/checkout" || pathname.startsWith("/checkout/"))
       ) {
         const home = dashboardPathForStudentUser({
@@ -167,6 +206,16 @@ export default withAuth(
     }
 
     if (role === "student" && onboardingCompleted) {
+      const stepStudent = isStepStudentToken({
+        stepEnrolled: token?.stepEnrolled,
+        enrolledPrograms: token?.enrolledPrograms,
+        programSelected: token?.programSelected,
+      });
+
+      if (stepStudent && pathname.startsWith("/dashboard/ielts")) {
+        return NextResponse.redirect(new URL("/dashboard/step/student", req.url));
+      }
+
       const programType = resolveStudentProgramType({
         programType: token?.programType,
         enrolledPrograms: token?.enrolledPrograms,
@@ -182,7 +231,7 @@ export default withAuth(
         }
       }
 
-      if (isIeltsVariantProgram(programType)) {
+      if (!stepStudent && isIeltsVariantProgram(programType)) {
         const mirrored = mirrorIeltsStudentDashboardPath(pathname, programType);
         if (mirrored !== pathname) {
           const url = new URL(mirrored, req.url);

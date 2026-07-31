@@ -182,10 +182,11 @@ function LoginForm() {
         enrolledPrograms?: unknown;
         stepEnrolled?: boolean;
         onboardingCompleted?: boolean;
+        programSelected?: string;
       };
 
       const callbackPath = safeCallbackPath(callbackUrl);
-      if (callbackPath?.startsWith("/dashboard/ielts")) {
+      if (callbackPath?.startsWith("/dashboard/")) {
         window.location.href = callbackPath;
         return;
       }
@@ -197,6 +198,7 @@ function LoginForm() {
         programType: sessionUser.programType,
         enrolledPrograms: sessionUser.enrolledPrograms,
         stepEnrolled: sessionUser.stepEnrolled,
+        programSelected: sessionUser.programSelected,
       });
 
       window.location.href = redirectPath;

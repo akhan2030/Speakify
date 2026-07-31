@@ -154,7 +154,7 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
     .from("users")
 
-    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, payment_comped_until, program_selected, student_type")
+    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, payment_comped_until, program_selected")
 
     .eq("email", normalizedEmail)
 
@@ -265,6 +265,36 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
   };
 
+}
+
+
+
+function applyDbUserToAuthToken(token: Record<string, unknown>, dbUser: DbUser) {
+  token.id = dbUser.id;
+  token.sub = dbUser.id;
+  token.role = dbUser.role;
+  token.email = dbUser.email;
+  token.name = dbUser.name;
+  token.programType = dbUser.programType;
+  token.enrolledPrograms = dbUser.enrolledPrograms;
+  token.stepEnrolled = dbUser.stepEnrolled;
+  token.onboardingCompleted = dbUser.onboardingCompleted;
+  token.paymentStatus = dbUser.paymentStatus;
+  token.paymentCompedUntil = dbUser.paymentCompedUntil;
+  token.programSelected = dbUser.programSelected;
+  token.studentType = dbUser.studentType;
+  token.hasDashboardAccess = hasDashboardAccess({
+    role: dbUser.role,
+    paymentStatus: dbUser.paymentStatus,
+    paymentCompedUntil: dbUser.paymentCompedUntil,
+    enrolledPrograms: dbUser.enrolledPrograms,
+    programSelected: dbUser.programSelected,
+  });
+  token.requiresPayment = requiresProgrammePayment({
+    role: dbUser.role,
+    enrolledPrograms: dbUser.enrolledPrograms,
+    programSelected: dbUser.programSelected,
+  });
 }
 
 
@@ -510,107 +540,52 @@ export const authOptions: NextAuthOptions = {
         if ((session as { paymentStatus?: string }).paymentStatus) {
           (token as any).paymentStatus = (session as { paymentStatus?: string }).paymentStatus;
         }
+        if ((session as { paymentCompedUntil?: string | null }).paymentCompedUntil !== undefined) {
+          (token as any).paymentCompedUntil = (
+            session as { paymentCompedUntil?: string | null }
+          ).paymentCompedUntil;
+        }
         if ((session as { requiresPayment?: boolean }).requiresPayment === true) {
           (token as any).requiresPayment = true;
         }
       }
 
-      if (user) {
+      const email = String((token as any).email ?? (user as { email?: string } | undefined)?.email ?? "")
+        .trim()
+        .toLowerCase();
 
-        const email = String((user as any).email ?? token.email ?? "")
-
-          .trim()
-
-          .toLowerCase();
-
-        const dbUser = email ? await fetchUserByEmail(email) : null;
-
-
-
+      if (email) {
+        const dbUser = await fetchUserByEmail(email);
         if (dbUser) {
-
-          token.id = dbUser.id;
-
-          token.sub = dbUser.id;
-
-          token.role = dbUser.role;
-
-          token.email = dbUser.email;
-
-          token.name = dbUser.name;
-
-          (token as any).programType = dbUser.programType;
-
-          (token as any).enrolledPrograms = dbUser.enrolledPrograms;
-
-          (token as any).stepEnrolled = dbUser.stepEnrolled;
-
-          (token as any).onboardingCompleted = dbUser.onboardingCompleted;
-
-          (token as any).paymentStatus = dbUser.paymentStatus;
-
-          (token as any).paymentCompedUntil = dbUser.paymentCompedUntil;
-
-          (token as any).programSelected = dbUser.programSelected;
-
-          (token as any).studentType = (dbUser as { studentType?: string }).studentType ?? "self_study";
-
-          (token as any).hasDashboardAccess = hasDashboardAccess({
-            role: dbUser.role,
-            paymentStatus: dbUser.paymentStatus,
-            paymentCompedUntil: dbUser.paymentCompedUntil,
-            enrolledPrograms: dbUser.enrolledPrograms,
-            programSelected: dbUser.programSelected,
-          });
-
-          (token as any).requiresPayment = requiresProgrammePayment({
-            role: dbUser.role,
-            enrolledPrograms: dbUser.enrolledPrograms,
-            programSelected: dbUser.programSelected,
-          });
-
-        } else {
-
+          applyDbUserToAuthToken(token as Record<string, unknown>, dbUser);
+        } else if (user) {
           token.role = normalizeRole((user as any).role);
-
           token.id = (user as any).id;
-
           token.sub = (user as any).id ?? token.sub;
-
           token.email = (user as any).email ?? token.email;
-
           token.name = (user as any).name ?? token.name;
-
-          (token as any).programType = normalizeProgramType(
-
-            (user as any).programType
-
-          );
-
+          (token as any).programType = normalizeProgramType((user as any).programType);
         }
-
-
-
-        if ((user as any).mustChangePassword === true) {
-
-          (token as any).mustChangePassword = true;
-
-        }
-
+      } else if (user) {
+        token.role = normalizeRole((user as any).role);
+        token.id = (user as any).id;
+        token.sub = (user as any).id ?? token.sub;
+        token.email = (user as any).email ?? token.email;
+        token.name = (user as any).name ?? token.name;
+        (token as any).programType = normalizeProgramType((user as any).programType);
       }
 
-
+      if (user && (user as { mustChangePassword?: boolean }).mustChangePassword === true) {
+        (token as any).mustChangePassword = true;
+      }
 
       token.role = normalizeRole(token.role);
 
       if ((token as any).programType == null) {
-
         (token as any).programType = "ielts";
-
       }
 
       return token;
-
     },
 
     async session({ session, token }) {

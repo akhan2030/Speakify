@@ -98,25 +98,29 @@ export function resolveStudentDashboardPath(input: {
   const programs = normalizeEnrolledPrograms(input.enrolledPrograms, programType);
   const raw = parseRawEnrolledPrograms(input.enrolledPrograms);
   const stepEnrolled = input.stepEnrolled === true;
+  const programSelected = String(input.programSelected ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  const isStepStudent =
+    stepEnrolled || raw.includes("step") || programSelected === "step";
 
   const isGeneralTraining =
     programType === "ielts_general" ||
     raw.includes("ielts_general") ||
-    String(input.programSelected ?? "")
-      .trim()
-      .toLowerCase()
-      .replace(/-/g, "_") === "ielts_general";
+    programSelected === "ielts_general";
 
   // Stale step_enrolled flag with IELTS-only enrollment → IELTS dashboard (not STEP diagnostic)
   if (
     stepEnrolled &&
     programs.includes("ielts") &&
-    !raw.includes("step")
+    !raw.includes("step") &&
+    programSelected !== "step"
   ) {
     return studentDashboardPath("ielts");
   }
 
-  if (stepEnrolled) {
+  if (isStepStudent) {
     const hasStepAndIelts = raw.includes("step") && raw.includes("ielts");
     const hasPathway = programs.includes("pathway");
     const hasOtherSpecialty =
