@@ -1,3 +1,5 @@
+import { parseEnrollmentSlugs } from "@/lib/programType";
+
 export type PaymentStatus = "unpaid" | "pending" | "paid" | "comped" | "refunded";
 
 export type PaymentAccessUser = {
@@ -24,6 +26,15 @@ export const PAID_PROGRAMMES = ["ielts", "ielts_general"] as const;
 export function requiresProgrammePayment(user: PaymentAccessUser): boolean {
   if (user.role === "admin" || user.role === "teacher") return false;
 
+  const selected = String(user.programSelected ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  if (selected === "step") return false;
+
+  const slugs = parseEnrollmentSlugs(user.enrolledPrograms);
+  if (slugs.includes("step")) return false;
+
   const programs = Array.isArray(user.enrolledPrograms)
     ? user.enrolledPrograms.map((p) => String(p).trim().toLowerCase())
     : [];
@@ -32,7 +43,6 @@ export function requiresProgrammePayment(user: PaymentAccessUser): boolean {
     return true;
   }
 
-  const selected = String(user.programSelected ?? "").trim().toLowerCase();
   if ((PAID_PROGRAMMES as readonly string[]).includes(selected)) return true;
 
   return false;

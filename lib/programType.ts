@@ -8,17 +8,53 @@ export { mirrorIeltsStudentDashboardPath } from "@/lib/ieltsStudentRouteMirror";
 export type CoreProgramType = "pathway" | "ielts" | "ielts_general" | "classroom";
 export type ProgramType = CoreProgramType | SpecialtyProgramId;
 
+/** Multi-programme students with no resolved dashboard route land here. */
+export const PROGRAMME_PICKER_PATH = "/dashboard/home";
+
 const SPECIALTY_SET = new Set<string>(SPECIALTY_PROGRAM_IDS);
 
 export function isSpecialtyProgramType(value: string): value is SpecialtyProgramId {
   return SPECIALTY_SET.has(value);
 }
 
-export function normalizeProgramType(value: unknown): ProgramType {
+/** Parse enrolled_programs into lowercase slug list (preserves step, etc.). */
+export function parseEnrollmentSlugs(value: unknown): string[] {
+  const out: string[] = [];
+
+  const add = (raw: string) => {
+    const v = raw.trim().toLowerCase().replace(/-/g, "_");
+    if (v) out.push(v);
+  };
+
+  if (Array.isArray(value)) {
+    for (const entry of value) add(String(entry));
+  } else if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        for (const entry of parsed) add(String(entry));
+      } else {
+        for (const part of value.split(",")) add(part);
+      }
+    } catch {
+      for (const part of value.split(",")) add(part);
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Map a stored programme slug to a known LMS programme type.
+ * Returns null for empty, STEP, TOEFL, or any unrecognized slug — never silently "ielts".
+ */
+export function normalizeProgramType(value: unknown): ProgramType | null {
   const v = String(value ?? "")
     .trim()
     .toLowerCase()
     .replace(/-/g, "_");
+
+  if (!v) return null;
 
   if (v === "pathway" || v === "english_pathway" || v === "english-pathway") {
     return "pathway";
@@ -37,11 +73,21 @@ export function normalizeProgramType(value: unknown): ProgramType {
   if (v === "business_english" || v === "business") return "business_english";
   if (v === "legal_english" || v === "legal") return "legal_english";
   if (v === "kids_english" || v === "kids") return "kids_english";
-  if (v === "ielts" || v === "toefl" || v === "step") return "ielts";
-  return "ielts";
+  if (v === "ielts") return "ielts";
+
+  if (v === "step" || v === "step_test" || v === "toefl") {
+    return null;
+  }
+
+  if (typeof process !== "undefined") {
+    console.warn(
+      `[programType] unrecognized program slug "${v}" — routing to programme picker`
+    );
+  }
+  return null;
 }
 
-export function studentDashboardPath(programType: ProgramType): string {
+export function studentDashboardPath(programType: ProgramType | null): string {
   switch (programType) {
     case "classroom":
       return "/classroom";
@@ -55,20 +101,22 @@ export function studentDashboardPath(programType: ProgramType): string {
       return "/dashboard/legal-english/student";
     case "kids_english":
       return "/dashboard/kids-english/student";
-    default:
+    case "ielts":
       return "/dashboard/ielts/student";
+    default:
+      return PROGRAMME_PICKER_PATH;
   }
 }
 
 export function isIeltsVariantProgram(
-  program: ProgramType
+  program: ProgramType | null | undefined
 ): program is "ielts" | "ielts_general" {
   return program === "ielts" || program === "ielts_general";
 }
 
 export function dashboardPathForUser(
   role: string | null | undefined,
-  programType: ProgramType
+  programType: ProgramType | null
 ): string {
   if (role === "teacher") return "/dashboard/teacher";
   return studentDashboardPath(programType);
@@ -99,16 +147,22 @@ export function resolveStudentProgramType(input: {
   programType?: unknown;
   enrolledPrograms?: unknown;
   programSelected?: unknown;
-}): ProgramType {
+}): ProgramType | null {
+  const slugs = parseEnrollmentSlugs(input.enrolledPrograms);
+  const selected = String(input.programSelected ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+
+  if (selected === "step" || slugs.includes("step")) {
+    return null;
+  }
+
   const base = normalizeProgramType(input.programType);
   const enrolled = normalizeEnrolledProgramsForGuard(
     input.enrolledPrograms,
     base
   );
-  const selected = String(input.programSelected ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/-/g, "_");
 
   if (selected === "ielts_general" && enrolled.includes("ielts_general")) {
     return "ielts_general";
@@ -120,17 +174,18 @@ export function resolveStudentProgramType(input: {
     return "ielts_general";
   }
   if (enrolled.length === 1) return enrolled[0];
+  if (enrolled.length > 1) return null;
   return base;
 }
 
 function normalizeEnrolledProgramsForGuard(
   value: unknown,
-  fallback: ProgramType
+  fallback: ProgramType | null
 ): ProgramType[] {
   const programs = new Set<ProgramType>();
   const add = (raw: string) => {
     const normalized = normalizeProgramType(raw);
-    programs.add(normalized);
+    if (normalized) programs.add(normalized);
   };
 
   if (Array.isArray(value)) {
@@ -146,7 +201,10 @@ function normalizeEnrolledProgramsForGuard(
     }
   }
 
-  if (programs.size === 0) programs.add(fallback);
+  if (programs.size === 0 && fallback) {
+    programs.add(fallback);
+  }
+
   return Array.from(programs);
 }
 
@@ -160,8 +218,8 @@ export function canAccessStudentDashboard(
   }
 ): boolean {
   const resolved = resolveStudentProgramType(input);
+  if (!resolved) return false;
 
-  // Academic and GT are separate dashboards — never cross-access by enrollment alone.
   if (isIeltsVariantProgram(expectedProgram) && isIeltsVariantProgram(resolved)) {
     return resolved === expectedProgram;
   }

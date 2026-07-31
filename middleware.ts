@@ -231,7 +231,7 @@ export default withAuth(
         }
       }
 
-      if (!stepStudent && isIeltsVariantProgram(programType)) {
+      if (!stepStudent && programType && isIeltsVariantProgram(programType)) {
         const mirrored = mirrorIeltsStudentDashboardPath(pathname, programType);
         if (mirrored !== pathname) {
           const url = new URL(mirrored, req.url);

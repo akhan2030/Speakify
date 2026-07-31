@@ -32,6 +32,8 @@ import {
 
 import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
 
+import { fetchUserRowByEmail } from "@/lib/auth/userSelect";
+
 
 
 function getSupabaseUrl() {
@@ -88,7 +90,7 @@ type DbUser = {
 
   role: string;
 
-  programType: ProgramType;
+  programType: ProgramType | null;
 
   enrolledPrograms: string[];
 
@@ -120,89 +122,7 @@ async function fetchUserByEmail(email: string): Promise<DbUser | null> {
 
   const supabase = getSupabase();
 
-  let data: {
-
-    id: string;
-
-    name: string | null;
-
-    email: string;
-
-    role: string;
-
-    program_type?: string | null;
-
-    enrolled_programs?: unknown;
-
-    step_enrolled?: boolean | null;
-
-    onboarding_completed?: boolean | null;
-
-    payment_status?: string | null;
-
-    payment_comped_until?: string | null;
-
-    program_selected?: string | null;
-
-  } | null = null;
-
-  let error: { message?: string } | null = null;
-
-
-
-  const full = await supabase
-
-    .from("users")
-
-    .select("id, name, email, role, program_type, enrolled_programs, step_enrolled, onboarding_completed, payment_status, payment_comped_until, program_selected")
-
-    .eq("email", normalizedEmail)
-
-    .maybeSingle();
-
-  data = full.data;
-
-  error = full.error;
-
-
-
-  if (error?.message?.includes("column")) {
-
-    const withProgram = await supabase
-
-      .from("users")
-
-      .select("id, name, email, role, program_type")
-
-      .eq("email", normalizedEmail)
-
-      .maybeSingle();
-
-    if (!withProgram.error) {
-
-      data = withProgram.data;
-
-      error = null;
-
-    } else {
-
-      const basic = await supabase
-
-        .from("users")
-
-        .select("id, name, email, role")
-
-        .eq("email", normalizedEmail)
-
-        .maybeSingle();
-
-      data = basic.data;
-
-      error = basic.error;
-
-    }
-
-  }
+  const { data, error } = await fetchUserRowByEmail(supabase, normalizedEmail);
 
 
 
@@ -370,73 +290,11 @@ export const authOptions: NextAuthOptions = {
 
           const supabase = getSupabase();
 
-          let data: {
-
-            id: string;
-
-            name: string | null;
-
-            email: string;
-
-            password: string;
-
-            role: string;
-
-            is_active?: boolean | null;
-
-            must_change_password?: boolean | null;
-
-            program_type?: string | null;
-
-            email_verified_at?: string | null;
-
-            phone_verified_at?: string | null;
-
-            phone?: string | null;
-
-          } | null = null;
-
-          let error: { message?: string } | null = null;
-
-
-
-          const full = await supabase
-
-            .from("users")
-
-            .select(
-
-              "id, name, email, password, role, is_active, must_change_password, program_type, email_verified_at, phone_verified_at, phone"
-
-            )
-
-            .eq("email", email)
-
-            .maybeSingle();
-
-          data = full.data;
-
-          error = full.error;
-
-
-
-          if (error?.message?.includes("column")) {
-
-            const basic = await supabase
-
-              .from("users")
-
-              .select("id, name, email, password, role")
-
-              .eq("email", email)
-
-              .maybeSingle();
-
-            data = basic.data;
-
-            error = basic.error;
-
-          }
+          const { data, error } = await fetchUserRowByEmail(
+            supabase,
+            email,
+            "password, is_active, must_change_password, email_verified_at, phone_verified_at, phone"
+          );
 
 
 
@@ -580,10 +438,6 @@ export const authOptions: NextAuthOptions = {
       }
 
       token.role = normalizeRole(token.role);
-
-      if ((token as any).programType == null) {
-        (token as any).programType = "ielts";
-      }
 
       return token;
     },

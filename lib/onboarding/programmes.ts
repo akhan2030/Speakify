@@ -1,5 +1,6 @@
 import type { GatewayProgramme } from "@/lib/onboarding/types";
 import { GATEWAY_QUESTION_COUNT } from "@/lib/onboarding/gatewayEngine";
+import { isStepPubliclyDiscoverable } from "@/lib/step/launchGate";
 
 export type OnboardingProgrammeOption = {
   id: GatewayProgramme;
@@ -9,8 +10,7 @@ export type OnboardingProgrammeOption = {
   assessmentLabel: string;
 };
 
-/** All Speakify programmes shown on onboarding Step 1. */
-export const ONBOARDING_PROGRAMME_OPTIONS: OnboardingProgrammeOption[] = [
+const ALL_ONBOARDING_PROGRAMME_OPTIONS: OnboardingProgrammeOption[] = [
   {
     id: "ielts",
     icon: "🎯",
@@ -69,6 +69,12 @@ export const ONBOARDING_PROGRAMME_OPTIONS: OnboardingProgrammeOption[] = [
   },
 ];
 
+/** Programmes shown on onboarding Step 1 (STEP only when publicly launched). */
+export const ONBOARDING_PROGRAMME_OPTIONS: OnboardingProgrammeOption[] =
+  isStepPubliclyDiscoverable()
+    ? ALL_ONBOARDING_PROGRAMME_OPTIONS
+    : ALL_ONBOARDING_PROGRAMME_OPTIONS.filter((p) => p.id !== "step");
+
 export const GATEWAY_PROGRAMME_IDS: GatewayProgramme[] = ONBOARDING_PROGRAMME_OPTIONS.map(
   (p) => p.id
 );
@@ -116,8 +122,11 @@ export function programTypeForGateway(programme: GatewayProgramme): string {
     case "ielts_general":
       return "ielts_general";
     case "step":
+      return "step";
     case "ielts":
+      return "ielts";
     case "toefl":
+      return "toefl";
     default:
       return "ielts";
   }

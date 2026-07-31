@@ -1,6 +1,7 @@
 import {
   isIeltsVariantProgram,
   studentDashboardPath,
+  PROGRAMME_PICKER_PATH,
   type ProgramType,
 } from "@/lib/programType";
 
@@ -9,7 +10,7 @@ const LEGACY_STUDENT_PREFIX = "/dashboard/student";
 /** Map legacy `/dashboard/student/*` URLs to programme-specific student routes. */
 export function resolveLegacyStudentRedirect(
   pathname: string,
-  programType: ProgramType
+  programType: ProgramType | null
 ): string | null {
   if (!pathname.startsWith(LEGACY_STUDENT_PREFIX)) return null;
 
@@ -52,6 +53,8 @@ export function resolveLegacyStudentRedirect(
   if (isIeltsVariantProgram(programType)) {
     return `${home}${rest}`;
   }
+
+  if (!programType) return PROGRAMME_PICKER_PATH;
 
   return `${home}${rest}`;
 }
