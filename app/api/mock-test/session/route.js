@@ -42,7 +42,7 @@ export async function POST(request) {
       String(body.examVariant ?? "").trim().toLowerCase() === "general"
         ? "general"
         : "academic";
-    const generatedMockTestId =
+    let generatedMockTestId =
       body.generatedMockTestId != null && body.generatedMockTestId !== ""
         ? Number(body.generatedMockTestId) || null
         : null;
@@ -119,31 +119,57 @@ export async function POST(request) {
     }
 
     let examContent = { examVariant, mockNumber };
-    if (generatedMockTestId) {
-      const { data: mockRow } = await supabase
-        .from("generated_mock_tests")
-        .select("*")
-        .eq("id", generatedMockTestId)
-        .maybeSingle();
-      if (mockRow) {
-        const { resolveAcademicMockBundle } = await import(
-          "@/lib/mock-test/resolveFullMockContent"
-        );
-        const bundle = resolveAcademicMockBundle({
-          ...mockRow,
-          generatedMockTestId: mockRow.id,
-        });
-        examContent = {
-          examVariant: "academic",
-          mockNumber: bundle.mockNumber,
-          generatedMockTestId: mockRow.id,
-          topic: bundle.topic,
-          reading: bundle.reading.reading,
-          listeningParts: bundle.listening,
-          writingTasks: bundle.writing,
-          speakingParts: bundle.speaking,
-          resolvedAt: new Date().toISOString(),
-        };
+    if (examVariant === "academic" && (generatedMockTestId || mockNumber)) {
+      let mockRow = null;
+      if (generatedMockTestId) {
+        const { data } = await supabase
+          .from("generated_mock_tests")
+          .select("*")
+          .eq("id", generatedMockTestId)
+          .maybeSingle();
+        mockRow = data;
+      }
+      if (!mockRow && mockNumber) {
+        const { data } = await supabase
+          .from("generated_mock_tests")
+          .select("*")
+          .eq("test_type", "full_mock")
+          .eq("mock_number", mockNumber)
+          .in("status", ["published", "draft"])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        mockRow = data;
+      }
+
+      const { resolveAcademicMockBundle } = await import(
+        "@/lib/mock-test/resolveFullMockContent"
+      );
+      const { getAcademicMockByNumber } = await import(
+        "@/lib/mock-test/academicMockCatalog"
+      );
+      const catalog = getAcademicMockByNumber(mockNumber);
+      const bundle = resolveAcademicMockBundle(
+        mockRow
+          ? { ...mockRow, generatedMockTestId: mockRow.id }
+          : {
+              mock_number: mockNumber,
+              topic: catalog?.theme ?? `Mock ${mockNumber}`,
+            }
+      );
+      examContent = {
+        examVariant: "academic",
+        mockNumber: bundle.mockNumber,
+        generatedMockTestId: bundle.generatedMockTestId,
+        topic: bundle.topic || catalog?.theme || null,
+        reading: bundle.reading.reading,
+        listeningParts: bundle.listening,
+        writingTasks: bundle.writing,
+        speakingParts: bundle.speaking,
+        resolvedAt: new Date().toISOString(),
+      };
+      if (!generatedMockTestId && bundle.generatedMockTestId) {
+        generatedMockTestId = bundle.generatedMockTestId;
       }
     }
 
