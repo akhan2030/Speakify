@@ -18,7 +18,7 @@ export function parseRawEnrolledPrograms(value: unknown): string[] {
 
 export function normalizeEnrolledPrograms(
   value: unknown,
-  programType?: ProgramType | null
+  _programType?: ProgramType | null
 ): ProgramType[] {
   const programs = new Set<ProgramType>();
 
@@ -40,10 +40,7 @@ export function normalizeEnrolledPrograms(
     }
   }
 
-  if (programs.size === 0 && programType) {
-    programs.add(programType);
-  }
-
+  // Never invent enrollment from program_type — empty stays empty (programme picker).
   return Array.from(programs);
 }
 

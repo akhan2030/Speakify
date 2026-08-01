@@ -28,22 +28,18 @@ export function isMockOnlyPurchaseIntent(value: unknown): boolean {
   return isMockOnlyIntentFromAccess(value);
 }
 
-/** Enrolled in IELTS Academic (not GT-only). */
+/** Enrolled in IELTS Academic (not GT-only). Requires explicit enrolled_programs slug. */
 export function isIeltsAcademicEnrolled(user: {
   enrolledPrograms?: unknown;
   programSelected?: string | null;
 }): boolean {
   const slugs = parseEnrollmentSlugs(user.enrolledPrograms);
-  const selected = String(user.programSelected ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/-/g, "_");
 
   if (slugs.includes("ielts_general") && !slugs.includes("ielts")) {
     return false;
   }
 
-  return slugs.includes("ielts") || selected === "ielts";
+  return slugs.includes("ielts");
 }
 
 /**

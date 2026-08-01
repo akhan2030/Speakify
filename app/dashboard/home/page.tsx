@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeRole } from "@/lib/roles";
+import {
+  parseEnrollmentSlugs,
+  type ProgramType,
+} from "@/lib/programType";
 
 type PathwayPreview = {
   levelName: string;
@@ -30,6 +34,88 @@ const DEFAULT_IELTS: IeltsPreview = {
   taskPreview: "Writing Task 2 practice + reading drill",
 };
 
+const PROGRAMME_CARDS: Array<{
+  id: ProgramType | "step";
+  match: (slugs: string[]) => boolean;
+  title: string;
+  accent: string;
+  icon: string;
+  href: string;
+  buttonLabel: string;
+  kind: "pathway" | "ielts" | "generic";
+}> = [
+  {
+    id: "pathway",
+    match: (s) => s.includes("pathway"),
+    title: "English Pathway",
+    accent: "#0d9488",
+    icon: "🗺",
+    href: "/dashboard/pathway/student",
+    buttonLabel: "Continue Pathway →",
+    kind: "pathway",
+  },
+  {
+    id: "ielts",
+    match: (s) => s.includes("ielts"),
+    title: "IELTS Accelerator",
+    accent: "#c9972c",
+    icon: "🎯",
+    href: "/dashboard/ielts/student",
+    buttonLabel: "Continue IELTS →",
+    kind: "ielts",
+  },
+  {
+    id: "ielts_general",
+    match: (s) => s.includes("ielts_general"),
+    title: "IELTS General Training",
+    accent: "#0d9488",
+    icon: "📝",
+    href: "/dashboard/ielts-general/student",
+    buttonLabel: "Continue GT →",
+    kind: "generic",
+  },
+  {
+    id: "step",
+    match: (s) => s.includes("step"),
+    title: "STEP Prep",
+    accent: "#0d1b35",
+    icon: "🇸🇦",
+    href: "/dashboard/step/student",
+    buttonLabel: "Continue STEP →",
+    kind: "generic",
+  },
+  {
+    id: "business_english",
+    match: (s) => s.includes("business_english"),
+    title: "Business English",
+    accent: "#0369a1",
+    icon: "💼",
+    href: "/dashboard/business-english/student",
+    buttonLabel: "Continue →",
+    kind: "generic",
+  },
+  {
+    id: "legal_english",
+    match: (s) => s.includes("legal_english"),
+    title: "Legal English",
+    accent: "#7c3aed",
+    icon: "⚖️",
+    href: "/dashboard/legal-english/student",
+    buttonLabel: "Continue →",
+    kind: "generic",
+  },
+  {
+    id: "kids_english",
+    match: (s) => s.includes("kids_english"),
+    title: "Kids English",
+    accent: "#db2777",
+    icon: "🎒",
+    href: "/dashboard/kids-english/student",
+    buttonLabel: "Continue →",
+    kind: "generic",
+  },
+];
+
 export default function ProgramHomePage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -37,6 +123,28 @@ export default function ProgramHomePage() {
   const [ielts, setIelts] = useState<IeltsPreview>(DEFAULT_IELTS);
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
+  const enrolledSlugs = useMemo(() => {
+    const fromSession = parseEnrollmentSlugs(
+      (session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms
+    );
+    const selected = String(
+      (session?.user as { programSelected?: string })?.programSelected ?? ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/-/g, "_");
+    if (selected && !fromSession.includes(selected)) {
+      return [...fromSession, selected];
+    }
+    return fromSession;
+  }, [session?.user]);
+
+  const cards = useMemo(() => {
+    const matched = PROGRAMME_CARDS.filter((c) => c.match(enrolledSlugs));
+    // Fail closed: if we somehow have no enrollment, show nothing actionable
+    // rather than inventing Pathway + IELTS for everyone.
+    return matched;
+  }, [enrolledSlugs]);
 
   useEffect(() => {
     if (normalizeRole(session?.user?.role) === "admin") {
@@ -45,6 +153,14 @@ export default function ProgramHomePage() {
   }, [session?.user?.role, router]);
 
   useEffect(() => {
+    // Single-programme students should not linger on the picker.
+    if (!session?.user || cards.length !== 1) return;
+    const only = cards[0];
+    router.replace(only.href);
+  }, [session?.user, cards, router]);
+
+  useEffect(() => {
+    if (!enrolledSlugs.includes("pathway")) return;
     fetch("/api/pathway/dashboard")
       .then((r) => r.json())
       .then((json) => {
@@ -70,7 +186,10 @@ export default function ProgramHomePage() {
         });
       })
       .catch(() => {});
+  }, [enrolledSlugs]);
 
+  useEffect(() => {
+    if (!enrolledSlugs.includes("ielts")) return;
     fetch("/api/student/ielts-dashboard")
       .then((r) => r.json())
       .then((json) => {
@@ -85,7 +204,7 @@ export default function ProgramHomePage() {
         });
       })
       .catch(() => {});
-  }, []);
+  }, [enrolledSlugs]);
 
   return (
     <main
@@ -119,7 +238,9 @@ export default function ProgramHomePage() {
             Welcome back, {firstName} — which program are you studying today?
           </h1>
           <p style={{ color: "#64748b", fontSize: "15px", marginTop: "0.5rem" }}>
-            Choose a program to continue where you left off.
+            {cards.length === 0
+              ? "No programme is enrolled on this account yet. Contact support if this looks wrong."
+              : "Choose a program to continue where you left off."}
           </p>
         </div>
 
@@ -130,31 +251,41 @@ export default function ProgramHomePage() {
             gap: "1.5rem",
           }}
         >
-          <ProgramCard
-            title="English Pathway"
-            accent="#0d9488"
-            icon="🗺"
-            stats={[
-              { label: "Current level", value: pathway.levelName },
-              { label: "Progress", value: pathway.weekLabel },
-            ]}
-            preview={pathway.taskPreview}
-            href="/dashboard/pathway/student"
-            buttonLabel="Continue Pathway →"
-          />
-
-          <ProgramCard
-            title="IELTS Accelerator"
-            accent="#c9972c"
-            icon="🎯"
-            stats={[
-              { label: "Current track", value: ielts.trackName },
-              { label: "Target band", value: ielts.targetBand },
-            ]}
-            preview={ielts.taskPreview}
-            href="/dashboard/ielts/student"
-            buttonLabel="Continue IELTS →"
-          />
+          {cards.map((card) => (
+            <ProgramCard
+              key={card.id}
+              title={card.title}
+              accent={card.accent}
+              icon={card.icon}
+              stats={
+                card.kind === "pathway"
+                  ? [
+                      { label: "Current level", value: pathway.levelName },
+                      { label: "Progress", value: pathway.weekLabel },
+                    ]
+                  : card.kind === "ielts"
+                    ? [
+                        { label: "Current track", value: ielts.trackName },
+                        { label: "Target band", value: ielts.targetBand },
+                      ]
+                    : [
+                        {
+                          label: "Programme",
+                          value: card.title,
+                        },
+                      ]
+              }
+              preview={
+                card.kind === "pathway"
+                  ? pathway.taskPreview
+                  : card.kind === "ielts"
+                    ? ielts.taskPreview
+                    : `Open your ${card.title} dashboard`
+              }
+              href={card.href}
+              buttonLabel={card.buttonLabel}
+            />
+          ))}
         </div>
       </div>
     </main>
@@ -206,63 +337,39 @@ function ProgramCard({
         >
           {icon}
         </span>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#0d1b35", margin: 0 }}>
-          {title}
-        </h2>
+        <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#0d1b35" }}>{title}</h2>
       </div>
 
-      <dl style={{ marginTop: "1.25rem", display: "grid", gap: "10px" }}>
-        {stats.map((stat) => (
-          <div key={stat.label}>
-            <dt style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>{stat.label}</dt>
-            <dd
-              style={{
-                fontSize: "15px",
-                fontWeight: 600,
-                color: "#0d1b35",
-                margin: "2px 0 0",
-              }}
-            >
-              {stat.value}
-            </dd>
+      <div style={{ marginTop: "1.25rem", display: "grid", gap: "0.75rem" }}>
+        {stats.map((s) => (
+          <div key={s.label}>
+            <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8" }}>{s.label}</p>
+            <p style={{ margin: "2px 0 0", fontWeight: 600, color: "#0d1b35" }}>{s.value}</p>
           </div>
         ))}
-      </dl>
+      </div>
 
-      <div
+      <p style={{ marginTop: "1.25rem", color: "#64748b", fontSize: "14px", flex: 1 }}>
+        {preview}
+      </p>
+
+      <Link
+        href={href}
         style={{
-          marginTop: "auto",
-          paddingTop: "1.25rem",
+          marginTop: "1rem",
+          display: "inline-flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "0.85rem 1rem",
+          borderRadius: "12px",
+          background: accent,
+          color: "#fff",
+          fontWeight: 700,
+          textDecoration: "none",
         }}
       >
-        <p
-          style={{
-            fontSize: "13px",
-            color: "#64748b",
-            margin: "0 0 1rem",
-            lineHeight: 1.5,
-          }}
-        >
-          <span style={{ fontWeight: 600, color: "#475569" }}>Today: </span>
-          {preview}
-        </p>
-        <Link
-          href={href}
-          style={{
-            display: "block",
-            textAlign: "center",
-            background: accent,
-            color: "white",
-            padding: "12px 20px",
-            borderRadius: "10px",
-            fontWeight: 700,
-            fontSize: "14px",
-            textDecoration: "none",
-          }}
-        >
-          {buttonLabel}
-        </Link>
-      </div>
+        {buttonLabel}
+      </Link>
     </div>
   );
 }

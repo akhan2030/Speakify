@@ -104,8 +104,10 @@ export function enrolledProgramsForGateway(programme: GatewayProgramme): string[
       return ["legal_english"];
     case "kids_english":
       return ["kids_english"];
-    default:
-      return ["ielts"];
+    default: {
+      const _exhaustive: never = programme;
+      throw new Error(`Unrecognized gateway programme: ${String(_exhaustive)}`);
+    }
   }
 }
 
@@ -127,7 +129,9 @@ export function programTypeForGateway(programme: GatewayProgramme): string {
       return "ielts";
     case "toefl":
       return "toefl";
-    default:
-      return "ielts";
+    default: {
+      const _exhaustive: never = programme;
+      throw new Error(`Unrecognized gateway programme: ${String(_exhaustive)}`);
+    }
   }
 }

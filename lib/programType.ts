@@ -5,7 +5,7 @@ import {
 
 export { mirrorIeltsStudentDashboardPath } from "@/lib/ieltsStudentRouteMirror";
 
-export type CoreProgramType = "pathway" | "ielts" | "ielts_general" | "classroom";
+export type CoreProgramType = "pathway" | "ielts" | "ielts_general" | "classroom" | "step";
 export type ProgramType = CoreProgramType | SpecialtyProgramId;
 
 /** Multi-programme students with no resolved dashboard route land here. */
@@ -74,8 +74,9 @@ export function normalizeProgramType(value: unknown): ProgramType | null {
   if (v === "legal_english" || v === "legal") return "legal_english";
   if (v === "kids_english" || v === "kids") return "kids_english";
   if (v === "ielts") return "ielts";
+  if (v === "step" || v === "step_test") return "step";
 
-  if (v === "step" || v === "step_test" || v === "toefl") {
+  if (v === "toefl") {
     return null;
   }
 
@@ -103,6 +104,8 @@ export function studentDashboardPath(programType: ProgramType | null): string {
       return "/dashboard/kids-english/student";
     case "ielts":
       return "/dashboard/ielts/student";
+    case "step":
+      return "/dashboard/step/student/diagnostic";
     default:
       return PROGRAMME_PICKER_PATH;
   }
@@ -155,14 +158,10 @@ export function resolveStudentProgramType(input: {
     .replace(/-/g, "_");
 
   if (selected === "step" || slugs.includes("step")) {
-    return null;
+    return "step";
   }
 
-  const base = normalizeProgramType(input.programType);
-  const enrolled = normalizeEnrolledProgramsForGuard(
-    input.enrolledPrograms,
-    base
-  );
+  const enrolled = normalizeEnrolledProgramsForGuard(input.enrolledPrograms);
 
   if (selected === "ielts_general" && enrolled.includes("ielts_general")) {
     return "ielts_general";
@@ -175,13 +174,12 @@ export function resolveStudentProgramType(input: {
   }
   if (enrolled.length === 1) return enrolled[0];
   if (enrolled.length > 1) return null;
-  return base;
+
+  // Empty enrollment: never fall back to program_type (DB default is often 'ielts').
+  return null;
 }
 
-function normalizeEnrolledProgramsForGuard(
-  value: unknown,
-  fallback: ProgramType | null
-): ProgramType[] {
+function normalizeEnrolledProgramsForGuard(value: unknown): ProgramType[] {
   const programs = new Set<ProgramType>();
   const add = (raw: string) => {
     const normalized = normalizeProgramType(raw);
@@ -199,10 +197,6 @@ function normalizeEnrolledProgramsForGuard(
     } catch {
       for (const part of value.split(",")) add(part);
     }
-  }
-
-  if (programs.size === 0 && fallback) {
-    programs.add(fallback);
   }
 
   return Array.from(programs);
@@ -224,10 +218,7 @@ export function canAccessStudentDashboard(
     return resolved === expectedProgram;
   }
 
-  const enrolled = normalizeEnrolledProgramsForGuard(
-    input.enrolledPrograms,
-    normalizeProgramType(input.programType)
-  );
+  const enrolled = normalizeEnrolledProgramsForGuard(input.enrolledPrograms);
   if (enrolled.includes(expectedProgram)) return true;
   return resolved === expectedProgram;
 }

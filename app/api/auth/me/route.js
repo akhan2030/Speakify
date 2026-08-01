@@ -22,15 +22,35 @@ export async function GET() {
     );
   }
 
-  const programType = normalizeProgramType(session.user?.programType);
+  const user = session.user as {
+    id?: string;
+    name?: string | null;
+    email?: string | null;
+    programType?: string | null;
+    enrolledPrograms?: unknown;
+    stepEnrolled?: boolean;
+    programSelected?: string | null;
+    mustChangePassword?: boolean;
+  };
+
+  const programType = normalizeProgramType(user.programType);
 
   return NextResponse.json({
-    id: session.user.id ?? null,
-    name: session.user.name ?? null,
-    email: session.user.email ?? null,
+    id: user.id ?? null,
+    name: user.name ?? null,
+    email: user.email ?? null,
     role,
     programType,
-    dashboardPath: dashboardPathForSessionUser({ role, programType }),
-    mustChangePassword: session.user?.mustChangePassword === true,
+    enrolledPrograms: user.enrolledPrograms ?? [],
+    programSelected: user.programSelected ?? null,
+    stepEnrolled: user.stepEnrolled === true,
+    dashboardPath: dashboardPathForSessionUser({
+      role,
+      programType: user.programType,
+      enrolledPrograms: user.enrolledPrograms,
+      stepEnrolled: user.stepEnrolled,
+      programSelected: user.programSelected,
+    }),
+    mustChangePassword: user.mustChangePassword === true,
   });
 }

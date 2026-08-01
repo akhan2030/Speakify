@@ -10,6 +10,7 @@ import {
   resolveStudentProgramType,
   mirrorIeltsStudentDashboardPath,
   isIeltsVariantProgram,
+  parseEnrollmentSlugs,
 } from "@/lib/programType";
 import { isInPersonStudent } from "@/lib/classroom/studentTypeRouter";
 import {
@@ -203,7 +204,17 @@ export default withAuth(
     }
 
     if (role === "student" && onboardingCompleted && isMockOnly) {
-      if (pathname.startsWith("/dashboard") && !isIeltsAcademicMockPath(pathname)) {
+      // Only hijack to the Academic mock lobby for true mock-product accounts
+      // (ielts-only / empty enrollment). Never steal STEP, GT, pathway, etc.
+      const slugs = parseEnrollmentSlugs(token?.enrolledPrograms);
+      const isMockProductPrimary =
+        slugs.length === 0 ||
+        slugs.every((s) => s === "ielts" || s === "toefl");
+      if (
+        isMockProductPrimary &&
+        pathname.startsWith("/dashboard") &&
+        !isIeltsAcademicMockPath(pathname)
+      ) {
         return NextResponse.redirect(new URL(IELTS_MOCK_LOBBY_PATH, req.url));
       }
     }

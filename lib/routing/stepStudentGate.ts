@@ -4,10 +4,7 @@ import {
   type ProgramType,
 } from "@/lib/programType";
 
-function normalizeEnrolledPrograms(
-  value: unknown,
-  fallback: ProgramType | null
-): ProgramType[] {
+function normalizeEnrolledPrograms(value: unknown): ProgramType[] {
   const programs = new Set<ProgramType>();
   const add = (raw: string) => {
     const normalized = normalizeProgramType(raw);
@@ -27,16 +24,13 @@ function normalizeEnrolledPrograms(
     }
   }
 
-  if (programs.size === 0 && fallback) {
-    programs.add(fallback);
-  }
-
   return Array.from(programs);
 }
 
 /**
  * True when the session should be treated as an active STEP student for route guards.
  * Matches resolveStudentDashboardPath — ignores stale step_enrolled on IELTS-only accounts.
+ * Never invents STEP/IELTS enrollment from program_type alone.
  */
 export function isActiveStepStudent(input: {
   stepEnrolled?: boolean;
@@ -50,8 +44,7 @@ export function isActiveStepStudent(input: {
     .toLowerCase()
     .replace(/-/g, "_");
   const stepEnrolled = input.stepEnrolled === true;
-  const fallback = normalizeProgramType(input.programType);
-  const programs = normalizeEnrolledPrograms(input.enrolledPrograms, fallback);
+  const programs = normalizeEnrolledPrograms(input.enrolledPrograms);
 
   if (
     stepEnrolled &&

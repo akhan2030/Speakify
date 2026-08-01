@@ -4,6 +4,7 @@ import type {
   GatewayProgramme,
   GatewayRecommendation,
 } from "@/lib/onboarding/types";
+import { PROGRAMME_PICKER_PATH } from "@/lib/programType";
 
 export function bandToPathwaySubLevel(band: number): string {
   if (band >= 6.5) return "B2.1";
@@ -158,7 +159,8 @@ export function dashboardPathForProgramme(programme: GatewayProgramme): string {
     case "ielts_general":
       return "/dashboard/ielts-general/student";
     case "toefl":
-      return "/dashboard/ielts/student";
+      // TOEFL product is not live — never silently send students to IELTS Academic.
+      return PROGRAMME_PICKER_PATH;
     case "step":
       return "/dashboard/step/student";
     case "pathway":
@@ -170,7 +172,7 @@ export function dashboardPathForProgramme(programme: GatewayProgramme): string {
     case "kids_english":
       return "/dashboard/kids-english/student";
     default:
-      return "/dashboard/ielts/student";
+      return PROGRAMME_PICKER_PATH;
   }
 }
 
