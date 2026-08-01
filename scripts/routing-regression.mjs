@@ -369,11 +369,13 @@ async function main() {
     accounts: [],
   };
 
-  // Unit checks via npx tsx inline script for reliability
+  // Unit checks via npx tsx from repo root
   const { spawnSync } = await import("node:child_process");
+  const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const unitFile = path.join(outDir, "_unit-temp.mts");
   const unitScript = `
-    import { resolveStudentDashboardPath, normalizeEnrolledPrograms } from "./lib/studentLoginRedirect.ts";
-    import { hasAllAcademicMockAccess, hasMockExamStartAccess } from "./lib/mock-test/mockAccess.ts";
+    import { resolveStudentDashboardPath, normalizeEnrolledPrograms } from "../../../lib/studentLoginRedirect.ts";
+    import { hasAllAcademicMockAccess, hasMockExamStartAccess } from "../../../lib/mock-test/mockAccess.ts";
     const checks = [];
     const push = (name, ok, detail) => checks.push({ name, ok, detail });
     push("empty enrollment does not invent IELTS", normalizeEnrolledPrograms([], "ielts").length === 0, {});
@@ -387,15 +389,15 @@ async function main() {
     push("paid Accelerator all mocks", hasAllAcademicMockAccess(paid) === true, {});
     console.log(JSON.stringify(checks));
   `;
-  const unitFile = path.join(outDir, "_unit-temp.mts");
   await writeFile(unitFile, unitScript);
   const unitRun = spawnSync("npx", ["tsx", unitFile], {
-    cwd: path.join(path.dirname(fileURLToPath(import.meta.url)), ".."),
+    cwd: repoRoot,
     encoding: "utf8",
     shell: true,
   });
   if (unitRun.status === 0) {
-    report.unit = JSON.parse(unitRun.stdout.trim().split("\n").pop());
+    const lines = unitRun.stdout.trim().split("\n");
+    report.unit = JSON.parse(lines[lines.length - 1]);
   } else {
     report.unit = [{ name: "unit runner", ok: false, detail: unitRun.stderr || unitRun.stdout }];
   }
