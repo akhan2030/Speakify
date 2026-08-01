@@ -13,6 +13,12 @@ import { createMoyasarPayment, isMoyasarMockMode } from "@/lib/payments/moyasar"
 import { getAppBaseUrl } from "@/lib/appUrl";
 import { requiresProgrammePayment, hasDashboardAccess } from "@/lib/payments/access";
 import {
+  acceleratorProductIdForTrack,
+  foundingOfferPriceHalalas,
+  getFoundingOffer,
+  isFounding50OfferActive,
+} from "@/lib/discounts";
+import {
   checkoutPaymentDescription,
   checkoutTrackLabel,
   resolvePaidProgramme,
@@ -29,8 +35,11 @@ function getSupabase() {
   });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => ({}));
+    const offerCode = String(body.offer ?? "").trim().toLowerCase() || null;
+
     const session = await getServerSession(authOptions);
     const studentId = session?.user?.id;
     const role = normalizeRole((session?.user as { role?: string })?.role);
@@ -91,6 +100,14 @@ export async function POST() {
       return NextResponse.json({ error: "No track selected for checkout" }, { status: 400 });
     }
 
+    const foundingProductId = acceleratorProductIdForTrack(
+      track,
+      programme === "ielts_general" ? "ielts_general" : "ielts"
+    );
+    const foundingOffer = isFounding50OfferActive(offerCode)
+      ? getFoundingOffer(foundingProductId)
+      : null;
+
     const baseUrl = getAppBaseUrl() || "http://localhost:3000";
     const callbackUrl = `${baseUrl}/checkout/success`;
 
@@ -101,6 +118,10 @@ export async function POST() {
       studentEmail: String(user.email ?? session.user?.email ?? ""),
       studentName: String(user.name ?? "Student"),
       callbackUrl,
+      amountHalalasOverride: foundingOffer
+        ? foundingOfferPriceHalalas(foundingProductId)
+        : undefined,
+      offerCode: foundingOffer ? offerCode : null,
     });
 
     if ("error" in payment) {
@@ -143,7 +164,9 @@ export async function POST() {
       track,
       programme,
       trackLabel,
-      price: meta.price,
+      price: foundingOffer?.discountedPriceLabel ?? meta.price,
+      originalPrice: foundingOffer?.originalPriceLabel ?? null,
+      offer: foundingOffer ? offerCode : null,
       amountHalalas: payment.amountHalalas,
       duration: meta.duration,
       target: meta.target,

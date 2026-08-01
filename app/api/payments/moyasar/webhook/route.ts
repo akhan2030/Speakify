@@ -9,6 +9,12 @@ import {
   verifyMoyasarWebhookSecret,
 } from "@/lib/payments/moyasar";
 import type { MockPaymentProductType } from "@/lib/mock-test/academicMockCatalog";
+import {
+  FOUNDING_50_OFFER_CODE,
+  acceleratorProductIdForTrack,
+  isFounding50OfferActive,
+  mockProductIdForType,
+} from "@/lib/discounts";
 
 export const runtime = "nodejs";
 
@@ -25,6 +31,7 @@ type MoyasarWebhookEvent = {
       track?: string;
       product_type?: string;
       mock_numbers?: string;
+      offer?: string;
     };
   };
 };
@@ -37,6 +44,30 @@ const MOCK_PRODUCT_TYPES = new Set([
 
 function isMockPaymentProductType(value: string): value is MockPaymentProductType {
   return MOCK_PRODUCT_TYPES.has(value);
+}
+
+async function recordFoundingClaim(
+  supabase: { from: (table: string) => any },
+  input: {
+    studentId: string;
+    productId: string;
+    paymentId: string;
+    offer?: string | null;
+  }
+) {
+  if (!isFounding50OfferActive(input.offer)) return;
+  try {
+    const { error } = await supabase.from("founding_offer_claims").insert({
+      student_id: input.studentId,
+      product_id: input.productId,
+      payment_id: input.paymentId,
+    });
+    if (error && !/duplicate|unique/i.test(String(error.message ?? ""))) {
+      console.warn("[payments/moyasar/webhook] founding claim", error.message);
+    }
+  } catch (err) {
+    console.warn("[payments/moyasar/webhook] founding claim skipped", err);
+  }
 }
 
 /** Browser check — Moyasar delivers real events via POST. */
@@ -105,6 +136,7 @@ export async function POST(request: Request) {
     const metadataMockNumbers = parseMockNumbersFromMetadata(
       payment.metadata?.mock_numbers ?? tx?.mock_numbers
     );
+    const offerCode = String(payment.metadata?.offer ?? "").trim().toLowerCase();
 
     const amountHalalas =
       Number(payment.amount) ||
@@ -180,6 +212,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: result.error }, { status: 500 });
       }
 
+      const mockProduct =
+        productType === "mock_pack3"
+          ? "pack3"
+          : productType === "mock_pack5"
+            ? "pack5"
+            : "single";
+      await recordFoundingClaim(supabase, {
+        studentId,
+        productId: mockProductIdForType(mockProduct),
+        paymentId,
+        offer: offerCode,
+      });
+
       return NextResponse.json({
         ok: true,
         alreadyPaid: result.alreadyPaid,
@@ -214,6 +259,13 @@ export async function POST(request: Request) {
       console.error("[payments/moyasar/webhook]", result.error);
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
+
+    await recordFoundingClaim(supabase, {
+      studentId,
+      productId: acceleratorProductIdForTrack(trackRaw as AcceleratorTrackId),
+      paymentId,
+      offer: offerCode,
+    });
 
     return NextResponse.json({ ok: true, alreadyPaid: result.alreadyPaid, granted: "accelerator" });
   } catch (err) {

@@ -47,6 +47,7 @@ function RegisterFormInner({
   const mockCheckoutProduct =
     checkoutProduct ?? searchParams.get("product") ?? undefined;
   const mockCheckoutMock = checkoutMock ?? searchParams.get("mock") ?? undefined;
+  const offerCode = searchParams.get("offer") ?? undefined;
   const purchasedTrack = resolvePurchasedTrack(
     acceleratorTrack,
     searchParams.get("track")
@@ -143,6 +144,9 @@ function RegisterFormInner({
       }
       if (slug === "mock-exam" && mockCheckoutMock) {
         params.set("mock", mockCheckoutMock);
+      }
+      if (offerCode) {
+        params.set("offer", offerCode);
       }
       router.push(`/register/verify?${params.toString()}`);
     } catch {

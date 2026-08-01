@@ -49,6 +49,7 @@ function WelcomeContent() {
   const trackParam = searchParams.get("track")?.trim().toLowerCase() ?? "";
   const checkoutProduct = searchParams.get("product")?.trim() ?? "";
   const checkoutMock = searchParams.get("mock")?.trim() ?? "";
+  const offerCode = searchParams.get("offer")?.trim() ?? "";
   const purchasedTrack: AcceleratorTrackId | null = isValidTrack(trackParam)
     ? trackParam
     : null;
@@ -92,6 +93,7 @@ function WelcomeContent() {
     const params = new URLSearchParams();
     if (checkoutProduct) params.set("product", checkoutProduct);
     if (checkoutMock) params.set("mock", checkoutMock);
+    if (offerCode) params.set("offer", offerCode);
     const q = params.toString();
     return q ? `/checkout/mock?${q}` : "/courses/mock-exams";
   })();

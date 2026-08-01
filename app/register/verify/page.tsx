@@ -234,8 +234,10 @@ function RegisterVerifyContent() {
       if (track) params.set("track", track);
       const product = searchParams.get("product");
       const mock = searchParams.get("mock");
+      const offer = searchParams.get("offer");
       if (product) params.set("product", product);
       if (mock) params.set("mock", mock);
+      if (offer) params.set("offer", offer);
       router.replace(`/register/welcome?${params.toString()}`);
     }
   }, [emailDone, phoneDone, name, program, track, router, searchParams]);

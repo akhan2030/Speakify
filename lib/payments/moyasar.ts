@@ -113,8 +113,14 @@ export async function createMoyasarPayment(options: {
   studentEmail: string;
   studentName: string;
   callbackUrl: string;
+  /** Override list price (e.g. Founding 50) */
+  amountHalalasOverride?: number;
+  offerCode?: string | null;
 }): Promise<MoyasarCreatePaymentResult | { error: string }> {
-  const amountHalalas = trackPriceHalalas(options.track);
+  const amountHalalas =
+    options.amountHalalasOverride != null && options.amountHalalasOverride > 0
+      ? options.amountHalalasOverride
+      : trackPriceHalalas(options.track);
   const programme = options.programme ?? "ielts";
   const description = checkoutPaymentDescription(programme, options.track);
 
@@ -149,6 +155,7 @@ export async function createMoyasarPayment(options: {
       metadata: {
         student_id: options.studentId,
         track: options.track,
+        ...(options.offerCode ? { offer: options.offerCode } : {}),
       },
     }),
   });
@@ -180,6 +187,8 @@ export async function createMockExamPayment(options: {
   studentEmail: string;
   studentName: string;
   callbackUrl: string;
+  amountHalalasOverride?: number;
+  offerCode?: string | null;
 }): Promise<MoyasarCreateMockPaymentResult | { error: string }> {
   let mockNumbers: number[];
   try {
@@ -191,7 +200,10 @@ export async function createMockExamPayment(options: {
   }
 
   const productType = paymentProductTypeForMockProduct(options.product);
-  const amountHalalas = priceHalalasForMockProduct(options.product);
+  const amountHalalas =
+    options.amountHalalasOverride != null && options.amountHalalasOverride > 0
+      ? options.amountHalalasOverride
+      : priceHalalasForMockProduct(options.product);
   const description = mockCheckoutDescription(options.product, mockNumbers);
 
   if (isMoyasarMockMode()) {
@@ -227,6 +239,7 @@ export async function createMockExamPayment(options: {
         student_id: options.studentId,
         product_type: productType,
         mock_numbers: mockNumbers.join(","),
+        ...(options.offerCode ? { offer: options.offerCode } : {}),
       },
     }),
   });

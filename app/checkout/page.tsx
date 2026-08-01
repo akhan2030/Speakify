@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ACCELERATOR_TRACKS, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 import { MoyasarCheckoutForm } from "@/components/payments/MoyasarCheckoutForm";
+import { readRememberedFoundingOffer } from "@/lib/discounts";
 
 const GOLD = "#c9972c";
 const NAVY = "#0d1b35";
@@ -36,6 +37,7 @@ export default function CheckoutPage() {
   const [checkout, setCheckout] = useState<CheckoutState | null>(null);
 
   const reason = searchParams.get("reason");
+  const offer = searchParams.get("offer") || readRememberedFoundingOffer();
 
   const initCheckout = useCallback(async () => {
     setLoading(true);
@@ -45,6 +47,11 @@ export default function CheckoutPage() {
       const statusRes = await fetch("/api/payments/status");
       const statusData = await statusRes.json();
       if (statusData.hasAccess) {
+        await update({
+          paymentStatus: statusData.paymentStatus ?? "comped",
+          paymentCompedUntil: statusData.paymentCompedUntil ?? null,
+          hasDashboardAccess: true,
+        });
         router.replace(statusData.dashboardPath ?? "/dashboard/ielts/student");
         return;
       }
@@ -53,7 +60,11 @@ export default function CheckoutPage() {
         return;
       }
 
-      const res = await fetch("/api/payments/moyasar/create", { method: "POST" });
+      const res = await fetch("/api/payments/moyasar/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(offer ? { offer } : {}),
+      });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error ?? "Could not start checkout");
@@ -79,7 +90,7 @@ export default function CheckoutPage() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, update, offer]);
 
   useEffect(() => {
     if (status === "unauthenticated") {

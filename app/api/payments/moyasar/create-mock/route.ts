@@ -13,6 +13,12 @@ import {
 } from "@/lib/mock-test/academicMockCatalog";
 import { createMockExamPayment, isMoyasarMockMode } from "@/lib/payments/moyasar";
 import { hasAllAcademicMockAccess } from "@/lib/mock-test/mockAccess";
+import {
+  foundingOfferPriceHalalas,
+  getFoundingOffer,
+  isFounding50OfferActive,
+  mockProductIdForType,
+} from "@/lib/discounts";
 
 export const runtime = "nodejs";
 
@@ -50,6 +56,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const product = parseProduct(body.product);
     const mockNumber = Number(body.mockNumber);
+    const offerCode = String(body.offer ?? "").trim().toLowerCase() || null;
 
     if (!product) {
       return NextResponse.json({ error: "Invalid product" }, { status: 400 });
@@ -122,6 +129,11 @@ export async function POST(request: Request) {
     const baseUrl = getAppBaseUrl() || "http://localhost:3000";
     const callbackUrl = `${baseUrl}/checkout/mock/success`;
 
+    const foundingProductId = mockProductIdForType(product);
+    const foundingOffer = isFounding50OfferActive(offerCode)
+      ? getFoundingOffer(foundingProductId)
+      : null;
+
     const payment = await createMockExamPayment({
       studentId,
       product,
@@ -129,6 +141,10 @@ export async function POST(request: Request) {
       studentEmail: String(user.email ?? session.user?.email ?? ""),
       studentName: String(user.name ?? "Student"),
       callbackUrl,
+      amountHalalasOverride: foundingOffer
+        ? foundingOfferPriceHalalas(foundingProductId)
+        : undefined,
+      offerCode: foundingOffer ? offerCode : null,
     });
 
     if ("error" in payment) {
@@ -166,10 +182,12 @@ export async function POST(request: Request) {
       mockNumbers: payment.mockNumbers,
       unlockingMockNumbers: toBuy,
       alreadyOwnedMockNumbers: alreadyOwnedList,
-      price: pricing.priceLabel,
+      price: foundingOffer?.discountedPriceLabel ?? pricing.priceLabel,
+      originalPrice: foundingOffer?.originalPriceLabel ?? null,
+      offer: foundingOffer ? offerCode : null,
       amountHalalas: payment.amountHalalas,
       description:
-        product === "single" && mockMeta
+        product === "single"
           ? `IELTS Academic Mock #${mockNumber}`
           : product === "pack3"
             ? "IELTS Academic 3-Mock Pack (Mocks #1–#3)"

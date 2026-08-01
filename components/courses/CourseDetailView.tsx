@@ -8,6 +8,8 @@ import {
 } from "@/lib/courses/pageContent";
 import { levelBadgeColor, type CourseCatalogItem } from "@/lib/courses/catalog";
 import { loginPathForCourseSlug } from "@/lib/courses/loginPaths";
+import { foundingOfferForCourseSlug } from "@/lib/discounts";
+import FoundingOfferPopup from "@/components/offers/FoundingOfferPopup";
 
 type Props = {
   course: CourseCatalogItem;
@@ -22,19 +24,28 @@ function ctaButtonStyle(accent: string): React.CSSProperties {
 
 export default function CourseDetailView({ course }: Props) {
   const content = getCoursePageContent(course.slug);
+  const foundingOffer = foundingOfferForCourseSlug(course.slug);
   const relatedIelts = isIeltsCourse(course.slug)
     ? getRelatedIeltsCourses(course.slug)
     : isIeltsGeneralCourse(course.slug)
       ? getRelatedIeltsGeneralCourses(course.slug)
       : [];
-  const primaryHref =
-    course.ctaLabel === "Start Learning" ? course.ctaHref : "/placement-test";
+  const primaryHref = foundingOffer
+    ? foundingOffer.ctaHref
+    : course.ctaLabel === "Start Learning"
+      ? course.ctaHref
+      : "/placement-test";
   const primaryLabel =
-    course.ctaLabel === "Start Learning" ? "Start Learning" : "Take placement test";
+    course.ctaLabel === "Start Learning"
+      ? foundingOffer
+        ? "Claim founding price"
+        : "Start Learning"
+      : "Take placement test";
   const signInHref = loginPathForCourseSlug(course.slug);
 
   return (
     <div>
+      {foundingOffer ? <FoundingOfferPopup productId={foundingOffer.productId} /> : null}
       <section
         className="px-4 py-12 sm:px-6 sm:py-16"
         style={{
@@ -104,7 +115,14 @@ export default function CourseDetailView({ course }: Props) {
                 {course.duration}
               </span>
             ) : null}
-            {content.price ? (
+            {foundingOffer ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#c9972c]/20 px-4 py-1.5 text-sm font-semibold text-[#c9972c]">
+                <span className="text-slate-400 line-through">
+                  {foundingOffer.originalPriceLabel}
+                </span>
+                {foundingOffer.discountedPriceLabel}
+              </span>
+            ) : content.price ? (
               <span className="rounded-full bg-[#c9972c]/20 px-4 py-1.5 text-sm font-semibold text-[#c9972c]">
                 {content.price}
               </span>

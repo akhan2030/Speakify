@@ -4,20 +4,29 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import {
   ACADEMIC_MOCK_CATALOG,
-  ACADEMIC_MOCK_PRICING,
 } from "@/lib/mock-test/academicMockCatalog";
 import {
   IELTS_MOCK_LOBBY_PATH,
   ieltsMockLobbyHref,
 } from "@/lib/mock-test/ieltsMockRoutes";
+import {
+  FOUNDING_50_OFFER_CODE,
+  getFoundingOffer,
+  rememberFoundingOffer,
+} from "@/lib/discounts";
+import FoundingOfferPopup from "@/components/offers/FoundingOfferPopup";
 import { useMarketingLocale } from "@/components/marketing/MarketingLocale";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
 const TEAL = "#0d9488";
 
+const singleOffer = getFoundingOffer("mock-single");
+const pack3Offer = getFoundingOffer("mock-pack3");
+const pack5Offer = getFoundingOffer("mock-pack5");
+
 function buyHref(product: string, mockNumber?: number) {
-  const params = new URLSearchParams({ product });
+  const params = new URLSearchParams({ product, offer: FOUNDING_50_OFFER_CODE });
   if (product === "single" && mockNumber != null) {
     params.set("mock", String(mockNumber));
   }
@@ -25,7 +34,7 @@ function buyHref(product: string, mockNumber?: number) {
 }
 
 function registerHref(product: string, mockNumber?: number) {
-  const params = new URLSearchParams({ product });
+  const params = new URLSearchParams({ product, offer: FOUNDING_50_OFFER_CODE });
   if (product === "single" && mockNumber != null) {
     params.set("mock", String(mockNumber));
   }
@@ -74,6 +83,7 @@ export default function MockExamsLanding() {
 
   return (
     <div>
+      <FoundingOfferPopup productId="mock-pack5" />
       <section className="relative overflow-hidden px-4 py-14 sm:px-6 sm:py-20" style={{ backgroundColor: NAVY }}>
         <div className="relative mx-auto max-w-6xl text-center">
           <p className="text-sm font-bold uppercase tracking-widest" style={{ color: GOLD }}>
@@ -121,10 +131,14 @@ export default function MockExamsLanding() {
                   <li>{t("mockExams.retakesLine")}</li>
                 </ul>
                 <p className="mt-4 text-2xl font-extrabold" style={{ color: TEAL }}>
-                  {mock.priceLabel}
+                  {singleOffer.discountedPriceLabel}
+                </p>
+                <p className="text-xs text-slate-400 line-through">
+                  {singleOffer.originalPriceLabel}
                 </p>
                 <Link
                   href={cta.href}
+                  onClick={() => rememberFoundingOffer()}
                   className="mt-4 block rounded-xl py-2.5 text-center text-sm font-bold text-white hover:opacity-95"
                   style={{ backgroundColor: TEAL }}
                 >
@@ -142,12 +156,18 @@ export default function MockExamsLanding() {
             <article className="rounded-xl border border-slate-200 bg-white p-5">
               <h3 className="font-bold text-[#0d1b35]">{t("mockExams.pack3Name")}</h3>
               <p className="mt-1 text-3xl font-extrabold" style={{ color: TEAL }}>
-                {ACADEMIC_MOCK_PRICING.pack3.priceLabel}
+                {pack3Offer.discountedPriceLabel}
               </p>
-              <p className="mt-1 text-sm text-slate-500">{ACADEMIC_MOCK_PRICING.pack3.saveVsSinglesLabel}</p>
+              <p className="text-sm text-slate-400 line-through">
+                {pack3Offer.originalPriceLabel}
+              </p>
+              <p className="mt-1 text-sm font-medium" style={{ color: GOLD }}>
+                Founding 50 · Save {pack3Offer.discountPercent}%
+              </p>
               <p className="mt-2 text-sm text-slate-600">{t("mockExams.pack3Unlocks")}</p>
               <Link
                 href={pack3.href}
+                onClick={() => rememberFoundingOffer()}
                 className="mt-4 inline-flex rounded-xl px-5 py-2.5 text-sm font-bold text-white"
                 style={{ backgroundColor: TEAL }}
               >
@@ -160,12 +180,18 @@ export default function MockExamsLanding() {
               </p>
               <h3 className="mt-1 font-bold text-[#0d1b35]">{t("mockExams.pack5Name")}</h3>
               <p className="mt-1 text-3xl font-extrabold" style={{ color: TEAL }}>
-                {ACADEMIC_MOCK_PRICING.pack5.priceLabel}
+                {pack5Offer.discountedPriceLabel}
               </p>
-              <p className="mt-1 text-sm text-slate-500">{ACADEMIC_MOCK_PRICING.pack5.saveVsSinglesLabel}</p>
+              <p className="text-sm text-slate-400 line-through">
+                {pack5Offer.originalPriceLabel}
+              </p>
+              <p className="mt-1 text-sm font-medium" style={{ color: GOLD }}>
+                Founding 50 · Save {pack5Offer.discountPercent}%
+              </p>
               <p className="mt-2 text-sm text-slate-600">{t("mockExams.pack5Unlocks")}</p>
               <Link
                 href={pack5.href}
+                onClick={() => rememberFoundingOffer()}
                 className="mt-4 inline-flex rounded-xl px-5 py-2.5 text-sm font-bold text-white"
                 style={{ backgroundColor: NAVY }}
               >

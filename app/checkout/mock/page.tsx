@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MoyasarCheckoutForm } from "@/components/payments/MoyasarCheckoutForm";
+import { readRememberedFoundingOffer } from "@/lib/discounts";
 import type { MockProductType } from "@/lib/mock-test/academicMockCatalog";
 
 const GOLD = "#c9972c";
@@ -46,6 +47,7 @@ export default function MockCheckoutPage() {
 
   const product = parseProduct(searchParams.get("product"));
   const mockNumber = Number(searchParams.get("mock"));
+  const offer = searchParams.get("offer") || readRememberedFoundingOffer();
 
   const checkoutQuery = useMemo(() => {
     const params = new URLSearchParams();
@@ -53,8 +55,9 @@ export default function MockCheckoutPage() {
     if (product === "single" && Number.isFinite(mockNumber)) {
       params.set("mock", String(mockNumber));
     }
+    if (offer) params.set("offer", offer);
     return params.toString();
-  }, [product, mockNumber]);
+  }, [product, mockNumber, offer]);
 
   const initCheckout = useCallback(async () => {
     if (!product) {
@@ -74,6 +77,7 @@ export default function MockCheckoutPage() {
         body: JSON.stringify({
           product,
           mockNumber: product === "single" ? mockNumber : undefined,
+          ...(offer ? { offer } : {}),
         }),
       });
       const data = await res.json();
@@ -113,7 +117,7 @@ export default function MockCheckoutPage() {
     } finally {
       setLoading(false);
     }
-  }, [product, mockNumber, router, checkoutQuery]);
+  }, [product, mockNumber, router, checkoutQuery, offer]);
 
   useEffect(() => {
     if (!product) {
