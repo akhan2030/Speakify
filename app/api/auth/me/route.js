@@ -22,16 +22,7 @@ export async function GET() {
     );
   }
 
-  const user = session.user as {
-    id?: string;
-    name?: string | null;
-    email?: string | null;
-    programType?: string | null;
-    enrolledPrograms?: unknown;
-    stepEnrolled?: boolean;
-    programSelected?: string | null;
-    mustChangePassword?: boolean;
-  };
+  const user = session.user;
 
   const programType = normalizeProgramType(user.programType);
 
