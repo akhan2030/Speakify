@@ -4,6 +4,7 @@ import {
   FOUNDING_50_FALLBACK_SPOTS_REMAINING,
   FOUNDING_50_TOTAL_SPOTS,
 } from "@/lib/discounts";
+import { getFoundingSpotStatus } from "@/lib/foundingOfferServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,21 +33,15 @@ export async function GET() {
       return NextResponse.json(fallback);
     }
 
-    const { count, error } = await supabase
-      .from("founding_offer_claims")
-      .select("id", { count: "exact", head: true });
-
-    if (error || count == null) {
-      return NextResponse.json(fallback);
+    const status = await getFoundingSpotStatus(supabase);
+    if (status.source !== "database") {
+      return NextResponse.json({ ...fallback, reason: status.reason });
     }
-
-    const claimed = Math.max(0, Number(count));
-    const spotsRemaining = Math.max(0, FOUNDING_50_TOTAL_SPOTS - claimed);
 
     return NextResponse.json({
       totalSpots: FOUNDING_50_TOTAL_SPOTS,
-      spotsRemaining,
-      claimed,
+      spotsRemaining: status.spotsRemaining,
+      claimed: status.claimed,
       source: "database" as const,
     });
   } catch {

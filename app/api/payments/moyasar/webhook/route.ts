@@ -10,11 +10,11 @@ import {
 } from "@/lib/payments/moyasar";
 import type { MockPaymentProductType } from "@/lib/mock-test/academicMockCatalog";
 import {
-  FOUNDING_50_OFFER_CODE,
   acceleratorProductIdForTrack,
   isFounding50OfferActive,
   mockProductIdForType,
 } from "@/lib/discounts";
+import { confirmFoundingClaim } from "@/lib/foundingOfferServer";
 
 export const runtime = "nodejs";
 
@@ -44,30 +44,6 @@ const MOCK_PRODUCT_TYPES = new Set([
 
 function isMockPaymentProductType(value: string): value is MockPaymentProductType {
   return MOCK_PRODUCT_TYPES.has(value);
-}
-
-async function recordFoundingClaim(
-  supabase: { from: (table: string) => any },
-  input: {
-    studentId: string;
-    productId: string;
-    paymentId: string;
-    offer?: string | null;
-  }
-) {
-  if (!isFounding50OfferActive(input.offer)) return;
-  try {
-    const { error } = await supabase.from("founding_offer_claims").insert({
-      student_id: input.studentId,
-      product_id: input.productId,
-      payment_id: input.paymentId,
-    });
-    if (error && !/duplicate|unique/i.test(String(error.message ?? ""))) {
-      console.warn("[payments/moyasar/webhook] founding claim", error.message);
-    }
-  } catch (err) {
-    console.warn("[payments/moyasar/webhook] founding claim skipped", err);
-  }
 }
 
 /** Browser check — Moyasar delivers real events via POST. */
@@ -218,12 +194,13 @@ export async function POST(request: Request) {
           : productType === "mock_pack5"
             ? "pack5"
             : "single";
-      await recordFoundingClaim(supabase, {
-        studentId,
-        productId: mockProductIdForType(mockProduct),
-        paymentId,
-        offer: offerCode,
-      });
+      if (isFounding50OfferActive(offerCode)) {
+        await confirmFoundingClaim(supabase, {
+          studentId,
+          productId: mockProductIdForType(mockProduct),
+          paymentId,
+        });
+      }
 
       return NextResponse.json({
         ok: true,
@@ -260,12 +237,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    await recordFoundingClaim(supabase, {
-      studentId,
-      productId: acceleratorProductIdForTrack(trackRaw as AcceleratorTrackId),
-      paymentId,
-      offer: offerCode,
-    });
+    if (isFounding50OfferActive(offerCode)) {
+      await confirmFoundingClaim(supabase, {
+        studentId,
+        productId: acceleratorProductIdForTrack(trackRaw as AcceleratorTrackId),
+        paymentId,
+      });
+    }
 
     return NextResponse.json({ ok: true, alreadyPaid: result.alreadyPaid, granted: "accelerator" });
   } catch (err) {

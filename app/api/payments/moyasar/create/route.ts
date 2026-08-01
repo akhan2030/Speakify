@@ -19,6 +19,11 @@ import {
   isFounding50OfferActive,
 } from "@/lib/discounts";
 import {
+  attachFoundingPayment,
+  releaseFoundingReservation,
+  reserveFoundingSpot,
+} from "@/lib/foundingOfferServer";
+import {
   checkoutPaymentDescription,
   checkoutTrackLabel,
   resolvePaidProgramme,
@@ -104,9 +109,25 @@ export async function POST(request: Request) {
       track,
       programme === "ielts_general" ? "ielts_general" : "ielts"
     );
-    const foundingOffer = isFounding50OfferActive(offerCode)
+
+    let foundingOffer = isFounding50OfferActive(offerCode)
       ? getFoundingOffer(foundingProductId)
       : null;
+    let foundingOfferFull = false;
+    let reservationToken: string | null = null;
+
+    if (foundingOffer) {
+      const reserved = await reserveFoundingSpot(supabase, {
+        studentId,
+        productId: foundingProductId,
+      });
+      if (!reserved.ok) {
+        foundingOffer = null;
+        foundingOfferFull = reserved.reason === "full" || reserved.reason === "unavailable";
+      } else {
+        reservationToken = reserved.reservationToken;
+      }
+    }
 
     const baseUrl = getAppBaseUrl() || "http://localhost:3000";
     const callbackUrl = `${baseUrl}/checkout/success`;
@@ -125,11 +146,16 @@ export async function POST(request: Request) {
     });
 
     if ("error" in payment) {
+      await releaseFoundingReservation(supabase, reservationToken);
       return NextResponse.json({ error: payment.error }, { status: 503 });
     }
 
     const paymentId =
       payment.mode === "mock" ? payment.mockPaymentId : payment.paymentId;
+
+    if (reservationToken) {
+      await attachFoundingPayment(supabase, reservationToken, paymentId);
+    }
 
     await supabase
       .from("users")
@@ -167,6 +193,10 @@ export async function POST(request: Request) {
       price: foundingOffer?.discountedPriceLabel ?? meta.price,
       originalPrice: foundingOffer?.originalPriceLabel ?? null,
       offer: foundingOffer ? offerCode : null,
+      foundingOfferFull,
+      foundingOfferMessage: foundingOfferFull
+        ? "The Founding 50 offer is full — standard pricing applies."
+        : null,
       amountHalalas: payment.amountHalalas,
       duration: meta.duration,
       target: meta.target,

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import MockResultsReport from "@/components/mock-test/MockResultsReport";
+import FoundingTestimonialPrompt from "@/components/offers/FoundingTestimonialPrompt";
 import type { MockTestFullReport } from "@/lib/mock-test/reportTypes";
 
 export default function MockTestResultsPage({
@@ -111,5 +112,10 @@ export default function MockTestResultsPage({
     );
   }
 
-  return <MockResultsReport report={report} attemptId={params.id} />;
+  return (
+    <>
+      <MockResultsReport report={report} attemptId={params.id} />
+      <FoundingTestimonialPrompt overallBand={report.overallBand ?? null} />
+    </>
+  );
 }

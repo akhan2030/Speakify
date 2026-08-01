@@ -24,6 +24,8 @@ type CheckoutState = {
   callbackUrl: string;
   description: string;
   studentId: string;
+  foundingOfferFull?: boolean;
+  foundingOfferMessage?: string | null;
 };
 
 export default function CheckoutPage() {
@@ -84,6 +86,8 @@ export default function CheckoutPage() {
         callbackUrl: data.callbackUrl,
         description: data.description,
         studentId: data.studentId,
+        foundingOfferFull: Boolean(data.foundingOfferFull),
+        foundingOfferMessage: data.foundingOfferMessage ?? null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -187,6 +191,11 @@ export default function CheckoutPage() {
                 </p>
                 <p className="mt-2 text-lg font-bold text-[#0d1b35]">{checkout.trackLabel}</p>
                 <p className="mt-1 text-2xl font-bold text-[#0d1b35]">{checkout.price}</p>
+                {checkout.foundingOfferMessage ? (
+                  <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    {checkout.foundingOfferMessage}
+                  </p>
+                ) : null}
                 <p className="mt-2 text-sm text-slate-600">Target: {checkout.target}</p>
                 <p className="text-sm text-slate-600">Duration: {checkout.duration}</p>
               </div>

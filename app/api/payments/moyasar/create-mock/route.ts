@@ -6,7 +6,6 @@ import { normalizeRole } from "@/lib/roles";
 import { getAppBaseUrl } from "@/lib/appUrl";
 import {
   ACADEMIC_MOCK_PRICING,
-  getAcademicMockByNumber,
   isValidAcademicMockNumber,
   mockNumbersForProduct,
   type MockProductType,
@@ -19,6 +18,11 @@ import {
   isFounding50OfferActive,
   mockProductIdForType,
 } from "@/lib/discounts";
+import {
+  attachFoundingPayment,
+  releaseFoundingReservation,
+  reserveFoundingSpot,
+} from "@/lib/foundingOfferServer";
 
 export const runtime = "nodejs";
 
@@ -130,9 +134,24 @@ export async function POST(request: Request) {
     const callbackUrl = `${baseUrl}/checkout/mock/success`;
 
     const foundingProductId = mockProductIdForType(product);
-    const foundingOffer = isFounding50OfferActive(offerCode)
+    let foundingOffer = isFounding50OfferActive(offerCode)
       ? getFoundingOffer(foundingProductId)
       : null;
+    let foundingOfferFull = false;
+    let reservationToken: string | null = null;
+
+    if (foundingOffer) {
+      const reserved = await reserveFoundingSpot(supabase, {
+        studentId,
+        productId: foundingProductId,
+      });
+      if (!reserved.ok) {
+        foundingOffer = null;
+        foundingOfferFull = reserved.reason === "full" || reserved.reason === "unavailable";
+      } else {
+        reservationToken = reserved.reservationToken;
+      }
+    }
 
     const payment = await createMockExamPayment({
       studentId,
@@ -148,11 +167,16 @@ export async function POST(request: Request) {
     });
 
     if ("error" in payment) {
+      await releaseFoundingReservation(supabase, reservationToken);
       return NextResponse.json({ error: payment.error }, { status: 503 });
     }
 
     const paymentId =
       payment.mode === "mock" ? payment.mockPaymentId : payment.paymentId;
+
+    if (reservationToken) {
+      await attachFoundingPayment(supabase, reservationToken, paymentId);
+    }
 
     await supabase.from("payment_transactions").upsert(
       {
@@ -169,8 +193,6 @@ export async function POST(request: Request) {
     );
 
     const pricing = ACADEMIC_MOCK_PRICING[product];
-    const mockMeta =
-      product === "single" ? getAcademicMockByNumber(mockNumber) : null;
 
     return NextResponse.json({
       ok: true,
@@ -185,6 +207,10 @@ export async function POST(request: Request) {
       price: foundingOffer?.discountedPriceLabel ?? pricing.priceLabel,
       originalPrice: foundingOffer?.originalPriceLabel ?? null,
       offer: foundingOffer ? offerCode : null,
+      foundingOfferFull,
+      foundingOfferMessage: foundingOfferFull
+        ? "The Founding 50 offer is full — standard pricing applies."
+        : null,
       amountHalalas: payment.amountHalalas,
       description:
         product === "single"
