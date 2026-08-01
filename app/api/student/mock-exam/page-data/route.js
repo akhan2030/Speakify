@@ -104,7 +104,7 @@ export async function GET() {
         history: [],
         availableMocks: catalogFallbackMocks().map((m, i) => ({
           ...m,
-          canStart: true,
+          canStart: false,
           isCurrent: i === 0,
         })),
         currentMockNumber: 1,

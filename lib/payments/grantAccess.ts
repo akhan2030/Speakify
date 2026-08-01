@@ -50,6 +50,8 @@ export async function grantPaidAccess(
       checkout_track: track,
       moyasar_payment_id: paymentId,
       target_band: targetBand,
+      // Clear mock-only so hasAllAcademicMockAccess treats them as full Accelerator.
+      purchase_intent: "accelerator",
     })
     .eq("id", input.studentId);
 

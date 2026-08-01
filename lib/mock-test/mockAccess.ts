@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { hasDashboardAccess, type PaymentAccessUser } from "@/lib/payments/access";
+import {
+  hasDashboardAccess,
+  isMockOnlyPurchaseIntent as isMockOnlyIntentFromAccess,
+  normalizePaymentStatus,
+  type PaymentAccessUser,
+} from "@/lib/payments/access";
 import { parseEnrollmentSlugs } from "@/lib/programType";
 import { normalizeRole } from "@/lib/roles";
 import {
@@ -20,7 +25,7 @@ export function isStaffMockAccessRole(role: unknown): boolean {
 }
 
 export function isMockOnlyPurchaseIntent(value: unknown): boolean {
-  return String(value ?? "").trim().toLowerCase() === "mock_only";
+  return isMockOnlyIntentFromAccess(value);
 }
 
 /** Enrolled in IELTS Academic (not GT-only). */
@@ -42,13 +47,16 @@ export function isIeltsAcademicEnrolled(user: {
 }
 
 /**
- * All 5 Academic mocks unlocked — same entitlement groups as full mock access today:
+ * All 5 Academic mocks unlocked — entitlement groups:
  * 1. admin / teacher (always)
- * 2. IELTS Academic student with hasDashboardAccess() — paid OR valid comped
+ * 2. Paid Accelerator (payment_status paid) on IELTS Academic
+ * 3. Valid-comped / other hasDashboardAccess IELTS Academic students
+ *    who are NOT mock-only purchasers
  *
- * Uses hasDashboardAccess() directly so comped accounts (demo.onboarding@, Fatima,
- * admin test students, etc.) behave identically to paid Accelerator enrollees.
- * Pathway-only / STEP / unpaid IELTS students do NOT get all mocks here.
+ * Mock-only buyers (`purchase_intent = mock_only`) unlock via
+ * mock_exam_purchases rows only — never the full catalogue — even though
+ * hasDashboardAccess() returns true for them (so they can reach the lobby
+ * without paying for Accelerator).
  */
 export function hasAllAcademicMockAccess(user: MockAccessUser): boolean {
   if (isStaffMockAccessRole(user.role)) {
@@ -57,6 +65,11 @@ export function hasAllAcademicMockAccess(user: MockAccessUser): boolean {
 
   if (!isIeltsAcademicEnrolled(user)) {
     return false;
+  }
+
+  // Later Accelerator checkout clears this; paid status is the safety net.
+  if (isMockOnlyPurchaseIntent(user.purchaseIntent)) {
+    return normalizePaymentStatus(user.paymentStatus) === "paid";
   }
 
   return hasDashboardAccess(user);

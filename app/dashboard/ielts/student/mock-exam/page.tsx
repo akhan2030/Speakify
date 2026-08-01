@@ -120,6 +120,10 @@ function buyHref(mockNumber: number) {
   return `/checkout/mock?product=single&mock=${mockNumber}`;
 }
 
+function pack5Href() {
+  return `/checkout/mock?product=pack5`;
+}
+
 function TipsPanel({ className = "" }: { className?: string }) {
   return (
     <aside className={`rounded-2xl border border-slate-200 bg-slate-50 p-5 ${className}`}>
@@ -142,15 +146,18 @@ function MockExamCard({
   mock,
   onStart,
   loadingMockId,
+  showPack5Upgrade,
 }: {
   mock: MockItem;
   onStart: (mock: MockItem) => void;
   loadingMockId: number | null;
+  showPack5Upgrade: boolean;
 }) {
   const isCompleted = mock.status === "completed";
   const isCurrent = mock.isCurrent && !isCompleted;
-  const canStart = mock.canStart !== false && !isCompleted;
-  const borderColor = isCurrent ? GOLD : isCompleted ? "#e2e8f0" : TEAL;
+  // Fail closed: only start when the server explicitly grants access.
+  const canStart = mock.canStart === true && !isCompleted;
+  const borderColor = isCurrent ? GOLD : isCompleted ? "#e2e8f0" : canStart ? TEAL : "#cbd5e1";
   const bgColor = isCurrent ? NAVY : isCompleted ? "#f8fafc" : "#ffffff";
   return (
     <div
@@ -160,8 +167,14 @@ function MockExamCard({
       <span
         className="mb-3 inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide"
         style={{
-          backgroundColor: isCurrent ? GOLD : isCompleted ? "#e2e8f0" : `${TEAL}20`,
-          color: isCurrent ? NAVY : isCompleted ? "#64748b" : TEAL,
+          backgroundColor: isCurrent
+            ? GOLD
+            : isCompleted
+              ? "#e2e8f0"
+              : canStart
+                ? `${TEAL}20`
+                : "#f1f5f9",
+          color: isCurrent ? NAVY : isCompleted ? "#64748b" : canStart ? TEAL : "#64748b",
         }}
       >
         Mock Exam {formatMockNumber(mock.mockNumber)}
@@ -211,7 +224,7 @@ function MockExamCard({
           </span>
         ) : (
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase text-slate-500">
-            Unlock to start
+            Locked
           </span>
         )}
 
@@ -257,13 +270,24 @@ function MockExamCard({
           )}
         </button>
       ) : !isCompleted ? (
-        <Link
-          href={buyHref(mock.mockNumber)}
-          className="mt-4 inline-flex w-full items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white hover:opacity-95 sm:w-auto"
-          style={{ backgroundColor: TEAL }}
-        >
-          Unlock Mock {formatMockNumber(mock.mockNumber)} — 169 SAR
-        </Link>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Link
+            href={buyHref(mock.mockNumber)}
+            className="inline-flex w-full items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white hover:opacity-95 sm:w-auto"
+            style={{ backgroundColor: TEAL }}
+          >
+            Buy this mock — 169 SAR
+          </Link>
+          {showPack5Upgrade ? (
+            <Link
+              href={pack5Href()}
+              className="inline-flex w-full items-center justify-center rounded-xl border-2 px-6 py-3 text-sm font-bold hover:opacity-95 sm:w-auto"
+              style={{ borderColor: GOLD, color: NAVY }}
+            >
+              Upgrade to 5-Mock Pack
+            </Link>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -384,7 +408,7 @@ export default function IeltsMockExamPage() {
     }
     const mock = pageData.availableMocks.find((m) => m.mockNumber === requestedMockNumber);
     if (!mock || mock.status === "completed") return;
-    if (mock.canStart === false) return;
+    if (mock.canStart !== true) return;
     autoStartAttempted.current = true;
     void handleStartMock(mock);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot deep link from public landing
@@ -405,6 +429,10 @@ export default function IeltsMockExamPage() {
           Number.isInteger(requestedMockNumber) ? requestedMockNumber : undefined
         );
   const currentMock = mocks.find((m) => m.isCurrent) ?? mocks.find((m) => m.status === "available");
+  const ownedCount = pageData?.access?.purchasedMockNumbers?.length ?? 0;
+  const hasAllMocks = pageData?.access?.hasAllMocks === true;
+  const showPack5Upgrade = !hasAllMocks && ownedCount > 0 && ownedCount < 5;
+  const startableCount = mocks.filter((m) => m.canStart === true && m.status !== "completed").length;
 
   return (
     <main className="mx-auto max-w-6xl p-4 sm:p-6">
@@ -428,10 +456,14 @@ export default function IeltsMockExamPage() {
         <div className="min-w-0 flex-1">
           <header className="mb-6">
             <h2 className="text-lg font-bold sm:text-xl" style={{ color: NAVY }}>
-              Available mocks
+              Your mocks
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Five distinct Academic mocks — unlimited retakes after purchase.
+              {hasAllMocks
+                ? "All five Academic mocks are unlocked on your plan."
+                : startableCount > 0
+                  ? `${startableCount} of 5 mocks unlocked on your account — purchase to unlock the rest.`
+                  : "Purchase a mock or pack to unlock exams below."}
             </p>
           </header>
 
@@ -460,6 +492,7 @@ export default function IeltsMockExamPage() {
                 mock={mock}
                 onStart={handleStartMock}
                 loadingMockId={loadingMockId}
+                showPack5Upgrade={showPack5Upgrade}
               />
             ))}
           </div>
