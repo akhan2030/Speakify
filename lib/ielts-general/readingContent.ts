@@ -629,6 +629,179 @@ The work remains unfinished. Al-Harbi estimates that two hundred elders still ho
       },
     ],
   },
+  {
+    id: "gt_c_002",
+    section: "C",
+    title: "Shade Before Speed: How Riyadh Is Redesigning Its Streets for Walking",
+    text: `Shade Before Speed: How Riyadh Is Redesigning Its Streets for Walking
+
+Until recently, many Riyadh streets were designed for cars first and people second. Wide asphalt, limited shade, and long gaps between crossings made walking feel optional — something you did from a parking bay to a mall entrance, not a way of moving through the city. That assumption is now being challenged by a quieter redesign: cooler pavements, denser tree cover, and neighbourhood routes planned around shade as carefully as they once were around traffic flow.
+
+The shift did not begin with a single megaproject. According to urban planner Noura Al-Salem, it grew from a practical complaint. "Parents told us their children could not walk ten minutes to school after 9 a.m. in summer," she said in a 2024 interview. "If the sidewalk burns your feet, no awareness campaign will convince families to leave the car at home." Her team mapped surface temperatures on fifteen residential streets and found that unshaded concrete could exceed 55°C by midday, while stretches under mature ghaf and sidr trees stayed roughly 10–12°C cooler at pedestrian height.
+
+Trees alone are not enough. Landscape architect Faisal Al-Dosari argues that "shade without continuity is almost useless." A single row of palms along a main road looks attractive in photographs, but walkers need overlapping cover from door to destination. His studio's guidelines for new sidewalk projects insist on a continuous canopy where possible, mixed species rather than one fashionable tree, and irrigation systems that drip at night to reduce daytime water loss. The guidelines also discourage decorative gravel beds that reflect heat onto pavement.
+
+Transport engineers have joined the conversation. Where older intersections forced pedestrians into long detours, several districts now use shorter crossing cycles and raised walkways painted in lighter colours. A pilot scheme in northern Riyadh cut average waiting time at two busy junctions from ninety seconds to under forty. Critically, the same pilot added seating every 150 metres — not benches for decoration, but shaded rest points for older residents. "If you design only for twenty-year-olds in trainers, you design for nobody," said traffic analyst Huda Al-Rashid.
+
+Businesses have noticed. Café owner Majid Al-Harbi reported that outdoor seating on his shaded side street filled earlier in the afternoon after trees matured and the pavement was widened. "Before, customers arrived by car, stayed inside the air conditioning, and left," he said. "Now some walk from two blocks away." Not all shopkeepers are convinced. A pharmacy owner on an unshaded arterial road said footfall barely changed and that delivery vans still blocked the new bike lane. Al-Salem accepts the uneven results: "Shade is a network. One upgraded street cannot fix a corridor that still cooks pedestrians."
+
+Water use remains the sharpest objection. Critics ask how a desert capital can justify denser planting when every litre matters. Al-Dosari's reply is blunt: the alternative is more air-conditioned indoor space and longer car journeys, both of which consume far more energy. Treated wastewater already irrigates many municipal green belts, and new projects are required to publish estimated water demand before approval. Whether those estimates hold after five dry summers is, he admits, "the real exam."
+
+Schools have become unexpected laboratories. At one girls' secondary school, a student committee surveyed classmates about walking routes and presented heat maps to the municipality. Three new trees and a covered waiting area appeared outside the gate within a year. The committee's teacher, Samira Al-Qahtani, stresses that the point was not activism for its own sake. "They learned to collect evidence, speak to engineers, and accept that change is slow," she said. "That is civic education with a thermometer."
+
+The redesign will not turn Riyadh into a temperate European city, nor is that the goal. Planners speak instead of "walkable pockets" — clusters of homes, shops, mosques, and schools linked by cool corridors — so that short trips become realistic for more hours of the day. Success will be measured less by glossy skyline photographs than by ordinary choices: a parent leaving the car for a school run at 7:30 a.m., a grandparent resting under a tree, a café that thrives because people arrive on foot. Shade, in this view, is not decoration. It is infrastructure.`,
+    saudiContext: true,
+    questions: [
+      {
+        id: "gt_c_002_q1",
+        number: 1,
+        type: "multiple_choice",
+        question:
+          "What assumption about Riyadh streets is now being challenged?",
+        options: [
+          "That shopping malls should replace neighbourhood walking routes",
+          "That streets were designed for cars first and walking was optional",
+          "That a single megaproject can cool the entire capital overnight",
+          "That Riyadh should become a temperate European-style city",
+        ],
+        answer: "That streets were designed for cars first and walking was optional",
+        explanation:
+          "The opening says streets were designed for cars first, walking felt optional, and that assumption is now being challenged.",
+      },
+      {
+        id: "gt_c_002_q2",
+        number: 2,
+        type: "true_false_not_given",
+        question:
+          "Unshaded concrete on the mapped residential streets could exceed 55°C by midday.",
+        answer: "TRUE",
+        explanation:
+          "Al-Salem's team found unshaded concrete could exceed 55°C by midday.",
+      },
+      {
+        id: "gt_c_002_q3",
+        number: 3,
+        type: "short_answer",
+        question:
+          "Who mapped surface temperatures on fifteen residential streets?",
+        answer: "Noura Al-Salem/Al-Salem/her team",
+        explanation:
+          "Urban planner Noura Al-Salem; her team mapped temperatures on fifteen streets.",
+      },
+      {
+        id: "gt_c_002_q4",
+        number: 4,
+        type: "short_answer",
+        question:
+          "According to Faisal Al-Dosari, what do walkers need instead of a single row of palms?",
+        answer:
+          "overlapping cover/continuous cover/continuous canopy/cover from door to destination",
+        explanation:
+          "He says walkers need overlapping cover from door to destination; shade without continuity is almost useless.",
+      },
+      {
+        id: "gt_c_002_q5",
+        number: 5,
+        type: "sentence_completion",
+        question:
+          "His studio's guidelines insist on irrigation systems that drip at ______.",
+        answer: "night",
+        explanation:
+          "Irrigation systems that drip at night reduce daytime water loss.",
+      },
+      {
+        id: "gt_c_002_q6",
+        number: 6,
+        type: "true_false_not_given",
+        question:
+          "The northern Riyadh pilot increased average waiting time at two busy junctions.",
+        answer: "FALSE",
+        explanation:
+          "The pilot cut average waiting time from ninety seconds to under forty.",
+      },
+      {
+        id: "gt_c_002_q7",
+        number: 7,
+        type: "short_answer",
+        question:
+          "How far apart were shaded seating points added in the pilot scheme?",
+        answer: "every 150 metres/150 metres/150 m",
+        explanation: "The pilot added seating every 150 metres.",
+      },
+      {
+        id: "gt_c_002_q8",
+        number: 8,
+        type: "multiple_choice",
+        question:
+          "What change did café owner Majid Al-Harbi notice after trees matured and the pavement was widened?",
+        options: [
+          "Delivery vans stopped blocking the bike lane outside his café",
+          "The pharmacy on the arterial road reported a large rise in footfall",
+          "Outdoor seating filled earlier and some customers walked from nearby",
+          "He replaced outdoor tables with indoor air-conditioned seating only",
+        ],
+        answer:
+          "Outdoor seating filled earlier and some customers walked from nearby",
+        explanation:
+          "He said outdoor seating filled earlier in the afternoon and some customers now walk from two blocks away.",
+      },
+      {
+        id: "gt_c_002_q9",
+        number: 9,
+        type: "sentence_completion",
+        question:
+          "Al-Salem says shade is a ______ — one upgraded street cannot fix a corridor that still cooks pedestrians.",
+        answer: "network",
+        explanation: 'Al-Salem: "Shade is a network."',
+      },
+      {
+        id: "gt_c_002_q10",
+        number: 10,
+        type: "true_false_not_given",
+        question:
+          "Desalinated water will replace treated wastewater for all municipal irrigation by 2030.",
+        answer: "NOT GIVEN",
+        explanation:
+          "The passage says treated wastewater already irrigates many green belts and that estimates must be published, but it does not mention desalinated water or a 2030 replacement plan.",
+      },
+      {
+        id: "gt_c_002_q11",
+        number: 11,
+        type: "short_answer",
+        question:
+          "According to Al-Dosari, what already irrigates many municipal green belts?",
+        answer: "treated wastewater/wastewater",
+        explanation:
+          "Al-Dosari notes that treated wastewater already irrigates many municipal green belts.",
+      },
+      {
+        id: "gt_c_002_q12",
+        number: 12,
+        type: "short_answer",
+        question:
+          "What did the girls' secondary school student committee present to the municipality?",
+        answer: "heat maps",
+        explanation:
+          "The committee surveyed classmates and presented heat maps to the municipality.",
+      },
+      {
+        id: "gt_c_002_q13",
+        number: 13,
+        type: "multiple_choice",
+        question: "How do planners describe the goal of the redesign?",
+        options: [
+          "Turning Riyadh into a temperate European city with full shade cover",
+          "Building one continuous tree line along every arterial highway",
+          "Creating walkable pockets linked by cool corridors for short trips",
+          "Replacing all school transport with mandatory walking after 9 a.m.",
+        ],
+        answer:
+          "Creating walkable pockets linked by cool corridors for short trips",
+        explanation:
+          'Planners speak of "walkable pockets" linked by cool corridors; becoming a European city is explicitly not the goal.',
+      },
+    ],
+  },
 ];
 
 export type GtReadingTestBundle = {
