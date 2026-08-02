@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
-import { ACCELERATOR_TRACKS, recommendTrack } from "@/lib/accelerator/tracks";
+import { getAcceleratorTrackForProgramme, recommendTrack } from "@/lib/accelerator/tracks";
 import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 import { getGeneralMissionTasksForDay } from "@/lib/ielts-general/missionTasks";
 import {
@@ -128,7 +128,7 @@ export async function GET() {
     const placementBand =
       profile.placementBand ?? profile.currentBand ?? profile.skillBands?.reading ?? null;
     const trackId = recommendTrack(placementBand);
-    const trackMeta = ACCELERATOR_TRACKS[trackId];
+    const trackMeta = getAcceleratorTrackForProgramme(trackId, "ielts_general");
     const todayKey = todayDateKey();
 
     let completions = [];

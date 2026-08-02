@@ -115,6 +115,76 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
   },
 };
 
+/** GT-safe track copy — never reuse Academic-only week titles / mock claims. */
+const GT_TRACK_OVERRIDES: Partial<
+  Record<AcceleratorTrackId, Pick<AcceleratorTrack, "bullets" | "weekTitles">>
+> = {
+  foundation: {
+    bullets: [
+      "Core IELTS General Training format & band descriptors",
+      "Everyday & workplace vocabulary (500 words)",
+      "Present/past tenses for letters and essays",
+      "Listening for gist & key details",
+      "Writing Task 1 letter basics (formal, semi-formal, informal)",
+      "Speaking Part 1 confidence building",
+    ],
+    weekTitles: [
+      "GT Foundations & Format",
+      "Grammar for Letters & Essays",
+      "Listening & GT Reading Basics",
+      "Letter Writing Introduction",
+      "Speaking Part 1 & 2 Basics",
+      "Full Skills Integration",
+    ],
+  },
+  plus: {
+    bullets: [
+      "Everyday & workplace vocabulary expansion (800+ words)",
+      "GT Reading strategies: Sections A, B & C",
+      "Listening note-taking & prediction skills",
+      "Letter + Task 2 essay structure & cohesion",
+      "Speaking fluency drills & Part 3 discussion",
+      "3 full timed GT mock exams with AI feedback",
+    ],
+    weekTitles: [
+      "Everyday English Foundation",
+      "GT Reading Mastery",
+      "Listening Mastery",
+      "Letters & Task 2 Essays",
+      "Speaking Fluency Push",
+      "Full mocks + Final Push",
+    ],
+  },
+  elite: {
+    bullets: [
+      "Advanced lexical resource for work and community topics",
+      "Complex GT Reading: inference & writer attitude",
+      "Listening for attitude & implied meaning",
+      "Band 7+ letters and essays: nuance & argumentation",
+      "Speaking: natural discourse & pronunciation",
+      "Exam-day strategy & 3 full timed GT mocks",
+    ],
+    weekTitles: [
+      "Band 7+ Language Precision",
+      "Advanced GT Reading & Listening",
+      "High-Band Letter & Essay Mastery",
+      "Intensive Mock Exams & Polish",
+    ],
+  },
+};
+
+/** Academic or GT display copy for the same track id. */
+export function getAcceleratorTrackForProgramme(
+  trackId: AcceleratorTrackId,
+  programme: IeltsProgramVariant = "ielts"
+): AcceleratorTrack {
+  const base = ACCELERATOR_TRACKS[trackId];
+  if (programme !== "ielts_general") return base;
+  const override = GT_TRACK_OVERRIDES[trackId];
+  if (!override) return base;
+  return { ...base, ...override };
+}
+
 const LEGACY_MODULE_LINKS = {
   readingStrategies: "/dashboard/student/reading/strategies",
   readingPractice: "/dashboard/student/reading/practice",

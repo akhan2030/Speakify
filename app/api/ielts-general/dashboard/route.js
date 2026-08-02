@@ -6,7 +6,7 @@ import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 import { buildRecommendations } from "@/lib/course/recommendationEngine";
 import { computeReadinessMeter } from "@/lib/course/readinessMeter";
 import {
-  ACCELERATOR_TRACKS,
+  getAcceleratorTrackForProgramme,
   recommendTrack,
 } from "@/lib/accelerator/tracks";
 import {
@@ -399,7 +399,10 @@ export async function GET() {
     const placementBand =
       profile.placementBand ?? profile.currentBand ?? profile.skillBands?.reading ?? null;
     const recommendedTrack = recommendTrack(placementBand);
-    const trackMeta = ACCELERATOR_TRACKS[recommendedTrack];
+    const trackMeta = getAcceleratorTrackForProgramme(
+      recommendedTrack,
+      "ielts_general"
+    );
 
     const todayKey = todayDateKey();
     const studyDay = getStudyDay();
