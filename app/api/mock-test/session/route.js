@@ -87,7 +87,7 @@ export async function POST(request) {
       });
     }
 
-    if (examVariant === "academic" && mockNumber) {
+    if ((examVariant === "academic" || examVariant === "general") && mockNumber) {
       const authSession = await getServerSession(authOptions);
       if (!authSession?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -105,14 +105,23 @@ export async function POST(request) {
         "@/lib/mock-test/loadMockAccessContext"
       );
 
+      const programme =
+        examVariant === "general" ? "ielts_general" : "ielts";
+
       const accessCtx = await loadMockAccessContext(
         supabase,
-        userRow ?? { id: authSession.user.id, role: authSession.user.role ?? "student" }
+        userRow ?? { id: authSession.user.id, role: authSession.user.role ?? "student" },
+        { programme }
       );
 
       if (!canStartMock(accessCtx, mockNumber)) {
         return NextResponse.json(
-          { error: "Purchase this mock exam to start a new attempt." },
+          {
+            error:
+              examVariant === "general"
+                ? "Purchase this GT mock exam to start a new attempt."
+                : "Purchase this mock exam to start a new attempt.",
+          },
           { status: 403 }
         );
       }

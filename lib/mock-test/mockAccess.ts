@@ -11,12 +11,19 @@ import {
   ALL_ACADEMIC_MOCK_NUMBERS,
   isValidAcademicMockNumber,
 } from "@/lib/mock-test/academicMockCatalog";
+import {
+  ALL_GT_MOCK_NUMBERS,
+  isValidGtMockNumber,
+} from "@/lib/ielts-general/gtMockCatalog";
+import type { MockPurchaseProgramme } from "@/lib/payments/grantMockAccess";
 
 export type MockAccessUser = PaymentAccessUser & {
   purchaseIntent?: string | null;
 };
 
 export type PurchaseIntent = "accelerator" | "mock_only";
+
+export type { MockPurchaseProgramme };
 
 /** Admin and teacher always have full mock access (QA, demos, support). */
 export function isStaffMockAccessRole(role: unknown): boolean {
@@ -26,6 +33,23 @@ export function isStaffMockAccessRole(role: unknown): boolean {
 
 export function isMockOnlyPurchaseIntent(value: unknown): boolean {
   return isMockOnlyIntentFromAccess(value);
+}
+
+function isValidMockNumberForProgramme(
+  programme: MockPurchaseProgramme,
+  mockNumber: number
+): boolean {
+  return programme === "ielts_general"
+    ? isValidGtMockNumber(mockNumber)
+    : isValidAcademicMockNumber(mockNumber);
+}
+
+function allMockNumbersForProgramme(
+  programme: MockPurchaseProgramme
+): readonly number[] {
+  return programme === "ielts_general"
+    ? ALL_GT_MOCK_NUMBERS
+    : ALL_ACADEMIC_MOCK_NUMBERS;
 }
 
 /** Enrolled in IELTS Academic (not GT-only). Requires explicit enrolled_programs slug. */
@@ -42,6 +66,52 @@ export function isIeltsAcademicEnrolled(user: {
   return slugs.includes("ielts");
 }
 
+/** Enrolled in IELTS General Training. Requires explicit enrolled_programs slug. */
+export function isIeltsGeneralEnrolled(user: {
+  enrolledPrograms?: unknown;
+  programSelected?: string | null;
+}): boolean {
+  return parseEnrollmentSlugs(user.enrolledPrograms).includes("ielts_general");
+}
+
+function isProgrammeEnrolled(
+  user: MockAccessUser,
+  programme: MockPurchaseProgramme
+): boolean {
+  return programme === "ielts_general"
+    ? isIeltsGeneralEnrolled(user)
+    : isIeltsAcademicEnrolled(user);
+}
+
+/**
+ * Full catalogue unlocked for a programme:
+ * 1. admin / teacher
+ * 2. Paid Accelerator on that programme
+ * 3. Valid-comped / other hasDashboardAccess students on that programme
+ *    who are NOT mock-only purchasers
+ *
+ * Mock-only buyers unlock via mock_exam_purchases rows only
+ * (filtered by programme).
+ */
+export function hasAllMockAccessForProgramme(
+  user: MockAccessUser,
+  programme: MockPurchaseProgramme
+): boolean {
+  if (isStaffMockAccessRole(user.role)) {
+    return true;
+  }
+
+  if (!isProgrammeEnrolled(user, programme)) {
+    return false;
+  }
+
+  if (isMockOnlyPurchaseIntent(user.purchaseIntent)) {
+    return normalizePaymentStatus(user.paymentStatus) === "paid";
+  }
+
+  return hasDashboardAccess(user);
+}
+
 /**
  * All 5 Academic mocks unlocked — entitlement groups:
  * 1. admin / teacher (always)
@@ -55,37 +125,41 @@ export function isIeltsAcademicEnrolled(user: {
  * without paying for Accelerator).
  */
 export function hasAllAcademicMockAccess(user: MockAccessUser): boolean {
-  if (isStaffMockAccessRole(user.role)) {
-    return true;
-  }
+  return hasAllMockAccessForProgramme(user, "ielts");
+}
 
-  if (!isIeltsAcademicEnrolled(user)) {
-    return false;
-  }
-
-  // Later Accelerator checkout clears this; paid status is the safety net.
-  if (isMockOnlyPurchaseIntent(user.purchaseIntent)) {
-    return normalizePaymentStatus(user.paymentStatus) === "paid";
-  }
-
-  return hasDashboardAccess(user);
+/** All 3 sellable GT mocks unlocked for paid/comped GT Accelerator (not mock-only). */
+export function hasAllGeneralMockAccess(user: MockAccessUser): boolean {
+  return hasAllMockAccessForProgramme(user, "ielts_general");
 }
 
 /**
  * Start or resume a live mock attempt — requires active entitlement.
  * Expired comp / lapsed access does NOT qualify (unless staff or purchased).
  */
-export function hasMockExamStartAccess(
+export function hasMockExamStartAccessForProgramme(
   user: MockAccessUser,
+  programme: MockPurchaseProgramme,
   mockNumber: number,
   purchasedMockNumbers: Iterable<number> = []
 ): boolean {
-  if (!isValidAcademicMockNumber(mockNumber)) {
+  if (!isValidMockNumberForProgramme(programme, mockNumber)) {
     return false;
   }
 
-  if (hasAllAcademicMockAccess(user)) {
+  if (isStaffMockAccessRole(user.role)) {
     return true;
+  }
+
+  if (hasAllMockAccessForProgramme(user, programme)) {
+    return true;
+  }
+
+  // Purchases only unlock within a programme the student is enrolled in.
+  // Prevents Academic pack numbers from unlocking GT (and vice versa) if
+  // a caller accidentally passes the wrong purchase list.
+  if (!isProgrammeEnrolled(user, programme)) {
+    return false;
   }
 
   for (const n of purchasedMockNumbers) {
@@ -95,6 +169,23 @@ export function hasMockExamStartAccess(
   }
 
   return false;
+}
+
+/**
+ * Start or resume Academic mock — requires active entitlement.
+ * @deprecated Prefer hasMockExamStartAccessForProgramme(user, "ielts", …)
+ */
+export function hasMockExamStartAccess(
+  user: MockAccessUser,
+  mockNumber: number,
+  purchasedMockNumbers: Iterable<number> = []
+): boolean {
+  return hasMockExamStartAccessForProgramme(
+    user,
+    "ielts",
+    mockNumber,
+    purchasedMockNumbers
+  );
 }
 
 /** @alias hasMockExamStartAccess */
@@ -108,6 +199,7 @@ export const hasMockExamAccess = hasMockExamStartAccess;
 export function hasMockExamResultsAccess(
   user: MockAccessUser,
   options: {
+    programme?: MockPurchaseProgramme;
     mockNumber?: number;
     purchasedMockNumbers?: Iterable<number>;
     ownsAttempt?: boolean;
@@ -121,12 +213,15 @@ export function hasMockExamResultsAccess(
     return true;
   }
 
+  const programme = options.programme ?? "ielts";
+
   if (
     options.mockNumber != null &&
-    isValidAcademicMockNumber(options.mockNumber)
+    isValidMockNumberForProgramme(programme, options.mockNumber)
   ) {
-    return hasMockExamStartAccess(
+    return hasMockExamStartAccessForProgramme(
       user,
+      programme,
       options.mockNumber,
       options.purchasedMockNumbers ?? []
     );
@@ -142,6 +237,7 @@ export function hasMockExamResultsAccess(
 export function hasMockExamLobbyAccess(
   user: MockAccessUser,
   options: {
+    programme?: MockPurchaseProgramme;
     purchasedMockNumbers?: Iterable<number>;
     hasAttemptHistory?: boolean;
   } = {}
@@ -154,13 +250,14 @@ export function hasMockExamLobbyAccess(
     return true;
   }
 
+  const programme = options.programme ?? "ielts";
   const purchased = [...(options.purchasedMockNumbers ?? [])];
   if (purchased.length > 0) {
     return true;
   }
 
-  return ALL_ACADEMIC_MOCK_NUMBERS.some((n) =>
-    hasMockExamStartAccess(user, n, purchased)
+  return allMockNumbersForProgramme(programme).some((n) =>
+    hasMockExamStartAccessForProgramme(user, programme, n, purchased)
   );
 }
 
@@ -168,16 +265,21 @@ export function hasMockExamLobbyAccess(
 export function resolveVisibleMockNumbers(
   user: MockAccessUser,
   purchasedMockNumbers: Iterable<number>,
-  attemptedMockNumbers: Iterable<number>
+  attemptedMockNumbers: Iterable<number>,
+  programme: MockPurchaseProgramme = "ielts"
 ): number[] {
   const visible = new Set<number>();
 
-  for (const n of resolveAccessibleMockNumbers(user, purchasedMockNumbers)) {
+  for (const n of resolveAccessibleMockNumbers(
+    user,
+    purchasedMockNumbers,
+    programme
+  )) {
     visible.add(n);
   }
 
   for (const n of attemptedMockNumbers) {
-    if (isValidAcademicMockNumber(n)) {
+    if (isValidMockNumberForProgramme(programme, n)) {
       visible.add(n);
     }
   }
@@ -188,15 +290,16 @@ export function resolveVisibleMockNumbers(
 /** Mock numbers this user may open (sorted). */
 export function resolveAccessibleMockNumbers(
   user: MockAccessUser,
-  purchasedMockNumbers: Iterable<number> = []
+  purchasedMockNumbers: Iterable<number> = [],
+  programme: MockPurchaseProgramme = "ielts"
 ): number[] {
-  if (hasAllAcademicMockAccess(user)) {
-    return [...ALL_ACADEMIC_MOCK_NUMBERS];
+  if (hasAllMockAccessForProgramme(user, programme)) {
+    return [...allMockNumbersForProgramme(programme)];
   }
 
   const purchased = new Set<number>();
   for (const n of purchasedMockNumbers) {
-    if (isValidAcademicMockNumber(n)) {
+    if (isValidMockNumberForProgramme(programme, n)) {
       purchased.add(n);
     }
   }
@@ -204,9 +307,14 @@ export function resolveAccessibleMockNumbers(
   return [...purchased].sort((a, b) => a - b);
 }
 
+/**
+ * Purchased mock numbers for one programme only.
+ * Academic rows must not unlock GT (and vice versa).
+ */
 export async function fetchPurchasedMockNumbers(
   supabase: SupabaseClient,
-  studentId: string
+  studentId: string,
+  programme: MockPurchaseProgramme = "ielts"
 ): Promise<number[]> {
   const id = String(studentId ?? "").trim();
   if (!id) {
@@ -217,6 +325,7 @@ export async function fetchPurchasedMockNumbers(
     .from("mock_exam_purchases")
     .select("mock_number")
     .eq("student_id", id)
+    .eq("programme", programme)
     .order("mock_number", { ascending: true });
 
   if (error) {
@@ -226,26 +335,33 @@ export async function fetchPurchasedMockNumbers(
 
   return (data ?? [])
     .map((row) => Number(row.mock_number))
-    .filter((n) => isValidAcademicMockNumber(n));
+    .filter((n) => isValidMockNumberForProgramme(programme, n));
 }
 
 export async function resolveMockAccessContext(
   supabase: SupabaseClient,
-  user: MockAccessUser & { id?: string | null }
+  user: MockAccessUser & { id?: string | null },
+  programme: MockPurchaseProgramme = "ielts"
 ): Promise<{
+  programme: MockPurchaseProgramme;
   purchasedMockNumbers: number[];
   accessibleMockNumbers: number[];
   hasAllMocks: boolean;
   isMockOnly: boolean;
 }> {
   const purchasedMockNumbers = user.id
-    ? await fetchPurchasedMockNumbers(supabase, user.id)
+    ? await fetchPurchasedMockNumbers(supabase, user.id, programme)
     : [];
 
-  const hasAllMocks = hasAllAcademicMockAccess(user);
-  const accessibleMockNumbers = resolveAccessibleMockNumbers(user, purchasedMockNumbers);
+  const hasAllMocks = hasAllMockAccessForProgramme(user, programme);
+  const accessibleMockNumbers = resolveAccessibleMockNumbers(
+    user,
+    purchasedMockNumbers,
+    programme
+  );
 
   return {
+    programme,
     purchasedMockNumbers,
     accessibleMockNumbers,
     hasAllMocks,

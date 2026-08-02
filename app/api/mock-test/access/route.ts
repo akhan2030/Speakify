@@ -3,10 +3,12 @@ import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { isValidAcademicMockNumber } from "@/lib/mock-test/academicMockCatalog";
+import { isValidGtMockNumber } from "@/lib/ielts-general/gtMockCatalog";
 import {
   canStartMock,
   loadMockAccessContext,
 } from "@/lib/mock-test/loadMockAccessContext";
+import type { MockPurchaseProgramme } from "@/lib/mock-test/mockAccess";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +23,11 @@ function getSupabase() {
   });
 }
 
-/** GET ?mock=N — whether the signed-in student may start that Academic mock. */
+function parseProgramme(raw: string | null): MockPurchaseProgramme {
+  return raw === "ielts_general" ? "ielts_general" : "ielts";
+}
+
+/** GET ?mock=N&programme=ielts|ielts_general — may the signed-in student start that mock? */
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -30,8 +36,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const mockNumber = Number(new URL(request.url).searchParams.get("mock"));
-    if (!isValidAcademicMockNumber(mockNumber)) {
+    const url = new URL(request.url);
+    const mockNumber = Number(url.searchParams.get("mock"));
+    const programme = parseProgramme(url.searchParams.get("programme"));
+
+    const valid =
+      programme === "ielts_general"
+        ? isValidGtMockNumber(mockNumber)
+        : isValidAcademicMockNumber(mockNumber);
+
+    if (!valid) {
       return NextResponse.json({ error: "Invalid mock number" }, { status: 400 });
     }
 
@@ -53,7 +67,8 @@ export async function GET(request: Request) {
       userRow ?? {
         id: studentId,
         role: (session.user as { role?: string })?.role ?? "student",
-      }
+      },
+      { programme }
     );
 
     const allowed = canStartMock(accessCtx, mockNumber);
@@ -63,7 +78,11 @@ export async function GET(request: Request) {
           ok: false,
           canStart: false,
           mockNumber,
-          error: "Purchase this mock exam to start a new attempt.",
+          programme,
+          error:
+            programme === "ielts_general"
+              ? "Purchase this GT mock exam to start a new attempt."
+              : "Purchase this mock exam to start a new attempt.",
           purchasedMockNumbers: accessCtx.purchasedMockNumbers,
           hasAllMocks: accessCtx.hasAllMocks,
         },
@@ -75,6 +94,7 @@ export async function GET(request: Request) {
       ok: true,
       canStart: true,
       mockNumber,
+      programme,
       purchasedMockNumbers: accessCtx.purchasedMockNumbers,
       hasAllMocks: accessCtx.hasAllMocks,
     });
