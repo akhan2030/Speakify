@@ -10,8 +10,18 @@ import {
   mockNumbersForProduct,
   type MockProductType,
 } from "@/lib/mock-test/academicMockCatalog";
+import {
+  GT_MOCK_PRICING,
+  isValidGtMockNumber,
+  mockNumbersForGtProduct,
+  type GtMockProductType,
+} from "@/lib/ielts-general/gtMockCatalog";
 import { createMockExamPayment, isMoyasarMockMode } from "@/lib/payments/moyasar";
-import { hasAllAcademicMockAccess } from "@/lib/mock-test/mockAccess";
+import {
+  hasAllAcademicMockAccess,
+  hasAllGeneralMockAccess,
+  type MockPurchaseProgramme,
+} from "@/lib/mock-test/mockAccess";
 import {
   foundingOfferPriceHalalas,
   getFoundingOffer,
@@ -23,6 +33,10 @@ import {
   releaseFoundingReservation,
   reserveFoundingSpot,
 } from "@/lib/foundingOfferServer";
+import {
+  GT_MOCK_LOBBY_PATH,
+  IELTS_MOCK_LOBBY_PATH,
+} from "@/lib/mock-test/ieltsMockRoutes";
 
 export const runtime = "nodejs";
 
@@ -35,11 +49,22 @@ function getSupabase() {
   });
 }
 
-function parseProduct(value: unknown): MockProductType | null {
+function parseProgramme(value: unknown): MockPurchaseProgramme {
+  return String(value ?? "").trim().toLowerCase() === "ielts_general"
+    ? "ielts_general"
+    : "ielts";
+}
+
+function parseProduct(
+  value: unknown,
+  programme: MockPurchaseProgramme
+): MockProductType | GtMockProductType | null {
   const v = String(value ?? "").trim().toLowerCase();
-  if (v === "single" || v === "pack3" || v === "pack5") {
-    return v;
+  if (programme === "ielts_general") {
+    if (v === "single" || v === "pack3") return v;
+    return null;
   }
+  if (v === "single" || v === "pack3" || v === "pack5") return v;
   return null;
 }
 
@@ -58,16 +83,33 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const product = parseProduct(body.product);
+    const programme = parseProgramme(body.programme);
+    const product = parseProduct(body.product, programme);
     const mockNumber = Number(body.mockNumber);
     const offerCode = String(body.offer ?? "").trim().toLowerCase() || null;
+    const lobbyPath =
+      programme === "ielts_general" ? GT_MOCK_LOBBY_PATH : IELTS_MOCK_LOBBY_PATH;
 
     if (!product) {
-      return NextResponse.json({ error: "Invalid product" }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            programme === "ielts_general"
+              ? "Invalid GT product (single or pack3 only)"
+              : "Invalid product",
+        },
+        { status: 400 }
+      );
     }
 
-    if (product === "single" && !isValidAcademicMockNumber(mockNumber)) {
-      return NextResponse.json({ error: "Invalid mock number" }, { status: 400 });
+    if (product === "single") {
+      const valid =
+        programme === "ielts_general"
+          ? isValidGtMockNumber(mockNumber)
+          : isValidAcademicMockNumber(mockNumber);
+      if (!valid) {
+        return NextResponse.json({ error: "Invalid mock number" }, { status: 400 });
+      }
     }
 
     const supabase = getSupabase();
@@ -92,25 +134,40 @@ export async function POST(request: Request) {
       purchaseIntent: user.purchase_intent,
     };
 
-    if (hasAllAcademicMockAccess(accessUser)) {
+    const hasAll =
+      programme === "ielts_general"
+        ? hasAllGeneralMockAccess(accessUser)
+        : hasAllAcademicMockAccess(accessUser);
+
+    if (hasAll) {
       return NextResponse.json(
         {
-          error: "Your plan already includes all Academic mocks",
-          redirect: "/dashboard/ielts/student/mock-exam",
+          error:
+            programme === "ielts_general"
+              ? "Your plan already includes all 3 full timed GT mocks"
+              : "Your plan already includes all Academic mocks",
+          redirect: lobbyPath,
         },
         { status: 400 }
       );
     }
 
-    const mockNumbers = mockNumbersForProduct(
-      product,
-      product === "single" ? mockNumber : undefined
-    );
+    const mockNumbers =
+      programme === "ielts_general"
+        ? mockNumbersForGtProduct(
+            product as GtMockProductType,
+            product === "single" ? mockNumber : undefined
+          )
+        : mockNumbersForProduct(
+            product as MockProductType,
+            product === "single" ? mockNumber : undefined
+          );
 
     const { data: existingPurchases } = await supabase
       .from("mock_exam_purchases")
       .select("mock_number")
       .eq("student_id", studentId)
+      .eq("programme", programme)
       .in("mock_number", mockNumbers);
 
     const alreadyOwned = new Set(
@@ -122,7 +179,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "You already own the mocks in this product",
-          redirect: "/dashboard/ielts/student/mock-exam",
+          redirect: lobbyPath,
         },
         { status: 400 }
       );
@@ -131,9 +188,9 @@ export async function POST(request: Request) {
     const alreadyOwnedList = mockNumbers.filter((n) => alreadyOwned.has(n));
 
     const baseUrl = getAppBaseUrl() || "http://localhost:3000";
-    const callbackUrl = `${baseUrl}/checkout/mock/success`;
+    const callbackUrl = `${baseUrl}/checkout/mock/success?programme=${programme}`;
 
-    const foundingProductId = mockProductIdForType(product);
+    const foundingProductId = mockProductIdForType(product as MockProductType);
     let foundingOffer = isFounding50OfferActive(offerCode)
       ? getFoundingOffer(foundingProductId)
       : null;
@@ -147,23 +204,39 @@ export async function POST(request: Request) {
       });
       if (!reserved.ok) {
         foundingOffer = null;
-        foundingOfferFull = reserved.reason === "full" || reserved.reason === "unavailable";
+        foundingOfferFull =
+          reserved.reason === "full" || reserved.reason === "unavailable";
       } else {
         reservationToken = reserved.reservationToken;
       }
     }
 
+    const description =
+      programme === "ielts_general"
+        ? product === "single"
+          ? `IELTS General Training Mock #${mockNumber}`
+          : "3 full timed GT mock exams (Mocks #1–#3)"
+        : product === "single"
+          ? `IELTS Academic Mock #${mockNumber}`
+          : product === "pack3"
+            ? "IELTS Academic 3-Mock Pack (Mocks #1–#3)"
+            : "IELTS Academic 5-Mock Pack (Mocks #1–#5)";
+
     const payment = await createMockExamPayment({
       studentId,
-      product,
+      product: product as MockProductType,
       singleMockNumber: product === "single" ? mockNumber : undefined,
       studentEmail: String(user.email ?? session.user?.email ?? ""),
       studentName: String(user.name ?? "Student"),
       callbackUrl,
       amountHalalasOverride: foundingOffer
         ? foundingOfferPriceHalalas(foundingProductId)
-        : undefined,
+        : programme === "ielts_general"
+          ? GT_MOCK_PRICING[product as GtMockProductType].priceHalalas
+          : undefined,
       offerCode: foundingOffer ? offerCode : null,
+      programme,
+      descriptionOverride: description,
     });
 
     if ("error" in payment) {
@@ -192,13 +265,17 @@ export async function POST(request: Request) {
       { onConflict: "moyasar_payment_id" }
     );
 
-    const pricing = ACADEMIC_MOCK_PRICING[product];
+    const pricing =
+      programme === "ielts_general"
+        ? GT_MOCK_PRICING[product as GtMockProductType]
+        : ACADEMIC_MOCK_PRICING[product as MockProductType];
 
     return NextResponse.json({
       ok: true,
       mode: payment.mode,
       paymentId,
       studentId,
+      programme,
       product,
       productType: payment.productType,
       mockNumbers: payment.mockNumbers,
@@ -212,15 +289,11 @@ export async function POST(request: Request) {
         ? "The Founding 50 offer is full — standard pricing applies."
         : null,
       amountHalalas: payment.amountHalalas,
-      description:
-        product === "single"
-          ? `IELTS Academic Mock #${mockNumber}`
-          : product === "pack3"
-            ? "IELTS Academic 3-Mock Pack (Mocks #1–#3)"
-            : "IELTS Academic 5-Mock Pack (Mocks #1–#5)",
+      description,
       publishableKey: payment.mode === "live" ? payment.publishableKey : null,
       mockMode: isMoyasarMockMode(),
       callbackUrl,
+      lobbyPath,
     });
   } catch (err) {
     console.error("[payments/moyasar/create-mock]", err);

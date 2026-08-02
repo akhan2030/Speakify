@@ -7,6 +7,11 @@ import Link from "next/link";
 import { MoyasarCheckoutForm } from "@/components/payments/MoyasarCheckoutForm";
 import { readRememberedFoundingOffer } from "@/lib/discounts";
 import type { MockProductType } from "@/lib/mock-test/academicMockCatalog";
+import type { MockPurchaseProgramme } from "@/lib/mock-test/mockAccess";
+import {
+  GT_MOCK_LOBBY_PATH,
+  IELTS_MOCK_LOBBY_PATH,
+} from "@/lib/mock-test/ieltsMockRoutes";
 
 const GOLD = "#c9972c";
 const NAVY = "#0d1b35";
@@ -14,6 +19,7 @@ const TEAL = "#0d9488";
 
 type MockCheckoutState = {
   product: MockProductType;
+  programme: MockPurchaseProgramme;
   productType: string;
   mockNumbers: number[];
   unlockingMockNumbers: number[];
@@ -37,6 +43,12 @@ function parseProduct(value: string | null): MockProductType | null {
   return null;
 }
 
+function parseProgramme(value: string | null): MockPurchaseProgramme {
+  return String(value ?? "").trim().toLowerCase() === "ielts_general"
+    ? "ielts_general"
+    : "ielts";
+}
+
 export default function MockCheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,22 +60,32 @@ export default function MockCheckoutPage() {
   const [checkout, setCheckout] = useState<MockCheckoutState | null>(null);
 
   const product = parseProduct(searchParams.get("product"));
+  const programme = parseProgramme(searchParams.get("programme"));
   const mockNumber = Number(searchParams.get("mock"));
   const offer = searchParams.get("offer") || readRememberedFoundingOffer();
+  const isGt = programme === "ielts_general";
+  const maxMock = isGt ? 3 : 5;
 
   const checkoutQuery = useMemo(() => {
     const params = new URLSearchParams();
     if (product) params.set("product", product);
+    if (isGt) params.set("programme", "ielts_general");
     if (product === "single" && Number.isFinite(mockNumber)) {
       params.set("mock", String(mockNumber));
     }
     if (offer) params.set("offer", offer);
     return params.toString();
-  }, [product, mockNumber, offer]);
+  }, [product, mockNumber, offer, isGt]);
 
   const initCheckout = useCallback(async () => {
     if (!product) {
       setError("Missing checkout product. Choose a mock from the courses page.");
+      setLoading(false);
+      return;
+    }
+
+    if (isGt && product === "pack5") {
+      setError("GT offers single mocks or a 3-mock pack only — no 5-pack.");
       setLoading(false);
       return;
     }
@@ -78,6 +100,7 @@ export default function MockCheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           product,
+          programme,
           mockNumber: product === "single" ? mockNumber : undefined,
           ...(offer ? { offer } : {}),
         }),
@@ -100,6 +123,7 @@ export default function MockCheckoutPage() {
 
       setCheckout({
         product,
+        programme,
         productType: data.productType,
         mockNumbers: data.mockNumbers ?? [],
         unlockingMockNumbers: data.unlockingMockNumbers ?? data.mockNumbers ?? [],
@@ -121,7 +145,7 @@ export default function MockCheckoutPage() {
     } finally {
       setLoading(false);
     }
-  }, [product, mockNumber, router, checkoutQuery, offer]);
+  }, [product, mockNumber, router, checkoutQuery, offer, programme, isGt]);
 
   useEffect(() => {
     if (!product) {
@@ -130,7 +154,10 @@ export default function MockCheckoutPage() {
       return;
     }
 
-    if (product === "single" && (!Number.isInteger(mockNumber) || mockNumber < 1 || mockNumber > 5)) {
+    if (
+      product === "single" &&
+      (!Number.isInteger(mockNumber) || mockNumber < 1 || mockNumber > maxMock)
+    ) {
       setLoading(false);
       setError("Invalid mock number.");
       return;
@@ -145,7 +172,7 @@ export default function MockCheckoutPage() {
     if (status === "authenticated") {
       initCheckout();
     }
-  }, [status, product, mockNumber, router, checkoutQuery, initCheckout]);
+  }, [status, product, mockNumber, router, checkoutQuery, initCheckout, maxMock]);
 
   const completeMockPayment = async () => {
     if (!checkout) return;
@@ -155,13 +182,20 @@ export default function MockCheckoutPage() {
       const res = await fetch("/api/payments/mock-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentId: checkout.paymentId }),
+        body: JSON.stringify({
+          paymentId: checkout.paymentId,
+          programme: checkout.programme,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error ?? "Payment failed");
       }
-      router.replace(`/checkout/mock/success?paymentId=${encodeURIComponent(checkout.paymentId)}`);
+      const successParams = new URLSearchParams({
+        paymentId: checkout.paymentId,
+        programme: checkout.programme,
+      });
+      router.replace(`/checkout/mock/success?${successParams.toString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Payment failed");
     } finally {
@@ -199,7 +233,9 @@ export default function MockCheckoutPage() {
             className="text-xs font-bold uppercase tracking-wide"
             style={{ color: TEAL }}
           >
-            IELTS Academic mock exam
+            {isGt
+              ? "IELTS General Training mock exam"
+              : "IELTS Academic mock exam"}
           </p>
           <h1 className="mt-2 text-xl font-bold text-[#0d1b35]">Complete your purchase</h1>
           <p className="mt-2 text-sm text-slate-600">
@@ -256,7 +292,11 @@ export default function MockCheckoutPage() {
               </div>
 
               <ul className="mt-4 space-y-2 text-sm text-slate-600">
-                <li>✓ Full 4-skill Academic mock (~3 hours)</li>
+                <li>
+                  {isGt
+                    ? "✓ Full 4-skill General Training mock (~3 hours)"
+                    : "✓ Full 4-skill Academic mock (~3 hours)"}
+                </li>
                 <li>✓ Unlimited retakes on purchased mocks</li>
                 <li>✓ AI band prediction + human Writing/Speaking review</li>
                 <li>✓ mada, Apple Pay, STC Pay & cards (via Moyasar)</li>
@@ -292,6 +332,7 @@ export default function MockCheckoutPage() {
                     metadata={{
                       product_type: checkout.productType,
                       mock_numbers: checkout.mockNumbers.join(","),
+                      programme: checkout.programme,
                     }}
                     onError={setFormError}
                   />
@@ -307,6 +348,15 @@ export default function MockCheckoutPage() {
           {session?.user?.email ? (
             <p className="mt-6 text-center text-xs text-slate-400">
               Signed in as {session.user.email}
+            </p>
+          ) : null}
+
+          {checkout ? (
+            <p className="mt-4 text-center text-xs text-slate-400">
+              After payment you return to{" "}
+              {checkout.programme === "ielts_general"
+                ? GT_MOCK_LOBBY_PATH
+                : IELTS_MOCK_LOBBY_PATH}
             </p>
           ) : null}
         </div>

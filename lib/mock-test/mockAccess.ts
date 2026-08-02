@@ -106,7 +106,8 @@ export function hasAllMockAccessForProgramme(
   }
 
   if (isMockOnlyPurchaseIntent(user.purchaseIntent)) {
-    return normalizePaymentStatus(user.paymentStatus) === "paid";
+    // Mock-only buyers unlock via mock_exam_purchases only — never full catalogue.
+    return false;
   }
 
   return hasDashboardAccess(user);

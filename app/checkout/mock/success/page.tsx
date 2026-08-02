@@ -4,23 +4,33 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  GT_MOCK_LOBBY_PATH,
+  IELTS_MOCK_LOBBY_PATH,
+} from "@/lib/mock-test/ieltsMockRoutes";
 
 const GOLD = "#c9972c";
 const NAVY = "#0d1b35";
 const TEAL = "#0d9488";
-const MOCK_LOBBY = "/dashboard/ielts/student/mock-exam";
 
 function MockCheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status } = useSession();
   const paymentId = searchParams.get("paymentId")?.trim() ?? "";
+  const programme =
+    String(searchParams.get("programme") ?? "").trim().toLowerCase() ===
+    "ielts_general"
+      ? "ielts_general"
+      : "ielts";
+  const defaultLobby =
+    programme === "ielts_general" ? GT_MOCK_LOBBY_PATH : IELTS_MOCK_LOBBY_PATH;
   const [message, setMessage] = useState("Confirming your payment…");
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace(`/login?callbackUrl=${encodeURIComponent(MOCK_LOBBY)}`);
+      router.replace(`/login?callbackUrl=${encodeURIComponent(defaultLobby)}`);
       return;
     }
     if (status !== "authenticated") return;
@@ -31,15 +41,19 @@ function MockCheckoutSuccessContent() {
     const poll = async () => {
       attempts += 1;
       try {
-        const query = paymentId ? `?paymentId=${encodeURIComponent(paymentId)}` : "";
-        const res = await fetch(`/api/payments/mock-status${query}`);
+        const params = new URLSearchParams({ programme });
+        if (paymentId) params.set("paymentId", paymentId);
+        const res = await fetch(`/api/payments/mock-status?${params.toString()}`);
         const data = await res.json();
         if (cancelled) return;
 
         if (data.paymentConfirmed || data.hasPurchases) {
           setDone(true);
           setMessage("Payment confirmed! Redirecting to your mock exams…");
-          window.setTimeout(() => router.replace(data.redirect ?? MOCK_LOBBY), 1200);
+          window.setTimeout(
+            () => router.replace(data.redirect ?? defaultLobby),
+            1200
+          );
           return;
         }
 
@@ -63,7 +77,7 @@ function MockCheckoutSuccessContent() {
     return () => {
       cancelled = true;
     };
-  }, [status, router, paymentId]);
+  }, [status, router, paymentId, programme, defaultLobby]);
 
   return (
     <div
@@ -81,19 +95,20 @@ function MockCheckoutSuccessContent() {
           />
         ) : (
           <span
-            className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-2xl"
-            style={{ backgroundColor: `${TEAL}20`, color: TEAL }}
+            className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white"
+            style={{ backgroundColor: TEAL }}
           >
             ✓
           </span>
         )}
-        <p className="text-sm text-slate-700">{message}</p>
+        <h1 className="text-xl font-bold text-[#0d1b35]">Mock exam purchase</h1>
+        <p className="mt-3 text-sm text-slate-600">{message}</p>
         <Link
-          href={MOCK_LOBBY}
-          className="mt-6 inline-block text-sm font-semibold underline"
+          href={defaultLobby}
+          className="mt-6 inline-block text-sm font-semibold hover:underline"
           style={{ color: TEAL }}
         >
-          Go to mock exam lobby
+          Go to mock exam lobby →
         </Link>
       </div>
     </div>
@@ -104,7 +119,10 @@ export default function MockCheckoutSuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#0d1b35] text-white">
+        <div
+          className="flex min-h-screen items-center justify-center text-white"
+          style={{ backgroundColor: NAVY }}
+        >
           Loading…
         </div>
       }

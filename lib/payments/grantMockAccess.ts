@@ -4,6 +4,9 @@ import {
   isValidAcademicMockNumber,
   mockProductFromPaymentProductType,
 } from "@/lib/mock-test/academicMockCatalog";
+import { isValidGtMockNumber } from "@/lib/ielts-general/gtMockCatalog";
+
+export type MockPurchaseProgramme = "ielts" | "ielts_general";
 
 export type GrantMockAccessInput = {
   studentId: string;
@@ -12,6 +15,7 @@ export type GrantMockAccessInput = {
   productType: MockPaymentProductType;
   mockNumbers: number[];
   rawPayload?: unknown;
+  programme?: MockPurchaseProgramme;
 };
 
 function purchaseProductType(
@@ -24,9 +28,19 @@ function purchaseProductType(
   return mapped;
 }
 
+function isValidMockNumber(
+  programme: MockPurchaseProgramme,
+  n: number
+): boolean {
+  return programme === "ielts_general"
+    ? isValidGtMockNumber(n)
+    : isValidAcademicMockNumber(n);
+}
+
 /**
  * Idempotent mock unlock — does NOT change users.payment_status or Accelerator
- * enrollment. Inserts mock_exam_purchases rows (UNIQUE per student + mock).
+ * enrollment. Inserts mock_exam_purchases rows
+ * (UNIQUE per student + programme + mock).
  */
 export async function grantMockAccess(
   supabase: SupabaseClient,
@@ -37,8 +51,10 @@ export async function grantMockAccess(
     return { ok: false, error: "Missing payment id" };
   }
 
+  const programme: MockPurchaseProgramme = input.programme ?? "ielts";
+
   const mockNumbers = [...new Set(input.mockNumbers)].filter((n) =>
-    isValidAcademicMockNumber(n)
+    isValidMockNumber(programme, n)
   );
 
   if (mockNumbers.length === 0) {
@@ -94,12 +110,16 @@ export async function grantMockAccess(
     const { error: purchaseError } = await supabase.from("mock_exam_purchases").upsert(
       {
         student_id: input.studentId,
+        programme,
         mock_number: mockNumber,
         product_type: purchaseType,
         moyasar_payment_id: paymentId,
         purchased_at: new Date().toISOString(),
       },
-      { onConflict: "student_id,mock_number", ignoreDuplicates: true }
+      {
+        onConflict: "student_id,programme,mock_number",
+        ignoreDuplicates: true,
+      }
     );
 
     if (purchaseError) {
@@ -113,10 +133,22 @@ export async function grantMockAccess(
     .eq("id", input.studentId)
     .maybeSingle();
 
-  const paymentStatus = String(userRow?.payment_status ?? "unpaid").toLowerCase();
+  // Stamp mock_only only for unpaid/pending buyers. Never overwrite
+  // paid or comped Accelerator students (comped was previously corrupted).
+  const paymentStatus = String(userRow?.payment_status ?? "unpaid")
+    .trim()
+    .toLowerCase();
+  const intent = String(userRow?.purchase_intent ?? "")
+    .trim()
+    .toLowerCase();
   const userUpdates: Record<string, unknown> = {};
 
-  if (paymentStatus !== "paid" && userRow?.purchase_intent !== "accelerator") {
+  if (
+    (paymentStatus === "unpaid" ||
+      paymentStatus === "pending" ||
+      paymentStatus === "refunded") &&
+    intent !== "accelerator"
+  ) {
     userUpdates.purchase_intent = "mock_only";
   }
 

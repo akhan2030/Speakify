@@ -10,6 +10,7 @@ import {
   mockNumbersForProduct,
   paymentProductTypeForMockProduct,
 } from "@/lib/mock-test/academicMockCatalog";
+import { mockNumbersForGtProduct } from "@/lib/ielts-general/gtMockCatalog";
 
 export type MoyasarPaymentMetadata = {
   student_id?: string;
@@ -189,10 +190,29 @@ export async function createMockExamPayment(options: {
   callbackUrl: string;
   amountHalalasOverride?: number;
   offerCode?: string | null;
+  /** Enrollment slug — Academic `ielts` (default) or GT `ielts_general`. */
+  programme?: "ielts" | "ielts_general";
+  /** Override description (e.g. GT 3-pack marketing). */
+  descriptionOverride?: string;
 }): Promise<MoyasarCreateMockPaymentResult | { error: string }> {
+  const programme = options.programme ?? "ielts";
+
   let mockNumbers: number[];
   try {
-    mockNumbers = mockNumbersForProduct(options.product, options.singleMockNumber);
+    if (programme === "ielts_general") {
+      if (options.product === "pack5") {
+        return { error: "GT does not offer a 5-mock pack" };
+      }
+      mockNumbers = mockNumbersForGtProduct(
+        options.product as "single" | "pack3",
+        options.singleMockNumber
+      );
+    } else {
+      mockNumbers = mockNumbersForProduct(
+        options.product,
+        options.singleMockNumber
+      );
+    }
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Invalid mock product",
@@ -204,7 +224,9 @@ export async function createMockExamPayment(options: {
     options.amountHalalasOverride != null && options.amountHalalasOverride > 0
       ? options.amountHalalasOverride
       : priceHalalasForMockProduct(options.product);
-  const description = mockCheckoutDescription(options.product, mockNumbers);
+  const description =
+    options.descriptionOverride?.trim() ||
+    mockCheckoutDescription(options.product, mockNumbers);
 
   if (isMoyasarMockMode()) {
     const mockPaymentId = `mock_exam_${options.studentId}_${Date.now()}`;
@@ -239,6 +261,7 @@ export async function createMockExamPayment(options: {
         student_id: options.studentId,
         product_type: productType,
         mock_numbers: mockNumbers.join(","),
+        programme,
         ...(options.offerCode ? { offer: options.offerCode } : {}),
       },
     }),

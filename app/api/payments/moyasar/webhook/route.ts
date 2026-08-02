@@ -32,6 +32,7 @@ type MoyasarWebhookEvent = {
       product_type?: string;
       mock_numbers?: string;
       offer?: string;
+      programme?: string;
     };
   };
 };
@@ -174,12 +175,19 @@ export async function POST(request: Request) {
         });
       }
 
+      const programmeRaw = String(payment.metadata?.programme ?? "")
+        .trim()
+        .toLowerCase();
+      const programme =
+        programmeRaw === "ielts_general" ? "ielts_general" : "ielts";
+
       const result = await grantMockAccess(supabase, {
         studentId,
         moyasarPaymentId: paymentId,
         amountHalalas,
         productType,
         mockNumbers: metadataMockNumbers,
+        programme,
         rawPayload: payload,
       });
 

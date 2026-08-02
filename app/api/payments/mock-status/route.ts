@@ -9,11 +9,16 @@ import {
   mockProductFromPaymentProductType,
   type MockPaymentProductType,
 } from "@/lib/mock-test/academicMockCatalog";
-import { fetchPurchasedMockNumbers } from "@/lib/mock-test/mockAccess";
+import {
+  fetchPurchasedMockNumbers,
+  type MockPurchaseProgramme,
+} from "@/lib/mock-test/mockAccess";
+import {
+  GT_MOCK_LOBBY_PATH,
+  IELTS_MOCK_LOBBY_PATH,
+} from "@/lib/mock-test/ieltsMockRoutes";
 
 export const runtime = "nodejs";
-
-const MOCK_LOBBY = "/dashboard/ielts/student/mock-exam";
 
 function getSupabase() {
   const url = (process.env.SUPABASE_URL || "")
@@ -22,6 +27,16 @@ function getSupabase() {
   return createClient(url, process.env.SUPABASE_SERVICE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+function parseProgramme(value: unknown): MockPurchaseProgramme {
+  return String(value ?? "").trim().toLowerCase() === "ielts_general"
+    ? "ielts_general"
+    : "ielts";
+}
+
+function lobbyFor(programme: MockPurchaseProgramme): string {
+  return programme === "ielts_general" ? GT_MOCK_LOBBY_PATH : IELTS_MOCK_LOBBY_PATH;
 }
 
 /** Dev/mock only — simulates successful mock exam payment. */
@@ -41,6 +56,7 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const paymentId = String(body.paymentId ?? "").trim();
+    const programme = parseProgramme(body.programme);
     if (!paymentId) {
       return NextResponse.json({ error: "Missing payment id" }, { status: 400 });
     }
@@ -68,20 +84,22 @@ export async function POST(request: Request) {
       amountHalalas: Number(tx?.amount_halalas) || 0,
       productType,
       mockNumbers,
-      rawPayload: { mock: true, paymentId },
+      programme,
+      rawPayload: { mock: true, paymentId, programme },
     });
 
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    const purchased = await fetchPurchasedMockNumbers(supabase, studentId);
+    const purchased = await fetchPurchasedMockNumbers(supabase, studentId, programme);
 
     return NextResponse.json({
       ok: true,
       alreadyPaid: result.alreadyPaid,
       purchasedMockNumbers: purchased,
-      redirect: MOCK_LOBBY,
+      programme,
+      redirect: lobbyFor(programme),
     });
   } catch (err) {
     console.error("[payments/mock-status POST]", err);
@@ -104,9 +122,14 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const paymentId = String(searchParams.get("paymentId") ?? "").trim();
+    const programme = parseProgramme(searchParams.get("programme"));
 
     const supabase = getSupabase();
-    const purchasedMockNumbers = await fetchPurchasedMockNumbers(supabase, studentId);
+    const purchasedMockNumbers = await fetchPurchasedMockNumbers(
+      supabase,
+      studentId,
+      programme
+    );
 
     let paymentConfirmed = false;
     if (paymentId) {
@@ -122,10 +145,11 @@ export async function GET(request: Request) {
     return NextResponse.json({
       ok: true,
       role,
+      programme,
       purchasedMockNumbers,
       paymentConfirmed,
       hasPurchases: purchasedMockNumbers.length > 0,
-      redirect: MOCK_LOBBY,
+      redirect: lobbyFor(programme),
       mockMode: isMoyasarMockMode(),
     });
   } catch (err) {
