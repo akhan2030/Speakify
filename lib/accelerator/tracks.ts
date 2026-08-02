@@ -78,7 +78,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
       "Listening note-taking & prediction skills",
       "Writing Task 1 & 2 structure & cohesion",
       "Speaking fluency drills & Part 3 discussion",
-      "Two full mock tests with AI feedback",
+      "All 5 full Academic mock exams with AI feedback",
     ],
     weekTitles: [
       "Academic Language Foundation",
@@ -86,7 +86,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
       "Listening Mastery",
       "Writing Task 1 & 2",
       "Speaking Fluency Push",
-      "Full Mock × 2 + Final Push",
+      "Full mocks + Final Push",
     ],
   },
   elite: {
@@ -691,6 +691,9 @@ const PURCHASE_SLUG_TO_TRACK: Record<string, AcceleratorTrackId> = {
   "ielts-foundation": "foundation",
   "ielts-plus": "plus",
   "ielts-elite": "elite",
+  "ielts-gt-foundation": "foundation",
+  "ielts-gt-plus": "plus",
+  "ielts-gt-elite": "elite",
   foundation: "foundation",
   plus: "plus",
   elite: "elite",

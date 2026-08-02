@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import AudioRecorder from "@/components/AudioRecorder";
 import ExamChrome from "@/components/mock-test/ExamChrome";
@@ -46,7 +46,7 @@ import {
   EXAM_CONTENT,
   getStaticExamContent,
 } from "@/lib/mock-test/staticExamContent";
-import { getListeningPartsForMock } from "@/lib/mock-test/academicMockSkillVariants";
+import { getListeningPartsForMock, getSpeakingPartsForMock } from "@/lib/mock-test/academicMockSkillVariants";
 import { resolveAcademicMockBundle } from "@/lib/mock-test/resolveFullMockContent";
 import type { ListeningExamPart } from "@/lib/mock-test/listeningExam";
 import { getAllListeningQuestionsFromParts } from "@/lib/mock-test/resolveFullMockContent";
@@ -86,6 +86,7 @@ export default function MockExamEngine({
 }: MockExamEngineProps) {
   const isGeneral = variant === "general";
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [attemptId] = useState(() => {
     if (typeof window === "undefined") return `local_${crypto.randomUUID()}`;
@@ -95,12 +96,14 @@ export default function MockExamEngine({
   const mockNumber = useMemo(() => {
     if (typeof window === "undefined") return 1;
     try {
+      const fromQuery = Number(searchParams.get("mock"));
+      if (Number.isFinite(fromQuery) && fromQuery >= 1) return Math.floor(fromQuery);
       const raw = sessionStorage.getItem("mock_test_number");
       return Math.max(1, Number(raw) || 1);
     } catch {
       return 1;
     }
-  }, []);
+  }, [searchParams]);
   const [generatedAcademicContent, setGeneratedAcademicContent] =
     useState<MockExamContent | null>(null);
   const [academicBundle, setAcademicBundle] = useState<AcademicMockBundle | null>(
@@ -114,9 +117,12 @@ export default function MockExamEngine({
     return getListeningPartsForMock(mockNumber);
   }, [mockNumber]);
   const speakingParts = useMemo<SpeakingPart[]>(() => {
-    if (isGeneral) return [];
-    return academicBundle?.speaking ?? [];
-  }, [isGeneral, academicBundle]);
+    // GT reuses the Academic mock speaking bank (same pattern as Listening).
+    if (isGeneral) return getSpeakingPartsForMock(mockNumber);
+    return academicBundle?.speaking?.length
+      ? academicBundle.speaking
+      : getSpeakingPartsForMock(mockNumber);
+  }, [isGeneral, academicBundle, mockNumber]);
   const writingTasks = useMemo(() => {
     if (!isGeneral) {
       return (
@@ -129,7 +135,14 @@ export default function MockExamEngine({
     const picked = pickGeneralMockWritingTasks(mockNumber);
     return { task1: picked.task1, task2: picked.task2 };
   }, [isGeneral, mockNumber, academicBundle]);
-  const readyFlags = isGeneral ? GENERAL_EXAM_CONTENT : sectionReady;
+  const readyFlags = useMemo(() => {
+    if (!isGeneral) return sectionReady;
+    return {
+      ...GENERAL_EXAM_CONTENT,
+      // Never advertise Speaking as ready when the part list is empty.
+      speaking: { ready: speakingParts.length > 0 },
+    };
+  }, [isGeneral, speakingParts.length, sectionReady]);
   const [phase, setPhase] = useState<ExamPhase>("welcome");
   const [transitionFrom, setTransitionFrom] = useState<MockSection>("listening");
   const [transitionTo, setTransitionTo] = useState<MockSection>("reading");
@@ -384,6 +397,30 @@ export default function MockExamEngine({
       setSpeakingInPrep(false);
     }
   }, []);
+
+  // Localhost / QA key / Speakify test accounts: jump to a section (?forceSection=speaking).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const forced = searchParams.get("forceSection");
+    if (
+      forced !== "speaking" &&
+      forced !== "listening" &&
+      forced !== "reading" &&
+      forced !== "writing"
+    ) {
+      return;
+    }
+    const host = window.location.hostname;
+    const qaKey = process.env.NEXT_PUBLIC_QA_FORCE_KEY;
+    const qaOk = Boolean(qaKey && searchParams.get("qa") === qaKey);
+    const localOk = host === "localhost" || host === "127.0.0.1";
+    const email = (session?.user?.email || "").toLowerCase();
+    const testAccountOk =
+      email.endsWith("@speakify.test") || email.endsWith("@speakify.demo");
+    if (!localOk && !qaOk && !testAccountOk) return;
+    if (forced === "speaking" && speakingParts.length === 0) return;
+    beginSection(forced);
+  }, [searchParams, speakingParts.length, beginSection, session?.user?.email]);
 
   const finishExam = useCallback(async () => {
     if (submittingRef.current) return;
@@ -900,10 +937,23 @@ export default function MockExamEngine({
   const passage = readingPassages[readingPassageIdx];
   const readingQ = allReadingQuestions[readingQIdx];
   const speakingPart = speakingParts[speakingPartIdx];
-  const speakingKey =
-    speakingPart.part === 2
+  if (phase === "speaking" && readyFlags.speaking.ready && !speakingPart) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f8f9fa] p-6 text-center">
+        <div>
+          <h1 className="text-xl font-bold text-[#0d1b35]">Speaking section unavailable</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Speaking content could not be loaded for this mock. Please restart the exam.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  const speakingKey = speakingPart
+    ? speakingPart.part === 2
       ? "speaking-p2"
-      : `speaking-p${speakingPart.part}-q${speakingQIdx}`;
+      : `speaking-p${speakingPart.part}-q${speakingQIdx}`
+    : "speaking-missing";
 
   const taskWords = countWords(
     answers[writingTask === 1 ? writingTasks.task1.id : writingTasks.task2.id] ?? ""

@@ -13,6 +13,9 @@ export const GENERAL_EXAM_CONTENT = {
   listening: { ready: true },
   reading: { ready: true },
   writing: { ready: true },
+  // Speaking content is loaded from the shared Academic mock bank via
+  // getSpeakingPartsForMock(); MockExamEngine overrides this with
+  // speakingParts.length > 0 so we never advertise an empty section.
   speaking: { ready: true },
 } as const;
 
