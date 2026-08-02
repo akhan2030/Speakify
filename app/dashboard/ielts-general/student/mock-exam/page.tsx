@@ -6,13 +6,11 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
+import { GT_SELLABLE_MOCK_NUMBERS } from "@/lib/ielts-general/gtMockCatalog";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
 const TEAL = "#0d9488";
-
-/** Sellable distinct GT mocks only — not the old 6-slot recycle set. */
-export const GT_SELLABLE_MOCK_NUMBERS = [1, 2, 3] as const;
 
 const CHECKLIST = [
   "Listening — 4 sections, 40 questions (30 min)",
