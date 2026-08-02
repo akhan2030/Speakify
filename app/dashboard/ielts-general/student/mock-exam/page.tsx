@@ -102,8 +102,8 @@ export default function GtMockExamLobbyPage() {
             ))}
           </ul>
           <p className="mt-4 text-xs text-slate-500">
-            Allow ~3 hours uninterrupted. These are General Training papers — not
-            Academic graph / long-passage Academic Reading mocks.
+            Allow ~3 hours uninterrupted. Writing Task 1 is a letter (not a chart or
+            graph); Reading uses everyday and workplace texts (Sections A, B &amp; C).
           </p>
         </div>
 
