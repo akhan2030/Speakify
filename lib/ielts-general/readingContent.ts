@@ -513,9 +513,9 @@ The work remains unfinished. Al-Harbi estimates that two hundred elders still ho
         id: "gt_c_001_q2",
         number: 2,
         type: "true_false_not_given",
-        question: "Fahad's father watched construction cranes from the roof.",
-        answer: "FALSE",
-        explanation: "His father watched ships, not cranes.",
+        question: "Fahad's father watched ships from the roof.",
+        answer: "TRUE",
+        explanation: 'Fahad says: "My father watched ships from here."',
       },
       {
         id: "gt_c_001_q3",
@@ -528,15 +528,10 @@ The work remains unfinished. Al-Harbi estimates that two hundred elders still ho
       {
         id: "gt_c_001_q4",
         number: 4,
-        type: "matching_features",
+        type: "short_answer",
         question: "According to Dr. Al-Harbi, what happens when a word disappears?",
-        options: [
-          "Young people stop asking related practical questions",
-          "Tourism increases in Al-Balad",
-          "Schools replace textbooks",
-          "Builders demolish old houses",
-        ],
-        answer: "Young people stop asking related practical questions",
+        answer:
+          "Young people stop asking related practical questions/young people stop asking how nets were repaired",
         explanation:
           "She says young people stop asking how nets were repaired when a word disappears.",
       },
@@ -591,16 +586,17 @@ The work remains unfinished. Al-Harbi estimates that two hundred elders still ho
         id: "gt_c_001_q10",
         number: 10,
         type: "true_false_not_given",
-        question: "The oral-history project receives large government funding.",
-        answer: "FALSE",
-        explanation: "The team has no government budget.",
+        question:
+          "The oral-history project plans to publish a printed book of transcripts within two years.",
+        answer: "NOT GIVEN",
+        explanation:
+          "The passage says the work is unfinished and hopes schools will use clips, but it does not mention publishing a book or any two-year plan.",
       },
       {
         id: "gt_c_001_q11",
         number: 11,
-        type: "matching_features",
+        type: "short_answer",
         question: "Who often corrects Fahad's memory during recordings?",
-        options: ["Maha Al-Qahtani", "Safiya", "Hassan Mohammed", "Omar Al-Faraj"],
         answer: "Safiya",
         explanation: "His wife Safiya often joins to correct his memory.",
       },
