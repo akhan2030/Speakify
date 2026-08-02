@@ -58,6 +58,31 @@ export async function POST(request) {
 
     const supabase = getSupabase();
 
+    // Reject out-of-range mock numbers before resume/create.
+    if (mockNumber != null) {
+      const { isValidAcademicMockNumber } = await import(
+        "@/lib/mock-test/academicMockCatalog"
+      );
+      const { isValidGtMockNumber } = await import(
+        "@/lib/ielts-general/gtMockCatalog"
+      );
+      const valid =
+        examVariant === "general"
+          ? isValidGtMockNumber(mockNumber)
+          : isValidAcademicMockNumber(mockNumber);
+      if (!valid) {
+        return NextResponse.json(
+          {
+            error:
+              examVariant === "general"
+                ? "Invalid GT mock number (1–3 only)"
+                : "Invalid Academic mock number (1–5 only)",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const { data: inProgress } = await supabase
       .from("mock_test_attempts")
       .select("id, mock_number, created_at, exam_content, student_id")
@@ -70,7 +95,11 @@ export async function POST(request) {
     const inProgressVariant =
       inProgress?.exam_content?.examVariant === "general" ? "general" : "academic";
 
-    if (inProgress?.id && inProgressVariant === examVariant) {
+    const sameMock =
+      mockNumber == null ||
+      Number(inProgress?.mock_number) === Number(mockNumber);
+
+    if (inProgress?.id && inProgressVariant === examVariant && sameMock) {
       const authSession = await getServerSession(authOptions);
       if (
         authSession?.user?.id &&

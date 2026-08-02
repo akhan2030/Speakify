@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageSpinner } from "@/components/StudentSidebar";
 import { GT_MOCK_CATALOG } from "@/lib/ielts-general/gtMockCatalog";
@@ -300,6 +300,20 @@ function MockExamCard({
 }
 
 export default function GtMockExamLobbyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <PageSpinner />
+        </div>
+      }
+    >
+      <GtMockExamLobbyContent />
+    </Suspense>
+  );
+}
+
+function GtMockExamLobbyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedMockNumber = Number(searchParams.get("mock"));
