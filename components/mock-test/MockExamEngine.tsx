@@ -814,6 +814,20 @@ export default function MockExamEngine({
       if (pIdx >= 0) setReadingPassageIdx(pIdx);
     }
     if (phase === "writing") setWritingTask(index === 0 ? 1 : 2);
+    if (phase === "speaking") {
+      let remaining = index;
+      for (let p = 0; p < speakingParts.length; p++) {
+        const count =
+          speakingParts[p].part === 2 ? 1 : speakingParts[p].questions.length;
+        if (remaining < count) {
+          setSpeakingPartIdx(p);
+          setSpeakingQIdx(speakingParts[p].part === 2 ? 0 : remaining);
+          setSpeakingInPrep(false);
+          return;
+        }
+        remaining -= count;
+      }
+    }
   };
 
   const onPrepAnnouncementComplete = useCallback(() => {
