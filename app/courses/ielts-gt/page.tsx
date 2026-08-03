@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "IELTS General Training Courses | Speakify LMS",
   description:
-    "IELTS General Training Foundation, Plus, and Elite — letter writing, GT reading, and everyday English inside Speakify LMS.",
+    "IELTS General Training Foundation, Plus, and Elite — letter writing, General Reading, and everyday English inside Speakify LMS.",
 };
 
 export default function IeltsGeneralCoursesPage() {
@@ -25,7 +25,7 @@ export default function IeltsGeneralCoursesPage() {
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-300">
             Three dedicated General Training tracks — Foundation, Plus, and Elite — for letter
-            writing, everyday reading, and GT skills. Separate from Academic graph/report
+            writing, everyday reading, and General skills. Separate from Academic graph/report
             writing.
           </p>
         </div>

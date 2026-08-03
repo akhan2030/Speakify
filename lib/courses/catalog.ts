@@ -1,4 +1,5 @@
 import { ACCELERATOR_TRACKS } from "@/lib/accelerator/tracks";
+import { filterStepFromCatalog } from "@/lib/step/launchGate";
 
 export type CourseCategoryId = "test-prep" | "general-english" | "specialty";
 
@@ -40,7 +41,7 @@ export const COURSE_CATEGORIES: CourseCategory[] = [
     id: "general-english",
     label: "General English",
     description:
-      "Structured CEFR pathway from A1.1 through C2.2 — 12 micro-levels with weekly lessons and certificates.",
+      "Structured CEFR pathway from AB through C2.2 — 13 micro-levels with weekly lessons and certificates.",
   },
   {
     id: "specialty",
@@ -56,11 +57,11 @@ const elite = ACCELERATOR_TRACKS.elite;
 export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "ielts-foundation",
-    name: "IELTS Foundation",
-    tagline: "Build core IELTS skills",
-    shortDescription: "Core IELTS skills for Band 5.0–5.5 learners.",
+    name: "IELTS Academic — Foundation",
+    tagline: "Build core Academic IELTS skills",
+    shortDescription: "Core Academic IELTS skills for Band 5.0–5.5 learners.",
     description:
-      "Six-week programme for learners targeting Band 5.0–5.5. Master IELTS format, essential vocabulary, and fundamentals across all four skills.",
+      "Six-week programme for learners targeting Band 5.0–5.5. Master IELTS Academic format, essential vocabulary, and fundamentals across all four skills.",
     levelBadge: "Beginner",
     category: "test-prep",
     accent: "#6366f1",
@@ -72,11 +73,11 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   },
   {
     slug: "ielts-plus",
-    name: "IELTS Plus",
-    tagline: "Most popular track",
-    shortDescription: "Intermediate IELTS prep with mocks and AI feedback.",
+    name: "IELTS Academic — Plus",
+    tagline: "Most popular Academic track",
+    shortDescription: "Intermediate Academic IELTS prep with mocks and AI feedback.",
     description:
-      "Six-week intermediate IELTS preparation for Band 6.0–6.5. Strategy drills, full mock tests, and AI-powered speaking and writing feedback.",
+      "Six-week intermediate IELTS Academic preparation for Band 6.0–6.5. Strategy drills, full mock tests, and AI-powered speaking and writing feedback.",
     levelBadge: "Intermediate",
     category: "test-prep",
     accent: "#c9972c",
@@ -88,11 +89,11 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   },
   {
     slug: "ielts-elite",
-    name: "IELTS Elite",
-    tagline: "High-band intensive",
-    shortDescription: "Intensive Band 7.0+ accelerator with timed mocks.",
+    name: "IELTS Academic — Elite",
+    tagline: "High-band Academic intensive",
+    shortDescription: "Intensive Academic Band 7.0+ accelerator with timed mocks.",
     description:
-      "Four-week intensive accelerator for Band 7.0+. Advanced language precision, timed tasks, and exam-day strategy for ambitious test takers.",
+      "Four-week intensive Academic accelerator for Band 7.0+. Advanced language precision, timed tasks, and exam-day strategy for ambitious test takers.",
     levelBadge: "Advanced",
     category: "test-prep",
     accent: "#0d1b35",
@@ -105,21 +106,21 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "ielts-gt-foundation",
     name: "IELTS General Training — Foundation",
-    tagline: "GT core skills",
-    shortDescription: "Six-week GT programme for Band 5.0–5.5 learners.",
+    tagline: "General Training core skills",
+    shortDescription: "Six-week General Training programme for Band 5.0–5.5 learners.",
     description:
-      "Six-week programme for learners targeting Band 5.0–5.5. Master GT letter writing, everyday reading, and essential listening skills.",
+      "Six-week programme for learners targeting Band 5.0–5.5. Master General Training letter writing, everyday reading, and essential listening skills.",
     levelBadge: "Beginner",
     category: "test-prep",
     accent: "#0d9488",
     ctaLabel: "Start Learning",
-    ctaHref: "/register/ielts-general",
+    ctaHref: "/register/ielts-general?track=foundation",
     duration: "6 weeks",
     price: foundation.price,
     highlights: [
-      "GT format & letter types overview",
+      "General Training format & letter types overview",
       "Formal, semi-formal & informal letter foundations",
-      "GT reading strategies for everyday texts",
+      "General Reading strategies for everyday texts",
       "General Task 2 essay basics",
       "Listening skills for social contexts",
       "Full skills integration by Week 6",
@@ -128,21 +129,21 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "ielts-gt-plus",
     name: "IELTS General Training — Plus",
-    tagline: "Most popular GT track",
-    shortDescription: "Eight-week GT prep for Band 6.0–6.5 with AI scoring.",
+    tagline: "Most popular General Training track",
+    shortDescription: "Eight-week General Training prep for Band 6.0–6.5 with AI scoring.",
     description:
-      "Eight-week programme for Band 6.0–6.5. Master all letter types, GT reading sections, and AI-scored mock tests.",
+      "Eight-week programme for Band 6.0–6.5. Master all letter types, General Reading sections, and AI-scored mock tests.",
     levelBadge: "Intermediate",
     category: "test-prep",
     accent: "#c9972c",
     ctaLabel: "Start Learning",
-    ctaHref: "/register/ielts-general",
+    ctaHref: "/register/ielts-general?track=plus",
     duration: "8 weeks",
     price: plus.price,
     highlights: [
       "Formal letter mastery (Weeks 1–2)",
       "Semi-formal & informal letter precision",
-      "GT Reading Sections 1–3 practice",
+      "General Reading Sections 1–3 practice",
       "General Task 2 essay writing",
       "AI band scoring on every writing submission",
       "Full mock tests with AI feedback",
@@ -151,20 +152,20 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "ielts-gt-elite",
     name: "IELTS General Training — Elite",
-    tagline: "Band 7+ GT intensive",
-    shortDescription: "Ten-week intensive for Band 7.0+ GT candidates.",
+    tagline: "Band 7+ General Training intensive",
+    shortDescription: "Ten-week intensive for Band 7.0+ General Training candidates.",
     description:
       "Ten-week intensive for Band 7.0+. Advanced letter writing, complex reading, timed mocks, and Speaking mastery.",
     levelBadge: "Advanced",
     category: "test-prep",
     accent: "#0d1b35",
     ctaLabel: "Start Learning",
-    ctaHref: "/register/ielts-general",
+    ctaHref: "/register/ielts-general?track=elite",
     duration: "10 weeks",
     price: elite.price,
     highlights: [
       "Band 7+ letter writing with sophistication",
-      "Advanced GT reading under timed conditions",
+      "Advanced General Reading under timed conditions",
       "Advanced General Task 2 essay types",
       "Speaking Parts 1–3 at Band 7 level",
       "Full timed mock tests with detailed AI feedback",
@@ -214,11 +215,11 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "english-pathway",
     name: "English Pathway",
-    tagline: "CEFR A1.1 → C2.2",
+    tagline: "CEFR AB → C2.2",
     shortDescription:
-      "Full CEFR pathway — 12 micro-levels from A1.1 through C2.2.",
+      "Full CEFR pathway — 13 micro-levels from AB through C2.2.",
     description:
-      "Structured general English from A1.1 to C2.2 across 12 micro-levels. Each level is about 4 weeks with weekly lessons, skill practice, readiness checks, and graduation certificates.",
+      "Structured general English from AB to C2.2 across 13 micro-levels. Each level includes weekly lessons, skill practice, readiness checks, and graduation certificates.",
     levelBadge: "Beginner",
     category: "general-english",
     accent: "#0d9488",
@@ -227,7 +228,7 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     duration: "4 weeks per level",
     price: "Starts at 900 SAR",
     highlights: [
-      "CEFR progression A1.1 → C2.2 (12 micro-levels)",
+      "CEFR progression AB → C2.2 (13 micro-levels)",
       "Weekly grammar & vocabulary focus",
       "Speaking, reading, listening & writing practice",
       "Level readiness checks & certificates",
@@ -308,10 +309,12 @@ export function getIeltsGeneralCourses(): CourseCatalogItem[] {
 }
 
 export function getOtherTestPrepCourses(): CourseCatalogItem[] {
-  return getCoursesByCategory("test-prep").filter(
-    (c) =>
-      !getIeltsAcademicCourses().some((a) => a.slug === c.slug) &&
-      !getIeltsGeneralCourses().some((g) => g.slug === c.slug)
+  return filterStepFromCatalog(
+    getCoursesByCategory("test-prep").filter(
+      (c) =>
+        !getIeltsAcademicCourses().some((a) => a.slug === c.slug) &&
+        !getIeltsGeneralCourses().some((g) => g.slug === c.slug)
+    )
   );
 }
 
@@ -338,7 +341,7 @@ export function getCourseBySlug(slug: string): CourseCatalogItem | undefined {
 }
 
 export function getCoursesByCategory(category: CourseCategoryId): CourseCatalogItem[] {
-  return COURSE_CATALOG.filter((c) => c.category === category);
+  return filterStepFromCatalog(COURSE_CATALOG.filter((c) => c.category === category));
 }
 
 export const COURSE_SLUGS = COURSE_CATALOG.map((c) => c.slug);
@@ -370,7 +373,7 @@ export const NAV_DROPDOWNS: NavDropdownGroup[] = [
       {
         sectionLabel: "IELTS General Training",
         courses: getIeltsGeneralCourses().map((c) => ({
-          name: c.name.replace("IELTS General Training — ", "GT "),
+          name: c.name.replace("IELTS General Training — ", "General — "),
           href: `/courses/${c.slug}`,
           levelBadge: c.levelBadge,
         })),

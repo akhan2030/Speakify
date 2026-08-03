@@ -165,6 +165,7 @@ export default function MockExamsLanding() {
       </section>
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <section id="academic" className="scroll-mt-24">
         <p className="text-center text-xs font-bold uppercase tracking-widest" style={{ color: TEAL }}>
           IELTS Academic
         </p>
@@ -272,8 +273,9 @@ export default function MockExamsLanding() {
             </p>
           ) : null}
         </section>
+        </section>
 
-        <section className="mt-16 border-t border-slate-200 pt-14">
+        <section id="general" className="mt-16 scroll-mt-24 border-t border-slate-200 pt-14">
           <p className="text-center text-xs font-bold uppercase tracking-widest" style={{ color: GOLD }}>
             IELTS General Training
           </p>
