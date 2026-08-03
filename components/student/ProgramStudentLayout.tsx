@@ -66,12 +66,29 @@ export default function ProgramStudentLayout({
 
   useEffect(() => {
     if (status !== "authenticated" || role !== "student") return;
-    if (
-      pathname &&
-      (isIeltsAcademicMockPath(pathname) || isIeltsGeneralMockPath(pathname))
-    ) {
+
+    const enrolled = Array.isArray(enrolledPrograms)
+      ? enrolledPrograms.map((p) => String(p).trim().toLowerCase())
+      : [];
+    const generalOnly =
+      enrolled.includes("ielts_general") && !enrolled.includes("ielts");
+
+    // General-only students must never stay on the Academic mock lobby.
+    if (pathname && isIeltsAcademicMockPath(pathname) && generalOnly) {
+      router.replace("/dashboard/ielts-general/student/mock-exam");
       return;
     }
+
+    // Anyone may open the General mock lobby (buyers + General Accelerator).
+    if (pathname && isIeltsGeneralMockPath(pathname)) {
+      return;
+    }
+
+    // Academic / dual students may open the Academic mock lobby.
+    if (pathname && isIeltsAcademicMockPath(pathname)) {
+      return;
+    }
+
     const allowed = canAccessStudentDashboard(expectedProgram, {
       programType: rawProgramType,
       enrolledPrograms,

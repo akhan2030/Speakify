@@ -699,7 +699,7 @@ export default function GeneralStudentDashboard() {
             <p className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-center text-sm font-semibold text-slate-500">
               Mock exams —{" "}
               <Link href={`${BASE}/mock-exam`} className="text-[#0d9488] hover:underline">
-                start GT mock →
+                start General mock →
               </Link>
             </p>
           </div>

@@ -66,7 +66,7 @@ export default function CoursesHubFork() {
             <Link href="/courses/mock-exams#academic" className="text-[#0d1b35] underline hover:text-[#0d9488]">
               Academic mocks
             </Link>
-            <Link href="/courses/mock-exams#general" className="text-[#0d1b35] underline hover:text-[#0d9488]">
+            <Link href="/courses/mock-exams/general" className="text-[#0d1b35] underline hover:text-[#0d9488]">
               General mocks
             </Link>
           </div>

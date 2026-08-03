@@ -77,18 +77,18 @@ export default function MockExamsLanding() {
     if (isLoggedIn && hasAcademicFullAccess) {
       return {
         href: ieltsMockLobbyHref(mockNumber),
-        label: t("mockExams.startMock").replace("{n}", String(mockNumber)),
+        label: `Start Academic Mock #${mockNumber}`,
       };
     }
     if (isLoggedIn) {
       return {
         href: buyHref("single", mockNumber),
-        label: t("mockExams.buyMock").replace("{n}", String(mockNumber)),
+        label: `Buy Academic Mock #${mockNumber}`,
       };
     }
     return {
       href: registerHref("single", mockNumber),
-      label: t("mockExams.buyMock").replace("{n}", String(mockNumber)),
+      label: `Buy Academic Mock #${mockNumber}`,
     };
   }
 
@@ -284,7 +284,17 @@ export default function MockExamsLanding() {
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">
             Letter Writing Task 1, General Reading Sections A/B/C, Listening &amp; Speaking —
-            sold separately from Academic mocks. No 5-pack (Reading inventory supports 3).
+            sold separately from Academic mocks. Opens the General lobby only
+            (<code className="text-xs">/dashboard/ielts-general/…</code>), never Academic.
+          </p>
+          <p className="mt-4 text-center">
+            <Link
+              href="/courses/mock-exams/general"
+              className="text-sm font-bold underline"
+              style={{ color: TEAL }}
+            >
+              Open dedicated General mock exams page →
+            </Link>
           </p>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
