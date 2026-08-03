@@ -129,7 +129,7 @@ export async function grantMockAccess(
 
   const { data: userRow } = await supabase
     .from("users")
-    .select("payment_status, purchase_intent")
+    .select("payment_status, purchase_intent, enrolled_programs, program_selected")
     .eq("id", input.studentId)
     .maybeSingle();
 
@@ -150,6 +150,18 @@ export async function grantMockAccess(
     intent !== "accelerator"
   ) {
     userUpdates.purchase_intent = "mock_only";
+  }
+
+  // Ensure the purchased programme is on enrolled_programs so the matching
+  // lobby layout does not bounce the buyer to the other IELTS variant.
+  const existing = Array.isArray(userRow?.enrolled_programs)
+    ? userRow!.enrolled_programs.map((p: unknown) => String(p).trim().toLowerCase())
+    : [];
+  if (!existing.includes(programme)) {
+    userUpdates.enrolled_programs = [...existing, programme];
+  }
+  if (!userRow?.program_selected) {
+    userUpdates.program_selected = programme;
   }
 
   if (Object.keys(userUpdates).length > 0) {

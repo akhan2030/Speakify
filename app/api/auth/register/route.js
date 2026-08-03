@@ -108,10 +108,16 @@ export async function POST(request) {
       );
     }
     const isMockExamRegistration = registrationSlug === "mock-exam";
+    const mockProgrammeRaw = String(body.programme ?? body.mockProgramme ?? "")
+      .trim()
+      .toLowerCase();
+    const isMockExamGeneral =
+      isMockExamRegistration && mockProgrammeRaw === "ielts_general";
     const isIeltsGeneralRegistration =
       registrationSlug === "ielts-general" ||
       courseSlug === "ielts-general" ||
-      courseSlug.startsWith("ielts-gt");
+      courseSlug.startsWith("ielts-gt") ||
+      isMockExamGeneral;
     const isIeltsAcademicRegistration =
       !isMockExamRegistration &&
       !isIeltsGeneralRegistration &&
@@ -142,8 +148,8 @@ export async function POST(request) {
         ? { step_enrolled: true, enrolled_programs: ["step"] }
         : isMockExamRegistration
           ? {
-              enrolled_programs: ["ielts"],
-              program_selected: "ielts",
+              enrolled_programs: [isMockExamGeneral ? "ielts_general" : "ielts"],
+              program_selected: isMockExamGeneral ? "ielts_general" : "ielts",
               purchase_intent: "mock_only",
               onboarding_completed: true,
             }

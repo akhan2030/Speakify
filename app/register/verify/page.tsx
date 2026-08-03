@@ -235,9 +235,11 @@ function RegisterVerifyContent() {
       const product = searchParams.get("product");
       const mock = searchParams.get("mock");
       const offer = searchParams.get("offer");
+      const programme = searchParams.get("programme");
       if (product) params.set("product", product);
       if (mock) params.set("mock", mock);
       if (offer) params.set("offer", offer);
+      if (programme) params.set("programme", programme);
       router.replace(`/register/welcome?${params.toString()}`);
     }
   }, [emailDone, phoneDone, name, program, track, router, searchParams]);

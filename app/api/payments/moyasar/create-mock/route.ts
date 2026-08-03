@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         {
           error:
             programme === "ielts_general"
-              ? "Invalid GT product (single or pack3 only)"
+              ? "Invalid General product (single or pack3 only)"
               : "Invalid product",
         },
         { status: 400 }
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
         {
           error:
             programme === "ielts_general"
-              ? "Your plan already includes all 3 full timed GT mocks"
+              ? "Your plan already includes all 3 full timed General mocks"
               : "Your plan already includes all Academic mocks",
           redirect: lobbyPath,
         },
@@ -215,7 +215,7 @@ export async function POST(request: Request) {
       programme === "ielts_general"
         ? product === "single"
           ? `IELTS General Training Mock #${mockNumber}`
-          : "3 full timed GT mock exams (Mocks #1–#3)"
+          : "3 full timed General mock exams (Mocks #1–#3)"
         : product === "single"
           ? `IELTS Academic Mock #${mockNumber}`
           : product === "pack3"

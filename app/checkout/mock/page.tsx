@@ -85,7 +85,7 @@ export default function MockCheckoutPage() {
     }
 
     if (isGt && product === "pack5") {
-      setError("GT offers single mocks or a 3-mock pack only — no 5-pack.");
+      setError("General offers single mocks or a 3-mock pack only — no 5-pack.");
       setLoading(false);
       return;
     }

@@ -61,12 +61,20 @@ export default function MockExamsLanding() {
   const { t } = useMarketingLocale();
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
-  const hasFullAccess =
+  const enrolled = ((session?.user as { enrolledPrograms?: unknown })?.enrolledPrograms ??
+    []) as unknown[];
+  const enrolledSlugs = enrolled.map((p) => String(p).trim().toLowerCase());
+  const hasAcademicFullAccess =
     (session?.user as { hasDashboardAccess?: boolean })?.hasDashboardAccess === true &&
-    (session?.user as { purchaseIntent?: string | null })?.purchaseIntent !== "mock_only";
+    (session?.user as { purchaseIntent?: string | null })?.purchaseIntent !== "mock_only" &&
+    enrolledSlugs.includes("ielts");
+  const hasGeneralFullAccess =
+    (session?.user as { hasDashboardAccess?: boolean })?.hasDashboardAccess === true &&
+    (session?.user as { purchaseIntent?: string | null })?.purchaseIntent !== "mock_only" &&
+    enrolledSlugs.includes("ielts_general");
 
   function ctaForMock(mockNumber: number) {
-    if (isLoggedIn && hasFullAccess) {
+    if (isLoggedIn && hasAcademicFullAccess) {
       return {
         href: ieltsMockLobbyHref(mockNumber),
         label: t("mockExams.startMock").replace("{n}", String(mockNumber)),
@@ -85,7 +93,7 @@ export default function MockExamsLanding() {
   }
 
   function packCta(product: "pack3" | "pack5") {
-    if (isLoggedIn && hasFullAccess) {
+    if (isLoggedIn && hasAcademicFullAccess) {
       return { href: IELTS_MOCK_LOBBY_PATH, label: t("mockExams.goToLobby") };
     }
     if (isLoggedIn) {
@@ -94,44 +102,45 @@ export default function MockExamsLanding() {
     return { href: registerHref(product), label: t(`mockExams.buy${product}`) };
   }
 
-  function gtCtaForMock(mockNumber: number) {
-    if (isLoggedIn && hasFullAccess) {
+  function generalCtaForMock(mockNumber: number) {
+    if (isLoggedIn && hasGeneralFullAccess) {
       return {
         href: gtMockLobbyHref(mockNumber),
-        label: `Start GT Mock #${mockNumber}`,
+        label: `Start General Mock #${mockNumber}`,
       };
     }
     if (isLoggedIn) {
       return {
         href: buyHref("single", mockNumber, "ielts_general"),
-        label: `Buy GT Mock #${mockNumber}`,
+        label: `Buy General Mock #${mockNumber}`,
       };
     }
     return {
       href: registerHref("single", mockNumber, "ielts_general"),
-      label: `Buy GT Mock #${mockNumber}`,
+      label: `Buy General Mock #${mockNumber}`,
     };
   }
 
-  function gtPack3Cta() {
-    if (isLoggedIn && hasFullAccess) {
-      return { href: GT_MOCK_LOBBY_PATH, label: "Go to GT lobby" };
+  function generalPack3Cta() {
+    if (isLoggedIn && hasGeneralFullAccess) {
+      return { href: GT_MOCK_LOBBY_PATH, label: "Go to General lobby" };
     }
     if (isLoggedIn) {
       return {
         href: buyHref("pack3", undefined, "ielts_general"),
-        label: "Buy GT 3-Mock Pack",
+        label: "Buy General 3-Mock Pack",
       };
     }
     return {
       href: registerHref("pack3", undefined, "ielts_general"),
-      label: "Buy GT 3-Mock Pack",
+      label: "Buy General 3-Mock Pack",
     };
   }
 
   const pack3 = packCta("pack3");
   const pack5 = packCta("pack5");
-  const gtPack3 = gtPack3Cta();
+  const generalPack3 = generalPack3Cta();
+  const hasFullAccess = hasAcademicFullAccess;
 
   return (
     <div>
@@ -269,23 +278,23 @@ export default function MockExamsLanding() {
             IELTS General Training
           </p>
           <h2 className="mt-2 text-center text-2xl font-bold text-[#0d1b35]">
-            3 full timed GT mock exams
+            3 full timed General mock exams
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">
-            Letter Writing Task 1, GT Reading Sections A/B/C, Listening &amp; Speaking —
+            Letter Writing Task 1, General Reading Sections A/B/C, Listening &amp; Speaking —
             sold separately from Academic mocks. No 5-pack (Reading inventory supports 3).
           </p>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {GT_MOCK_CATALOG.map((mock) => {
-              const cta = gtCtaForMock(mock.mockNumber);
+              const cta = generalCtaForMock(mock.mockNumber);
               return (
                 <article
-                  key={`gt-${mock.mockNumber}`}
+                  key={`general-${mock.mockNumber}`}
                   className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
                   <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                    GT Mock #{mock.mockNumber}
+                    General Mock #{mock.mockNumber}
                   </p>
                   <h3 className="mt-2 text-base font-bold text-[#0d1b35]">
                     Full IELTS General Training Mock Exam
@@ -313,7 +322,7 @@ export default function MockExamsLanding() {
           </div>
 
           <div className="mt-8 rounded-2xl border border-[#c9972c]/40 bg-[#c9972c]/5 p-6 sm:p-8">
-            <h3 className="text-lg font-bold text-[#0d1b35]">GT 3-Mock Pack</h3>
+            <h3 className="text-lg font-bold text-[#0d1b35]">General 3-Mock Pack</h3>
             <p className="mt-1 text-3xl font-extrabold" style={{ color: TEAL }}>
               {GT_MOCK_PRICING.pack3.priceLabel}
             </p>
@@ -321,25 +330,25 @@ export default function MockExamsLanding() {
               {GT_MOCK_PRICING.pack3.saveVsSinglesLabel}
             </p>
             <p className="mt-2 text-sm text-slate-600">
-              Unlocks all 3 full timed GT mocks. Not interchangeable with Academic packs.
+              Unlocks all 3 full timed General mocks. Not interchangeable with Academic packs.
             </p>
             <Link
-              href={gtPack3.href}
+              href={generalPack3.href}
               onClick={() => rememberFoundingOffer()}
               className="mt-4 inline-flex rounded-xl px-5 py-2.5 text-sm font-bold text-white"
               style={{ backgroundColor: NAVY }}
             >
-              {gtPack3.label}
+              {generalPack3.label}
             </Link>
-            {isLoggedIn && hasFullAccess ? (
+            {isLoggedIn && hasGeneralFullAccess ? (
               <p className="mt-4 text-sm text-slate-600">
-                GT Accelerator includes all 3 mocks —{" "}
+                General Accelerator includes all 3 mocks —{" "}
                 <Link
                   href={GT_MOCK_LOBBY_PATH}
                   className="font-semibold underline"
                   style={{ color: TEAL }}
                 >
-                  open GT lobby →
+                  open General lobby →
                 </Link>
               </p>
             ) : null}

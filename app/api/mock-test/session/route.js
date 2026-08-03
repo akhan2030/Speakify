@@ -75,7 +75,7 @@ export async function POST(request) {
           {
             error:
               examVariant === "general"
-                ? "Invalid GT mock number (1–3 only)"
+                ? "Invalid General mock number (1–3 only)"
                 : "Invalid Academic mock number (1–5 only)",
           },
           { status: 400 }
@@ -148,7 +148,7 @@ export async function POST(request) {
           {
             error:
               examVariant === "general"
-                ? "Purchase this GT mock exam to start a new attempt."
+                ? "Purchase this General mock exam to start a new attempt."
                 : "Purchase this mock exam to start a new attempt.",
           },
           { status: 403 }

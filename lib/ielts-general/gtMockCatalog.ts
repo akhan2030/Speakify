@@ -45,13 +45,13 @@ export const GT_MOCK_CATALOG: GtMockCatalogItem[] = [
   {
     mockNumber: 2,
     theme: "Community & Practical Life",
-    readingFocus: "Rotated GT Reading bank + alternate Section C",
+    readingFocus: "Rotated General Reading bank + alternate Section C",
     priceHalalas: GT_MOCK_SINGLE_PRICE_HALALAS,
     priceLabel: "169 SAR",
   },
   {
     mockNumber: 3,
-    theme: "Timed GT Exam Conditions",
+    theme: "Timed General Exam Conditions",
     readingFocus: "Third sitting — new L/S/W; Reading bank reused",
     priceHalalas: GT_MOCK_SINGLE_PRICE_HALALAS,
     priceLabel: "169 SAR",

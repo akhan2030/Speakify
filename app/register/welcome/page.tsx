@@ -49,7 +49,9 @@ function WelcomeContent() {
   const trackParam = searchParams.get("track")?.trim().toLowerCase() ?? "";
   const checkoutProduct = searchParams.get("product")?.trim() ?? "";
   const checkoutMock = searchParams.get("mock")?.trim() ?? "";
+  const checkoutProgramme = searchParams.get("programme")?.trim().toLowerCase() ?? "";
   const offerCode = searchParams.get("offer")?.trim() ?? "";
+  const isGeneralMockCheckout = checkoutProgramme === "ielts_general";
   const purchasedTrack: AcceleratorTrackId | null = isValidTrack(trackParam)
     ? trackParam
     : null;
@@ -66,17 +68,23 @@ function WelcomeContent() {
 
   const isMockExam = registrationProgram.slug === "mock-exam";
   const isIeltsGeneral = registrationProgram.slug === "ielts-general";
-  const programType = isIeltsGeneral ? "ielts_general" : normalizeProgramType(registrationProgram.programType);
+  const programType = isIeltsGeneral || isGeneralMockCheckout
+    ? "ielts_general"
+    : normalizeProgramType(registrationProgram.programType);
   const isPathway = programType === "pathway";
   const isToefl = registrationProgram.slug === "toefl";
   const programLabel =
-    trackMeta && registrationProgram.slug === "ielts"
+    isMockExam && isGeneralMockCheckout
+      ? "IELTS General Training Mock Exam"
+      : trackMeta && registrationProgram.slug === "ielts"
       ? `IELTS Academic ${trackMeta.name}`
       : trackMeta && isIeltsGeneral
         ? `IELTS General ${trackMeta.name}`
         : registrationProgram.label;
   const dashboardPath =
-    registrationProgram.dashboardPath ?? studentDashboardPath(programType);
+    isMockExam && isGeneralMockCheckout
+      ? "/dashboard/ielts-general/student/mock-exam"
+      : registrationProgram.dashboardPath ?? studentDashboardPath(programType);
   const isStep = registrationProgram.slug === "step-test";
   const accentClass = isMockExam
     ? "bg-[#0d9488]/20 text-[#0d9488]"
@@ -93,6 +101,7 @@ function WelcomeContent() {
     const params = new URLSearchParams();
     if (checkoutProduct) params.set("product", checkoutProduct);
     if (checkoutMock) params.set("mock", checkoutMock);
+    if (isGeneralMockCheckout) params.set("programme", "ielts_general");
     if (offerCode) params.set("offer", offerCode);
     const q = params.toString();
     return q ? `/checkout/mock?${q}` : "/courses/mock-exams";

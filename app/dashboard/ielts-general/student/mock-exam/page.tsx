@@ -13,14 +13,14 @@ const TEAL = "#0d9488";
 
 const QUOTES = [
   "Every mock exam is a step closer to your target band.",
-  "Treat this like the real GT exam — letter Task 1, everyday Reading texts.",
+  "Treat this like the real General Training exam — letter Task 1, everyday Reading texts.",
   "Your English is improving every single day. Keep going.",
   "Band 7 is not a dream — it is a plan executed daily.",
 ];
 
 const MOCK_CHECKLIST = [
   "40 Listening questions — 30 minutes",
-  "GT Reading Sections A, B & C — 60 minutes",
+  "General Reading Sections A, B & C — 60 minutes",
   "Writing Task 1 LETTER + Task 2 essay — 60 minutes",
   "3-part Speaking — 15 minutes",
   "AI + Human examiner scoring",
@@ -132,7 +132,7 @@ function TipsPanel({ className = "" }: { className?: string }) {
   return (
     <aside className={`rounded-2xl border border-slate-200 bg-slate-50 p-5 ${className}`}>
       <h3 className="text-sm font-bold" style={{ color: NAVY }}>
-        Before your GT mock
+        Before your General mock
       </h3>
       <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
         {PRE_MOCK_TIPS.map((tip) => (
@@ -197,7 +197,7 @@ function MockExamCard({
         {mock.theme
           ? `${mock.theme} — `
           : ""}
-        Timed GT paper: letter Task 1, Reading A/B/C, AI + human review within 24 hours.
+        Timed General Training paper: letter Task 1, Reading A/B/C, AI + human review within 24 hours.
       </p>
 
       {isCurrent ? (
@@ -272,7 +272,7 @@ function MockExamCard({
               Starting…
             </span>
           ) : (
-            `Start GT Mock ${formatMockNumber(mock.mockNumber)}`
+            `Start General Mock ${formatMockNumber(mock.mockNumber)}`
           )}
         </button>
       ) : !isCompleted ? (
@@ -290,7 +290,7 @@ function MockExamCard({
               className="inline-flex w-full items-center justify-center rounded-xl border-2 px-6 py-3 text-sm font-bold hover:opacity-95 sm:w-auto"
               style={{ borderColor: GOLD, color: NAVY }}
             >
-              Upgrade to 3-Mock Pack
+              Upgrade to General 3-Mock Pack
             </Link>
           ) : null}
         </div>
@@ -359,7 +359,7 @@ function GtMockExamLobbyContent() {
         setPageData(dataRes);
       } catch {
         if (cancelled) return;
-        setLoadError("Could not load GT mock exams. Showing catalog.");
+        setLoadError("Could not load General mock exams. Showing catalog.");
         setPageData({
           studentName: "Student",
           targetBand: 6.5,
@@ -473,10 +473,10 @@ function GtMockExamLobbyContent() {
           IELTS General Training · Full mock exams
         </p>
         <h1 className="mt-2 text-2xl font-extrabold text-white sm:text-3xl">
-          Your GT mock exam lobby
+          Your General mock exam lobby
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
-          Three full timed General Training simulations — letter Task 1, GT Reading A/B/C,
+          Three full timed General Training simulations — letter Task 1, General Reading A/B/C,
           real timing, AI scoring, and human Writing/Speaking review.
         </p>
       </div>
@@ -485,14 +485,14 @@ function GtMockExamLobbyContent() {
         <div className="min-w-0 flex-1">
           <header className="mb-6">
             <h2 className="text-lg font-bold sm:text-xl" style={{ color: NAVY }}>
-              Your GT mocks
+              Your General mocks
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               {hasAllMocks
-                ? "All 3 full timed GT mocks are unlocked on your plan."
+                ? "All 3 full timed General mocks are unlocked on your plan."
                 : startableCount > 0
-                  ? `${startableCount} of ${sellableCount} GT mocks unlocked — purchase to unlock the rest.`
-                  : "Purchase a GT mock or 3-pack to unlock exams below."}
+                  ? `${startableCount} of ${sellableCount} General mocks unlocked — purchase to unlock the rest.`
+                  : "Purchase a General mock or 3-pack to unlock exams below."}
             </p>
           </header>
 
@@ -536,7 +536,7 @@ function GtMockExamLobbyContent() {
             <div className="mt-4 inline-flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-xs text-slate-500">
-                  Last GT mock
+                  Last General mock
                   {pageData.lastMock.mockNumber
                     ? ` ${formatMockNumber(pageData.lastMock.mockNumber)}`
                     : ""}
@@ -551,7 +551,7 @@ function GtMockExamLobbyContent() {
           {pageData?.history && pageData.history.length > 0 ? (
             <section className="mt-10 overflow-x-auto">
               <h2 className="mb-4 text-base font-bold" style={{ color: NAVY }}>
-                GT mock exam history
+                General mock exam history
               </h2>
               <table className="w-full min-w-[680px] text-left text-sm">
                 <thead>

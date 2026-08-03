@@ -35,11 +35,13 @@ function RegisterFormInner({
   acceleratorTrack,
   checkoutProduct,
   checkoutMock,
+  checkoutProgramme,
 }: {
   slug: RegistrationSlug;
   acceleratorTrack?: string;
   checkoutProduct?: string;
   checkoutMock?: string;
+  checkoutProgramme?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,6 +49,15 @@ function RegisterFormInner({
   const mockCheckoutProduct =
     checkoutProduct ?? searchParams.get("product") ?? undefined;
   const mockCheckoutMock = checkoutMock ?? searchParams.get("mock") ?? undefined;
+  const mockCheckoutProgramme = (
+    checkoutProgramme ??
+    searchParams.get("programme") ??
+    ""
+  )
+    .trim()
+    .toLowerCase();
+  const isGeneralMockCheckout =
+    slug === "mock-exam" && mockCheckoutProgramme === "ielts_general";
   const offerCode = searchParams.get("offer") ?? undefined;
   const purchasedTrack = resolvePurchasedTrack(
     acceleratorTrack,
@@ -58,14 +69,31 @@ function RegisterFormInner({
     [slug, purchasedTrack]
   );
 
-  const sidebarJoin = trackDisplay?.joinHeading ?? program.label;
-  const sidebarDescription = trackDisplay?.description ?? program.description;
-  const sidebarBullets = trackDisplay?.bullets ?? program.bullets;
-  const formTagline = trackDisplay?.tagline ?? program.tagline;
-  const formHeading = trackDisplay
-    ? `Register for ${trackDisplay.registerHeading}`
-    : `Register for ${program.label}`;
-  const accountLabel = trackDisplay?.accountLabel ?? program.label;
+  const sidebarJoin = isGeneralMockCheckout
+    ? "IELTS General Training Mock Exam"
+    : trackDisplay?.joinHeading ?? program.label;
+  const sidebarDescription = isGeneralMockCheckout
+    ? "Create an account to buy and take full IELTS General Training mock exams — letter Task 1, Reading A/B/C, AI scoring, and human review."
+    : trackDisplay?.description ?? program.description;
+  const sidebarBullets = isGeneralMockCheckout
+    ? [
+        "3 full timed General Training mocks (~3 hours each)",
+        "Letter Writing Task 1 · Reading A/B/C · Listening · Speaking",
+        "Buy one mock or save with a 3-mock pack",
+        "Unlimited retakes on mocks you purchase",
+      ]
+    : trackDisplay?.bullets ?? program.bullets;
+  const formTagline = isGeneralMockCheckout
+    ? "General Training · Full mock · No course required"
+    : trackDisplay?.tagline ?? program.tagline;
+  const formHeading = isGeneralMockCheckout
+    ? "Register for IELTS General Training Mock Exam"
+    : trackDisplay
+      ? `Register for ${trackDisplay.registerHeading}`
+      : `Register for ${program.label}`;
+  const accountLabel = isGeneralMockCheckout
+    ? "IELTS General Training Mock Exam"
+    : trackDisplay?.accountLabel ?? program.label;
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -100,8 +128,9 @@ function RegisterFormInner({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          programType: program.programType,
+          programType: isGeneralMockCheckout ? "ielts_general" : program.programType,
           registrationSlug: slug,
+          programme: isGeneralMockCheckout ? "ielts_general" : undefined,
           acceleratorTrack: purchasedTrack ?? undefined,
           courseSlug:
             purchasedTrack && slug === "ielts-general"
@@ -144,6 +173,9 @@ function RegisterFormInner({
       }
       if (slug === "mock-exam" && mockCheckoutMock) {
         params.set("mock", mockCheckoutMock);
+      }
+      if (slug === "mock-exam" && isGeneralMockCheckout) {
+        params.set("programme", "ielts_general");
       }
       if (offerCode) {
         params.set("offer", offerCode);
@@ -384,11 +416,13 @@ export default function RegisterForm({
   acceleratorTrack,
   checkoutProduct,
   checkoutMock,
+  checkoutProgramme,
 }: {
   slug: RegistrationSlug;
   acceleratorTrack?: string;
   checkoutProduct?: string;
   checkoutMock?: string;
+  checkoutProgramme?: string;
 }) {
   return (
     <Suspense fallback={<RegisterFormFallback slug={slug} />}>
@@ -397,6 +431,7 @@ export default function RegisterForm({
         acceleratorTrack={acceleratorTrack}
         checkoutProduct={checkoutProduct}
         checkoutMock={checkoutMock}
+        checkoutProgramme={checkoutProgramme}
       />
     </Suspense>
   );
