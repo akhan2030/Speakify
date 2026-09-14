@@ -21,14 +21,23 @@ const MockCompletionCertificate = forwardRef<HTMLDivElement, Props>(
     return (
       <div className="mock-certificate-wrap mx-auto max-w-4xl">
         {showActions ? (
-          <div className="mb-4 flex flex-wrap justify-end gap-2 print:hidden">
-            <button
-              type="button"
-              onClick={onPrint}
-              className="rounded-xl bg-[#c9972c] px-5 py-2.5 text-sm font-bold text-[#0d1b35] hover:opacity-90"
-            >
-              Download Certificate (PDF)
-            </button>
+          <div className="mb-4 print:hidden">
+            <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-xs leading-relaxed text-amber-950">
+              If you saved a PDF of this report earlier, it may have said letter codes were
+              aligned to the Council of Europe CEFR framework. That claim was incorrect. This
+              page is the current wording: letter codes are Speakify&apos;s internal grouping of
+              mock band scores, not an official CEFR or IELTS result. Please use a new download
+              if you still have the old file.
+            </p>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={onPrint}
+                className="rounded-xl bg-[#c9972c] px-5 py-2.5 text-sm font-bold text-[#0d1b35] hover:opacity-90"
+              >
+                Download Certificate (PDF)
+              </button>
+            </div>
           </div>
         ) : null}
 
@@ -164,15 +173,15 @@ const MockCompletionCertificate = forwardRef<HTMLDivElement, Props>(
             </div>
 
             <p className="mt-3 text-center text-[0.65rem] text-slate-500">
-              CEFR levels shown are aligned to IELTS band score descriptors (Council of Europe
-              framework).
+              Letter codes on this report are Speakify&apos;s internal grouping of mock band
+              scores. They are not an official CEFR rating and are not aligned to the Council
+              of Europe framework.
             </p>
           </div>
 
-          {/* CEFR scale reference */}
           <div className="border-t border-slate-200 bg-white px-6 py-4 sm:px-8">
             <p className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500">
-              CEFR reference scale
+              Speakify internal band grouping (not an official CEFR scale)
             </p>
             <div className="mt-2 flex flex-wrap gap-2 text-[0.65rem] font-semibold">
               {[

@@ -312,8 +312,8 @@ export default function MockResultsReport({ report, attemptId }: Props) {
               Your IELTS Test Report Form
             </h2>
             <p className="mb-6 text-sm text-slate-600 print:hidden">
-              Official-style mock certificate with CEFR levels — download and keep for your
-              records.
+              Practice simulation report for your records — not an official IELTS or CEFR
+              certificate. If you saved an older PDF, download again from this page.
             </p>
             <MockCompletionCertificate
               data={certificateData}
