@@ -189,7 +189,7 @@ const MockCompletionCertificate = forwardRef<HTMLDivElement, Props>(
                 ["A2", "4.0–4.5"],
                 ["B1", "4.5–5.5"],
                 ["B2", "5.5–6.5"],
-                ["C1", "7.0–8.0"],
+                ["C1", "7.0–7.5"],
                 ["C2", "8.0+"],
               ].map(([cefr, band]) => (
                 <span
