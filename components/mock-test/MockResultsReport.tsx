@@ -11,6 +11,7 @@ import {
   readMockSessionMeta,
 } from "@/lib/mock-test/certificate";
 import { ACCELERATOR_TRACKS, acceleratorTrackIdForBand } from "@/lib/accelerator/tracks";
+import type { MockTestFullReport, SectionBreakdown } from "@/lib/mock-test/reportTypes";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
