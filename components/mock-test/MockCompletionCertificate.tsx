@@ -169,9 +169,11 @@ const MockCompletionCertificate = forwardRef<HTMLDivElement, Props>(
                   {ACCELERATOR_TRACKS[id].name}: {ACCELERATOR_TRACKS[id].target}
                 </span>
               ))}
-              <span className="rounded border border-[#c9972c]/40 bg-[#c9972c]/10 px-2 py-1 text-[#0d1b35]">
-                This mock: {ACCELERATOR_TRACKS[acceleratorTrackIdForBand(data.overallBand)].name}
-              </span>
+              {data.overallBand != null ? (
+                <span className="rounded border border-[#c9972c]/40 bg-[#c9972c]/10 px-2 py-1 text-[#0d1b35]">
+                  This mock: {ACCELERATOR_TRACKS[acceleratorTrackIdForBand(data.overallBand)].name}
+                </span>
+              ) : null}
             </div>
           </div>
 
