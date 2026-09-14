@@ -1,5 +1,7 @@
-import RegisterForm from "@/components/register/RegisterForm";
+import ProgramComingSoon from "@/components/courses/ProgramComingSoon";
+import { comingSoonForCourseSlug } from "@/lib/courses/enrolmentClosed";
 
 export default function RegisterLegalEnglishPage() {
-  return <RegisterForm slug="legal-english" />;
+  const copy = comingSoonForCourseSlug("legal-english")!;
+  return <ProgramComingSoon title={copy.title} body={copy.body} />;
 }

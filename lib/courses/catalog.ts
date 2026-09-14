@@ -223,8 +223,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     levelBadge: "Beginner",
     category: "general-english",
     accent: "#0d9488",
-    ctaLabel: "Start Learning",
-    ctaHref: "/register/pathway",
+    ctaLabel: "View Course",
+    ctaHref: "/courses/english-pathway",
     duration: "4 weeks per level",
     price: "Starts at 900 SAR",
     highlights: [
@@ -244,8 +244,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     levelBadge: "Intermediate",
     category: "specialty",
     accent: "#7c3aed",
-    ctaLabel: "Start Learning",
-    ctaHref: "/register/business-english",
+    ctaLabel: "View Course",
+    ctaHref: "/courses/business-english",
     duration: "8 weeks",
     highlights: [
       "Meeting & presentation language",
@@ -264,8 +264,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     levelBadge: "Advanced",
     category: "specialty",
     accent: "#1e40af",
-    ctaLabel: "Start Learning",
-    ctaHref: "/register/legal-english",
+    ctaLabel: "View Course",
+    ctaHref: "/courses/legal-english",
     duration: "10 weeks",
     highlights: [
       "Contract & clause analysis language",
@@ -284,8 +284,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     levelBadge: "Beginner",
     category: "specialty",
     accent: "#f59e0b",
-    ctaLabel: "Start Learning",
-    ctaHref: "/register/kids-english",
+    ctaLabel: "View Course",
+    ctaHref: "/courses/kids-english",
     duration: "Self-paced",
     highlights: [
       "Phonics & pronunciation foundations",

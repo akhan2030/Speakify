@@ -1,7 +1,8 @@
 import MarketingShell from "@/components/marketing/MarketingShell";
 import CourseDetailView from "@/components/courses/CourseDetailView";
-import ToeflComingSoon from "@/components/courses/ToeflComingSoon";
+import ProgramComingSoon from "@/components/courses/ProgramComingSoon";
 import { COURSE_SLUGS, getCourseBySlug } from "@/lib/courses/catalog";
+import { comingSoonForCourseSlug } from "@/lib/courses/enrolmentClosed";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -26,8 +27,9 @@ export default function CourseDetailPage({ params }: Props) {
   const course = getCourseBySlug(params.slug);
   if (!course) notFound();
 
-  if (course.slug === "toefl-accelerator") {
-    return <ToeflComingSoon />;
+  const comingSoon = comingSoonForCourseSlug(course.slug);
+  if (comingSoon) {
+    return <ProgramComingSoon title={comingSoon.title} body={comingSoon.body} />;
   }
 
   return (

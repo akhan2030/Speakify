@@ -300,9 +300,14 @@ export default function CoursesHub(_props: Props) {
                 <h3>English Pathway</h3>
                 <p>Self-paced · Starts at 900 SAR per level · live classes via marketplace</p>
               </div>
-              <Link href="/courses/english-pathway" className="btn-primary">
-                Start my level
-              </Link>
+              <div className="exam-actions">
+                <Link href="/courses/english-pathway" className="btn-primary">
+                  Coming soon
+                </Link>
+                <span className="btn-secondary" aria-disabled="true">
+                  Enrolment closed
+                </span>
+              </div>
             </div>
 
             <div className="ladder">
@@ -352,25 +357,40 @@ export default function CoursesHub(_props: Props) {
               <span className="spec-tag">Intermediate · Self-paced · 8 weeks</span>
               <h3>Business English</h3>
               <p>Workplace English for meetings, emails, and presentations.</p>
-              <Link href="/courses/business-english" className="btn-primary">
-                View course
-              </Link>
+              <div className="exam-actions">
+                <Link href="/courses/business-english" className="btn-primary">
+                  Coming soon
+                </Link>
+                <span className="btn-secondary" aria-disabled="true">
+                  Enrolment closed
+                </span>
+              </div>
             </div>
             <div className="spec-card">
               <span className="spec-tag">Advanced · Self-paced · 10 weeks</span>
               <h3>Legal English</h3>
               <p>Specialised English for contracts and legal writing.</p>
-              <Link href="/courses/legal-english" className="btn-primary">
-                View course
-              </Link>
+              <div className="exam-actions">
+                <Link href="/courses/legal-english" className="btn-primary">
+                  Coming soon
+                </Link>
+                <span className="btn-secondary" aria-disabled="true">
+                  Enrolment closed
+                </span>
+              </div>
             </div>
             <div className="spec-card">
               <span className="spec-tag">Beginner · Self-paced</span>
               <h3>Kids English</h3>
               <p>Fun, age-appropriate English for children aged 6–12.</p>
-              <Link href="/courses/kids-english" className="btn-primary">
-                View course
-              </Link>
+              <div className="exam-actions">
+                <Link href="/courses/kids-english" className="btn-primary">
+                  Coming soon
+                </Link>
+                <span className="btn-secondary" aria-disabled="true">
+                  Enrolment closed
+                </span>
+              </div>
             </div>
           </div>
         </div>

@@ -190,6 +190,7 @@ import {
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
 import { getCourseBySlug } from "@/lib/courses/catalog";
+import { comingSoonRegisterError } from "@/lib/courses/enrolmentClosed";
 
 const GT_TRACK_COURSE_SLUG: Record<AcceleratorTrackId, string> = {
   foundation: "ielts-gt-foundation",
@@ -269,7 +270,10 @@ export function isRegistrationSlug(value: string): value is RegistrationSlug {
 
 /** All programmes shown on /register — keep in sync with REGISTRATION_SLUGS. */
 export function getRegisterHubPrograms(): RegistrationProgramConfig[] {
-  return REGISTRATION_SLUGS.map((slug) => REGISTRATION_PROGRAMS[slug]);
+  return REGISTRATION_SLUGS.map((slug) => REGISTRATION_PROGRAMS[slug]).filter(
+    (program) =>
+      !comingSoonRegisterError(program.slug, program.slug, program.programType)
+  );
 }
 
 /** @deprecated Use REGISTRATION_PROGRAMS */
