@@ -1,0 +1,83 @@
+/* Shared Speakify tokens. Import from hub + dashboard CSS so they cannot drift. */
+:root,
+.speakify-hub,
+.speakify-dash {
+  --speakify-navy-900: #0b1b33;
+  --speakify-navy-700: #16294a;
+  --speakify-gold: #c99a3d;
+  --speakify-gold-deep: #a97f2e;
+  --speakify-paper: #f7f5f0;
+  --speakify-card: #ffffff;
+  --speakify-ink: #1b2430;
+  --speakify-ink-soft: #5b6472;
+  --speakify-line: #e3dfd4;
+  --speakify-line-dark: #2a3b5c;
+  --speakify-teal: #0f6e62;
+  --speakify-radius-button: 6px;
+  --speakify-radius-card: 10px;
+  --speakify-radius-panel: 20px;
+  --speakify-shadow-button: none;
+  --font-speakify-headline: var(--font-hub-fraunces), Fraunces, serif;
+  --font-speakify-body: var(--font-hub-inter), Inter, sans-serif;
+
+  --navy-900: var(--speakify-navy-900);
+  --navy-700: var(--speakify-navy-700);
+  --gold: var(--speakify-gold);
+  --gold-deep: var(--speakify-gold-deep);
+  --paper: var(--speakify-paper);
+  --card: var(--speakify-card);
+  --ink: var(--speakify-ink);
+  --ink-soft: var(--speakify-ink-soft);
+  --line: var(--speakify-line);
+  --line-dark: var(--speakify-line-dark);
+  --teal: var(--speakify-teal);
+}
+
+/* Concrete utilities so LMS chrome cannot lose navy/gold if Tailwind splits CSS. */
+.bg-speakify-navy {
+  background-color: var(--speakify-navy-900);
+}
+.bg-speakify-navy-700 {
+  background-color: var(--speakify-navy-700);
+}
+.bg-speakify-gold {
+  background-color: var(--speakify-gold);
+}
+.bg-speakify-gold-deep {
+  background-color: var(--speakify-gold-deep);
+}
+.bg-speakify-paper {
+  background-color: var(--speakify-paper);
+}
+.bg-speakify-line {
+  background-color: var(--speakify-line);
+}
+.text-speakify-navy {
+  color: var(--speakify-navy-900);
+}
+.text-speakify-gold {
+  color: var(--speakify-gold);
+}
+.text-speakify-gold-deep {
+  color: var(--speakify-gold-deep);
+}
+.text-speakify-ink {
+  color: var(--speakify-ink);
+}
+.text-speakify-muted {
+  color: var(--speakify-ink-soft);
+}
+.border-speakify-navy {
+  border-color: var(--speakify-navy-900);
+}
+.border-speakify-gold {
+  border-color: var(--speakify-gold);
+}
+.border-speakify-line {
+  border-color: var(--speakify-line);
+}
+.bg-speakify-navy:disabled,
+button.bg-speakify-navy:disabled {
+  background-color: var(--speakify-line);
+  color: var(--speakify-ink-soft);
+}

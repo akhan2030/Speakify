@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AcceleratorTrackId } from "@/lib/accelerator/tracks";
 import { isValidTrack } from "@/lib/accelerator/tracks";
 import { targetBandNumericFromTrack } from "@/lib/accelerator/tracks";
+import {
+  ensureOrientationEntitlement,
+  ensureTopicEntitlements,
+} from "@/lib/live-classes/store";
 
 export type GrantPaidAccessInput = {
   studentId: string;
@@ -76,6 +80,27 @@ export async function grantPaidAccess(
       currency: "SAR",
       status: "paid",
       raw_payload: input.rawPayload ?? null,
+    });
+  }
+
+  const { data: paidUser } = await supabase
+    .from("users")
+    .select(
+      "enrolled_programs, program_selected, program_type, accelerator_track, checkout_track, payment_status, cefr_level"
+    )
+    .eq("id", input.studentId)
+    .maybeSingle();
+
+  if (paidUser) {
+    await ensureOrientationEntitlement(supabase, input.studentId);
+    await ensureTopicEntitlements(supabase, input.studentId, {
+      enrolledPrograms: paidUser.enrolled_programs,
+      programSelected: paidUser.program_selected,
+      programType: paidUser.program_type,
+      acceleratorTrack: paidUser.accelerator_track,
+      checkoutTrack: paidUser.checkout_track,
+      paymentStatus: paidUser.payment_status,
+      cefrLevel: paidUser.cefr_level,
     });
   }
 

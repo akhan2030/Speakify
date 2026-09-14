@@ -27,6 +27,7 @@ import {
   getTomorrowDay,
   getRecommendedMockDay,
   STUDY_DAY_FULL,
+  isPastExamDate,
 } from "@/lib/ielts/studyWeek";
 import { missionTaskKey } from "@/lib/ielts/missionKeys";
 import {
@@ -92,14 +93,10 @@ async function safeQuery(promise) {
 
 function buildSkillRows(bands, targetBand) {
   const skills = [
-    {
-      key: "writing",
-      label: "Writing (Letter+Essay)",
-      href: `${BASE}/writing`,
-    },
-    { key: "speaking", label: "Speaking", href: `${BASE}/speaking` },
-    { key: "reading", label: "Reading", href: `${BASE}/reading` },
     { key: "listening", label: "Listening", href: `${BASE}/listening` },
+    { key: "reading", label: "Reading", href: `${BASE}/reading` },
+    { key: "writing", label: "Writing", href: `${BASE}/writing` },
+    { key: "speaking", label: "Speaking", href: `${BASE}/speaking` },
   ];
 
   return skills.map(({ key, label, href }) => {
@@ -543,6 +540,19 @@ export async function GET() {
       userRow?.study_days_per_week ?? profile.weeklyStudyDays ?? readiness.weeklyStudyDays ?? 3;
     const examDate = userRow?.ielts_exam_date ?? null;
     const daysToExam = daysUntilExam(examDate);
+    const examDatePassed = isPastExamDate(examDate);
+    const attemptedSkills = skillRows.filter((s) => s.attempted);
+    const coverageProvisional = attemptedSkills.length < 4;
+    const basedOnLabel =
+      attemptedSkills.length === 0
+        ? "No skill attempts yet"
+        : attemptedSkills.length === 1
+          ? `Based on ${attemptedSkills[0].label} only`
+          : `Based on ${attemptedSkills.map((s) => s.label).join(", ")}`;
+    const belowTarget =
+      currentBand != null && targetBand != null && currentBand + 0.05 < targetBand;
+    const paceWarning =
+      daysToExam != null && daysToExam < 14 && (belowTarget || coverageProvisional);
 
     const studiedDates = new Set(
       (allCompletions ?? []).map((r) => String(r.completed_at).slice(0, 10))
@@ -614,6 +624,27 @@ export async function GET() {
       recentTasks
     );
 
+    const coverageRatio = attemptedSkills.length / 4;
+    const bandProgress =
+      currentBand != null && targetBand ? Math.min(1, currentBand / targetBand) : 0;
+    let paceScore = 0.4;
+    if (daysToExam != null) {
+      const weeks = Math.max(daysToExam / 7, 1 / 7);
+      const remainingGap = Math.max(0, (targetBand ?? 0) - (currentBand ?? 0));
+      const needed = remainingGap / weeks;
+      const weeklyGain = projection.weeklyBandGain ?? 0.12;
+      if (attemptedSkills.length === 4 && remainingGap <= 0.05) paceScore = 1;
+      else if (coverageProvisional) paceScore = Math.min(0.45, weeklyGain / Math.max(needed, 0.08));
+      else paceScore = Math.min(1, weeklyGain / Math.max(needed, 0.08));
+    }
+    const examReadinessPercent = Math.min(
+      100,
+      Math.max(
+        0,
+        Math.round(coverageRatio * 50 + bandProgress * coverageRatio * 40 + paceScore * 10)
+      )
+    );
+
     return NextResponse.json({
       programLabel: "IELTS General Training",
       onboardingCompleted: Boolean(userRow?.onboarding_completed),
@@ -651,6 +682,12 @@ export async function GET() {
         target: targetBand,
         gap,
         skills: skillRows,
+        coverage: {
+          attempted: attemptedSkills.length,
+          total: 4,
+          provisional: coverageProvisional,
+          basedOnLabel,
+        },
       },
       letterTypeAccuracy,
       bandTrend,
@@ -673,6 +710,9 @@ export async function GET() {
       exam: {
         daysRemaining: daysToExam,
         examDateLabel: formatExamDateLabel(examDate),
+        datePassed: examDatePassed,
+        paceWarning,
+        examReadinessPercent,
         achievable,
         onTrackLabel: achievable
           ? `✓ On track for Band ${targetBand.toFixed(1)}`
@@ -704,7 +744,7 @@ export async function GET() {
         paceMessage: `At current pace — completing in ${weeksRemaining} weeks`,
         weekTitle: trackMeta.weekTitles[trackProgress.currentWeek - 1] ?? "",
       },
-      readinessPercent: readiness.readinessPercent,
+      readinessPercent: examReadinessPercent,
       achievementsCount: achievements?.length ?? 0,
       todayMissionIncomplete: completedCount < totalCount,
       sidebar: {
@@ -716,7 +756,7 @@ export async function GET() {
           listening: bands.listening,
         },
         mockReady: `#${nextMockNumber} ready`,
-        readinessPercent: readiness.readinessPercent,
+        readinessPercent: examReadinessPercent,
         newAchievements: Math.min(achievements?.length ?? 0, 3),
       },
     });

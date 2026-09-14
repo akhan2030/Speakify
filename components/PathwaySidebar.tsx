@@ -237,6 +237,12 @@ export default function PathwaySidebar({ user }: { user: SidebarUser }) {
             ASSESSMENT
           </p>
           <SidebarLink
+            href="/dashboard/pathway/student/live-classes"
+            active={active("/dashboard/pathway/student/live-classes")}
+            icon="🎥"
+            label="Live classes"
+          />
+          <SidebarLink
             href="/dashboard/pathway/student/progress-check"
             active={active("/dashboard/pathway/student/progress-check")}
             icon="✅"

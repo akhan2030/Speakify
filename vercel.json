@@ -3,5 +3,11 @@
     "app/api/listening/tts/route.js": {
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/live-classes/lifecycle",
+      "schedule": "15 15 * * *"
+    }
+  ]
 }

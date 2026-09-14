@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { getInitials } from "@/components/StudentSidebar";
 import { getPhaseDefinition } from "@/lib/step/phases";
 import { STEP_ROUTES } from "@/lib/step/paths";
 
@@ -22,6 +21,7 @@ export type StepActivePage =
   | "progress"
   | "vocabulary"
   | "grammar"
+  | "live-classes"
   | "settings";
 
 type NavItem = {
@@ -29,6 +29,7 @@ type NavItem = {
   label: string;
   href: string;
   icon: string;
+  order?: number;
 };
 
 type NavGroup = {
@@ -66,31 +67,35 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "STEP SECTIONS",
+    label: "Test sections",
     items: [
       {
         id: "reading",
         label: "Reading",
         href: STEP_ROUTES.practice("reading"),
         icon: "📖",
+        order: 1,
       },
       {
         id: "structure",
-        label: "Structure & Grammar",
+        label: "Structure",
         href: STEP_ROUTES.practice("structure"),
         icon: "✏️",
+        order: 2,
       },
       {
         id: "listening",
         label: "Listening",
         href: STEP_ROUTES.practice("listening"),
         icon: "🎧",
+        order: 3,
       },
       {
         id: "compositional",
         label: "Compositional",
         href: STEP_ROUTES.practice("compositional_analysis"),
         icon: "📋",
+        order: 4,
       },
     ],
   },
@@ -126,6 +131,12 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "STUDY TOOLS",
     items: [
+      {
+        id: "live-classes",
+        label: "Live classes",
+        href: STEP_ROUTES.liveClasses,
+        icon: "🎥",
+      },
       {
         id: "vocabulary",
         label: "Vocabulary Builder",
@@ -182,14 +193,15 @@ function NavLink({
   return (
     <Link
       href={item.href}
-      className={`flex items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors ${
-        isActive
-          ? "border-l-[#c9972c] bg-[#152a4d] font-semibold text-white"
-          : "border-l-transparent text-slate-300 hover:bg-white/5 hover:text-white"
-      }`}
+      className={`side-item${isActive ? " active" : ""}`}
     >
-      <span className="shrink-0">{item.icon}</span>
-      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      <span className="n">
+        {item.order != null ? (
+          <span className={`order-badge skill-${item.id}`}>{item.order}</span>
+        ) : null}
+        <span className="shrink-0">{item.icon}</span>
+        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      </span>
       {badge ? (
         <span
           className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${badge.className}`}
@@ -204,9 +216,6 @@ function NavLink({
 export default function StepSidebar({ activePage }: { activePage?: StepActivePage }) {
   const pathname = usePathname();
   const current = activePage ?? activeFromPath(pathname);
-  const { data: session } = useSession();
-  const name = session?.user?.name ?? "Student";
-  const initials = getInitials(name);
 
   const [phaseLabel, setPhaseLabel] = useState("Phase 1 · Foundation");
   const [estimatedScore, setEstimatedScore] = useState<number | null>(null);
@@ -255,67 +264,44 @@ export default function StepSidebar({ activePage }: { activePage?: StepActivePag
   const scoreDisplay =
     estimatedScore == null || estimatedScore === 0
       ? { text: "Est. —/100", className: "text-slate-500 bg-slate-500/10" }
-      : { text: `Est. ${estimatedScore}/100`, className: "text-[#c9972c] bg-[#c9972c]/20" };
+      : { text: `Est. ${estimatedScore}/100`, className: "text-speakify-gold bg-speakify-gold/20" };
 
   return (
     <>
-      <aside className="sticky top-0 z-20 hidden h-screen w-[220px] shrink-0 flex-col bg-[#0d1b35] px-3 py-6 md:flex">
-        <div className="flex flex-col items-center text-center">
-          <div className="h-10 w-10 rounded-full bg-[#c9972c]" />
-          <div className="mt-2 text-sm font-bold text-white">Speakify</div>
-          <div className="text-[10px] text-[#c9972c]">STEP Accelerator</div>
+      <aside className="side sticky top-0 z-20 hidden h-screen w-[240px] shrink-0 flex-col md:flex">
+        <Link href={BASE} className="logo">
+          Speakify
+        </Link>
+        <div className="sub">
+          STEP Accelerator · {phaseLabel}
+          {scoreDisplay.text ? ` · ${scoreDisplay.text}` : ""}
         </div>
 
-        <div className="mt-6 flex flex-col items-center text-center">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c9972c] text-sm font-bold text-[#0d1b35]">
-            {initials}
-          </div>
-          <div className="mt-2 line-clamp-2 text-sm font-medium text-white">{name}</div>
-          <div className="mt-1 text-[10px] font-medium text-slate-400">{phaseLabel}</div>
-          <div
-            className={`mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${scoreDisplay.className}`}
-          >
-            {scoreDisplay.text}
-          </div>
-        </div>
-
-        <nav className="mt-6 flex-1 space-y-4 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto">
           {NAV_GROUPS.map((group) => (
-            <div key={group.label}>
-              <p className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
-                {group.label}
-              </p>
-              <div className="space-y-0.5">
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.id}
-                    item={item}
-                    isActive={item.id === current}
-                    badge={item.id === "exit-test" ? exitTestBadge ?? undefined : undefined}
-                  />
-                ))}
-              </div>
+            <div key={group.label} className="side-group">
+              <div className="side-label">{group.label}</div>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.id}
+                  item={item}
+                  isActive={item.id === current}
+                  badge={item.id === "exit-test" ? exitTestBadge ?? undefined : undefined}
+                />
+              ))}
             </div>
           ))}
         </nav>
 
-        <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
+        <div className="side-foot">
           <Link
             href={STEP_ROUTES.settings}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
-              current === "settings"
-                ? "border-l-2 border-l-[#c9972c] bg-[#152a4d] font-semibold text-white"
-                : "text-slate-300 hover:bg-white/5 hover:text-white"
-            }`}
+            className={`side-item${current === "settings" ? " active" : ""}`}
           >
-            <span>⚙</span> Settings
+            <span className="n">⚙ Settings</span>
           </Link>
-          <button
-            type="button"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
-          >
-            <span>🚪</span> Logout
+          <button type="button" className="side-item" onClick={() => signOut({ callbackUrl: "/login" })}>
+            <span className="n">🚪 Logout</span>
           </button>
         </div>
       </aside>
@@ -328,13 +314,13 @@ export default function StepSidebar({ activePage }: { activePage?: StepActivePag
               key={item.id}
               href={item.href}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] ${
-                isActive ? "font-bold text-[#0d1b35]" : "text-slate-500"
+                isActive ? "font-bold text-speakify-navy" : "text-slate-500"
               }`}
             >
               <span className="text-lg">{item.icon}</span>
               <span>{item.label}</span>
               {isActive ? (
-                <span className="h-0.5 w-6 rounded-full bg-[#c9972c]" />
+                <span className="h-0.5 w-6 rounded-full bg-speakify-gold" />
               ) : null}
             </Link>
           );

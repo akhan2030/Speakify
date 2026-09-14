@@ -22,6 +22,7 @@ function navItems(base: string): NavItem[] {
     { id: "modules", label: "Modules", href: `${base}/modules`, icon: "📚" },
     { id: "weekly-plan", label: "Weekly Plan", href: `${base}/weekly-plan`, icon: "📅" },
     { id: "practice", label: "Practice", href: `${base}/practice`, icon: "⚡" },
+    { id: "live-classes", label: "Live classes", href: `${base}/live-classes`, icon: "🎥" },
     { id: "progress", label: "My Progress", href: `${base}/progress`, icon: "📊" },
     { id: "settings", label: "Settings", href: `${base}/settings`, icon: "⚙️" },
   ];

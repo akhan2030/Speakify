@@ -208,6 +208,13 @@ export async function POST(request) {
       );
     }
 
+    try {
+      const { ensureOrientationEntitlement } = await import("@/lib/live-classes/store");
+      await ensureOrientationEntitlement(supabase, newUser.id);
+    } catch (liveErr) {
+      console.warn("[auth/register] live-class orientation:", liveErr);
+    }
+
     if (isIeltsAcademicRegistration && purchasedTrack) {
       const { error: trackUpdateError } = await supabase
         .from("users")

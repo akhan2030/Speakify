@@ -4,24 +4,27 @@ import {
   type PaidProgramme,
 } from "@/lib/payments/checkoutLabels";
 import {
+  isValidAcademicMockNumber,
+  mockNumbersForProduct,
+  paymentProductTypeForMockProduct,
   priceHalalasForMockProduct,
   type MockPaymentProductType,
   type MockProductType,
-  mockNumbersForProduct,
-  paymentProductTypeForMockProduct,
 } from "@/lib/mock-test/academicMockCatalog";
 import { mockNumbersForGtProduct } from "@/lib/ielts-general/gtMockCatalog";
 
 export type MoyasarPaymentMetadata = {
   student_id?: string;
   track?: string;
-  product_type?: MockPaymentProductType | "accelerator";
+  product_type?: MockPaymentProductType | "accelerator" | "live_group" | "live_1to1";
   mock_numbers?: string;
+  booking_id?: string;
+  course_key?: string;
 };
 
 export function parseMockNumbersFromMetadata(value: unknown): number[] {
   if (Array.isArray(value)) {
-    return value.map((n) => Number(n)).filter((n) => Number.isInteger(n) && n >= 1 && n <= 5);
+    return value.map((n) => Number(n)).filter((n) => isValidAcademicMockNumber(n));
   }
 
   const raw = String(value ?? "").trim();
@@ -39,7 +42,7 @@ export function parseMockNumbersFromMetadata(value: unknown): number[] {
   return raw
     .split(/[,\s]+/)
     .map((part) => Number(part.trim()))
-    .filter((n) => Number.isInteger(n) && n >= 1 && n <= 5);
+    .filter((n) => isValidAcademicMockNumber(n));
 }
 
 export function mockCheckoutDescription(
@@ -75,9 +78,30 @@ export type MoyasarCreateMockPaymentResult =
     };
 
 export function isMoyasarMockMode(): boolean {
+  warnIfProductionPaymentsAreMock();
   if (process.env.MOYASAR_MOCK === "true") return true;
   if (process.env.MOYASAR_MOCK === "false") return false;
   return !process.env.MOYASAR_SECRET_KEY?.trim();
+}
+
+let productionMoyasarWarningIssued = false;
+
+export function warnIfProductionPaymentsAreMock(): void {
+  if (productionMoyasarWarningIssued) return;
+  if (process.env.NODE_ENV !== "production") return;
+  if (typeof window !== "undefined") return;
+
+  const forcedMock = process.env.MOYASAR_MOCK === "true";
+  const missingSecret = !process.env.MOYASAR_SECRET_KEY?.trim();
+  if (!forcedMock && !missingSecret) return;
+
+  productionMoyasarWarningIssued = true;
+  const reason = forcedMock
+    ? "MOYASAR_MOCK=true"
+    : "MOYASAR_SECRET_KEY is not set";
+  console.warn(
+    `[payments] Production is running checkout in mock/test mode (${reason}). Real customers will not be charged. Set MOYASAR_SECRET_KEY before going live.`
+  );
 }
 
 export function getMoyasarPublishableKey(): string | null {
@@ -284,6 +308,86 @@ export async function createMockExamPayment(options: {
     amountHalalas,
     productType,
     mockNumbers,
+    publishableKey,
+  };
+}
+
+export type MoyasarCreateLiveClassPaymentResult =
+  | {
+      mode: "mock";
+      mockPaymentId: string;
+      amountHalalas: number;
+      productType: "live_group" | "live_1to1";
+    }
+  | {
+      mode: "live";
+      paymentId: string;
+      amountHalalas: number;
+      productType: "live_group" | "live_1to1";
+      publishableKey: string;
+    };
+
+export async function createLiveClassPayment(options: {
+  studentId: string;
+  productType: "live_group" | "live_1to1";
+  amountHalalas: number;
+  description: string;
+  callbackUrl: string;
+  bookingId: string;
+  courseKey: string;
+}): Promise<MoyasarCreateLiveClassPaymentResult | { error: string }> {
+  if (isMoyasarMockMode()) {
+    return {
+      mode: "mock",
+      mockPaymentId: `mock_live_${options.studentId}_${Date.now()}`,
+      amountHalalas: options.amountHalalas,
+      productType: options.productType,
+    };
+  }
+
+  const secretKey = process.env.MOYASAR_SECRET_KEY?.trim();
+  const publishableKey = getMoyasarPublishableKey();
+  if (!secretKey || !publishableKey) {
+    return { error: "Payment is not configured. Please contact support." };
+  }
+
+  const auth = Buffer.from(`${secretKey}:`).toString("base64");
+  const res = await fetch("https://api.moyasar.com/v1/payments", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount: options.amountHalalas,
+      currency: "SAR",
+      description: options.description,
+      callback_url: options.callbackUrl,
+      metadata: {
+        student_id: options.studentId,
+        product_type: options.productType,
+        booking_id: options.bookingId,
+        course_key: options.courseKey,
+      },
+    }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    console.error("[moyasar/create-live-class]", data);
+    return { error: "Could not start payment. Please try again." };
+  }
+
+  const paymentId = String(data.id ?? "").trim();
+  if (!paymentId) {
+    return { error: "Invalid payment response." };
+  }
+
+  return {
+    mode: "live",
+    paymentId,
+    amountHalalas: options.amountHalalas,
+    productType: options.productType,
     publishableKey,
   };
 }

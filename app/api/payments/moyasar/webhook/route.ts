@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { isValidTrack, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
 import { grantPaidAccess } from "@/lib/payments/grantAccess";
 import { grantMockAccess } from "@/lib/payments/grantMockAccess";
+import { confirmPaygBooking } from "@/lib/live-classes/store";
+import { isLiveClassProductType } from "@/lib/live-classes/model";
 import {
   parseMockNumbersFromMetadata,
   trackPriceHalalas,
@@ -33,6 +35,8 @@ type MoyasarWebhookEvent = {
       mock_numbers?: string;
       offer?: string;
       programme?: string;
+      booking_id?: string;
+      course_key?: string;
     };
   };
 };
@@ -159,6 +163,41 @@ export async function POST(request: Request) {
         ok: true,
         acknowledged: true,
         reason: "student_not_found",
+      });
+    }
+
+    if (isLiveClassProductType(productType)) {
+      const liveResult = await confirmPaygBooking(supabase, paymentId);
+      if (!liveResult.ok) {
+        console.error("[payments/moyasar/webhook] live class", liveResult.error);
+        return NextResponse.json({ error: liveResult.error }, { status: 500 });
+      }
+
+      if (tx) {
+        await supabase
+          .from("payment_transactions")
+          .update({
+            status: "paid",
+            raw_payload: payload,
+          })
+          .eq("moyasar_payment_id", paymentId);
+      } else {
+        await supabase.from("payment_transactions").insert({
+          student_id: studentId,
+          moyasar_payment_id: paymentId,
+          track: "live",
+          amount_halalas: amountHalalas,
+          currency: "SAR",
+          status: "paid",
+          product_type: productType,
+          raw_payload: payload,
+        });
+      }
+
+      return NextResponse.json({
+        ok: true,
+        alreadyPaid: liveResult.alreadyPaid,
+        granted: "live_class",
       });
     }
 

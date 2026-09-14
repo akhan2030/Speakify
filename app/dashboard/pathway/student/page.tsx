@@ -12,6 +12,9 @@ import {
   PATHWAY_LEVEL_NAMES,
   type PathwaySkill,
 } from "@/lib/programs/terminology";
+import SpeakifyDashChrome from "@/components/dashboards/SpeakifyDashChrome";
+import CourseJourneyStrip from "@/components/dashboards/CourseJourneyStrip";
+import { PROGRAM_JOURNEYS } from "@/lib/dashboards/programJourneys";
 
 const pathwayEngine = getContentEngine("english_pathway");
 
@@ -210,6 +213,20 @@ export default function PathwayDashboard() {
   const todayTasksTotal = todayPlan?.tasks?.length || 4;
   const todayProgress =
     todayTasksTotal > 0 ? todayTasksCompleted / todayTasksTotal : 0;
+  const pathwayJourney = PROGRAM_JOURNEYS.pathway;
+  const pathwayNodes = pathwayJourney.steps.map((step) => {
+    const key = step.key as PathwaySkill;
+    const pct = Math.round(skillProgress[key] ?? 0);
+    return {
+      key: step.key,
+      score: `${pct}%`,
+      attempted: pct > 0,
+      href: skillHref[key],
+      percent: pct,
+      status: pct >= 70 ? "On target" : pct > 0 ? "In progress" : "Not started",
+      nextCopy: `This level (${currentLevelName}): ${step.label.toLowerCase()} practice — not an exam paper order.`,
+    };
+  });
 
   if (loading) {
     return (
@@ -227,7 +244,8 @@ export default function PathwayDashboard() {
   }
 
   return (
-    <div style={{ maxWidth: "1100px" }}>
+    <SpeakifyDashChrome>
+    <div className="dash-main" style={{ maxWidth: "1100px", paddingTop: 0 }}>
       <div
         style={{
           display: "flex",
@@ -280,8 +298,40 @@ export default function PathwayDashboard() {
               border: "1px solid #0d9488",
             }}
           >
-            Graduation assessment in 8 days
+            {currentLevelName} · {graduationReadiness}% level readiness
           </span>
+        </div>
+      </div>
+
+      <CourseJourneyStrip journey={pathwayJourney} nodes={pathwayNodes} />
+
+      <div
+        className="overview"
+        style={{ marginTop: 8 }}
+      >
+        <div className="band-card">
+          <div className="ready-line">
+            <span className="ready-pct">{graduationReadiness}%</span>
+            <span>ready to graduate {currentLevelName}</span>
+          </div>
+          <div className="band-track">
+            <div className="band-fill" style={{ width: `${graduationReadiness}%` }} />
+          </div>
+          <p className="ready-why">
+            Level readiness from Vocabulary, Grammar, Reading, and Speaking in this CEFR block — not IELTS exam order.
+          </p>
+        </div>
+        <div className="today-card">
+          <div className="tag">TODAY&apos;S SESSION</div>
+          <h3>{todayPlan?.title ?? "Today's practice"}</h3>
+          {(todayPlan?.tasks ?? []).slice(0, 4).map((task) => (
+            <div key={task} className="task">
+              {task}
+            </div>
+          ))}
+          <Link href="/dashboard/pathway/student/vocabulary" className="primary-btn">
+            Continue today&apos;s session →
+          </Link>
         </div>
       </div>
 
@@ -1244,5 +1294,6 @@ export default function PathwayDashboard() {
         </div>
       </div>
     </div>
+    </SpeakifyDashChrome>
   );
 }

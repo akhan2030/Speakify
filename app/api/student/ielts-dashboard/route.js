@@ -22,6 +22,7 @@ import {
   formatFullDate,
   formatShortDate,
   daysUntilExam,
+  isPastExamDate,
   getStreakMotivation,
   buildStudyWeekCalendar,
   getTomorrowDay,
@@ -84,10 +85,10 @@ async function safeQuery(promise) {
 
 function buildSkillRows(bands, targetBand) {
   const skills = [
+    { key: "listening", label: "Listening", href: "/dashboard/ielts/student/listening" },
+    { key: "reading", label: "Reading", href: "/dashboard/ielts/student/reading" },
     { key: "writing", label: "Writing", href: "/dashboard/ielts/student/writing" },
     { key: "speaking", label: "Speaking", href: "/dashboard/ielts/student/speaking" },
-    { key: "reading", label: "Reading", href: "/dashboard/ielts/student/reading" },
-    { key: "listening", label: "Listening", href: "/dashboard/ielts/student/listening" },
   ];
 
   return skills.map(({ key, label, href }) => {
@@ -441,6 +442,19 @@ export async function GET() {
       userRow?.study_days_per_week ?? profile.weeklyStudyDays ?? readiness.weeklyStudyDays ?? 3;
     const examDate = userRow?.ielts_exam_date ?? null;
     const daysToExam = daysUntilExam(examDate);
+    const examDatePassed = isPastExamDate(examDate);
+    const attemptedSkills = skillRows.filter((s) => s.attempted);
+    const coverageProvisional = attemptedSkills.length < 4;
+    const basedOnLabel =
+      attemptedSkills.length === 0
+        ? "No skill attempts yet"
+        : attemptedSkills.length === 1
+          ? `Based on ${attemptedSkills[0].label} only`
+          : `Based on ${attemptedSkills.map((s) => s.label).join(", ")}`;
+    const belowTarget =
+      currentBand != null && targetBand != null && currentBand + 0.05 < targetBand;
+    const paceWarning =
+      daysToExam != null && daysToExam < 14 && (belowTarget || coverageProvisional);
 
     const studiedDates = new Set(
       (allCompletions ?? []).map((r) => String(r.completed_at).slice(0, 10))
@@ -512,6 +526,27 @@ export async function GET() {
       recentTasks
     );
 
+    const coverageRatio = attemptedSkills.length / 4;
+    const bandProgress =
+      currentBand != null && targetBand ? Math.min(1, currentBand / targetBand) : 0;
+    let paceScore = 0.4;
+    if (daysToExam != null) {
+      const weeks = Math.max(daysToExam / 7, 1 / 7);
+      const remainingGap = Math.max(0, (targetBand ?? 0) - (currentBand ?? 0));
+      const needed = remainingGap / weeks;
+      const weeklyGain = projection.weeklyBandGain ?? 0.12;
+      if (attemptedSkills.length === 4 && remainingGap <= 0.05) paceScore = 1;
+      else if (coverageProvisional) paceScore = Math.min(0.45, weeklyGain / Math.max(needed, 0.08));
+      else paceScore = Math.min(1, weeklyGain / Math.max(needed, 0.08));
+    }
+    const examReadinessPercent = Math.min(
+      100,
+      Math.max(
+        0,
+        Math.round(coverageRatio * 50 + bandProgress * coverageRatio * 40 + paceScore * 10)
+      )
+    );
+
     return NextResponse.json({
       onboardingCompleted: Boolean(userRow?.onboarding_completed),
       user: {
@@ -549,6 +584,12 @@ export async function GET() {
         targetLabel,
         gap,
         skills: skillRows,
+        coverage: {
+          attempted: attemptedSkills.length,
+          total: 4,
+          provisional: coverageProvisional,
+          basedOnLabel,
+        },
       },
       bandTrend,
       projection,
@@ -570,6 +611,9 @@ export async function GET() {
       exam: {
         daysRemaining: daysToExam,
         examDateLabel: formatExamDateLabel(examDate),
+        datePassed: examDatePassed,
+        paceWarning,
+        examReadinessPercent,
         achievable,
         onTrackLabel: achievable
           ? `✓ On track for Band ${targetBand.toFixed(1)}`
@@ -613,6 +657,7 @@ export async function GET() {
           listening: bands.listening,
         },
         mockReady: `#${nextMockNumber} ready`,
+        nextMockNumber,
         readinessPercent: readiness.readinessPercent,
         newAchievements: Math.min(achievements?.length ?? 0, 3),
       },
@@ -644,7 +689,16 @@ export async function PATCH(request) {
     const updates = {};
 
     if (body.ielts_exam_date !== undefined) {
-      updates.ielts_exam_date = body.ielts_exam_date || null;
+      const nextDate = body.ielts_exam_date || null;
+      if (nextDate) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(nextDate))) {
+          return NextResponse.json({ error: "Enter a valid exam date" }, { status: 400 });
+        }
+        if (isPastExamDate(nextDate)) {
+          return NextResponse.json({ error: "Exam date cannot be in the past" }, { status: 400 });
+        }
+      }
+      updates.ielts_exam_date = nextDate;
     }
     if (body.study_days_per_week !== undefined) {
       updates.study_days_per_week = Number(body.study_days_per_week) || 5;

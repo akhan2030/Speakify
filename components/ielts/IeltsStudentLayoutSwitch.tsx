@@ -5,6 +5,7 @@ import IELTSSidebar from "@/components/IELTSSidebar";
 import IeltsOnboardingGate from "@/components/ielts/IeltsOnboardingGate";
 import ProgramStudentLayout from "@/components/student/ProgramStudentLayout";
 import IeltsMockExamShell from "@/components/mock-test/IeltsMockExamShell";
+import SpeakifyDashChrome from "@/components/dashboards/SpeakifyDashChrome";
 import { isIeltsAcademicMockPath } from "@/lib/mock-test/ieltsMockRoutes";
 
 export default function IeltsStudentLayoutSwitch({
@@ -25,12 +26,12 @@ export default function IeltsStudentLayoutSwitch({
 
   return (
     <ProgramStudentLayout expectedProgram="ielts">
-      <div className="program-student-layout flex min-h-screen bg-white">
+      <SpeakifyDashChrome className="program-student-layout flex min-h-screen">
         <IELTSSidebar />
         <div className="min-w-0 flex-1 pb-20 md:pb-0">
           <IeltsOnboardingGate>{children}</IeltsOnboardingGate>
         </div>
-      </div>
+      </SpeakifyDashChrome>
     </ProgramStudentLayout>
   );
 }

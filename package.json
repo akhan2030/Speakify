@@ -36,6 +36,7 @@
     "test:speaking-pipeline": "node --experimental-strip-types scripts/speaking-pipeline-regression.ts",
     "test:speaking": "npm run test:speaking-pipeline && npm run test:speaking-scoring",
     "test:vocabulary": "node --experimental-strip-types scripts/vocabulary-regression.ts",
+    "test:live-classes": "node --experimental-strip-types scripts/live-classes-regression.ts",
     "test:reading": "node scripts/reading-regression-check.mjs",
     "validate:writing-prompts": "node --experimental-strip-types scripts/validate-writing-prompts.ts",
     "validate:gt-writing-prompts": "node --experimental-strip-types scripts/validate-gt-writing-prompts.ts",

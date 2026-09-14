@@ -21,6 +21,7 @@ export type ActivePage =
   | "practice"
   | "progress"
   | "study-plan"
+  | "live-classes"
   | "settings";
 
 const NAV_ITEMS: {
@@ -46,6 +47,7 @@ const NAV_ITEMS: {
   },
   { id: "progress", label: "My Progress", href: "/dashboard/student/progress" },
   { id: "study-plan", label: "Study Plan", href: "/dashboard/student/study-plan" },
+  { id: "live-classes", label: "Live classes", href: "/dashboard/student/live-classes" },
   { id: "settings", label: "Settings", href: "/dashboard/student/settings" },
 ];
 

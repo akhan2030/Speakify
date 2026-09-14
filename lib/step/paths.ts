@@ -13,6 +13,7 @@ export const STEP_ROUTES = {
   history: `${STEP_STUDENT_BASE}/history`,
   vocabulary: `${STEP_STUDENT_BASE}/vocabulary`,
   grammarDrills: `${STEP_STUDENT_BASE}/grammar-drills`,
+  liveClasses: `${STEP_STUDENT_BASE}/live-classes`,
   settings: `${STEP_STUDENT_BASE}/settings`,
   phaseExit: `${STEP_STUDENT_BASE}/phase-exit`,
   exitTest: `${STEP_STUDENT_BASE}/exit-test`,
