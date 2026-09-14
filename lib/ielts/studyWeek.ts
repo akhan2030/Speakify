@@ -96,6 +96,14 @@ export function daysUntilExam(examDate: string | null | undefined): number | nul
   return diff >= 0 ? diff : 0;
 }
 
+export function isPastExamDate(examDate: string | null | undefined): boolean {
+  if (!examDate) return false;
+  const exam = new Date(`${examDate}T12:00:00`);
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  return exam.getTime() < today.getTime();
+}
+
 export function getStreakMotivation(streak: number): string {
   if (streak >= 30) return "30 days — this is what Band 7 students do";
   if (streak >= 21) return "Three weeks — elite preparation";
