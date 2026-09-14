@@ -5,6 +5,7 @@ import { fetchBusinessEnglishModules } from "@/lib/businessEnglishLms";
 import { getSupabase, getSupabaseUrl } from "@/lib/vocabularySupabase";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {

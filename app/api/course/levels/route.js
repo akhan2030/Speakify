@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/levels";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function metaKey(slug) {
   return slug?.replace(/-/g, "_");

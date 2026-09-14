@@ -7,6 +7,7 @@ import { fetchStudentDailyPracticeTasks } from "@/lib/dailyPractice/fetchStudent
 import { loadDailyPracticeProgress } from "@/lib/dailyPractice/completions";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")

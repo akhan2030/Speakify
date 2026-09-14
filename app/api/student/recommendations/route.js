@@ -5,6 +5,7 @@ import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 import { buildRecommendations } from "@/lib/course/recommendationEngine";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {

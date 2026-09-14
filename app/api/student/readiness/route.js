@@ -7,6 +7,7 @@ import { computeReadinessMeter } from "@/lib/course/readinessMeter";
 import { persistIeltsReadiness } from "@/lib/pathway/persistReadiness";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {

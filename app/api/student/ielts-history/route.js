@@ -6,6 +6,7 @@ import { buildBandTrendFromHistory } from "@/lib/ielts/projectedExamBand";
 import { fetchStudentProfile } from "@/lib/course/fetchStudentProfile";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabase() {
   const url = (process.env.SUPABASE_URL || "")

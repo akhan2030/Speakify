@@ -6,6 +6,7 @@ import { getPathwayDashboardPayload } from "@/lib/programs/pathway/engine";
 import { normalizePathwayLevelId } from "@/lib/programs/terminology";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabase() {
   const url = (process.env.SUPABASE_URL || "")

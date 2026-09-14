@@ -12,6 +12,7 @@ import {
 } from "@/lib/ielts-general/gtMockCatalog";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabase() {
   const url = (process.env.SUPABASE_URL || "")

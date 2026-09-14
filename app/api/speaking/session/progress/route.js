@@ -9,6 +9,7 @@ import {
 import { buildTodayVocabularyFromSessions } from "@/lib/speaking/scoreEvidence";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")

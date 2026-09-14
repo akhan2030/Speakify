@@ -91,6 +91,11 @@ export function getCategoryMeta(slug: string): GrammarCategoryMeta | null {
   return GRAMMAR_CATEGORIES.find((c) => c.slug === slug) ?? null;
 }
 
+/** Resolve grammar category metadata by slug (used by daily practice weakness signals). */
+export function getGrammarCategory(slug: string): GrammarCategoryMeta | null {
+  return getCategoryMeta(slug);
+}
+
 export function getCategoryMetaForProgram(
   slug: string,
   programme: "academic" | "general" = "academic"

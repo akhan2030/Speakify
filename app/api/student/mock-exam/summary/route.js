@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { normalizeAttemptRow } from "@/lib/mock-test/attemptSchema";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabase() {
   const url = (process.env.SUPABASE_URL || "")

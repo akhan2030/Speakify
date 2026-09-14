@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { getFreshAcceleratorTest, getSupabaseAdmin } from "@/lib/acceleratorTestPool";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 const VALID_TRACKS = ["foundation", "plus", "elite"];

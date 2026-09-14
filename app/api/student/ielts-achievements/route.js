@@ -11,6 +11,7 @@ import {
 import { fetchAchievementMetrics } from "@/lib/ielts/fetchAchievementMetrics";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabase() {
   const url = (process.env.SUPABASE_URL || "")

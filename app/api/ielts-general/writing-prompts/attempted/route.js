@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /** GT prompt attempt tracking — localStorage fallback until prompt_id column is added. */
 export async function GET(request) {

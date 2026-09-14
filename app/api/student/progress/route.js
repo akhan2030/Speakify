@@ -6,6 +6,7 @@ import { addDaysToDateKey, todayDateKey } from "@/lib/vocabulary";
 import { computeStreak } from "@/lib/vocabularySupabase";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")

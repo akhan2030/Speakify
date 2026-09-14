@@ -9,6 +9,7 @@ import {
 } from "../../../../lib/readingPassageTypes.js";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 /** Matching-information (and similar) may need several OpenAI+validation retries. */
 export const maxDuration = 300;
 

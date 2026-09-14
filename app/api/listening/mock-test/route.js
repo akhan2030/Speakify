@@ -10,6 +10,7 @@ import {
 import { generateValidatedFullMock } from "../../../../lib/listeningTestProvision.js";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 /** Full mock live generation may need multiple LLM calls — allow 60s. */
 export const maxDuration = 60;
 

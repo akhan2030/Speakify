@@ -5,6 +5,7 @@ import { BAND_FILTERS } from "@/lib/vocabulary";
 import { getSupabase, getSupabaseUrl, mapPhraseRow } from "@/lib/vocabularySupabase";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function bandMatches(filterId, bandLevel) {
   const filter = BAND_FILTERS.find((b) => b.id === filterId);

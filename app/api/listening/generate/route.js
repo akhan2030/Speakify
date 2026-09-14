@@ -8,6 +8,7 @@ import { getRandomTopic } from "../../../../lib/listeningGenerator.js";
 import { sectionHasPlaceholderQuestions } from "../../../../lib/listeningQuestionContent.js";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 /** Live LLM generation + authenticity retries often exceed 60s on Section 4. */
 export const maxDuration = 300;
 

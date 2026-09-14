@@ -6,6 +6,7 @@ import { bandToCefr } from "@/lib/placement/scoring";
 import { DEFAULT_CEFR_LEVEL } from "@/lib/vocabulary";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")

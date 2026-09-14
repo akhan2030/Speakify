@@ -12,6 +12,7 @@ import { buildStudyQueue, buildTopicStudyQueue } from "@/lib/vocabularyStudy";
 import { ensureArabicDefinitions } from "@/lib/vocabularyArabic";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(request) {
   try {

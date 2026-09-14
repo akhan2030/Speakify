@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabase() {
   const url = (process.env.SUPABASE_URL || "")

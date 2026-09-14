@@ -7,6 +7,7 @@ import { getTopicSummariesForLevel } from "@/lib/vocabularyStudy";
 import { formatVocabTopicLabel } from "@/lib/vocabularyTopics";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(request) {
   try {

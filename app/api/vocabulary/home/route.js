@@ -16,6 +16,7 @@ import {
 import { buildStudyQueue, getLevelProgressSummary } from "@/lib/vocabularyStudy";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(request) {
   try {

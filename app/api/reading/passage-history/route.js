@@ -5,6 +5,7 @@ import { authOptions } from "../../../../lib/auth";
 import { getQuestionTypeName } from "../../../../lib/readingPassageTypes.js";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")

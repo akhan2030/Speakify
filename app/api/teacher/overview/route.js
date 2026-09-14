@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { computeTeacherOverview, emptyOverview } from "@/lib/teacherOverview";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getSupabaseUrl() {
   return (process.env.SUPABASE_URL || "")

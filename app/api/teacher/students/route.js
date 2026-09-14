@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { normalizeProgramType } from "@/lib/programType";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const DEFAULT_CEFR = "B1.1";
 const INACTIVE_DAYS = 3;
