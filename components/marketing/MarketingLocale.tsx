@@ -46,9 +46,9 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
       "Foundation, Plus, and Elite — letters, everyday reading, and General Training skills",
     "hub.viewAllGt": "View all General Training →",
     "hub.otherTestPrep": "Other test prep",
-    "hub.pathwayGridTitle": "Full CEFR pathway",
+    "hub.pathwayGridTitle": "Speakify Pathway levels",
     "hub.pathwayGridSubtitle":
-      "Thirteen micro-levels from AB through C2.2 — matching the classroom pathway.",
+      "Named course levels from Foundation I through Advanced Mastery. Letter codes are approximate, not an official CEFR certificate.",
     "hub.pathwayWeeks": "4 weeks",
     "hub.pathwayCta": "Start this level",
     "category.test-prep": "Test Prep",
@@ -57,7 +57,7 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
     "categoryDesc.test-prep":
       "Exam-focused programmes with mock tests, band tracking, and AI feedback.",
     "categoryDesc.general-english":
-      "Structured CEFR pathway from AB through C2.2 — 13 micro-levels with weekly lessons and certificates.",
+      "Structured general English with named Speakify Pathway levels, weekly lessons, and certificates.",
     "categoryDesc.specialty":
       "Purpose-built courses for professional and young learners.",
     "level.Beginner": "Beginner",
@@ -144,9 +144,9 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
       "تأسيسي، بلس، وإليت — الخطابات والقراءة اليومية ومهارات الجنرال",
     "hub.viewAllGt": "عرض كل الجنرال ←",
     "hub.otherTestPrep": "اختبارات أخرى",
-    "hub.pathwayGridTitle": "مسار CEFR الكامل",
+    "hub.pathwayGridTitle": "مستويات مسار سبيكيفاي",
     "hub.pathwayGridSubtitle":
-      "١٣ مستوى فرعياً من AB إلى C2.2 — نفس مسار نظام الفصول الدراسية.",
+      "مستويات بأسماء سبيكيفاي من التأسيس إلى الإتقان. رموز الحروف تقريبية وليست شهادة CEFR رسمية.",
     "hub.pathwayWeeks": "٤ أسابيع",
     "hub.pathwayCta": "ابدأ هذا المستوى",
     "category.test-prep": "التحضير للاختبارات",
@@ -155,7 +155,7 @@ const STRINGS: Record<MarketingLang, Record<string, string>> = {
     "categoryDesc.test-prep":
       "برامج مركّزة على الاختبار مع محاكاة وتتبع الباند وتغذية راجعة بالذكاء الاصطناعي.",
     "categoryDesc.general-english":
-      "مسار CEFR من AB إلى C2.2 — ١٣ مستوى فرعياً مع دروس أسبوعية وشهادات.",
+      "إنجليزية عامة بمستويات مسار سبيكيفاي المسماة، مع دروس أسبوعية وشهادات.",
     "categoryDesc.specialty": "دورات مخصّصة للمحترفين والمتعلمين الصغار.",
     "level.Beginner": "مبتدئ",
     "level.Intermediate": "متوسط",

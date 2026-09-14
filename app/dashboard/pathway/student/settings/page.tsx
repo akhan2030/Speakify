@@ -26,7 +26,7 @@ export default function PathwaySettingsPage() {
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="font-semibold text-[#0d1b35]">Your program</h2>
           <p className="mt-2 text-sm text-slate-500">
-            English Pathway — CEFR general English course
+            English Pathway — general English course
           </p>
         </div>
       </div>

@@ -40,7 +40,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
     id: "foundation",
     name: "Foundation",
     target: "Band 5.0–5.5",
-    entry: "A2.2–B1.1",
+    entry: "Typical placement around Band 4.0–5.0",
     duration: "6 weeks",
     price: "1,200 SAR",
     priceHalalas: 120_000,
@@ -66,7 +66,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
     id: "plus",
     name: "Plus",
     target: "Band 6.0–6.5",
-    entry: "B1.2–B2.1",
+    entry: "Typical placement around Band 5.5–6.5",
     duration: "6 weeks",
     price: "1,800 SAR",
     priceHalalas: 180_000,
@@ -93,7 +93,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
     id: "elite",
     name: "Elite",
     target: "Band 7.0+",
-    entry: "B2.2–C1",
+    entry: "Typical placement around Band 7.0+",
     duration: "4 weeks intensive",
     price: "2,400 SAR",
     priceHalalas: 240_000,
@@ -114,6 +114,13 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
     ],
   },
 };
+
+/** Same band cutoffs as onboarding — do not change without a curriculum decision. */
+export function acceleratorTrackIdForBand(band: number): AcceleratorTrackId {
+  if (band >= 7.0) return "elite";
+  if (band >= 5.5) return "plus";
+  return "foundation";
+}
 
 /** GT-safe track copy — never reuse Academic-only week titles / mock claims. */
 const GT_TRACK_OVERRIDES: Partial<

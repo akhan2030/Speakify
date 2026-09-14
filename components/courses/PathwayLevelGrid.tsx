@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { CEFR_SUB_LEVELS } from "@/lib/course/cefrLevels";
+import { getPathwayLevelDisplay } from "@/lib/pathway/levelDisplay";
+import { PATHWAY_APPROX_CEFR_NOTE } from "@/lib/claims/studentLevelCopy";
 
 type CourseLevelTone = "beginner" | "intermediate" | "advanced";
 
@@ -28,8 +30,8 @@ type Props = {
 };
 
 export default function PathwayLevelGrid({
-  title = "Full CEFR pathway",
-  subtitle = "Twelve micro-levels from A1.1 to C2.2 — about 4 weeks each.",
+  title = "Speakify Pathway levels",
+  subtitle = "Named course levels. Letter codes are approximate CEFR labels, not an official certificate.",
   weeksLabel = "4 weeks",
   ctaLabel = "Start this level",
 }: Props) {
@@ -53,14 +55,14 @@ export default function PathwayLevelGrid({
                   className="rounded-md px-2 py-0.5 text-xs font-bold text-white"
                   style={{ backgroundColor: TONE_COLOR[tone] }}
                 >
-                  {level.code}
+                  {getPathwayLevelDisplay(level.code).displayName}
                 </span>
                 <span className="text-[11px] font-medium text-slate-400">
                   {weeksLabel}
                 </span>
               </div>
               <p className="mt-2 text-sm font-semibold text-[#0d1b35] group-hover:text-[#0d9488]">
-                {level.name}
+                approximately {level.code}
               </p>
               <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
                 {level.description}
@@ -72,6 +74,7 @@ export default function PathwayLevelGrid({
           );
         })}
       </div>
+      <p className="mt-3 text-xs text-slate-500">{PATHWAY_APPROX_CEFR_NOTE}</p>
     </div>
   );
 }

@@ -27,21 +27,23 @@ import {
   programTypeForGateway,
 } from "@/lib/onboarding/programmes";
 import type { GatewayProgramme, GatewayRecommendation } from "@/lib/onboarding/types";
-import { bandToCefr } from "@/lib/placement/scoring";
-import type { Question } from "@/lib/placement/types";
-import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
-import { dashboardPathForStudentUser } from "@/lib/studentLoginRedirect";
-import { normalizeRole } from "@/lib/roles";
+import { getPathwayLevelDisplay } from "@/lib/pathway/levelDisplay";
+import { PLACEMENT_ESTIMATE_DISCLAIMER } from "@/lib/claims/studentLevelCopy";
 import {
   ACCELERATOR_TRACKS,
+  acceleratorTrackIdForBand,
   targetBandDisplayFromTrack,
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
+import { shouldSkipGateway } from "@/lib/onboarding/postLogin";
+import { dashboardPathForStudentUser } from "@/lib/studentLoginRedirect";
+import { normalizeRole } from "@/lib/roles";
+import type { Question } from "@/lib/placement/types";
 
 const GOLD = "#c9972c";
 const NAVY = "#0d1b35";
 
-const CEFR_MARKERS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const TRACK_MARKERS = ["Foundation", "Plus", "Elite"] as const;
 
 function firstName(fullName: string | null | undefined): string {
   const trimmed = fullName?.trim();
@@ -49,10 +51,9 @@ function firstName(fullName: string | null | undefined): string {
   return trimmed.split(/\s+/)[0] ?? trimmed;
 }
 
-function levelBarIndex(level: string): number {
-  const base = level.split(".")[0]?.toUpperCase() ?? "B1";
-  const idx = CEFR_MARKERS.indexOf(base);
-  return idx >= 0 ? idx : 2;
+function trackBarIndex(band: number): number {
+  const id = acceleratorTrackIdForBand(band);
+  return id === "elite" ? 2 : id === "plus" ? 1 : 0;
 }
 
 function ProgressBar({ step }: { step: number }) {
@@ -307,14 +308,19 @@ export default function OnboardingPage() {
     [currentQuestion, advancing, programme, testState]
   );
 
-  const cefrLevel = useMemo(
+  const pathwayLevel = useMemo(
     () => (placementBand != null ? bandToPathwaySubLevel(placementBand) : "B1.2"),
     [placementBand]
   );
 
-  const cefrLabel = useMemo(() => {
-    if (placementBand == null) return "Intermediate";
-    return bandToCefr(placementBand).label;
+  const pathwayTitle = useMemo(
+    () => getPathwayLevelDisplay(pathwayLevel).displayName,
+    [pathwayLevel]
+  );
+
+  const ieltsTrackName = useMemo(() => {
+    if (placementBand == null) return "Foundation";
+    return ACCELERATOR_TRACKS[acceleratorTrackIdForBand(placementBand)].name;
   }, [placementBand]);
 
   const finishOnboarding = async () => {
@@ -503,7 +509,18 @@ export default function OnboardingPage() {
 
   if (step === 3 && recommendation && placementBand != null && programme) {
     const goal = programmeGoalLabel(programme);
-    const barIdx = levelBarIndex(cefrLevel);
+    const isIelts = programme === "ielts" || programme === "ielts_general";
+    const barIdx = trackBarIndex(placementBand);
+    const headline = isIelts
+      ? `Your placement estimate: Band ${placementBand.toFixed(1)}`
+      : programme === "pathway"
+        ? `Your starting level: ${pathwayTitle}`
+        : `Your placement estimate: Band ${placementBand.toFixed(1)}`;
+    const subline = isIelts
+      ? `Recommended track: ${ieltsTrackName}`
+      : programme === "pathway"
+        ? `approximately ${pathwayLevel}`
+        : recommendationProgrammeLabel(recommendation);
     const whatsappRaw =
       process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() || "966500000000";
     const whatsappHref = `https://wa.me/${whatsappRaw.replace(/\D/g, "")}?text=${encodeURIComponent(
@@ -513,18 +530,21 @@ export default function OnboardingPage() {
     return (
       <Shell step={3}>
         <h1 className="text-xl font-bold text-[#0d1b35]">
-          Your English Level: {cefrLevel}
+          {headline}
         </h1>
-        <p className="mt-1 text-sm font-medium text-slate-600">{cefrLabel}</p>
+        <p className="mt-1 text-sm font-medium text-slate-600">{subline}</p>
+        <p className="mt-2 text-xs text-slate-500">{PLACEMENT_ESTIMATE_DISCLAIMER}</p>
 
+        {isIelts ? (
         <div className="mt-6 flex justify-between gap-1 text-[10px] font-semibold uppercase text-slate-400">
-          {CEFR_MARKERS.map((m, i) => (
+          {TRACK_MARKERS.map((m, i) => (
             <span key={m} className={i === barIdx ? "text-[#c9972c]" : ""}>
               {m}
               {i === barIdx ? " ●" : ""}
             </span>
           ))}
         </div>
+        ) : null}
 
         <p className="mt-6 text-sm leading-relaxed text-slate-600">
           {purchasedMeta
@@ -629,7 +649,14 @@ export default function OnboardingPage() {
       <Shell step={4}>
         <h1 className="text-2xl font-bold text-[#0d1b35]">You are all set, {name}!</h1>
         <ul className="mt-6 space-y-3 text-sm text-slate-700">
-          <li>✅ Your level: {cefrLevel} {cefrLabel}</li>
+          <li>
+            ✅ Your level:{" "}
+            {programme === "pathway"
+              ? `${pathwayTitle} (approximately ${pathwayLevel})`
+              : programme === "ielts" || programme === "ielts_general"
+                ? `Band ${placementBand.toFixed(1)} · ${ieltsTrackName}`
+                : `Band ${placementBand.toFixed(1)}`}
+          </li>
           <li>✅ Your programme: {programmeLabel}</li>
           <li>✅ Your target: {target}</li>
           <li>

@@ -134,7 +134,7 @@ function WelcomeContent() {
           {isMockExam
             ? "Your account is ready. Sign in to complete payment and access your IELTS Academic mock exam — no Accelerator enrollment or placement test required."
             : isPathway
-            ? "Your English Pathway account is ready. Sign in and take the one-time placement test to find your CEFR starting level."
+            ? "Your English Pathway account is ready. Sign in and take the one-time placement test to find your starting Pathway level."
             : isStep
               ? "Your STEP Accelerator account is ready. Sign in and take the STEP diagnostic to find your starting phase."
             : isToefl

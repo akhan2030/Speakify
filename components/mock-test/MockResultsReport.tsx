@@ -10,7 +10,7 @@ import {
   buildMockCertificateFromReport,
   readMockSessionMeta,
 } from "@/lib/mock-test/certificate";
-import type { MockTestFullReport, SectionBreakdown } from "@/lib/mock-test/reportTypes";
+import { ACCELERATOR_TRACKS, acceleratorTrackIdForBand } from "@/lib/accelerator/tracks";
 
 const NAVY = "#0d1b35";
 const GOLD = "#c9972c";
@@ -282,18 +282,9 @@ export default function MockResultsReport({ report, attemptId }: Props) {
             </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-              <span
-                className="flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-white/20 text-center"
-                style={{ backgroundColor: NAVY }}
-              >
-                <span className="text-lg font-black text-[#c9972c]">
-                  {report.cefr.level}
-                </span>
-              </span>
-              <span className="text-left text-sm text-slate-300">
-                CEFR {report.cefr.level}
-                <br />
-                <span className="font-semibold text-white">{report.cefr.label}</span>
+              <span className="rounded-full border border-[#c9972c]/40 bg-[#c9972c]/15 px-4 py-2 text-sm font-bold text-[#c9972c]">
+                Speakify track:{" "}
+                {ACCELERATOR_TRACKS[acceleratorTrackIdForBand(report.overallBand)].name}
               </span>
               <span className="rounded-full border border-[#c9972c]/40 bg-[#c9972c]/15 px-4 py-2 text-sm font-bold text-[#c9972c]">
                 ✓ Reviewed by Speakify IELTS Examiner

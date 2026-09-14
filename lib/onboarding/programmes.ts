@@ -43,8 +43,8 @@ const ALL_ONBOARDING_PROGRAMME_OPTIONS: OnboardingProgrammeOption[] = [
     id: "pathway",
     icon: "📚",
     title: "English Pathway",
-    subtitle: "Build my English · CEFR levels (A1–C2)",
-    assessmentLabel: "CEFR level placement test",
+    subtitle: "Build my English · named Pathway levels",
+    assessmentLabel: "Speakify placement test",
   },
   {
     id: "business_english",

@@ -72,7 +72,7 @@ export default function PathwayRecommendationPanel({
             {pathway.trackCode} · {pathway.trackWeekCount} weeks
           </span>
           <span className="rounded-full bg-[#0d9488]/20 px-3 py-1 text-xs font-bold text-[#0d9488]">
-            CEFR {pathway.cefrCode}
+            approximately {pathway.cefrCode}
           </span>
           <span className="rounded-full bg-[#c9972c]/20 px-3 py-1 text-xs font-bold text-[#0d1b35]">
             {pathway.programName}

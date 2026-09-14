@@ -17,7 +17,7 @@ export default function CertificatesPage() {
   return (
     <PathwaySubPageShell
       title="Certificates"
-      subtitle="CEFR level certificates earned on English Pathway."
+      subtitle="Level certificates earned on English Pathway."
     >
       {earned.length === 0 ? (
         <p className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
@@ -31,7 +31,7 @@ export default function CertificatesPage() {
               className="rounded-xl border border-[#c9972c]/30 bg-gradient-to-br from-[#fffbeb] to-white p-5 shadow-sm"
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-[#c9972c]">
-                CEFR Certificate
+                Pathway certificate
               </p>
               <p className="mt-2 text-lg font-bold text-[#0d1b35]">{cert.name}</p>
               <p className="mt-1 text-sm text-slate-500">{cert.date}</p>

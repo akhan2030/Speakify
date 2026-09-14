@@ -12,7 +12,7 @@ export default function MyPathwayPage() {
   return (
     <PathwaySubPageShell
       title={terms.trackLabel}
-      subtitle={`Your CEFR journey from A1.1 to C1.2. You are currently at ${ctx.levelName}.`}
+      subtitle={`Your Pathway from Foundation I toward Advanced Mastery. You are currently at ${ctx.levelName}.`}
     >
       <PathwayLevelMap />
       <p className="mt-6 text-sm text-slate-600">

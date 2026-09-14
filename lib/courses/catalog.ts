@@ -41,7 +41,7 @@ export const COURSE_CATEGORIES: CourseCategory[] = [
     id: "general-english",
     label: "General English",
     description:
-      "Structured CEFR pathway from AB through C2.2 — 13 micro-levels with weekly lessons and certificates.",
+      "Structured general English from Foundation I through Advanced Mastery. Letter codes on level cards are approximate, not an official CEFR certificate.",
   },
   {
     id: "specialty",
@@ -215,11 +215,11 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "english-pathway",
     name: "English Pathway",
-    tagline: "CEFR AB → C2.2",
+    tagline: "Foundation I → Advanced Mastery",
     shortDescription:
-      "Full CEFR pathway — 13 micro-levels from AB through C2.2.",
+      "Speakify Pathway course names — Foundation I through Advanced Mastery.",
     description:
-      "Structured general English from AB to C2.2 across 13 micro-levels. Each level includes weekly lessons, skill practice, readiness checks, and graduation certificates.",
+      "Structured general English across Speakify Pathway levels. Each level includes weekly lessons, skill practice, readiness checks, and graduation certificates. Letter codes shown in the LMS are approximate CEFR labels, not an official certificate.",
     levelBadge: "Beginner",
     category: "general-english",
     accent: "#0d9488",
@@ -228,7 +228,7 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     duration: "4 weeks per level",
     price: "Starts at 900 SAR",
     highlights: [
-      "CEFR progression AB → C2.2 (13 micro-levels)",
+      "Speakify Pathway levels (Foundation I through Advanced Mastery)",
       "Weekly grammar & vocabulary focus",
       "Speaking, reading, listening & writing practice",
       "Level readiness checks & certificates",

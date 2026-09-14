@@ -13,7 +13,7 @@ export default function PathwayAchievementsPage() {
   return (
     <PathwaySubPageShell
       title="Achievements"
-      subtitle="Milestones on your English Pathway journey — CEFR progress, not exam scores."
+      subtitle="Milestones on your English Pathway journey — course progress, not exam scores."
     >
       <ul className="grid gap-4 sm:grid-cols-2">
         {ACHIEVEMENTS.map((a) => (

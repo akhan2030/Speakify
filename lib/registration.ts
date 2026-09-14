@@ -40,11 +40,11 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     slug: "pathway",
     programType: "pathway",
     label: "English Pathway",
-    tagline: "General English · CEFR levels",
+    tagline: "General English · Speakify Pathway levels",
     description:
-      "Structured CEFR course from A1 to B2 with lessons, vocabulary, and level assessments.",
+      "Structured general English with named course levels, weekly lessons, vocabulary, and level assessments.",
     bullets: [
-      "CEFR level progression (A1 → B2)",
+      "Named Pathway levels (Foundation I through Advanced Mastery)",
       "Weekly grammar & vocabulary focus",
       "Speaking, reading, listening & writing practice",
     ],

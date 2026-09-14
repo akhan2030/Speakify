@@ -11,6 +11,8 @@ import {
   type PlacementCertificateData,
 
 } from "@/lib/placement/certificate";
+import { ACCELERATOR_TRACKS, acceleratorTrackIdForBand } from "@/lib/accelerator/tracks";
+import { PLACEMENT_ESTIMATE_DISCLAIMER } from "@/lib/claims/studentLevelCopy";
 
 
 
@@ -168,8 +170,6 @@ const PlacementCertificate = forwardRef<HTMLDivElement, Props>(
 
       targetPct,
 
-      cefrInfo,
-
       estimatedTimeline,
 
       purpose,
@@ -306,7 +306,7 @@ const PlacementCertificate = forwardRef<HTMLDivElement, Props>(
 
                     <span className="text-lg font-bold text-[#c9972c] sm:text-xl">
 
-                      {cefrInfo.cefr}
+                      {ACCELERATOR_TRACKS[acceleratorTrackIdForBand(currentBand)].name}
 
                     </span>
 
@@ -314,7 +314,7 @@ const PlacementCertificate = forwardRef<HTMLDivElement, Props>(
 
                   <p className="mt-1.5 text-xs font-bold text-[#0d1b35] sm:text-sm">
 
-                    {cefrInfo.label}
+                    Recommended track
 
                   </p>
 
@@ -405,6 +405,9 @@ const PlacementCertificate = forwardRef<HTMLDivElement, Props>(
               {MOTIVATIONAL}
 
             </p>
+            <p className="mt-2 text-center text-[0.65rem] text-slate-500">
+              {PLACEMENT_ESTIMATE_DISCLAIMER}
+            </p>
 
 
 
@@ -430,7 +433,7 @@ const PlacementCertificate = forwardRef<HTMLDivElement, Props>(
 
                     <th className="px-3 py-2 text-center text-[0.65rem] font-bold uppercase tracking-wide">
 
-                      CEFR Level
+                      Speakify track
 
                     </th>
 
@@ -464,7 +467,7 @@ const PlacementCertificate = forwardRef<HTMLDivElement, Props>(
 
                       <td className="px-3 py-2 text-center font-medium text-slate-600">
 
-                        {row.cefr}
+                        {ACCELERATOR_TRACKS[acceleratorTrackIdForBand(row.band)].name}
 
                       </td>
 

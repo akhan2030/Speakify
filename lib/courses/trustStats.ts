@@ -42,8 +42,8 @@ export const COURSE_TRUST_STATS: Partial<
     full: "89% of STEP Accelerator students hit their university English target score.",
   },
   "english-pathway": {
-    card: "87% advance a full CEFR level",
-    full: "87% of Pathway learners advance at least one full CEFR level within a term.",
+    card: "87% advance a Pathway level",
+    full: "87% of Pathway learners advance at least one Speakify Pathway level within a term.",
   },
 };
 

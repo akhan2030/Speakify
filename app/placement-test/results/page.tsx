@@ -11,7 +11,8 @@ import {
   RadarChart,
   ResponsiveContainer,
 } from "recharts";
-import { bandToCefr } from "@/lib/placement/scoring";
+import { ACCELERATOR_TRACKS, acceleratorTrackIdForBand } from "@/lib/accelerator/tracks";
+import { PLACEMENT_ESTIMATE_DISCLAIMER } from "@/lib/claims/studentLevelCopy";
 import {
   DEADLINE_OPTIONS,
   parseTargetBandNumeric,
@@ -132,7 +133,7 @@ export default function PlacementResultsPage() {
   }
 
   const { result, onboarding } = data;
-  const cefrInfo = bandToCefr(result.overallBand);
+  const trackName = ACCELERATOR_TRACKS[acceleratorTrackIdForBand(result.overallBand)].name;
   const currentBand = result.overallBand;
   const targetBand =
     parseTargetBandNumeric(onboarding?.targetBandScore ?? "") ??
@@ -188,8 +189,11 @@ export default function PlacementResultsPage() {
             Your IELTS Band: {result.overallBand.toFixed(1)}
           </p>
           <span className="mt-4 inline-block rounded-full bg-[#0d1b35] px-5 py-2 text-sm font-bold text-white">
-            {cefrInfo.cefr} — {cefrInfo.label}
+            Speakify {trackName}
           </span>
+          <p className="mt-3 text-sm text-slate-500">
+            {PLACEMENT_ESTIMATE_DISCLAIMER}
+          </p>
           <p className="mt-3 text-sm text-slate-500">
             {result.totalQuestions} questions • Confidence{" "}
             {result.confidenceScore}%

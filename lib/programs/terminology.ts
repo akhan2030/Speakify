@@ -20,7 +20,7 @@ export type ProgramTerminology = {
 export const PROGRAM_TERMINOLOGY: Record<ProgramKind, ProgramTerminology> = {
   pathway: {
     programName: "English Pathway",
-    currentLevelLabel: "Current CEFR Level",
+    currentLevelLabel: "Current level",
     progressLabel: "Skill Progress",
     readinessLabel: "Level Readiness",
     assessmentLabel: "Graduation Assessment",
@@ -120,16 +120,16 @@ export const PATHWAY_LEVEL_IDS = [
 export type PathwayLevelId = (typeof PATHWAY_LEVEL_IDS)[number];
 
 export const PATHWAY_LEVEL_NAMES: Record<PathwayLevelId, string> = {
-  a1_1: "A1.1 Foundation I",
-  a1_2: "A1.2 Foundation II",
-  a2_1: "A2.1 Elementary I",
-  a2_2: "A2.2 Elementary II",
-  b1_1: "B1.1 Intermediate I",
-  b1_2: "B1.2 Intermediate II",
-  b2_1: "B2.1 Upper-Int I",
-  b2_2: "B2.2 Upper-Int II",
-  c1_1: "C1.1 Advanced I",
-  c1_2: "C1.2 Advanced II",
+  a1_1: "Foundation I",
+  a1_2: "Foundation II",
+  a2_1: "Elementary I",
+  a2_2: "Elementary II",
+  b1_1: "Intermediate I",
+  b1_2: "Intermediate II",
+  b2_1: "Upper-Intermediate I",
+  b2_2: "Upper-Intermediate II",
+  c1_1: "Advanced I",
+  c1_2: "Advanced Mastery",
 };
 
 export function normalizePathwayLevelId(value: unknown): PathwayLevelId {

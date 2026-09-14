@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Courses | Speakify LMS",
   description:
-    "Browse all Speakify programmes — IELTS, TOEFL, STEP, English Pathway (A1.1–C2.2), Business English, and more.",
+    "Browse all Speakify programmes — IELTS, TOEFL, STEP, English Pathway, Business English, and more.",
 };
 
 export default async function CoursesHubPage() {

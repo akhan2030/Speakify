@@ -62,9 +62,9 @@ export const LOGIN_HERO_CONTENT: Record<LoginHeroProgramme, LoginHeroContent> = 
     headline: "Build real English skills,",
     headlineHighlight: "level by level.",
     bullets: [
-      "CEFR-based lessons across reading, writing, listening, and speaking.",
+      "Lessons across reading, writing, listening, and speaking at your Pathway level.",
       "Weekly plans that match your current level and goals.",
-      "Clear progress from A1 through advanced levels.",
+      "Clear progress from Foundation I through Advanced Mastery.",
     ],
     footer: "When your foundations are strong —",
     footerBold: "the next level opens naturally.",

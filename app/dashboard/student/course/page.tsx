@@ -113,7 +113,7 @@ export default function CourseHubPage() {
 
         {cefrLevels.length > 0 ? (
           <section className="mt-12">
-            <h2 className="text-lg font-bold text-[#0d1b35]">CEFR sub-levels (A1.1 → C1.2)</h2>
+            <h2 className="text-lg font-bold text-[#0d1b35]">Pathway sub-levels</h2>
             <p className="mt-1 text-sm text-slate-500">
               Optional granular pathway — 4 weeks per sub-level.
             </p>

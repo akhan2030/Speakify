@@ -189,7 +189,7 @@ export default function PathwayCoursePage() {
             </p>
             <h1 className="mt-2 text-3xl font-bold text-white">My Course</h1>
             <p className="mt-2 text-sm text-slate-300">
-              CEFR levels from beginner to advanced — one step at a time
+              Speakify Pathway levels — one step at a time
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-4">
               <span className="rounded-full bg-[#c9972c] px-4 py-1.5 text-sm font-bold text-[#0d1b35]">

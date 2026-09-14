@@ -5,6 +5,8 @@ import {
   formatCertificateBand,
   type MockCertificateData,
 } from "@/lib/mock-test/certificate";
+import { ACCELERATOR_TRACKS, acceleratorTrackIdForBand } from "@/lib/accelerator/tracks";
+import { PLACEMENT_ESTIMATE_DISCLAIMER } from "@/lib/claims/studentLevelCopy";
 
 type Props = {
   data: MockCertificateData;
@@ -25,9 +27,8 @@ const MockCompletionCertificate = forwardRef<HTMLDivElement, Props>(
             <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-xs leading-relaxed text-amber-950">
               If you saved a PDF of this report earlier, it may have said letter codes were
               aligned to the Council of Europe CEFR framework. That claim was incorrect. This
-              page is the current wording: letter codes are Speakify&apos;s internal grouping of
-              mock band scores, not an official CEFR or IELTS result. Please use a new download
-              if you still have the old file.
+              page now shows mock band scores and the Speakify Foundation / Plus / Elite
+              grouping only. Please use a new download if you still have the old file.
             </p>
             <div className="flex flex-wrap justify-end gap-2">
               <button
@@ -146,59 +147,31 @@ const MockCompletionCertificate = forwardRef<HTMLDivElement, Props>(
                       {formatCertificateBand(data.overallBand)}
                     </td>
                   </tr>
-                  <tr className="border-t border-slate-200 bg-slate-50">
-                    {data.skillRows.map((row) => (
-                      <td
-                        key={`${row.key}-cefr`}
-                        className="border-r border-slate-200 px-2 py-2 text-xs font-semibold text-slate-600 sm:px-4"
-                      >
-                        {row.cefr ?? "—"}
-                      </td>
-                    ))}
-                    <td className="px-2 py-2 text-xs font-bold text-[#0d1b35] sm:px-4">
-                      {data.overallCefr ? (
-                        <span>
-                          {data.overallCefr.level}
-                          <span className="mt-0.5 block text-[0.65rem] font-medium text-slate-500">
-                            {data.overallCefr.label}
-                          </span>
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
 
             <p className="mt-3 text-center text-[0.65rem] text-slate-500">
-              Letter codes on this report are Speakify&apos;s internal grouping of mock band
-              scores. They are not an official CEFR rating and are not aligned to the Council
-              of Europe framework.
+              {PLACEMENT_ESTIMATE_DISCLAIMER}
             </p>
           </div>
 
           <div className="border-t border-slate-200 bg-white px-6 py-4 sm:px-8">
             <p className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500">
-              Speakify internal band grouping (not an official CEFR scale)
+              Speakify track grouping (not an official CEFR or IELTS scale)
             </p>
             <div className="mt-2 flex flex-wrap gap-2 text-[0.65rem] font-semibold">
-              {[
-                ["A1", "< 4.0"],
-                ["A2", "4.0–4.5"],
-                ["B1", "4.5–5.5"],
-                ["B2", "5.5–6.5"],
-                ["C1", "7.0–8.0"],
-                ["C2", "8.0+"],
-              ].map(([cefr, band]) => (
+              {(["foundation", "plus", "elite"] as const).map((id) => (
                 <span
-                  key={cefr}
+                  key={id}
                   className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600"
                 >
-                  {cefr}: {band}
+                  {ACCELERATOR_TRACKS[id].name}: {ACCELERATOR_TRACKS[id].target}
                 </span>
               ))}
+              <span className="rounded border border-[#c9972c]/40 bg-[#c9972c]/10 px-2 py-1 text-[#0d1b35]">
+                This mock: {ACCELERATOR_TRACKS[acceleratorTrackIdForBand(data.overallBand)].name}
+              </span>
             </div>
           </div>
 

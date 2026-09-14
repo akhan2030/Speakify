@@ -1,5 +1,9 @@
-import { ACCELERATOR_TRACKS, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
-import { bandToCefr } from "@/lib/placement/scoring";
+import {
+  ACCELERATOR_TRACKS,
+  acceleratorTrackIdForBand,
+  type AcceleratorTrackId,
+} from "@/lib/accelerator/tracks";
+import { getPathwayLevelDisplay } from "@/lib/pathway/levelDisplay";
 import type {
   GatewayProgramme,
   GatewayRecommendation,
@@ -14,22 +18,13 @@ export function bandToPathwaySubLevel(band: number): string {
   return "A1.1";
 }
 
-const PATHWAY_LABELS: Record<string, string> = {
-  "B2.1": "Upper Intermediate",
-  "B1.2": "Intermediate",
-  "B1.1": "Pre-Intermediate",
-  "A2.2": "Elementary",
-  "A1.1": "Beginner",
-};
-
 function ieltsTrackRecommendation(estimatedBand: number, prefix: string): {
   track: AcceleratorTrackId;
   trackLabel: string;
   target: string;
   weeks: number;
 } {
-  const track: AcceleratorTrackId =
-    estimatedBand >= 7.0 ? "elite" : estimatedBand >= 5.5 ? "plus" : "foundation";
+  const track = acceleratorTrackIdForBand(estimatedBand);
   const meta = ACCELERATOR_TRACKS[track];
   return { track, trackLabel: `${prefix} ${meta.name}`, target: meta.target, weeks: meta.weekCount };
 }
@@ -73,7 +68,7 @@ export function recommendGatewayTrack(
     return {
       kind: "pathway",
       level,
-      levelLabel: PATHWAY_LABELS[level] ?? bandToCefr(estimatedBand).label,
+      levelLabel: getPathwayLevelDisplay(level).displayName,
     };
   }
 
@@ -82,7 +77,7 @@ export function recommendGatewayTrack(
     return {
       kind: "business_english",
       level,
-      levelLabel: PATHWAY_LABELS[level] ?? "Professional",
+      levelLabel: getPathwayLevelDisplay(level).displayName,
     };
   }
 
@@ -90,9 +85,9 @@ export function recommendGatewayTrack(
     const level = bandToPathwaySubLevel(estimatedBand);
     const label =
       estimatedBand >= 6.5
-        ? "Legal professional (B2+)"
+        ? "Legal professional"
         : estimatedBand >= 5.5
-          ? "Legal workplace (B1+)"
+          ? "Legal workplace"
           : "Legal foundations";
     return {
       kind: "legal_english",
@@ -101,14 +96,13 @@ export function recommendGatewayTrack(
     };
   }
 
-  const level = bandToPathwaySubLevel(estimatedBand);
   const kidsLevel =
     estimatedBand >= 5.5 ? "Champion" : estimatedBand >= 4.5 ? "Explorer" : "Starter";
   const ageBand = estimatedBand >= 5.5 ? "Ages 10–12" : "Ages 6–9";
   return {
     kind: "kids_english",
     level: kidsLevel,
-    levelLabel: PATHWAY_LABELS[level] ?? "Young learner",
+    levelLabel: kidsLevel,
     ageBand,
   };
 }

@@ -151,7 +151,7 @@ export default function PathwayProgressPage() {
       </section>
 
       <section className="mt-8">
-        <h2 className="text-base font-bold text-[#0d1b35]">Skills (CEFR progress)</h2>
+        <h2 className="text-base font-bold text-[#0d1b35]">Skills (level progress)</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {skills
             ? (Object.keys(SKILL_LABELS) as PathwaySkill[]).map((key) => (

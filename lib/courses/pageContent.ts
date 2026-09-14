@@ -60,12 +60,12 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
   "ielts-elite": ieltsContent("ielts-elite"),
   "ielts-gt-foundation": {
     targetLabel: "Band 5.0–5.5",
-    entryLevel: "A2.2–B1.1",
+    entryLevel: "Typical placement around Band 4.0–5.0",
     price: ACCELERATOR_TRACKS.foundation.price,
     idealFor: [
       "Students applying for visas or secondary school abroad",
       "First-time GT candidates",
-      "Learners at A2–B1 level",
+      "Learners typically placing around Band 4.0–5.0",
     ],
     outcomes: [
       "Confident letter writing in all three styles",
@@ -91,7 +91,7 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
   },
   "ielts-gt-plus": {
     targetLabel: "Band 6.0–6.5",
-    entryLevel: "B1.2–B2.1",
+    entryLevel: "Typical placement around Band 5.5–6.5",
     price: ACCELERATOR_TRACKS.plus.price,
     idealFor: [
       "Skilled worker and healthcare visa applicants",
@@ -121,7 +121,7 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
   },
   "ielts-gt-elite": {
     targetLabel: "Band 7.0+",
-    entryLevel: "B2.2–C1.1",
+    entryLevel: "Typical placement around Band 7.0+",
     price: ACCELERATOR_TRACKS.elite.price,
     idealFor: [
       "Permanent residency applicants needing Band 7+",
@@ -199,15 +199,15 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
     ],
   },
   "english-pathway": {
-    targetLabel: "A1 – C1 CEFR",
+    targetLabel: "Foundation I → Advanced Mastery",
     entryLevel: "Any level",
     idealFor: [
       "Learners building general English step by step",
-      "Students who prefer CEFR levels over exam bands",
+      "Students who prefer named course levels over exam bands",
       "Anyone wanting certificates and level assessments",
     ],
     outcomes: [
-      "Clear progression across CEFR levels",
+      "Clear progression across Speakify Pathway levels",
       "Balanced practice in all four skills",
       "Level readiness checks before advancing",
       "Graduation certificates on completion",
@@ -216,7 +216,7 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
     curriculum: [
       { week: "Level block", title: "Input Days", detail: "New language, guided examples, and controlled practice" },
       { week: "Level block", title: "Practice Days", detail: "Skill tasks with feedback across the week" },
-      { week: "Level block", title: "Progress Check", detail: "Readiness review before the next CEFR level" },
+      { week: "Level block", title: "Progress Check", detail: "Readiness review before the next Pathway level" },
       { week: "Level block", title: "Graduation", detail: "Level assessment and certificate award" },
     ],
   },
