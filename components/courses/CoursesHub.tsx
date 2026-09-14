@@ -1,27 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import CourseCard from "@/components/courses/CourseCard";
-import PathwayLevelGrid from "@/components/courses/PathwayLevelGrid";
-import {
-  COURSE_CATEGORIES,
-  getCoursesByCategory,
-  getIeltsAcademicCourses,
-  getIeltsGeneralCourses,
-  getOtherTestPrepCourses,
-  type CourseCatalogItem,
-  type CourseLevel,
-} from "@/lib/courses/catalog";
-import { DURATION_FILTER_OPTIONS, type DurationBucket } from "@/lib/courses/duration";
-import {
-  filterCourses,
-  type CategoryFilter,
-  type LevelFilter,
-} from "@/lib/courses/hubFilters";
-import { HUB_HERO_TRUST } from "@/lib/courses/trustStats";
-import { useMarketingLocale } from "@/components/marketing/MarketingLocale";
-import CoursesHubFork from "@/components/courses/CoursesHubFork";
+import { speakifyFraunces, speakifyInter } from "@/lib/brand/fonts";
+import ProgramSignInLink from "@/components/marketing/ProgramSignInLink";
+import type { CourseCatalogItem } from "@/lib/courses/catalog";
+import "./coursesHubBlueprint.css";
 
 type Props = {
   recommended?: {
@@ -30,363 +14,369 @@ type Props = {
   } | null;
 };
 
-export default function CoursesHub({ recommended = null }: Props) {
-  const { t, dir } = useMarketingLocale();
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<CategoryFilter>("all");
-  const [level, setLevel] = useState<LevelFilter>("all");
-  const [duration, setDuration] = useState<DurationBucket>("all");
+type TierName = "Foundation" | "Plus" | "Elite";
 
-  const q = query.trim().toLowerCase();
-  const filtering = Boolean(q || category !== "all" || level !== "all" || duration !== "all");
+const AC_TIERS: Record<TierName, { href: string; detail: React.ReactNode }> = {
+  Foundation: {
+    href: "/courses/ielts-foundation",
+    detail: (
+      <>
+        Foundation — <b>Band 5.0–5.5</b> · 6 weeks · 1,200 SAR · 2 live classes
+      </>
+    ),
+  },
+  Plus: {
+    href: "/courses/ielts-plus",
+    detail: (
+      <>
+        Plus — <b>Band 6.0–6.5</b> · 6 weeks · 1,800 SAR · 3 live classes
+      </>
+    ),
+  },
+  Elite: {
+    href: "/courses/ielts-elite",
+    detail: (
+      <>
+        Elite — <b>Band 7.0+</b> · 4 weeks · 2,400 SAR · 4 live classes
+      </>
+    ),
+  },
+};
 
-  const filtered = useMemo(
-    () => filterCourses({ query: q, category, level, duration }),
-    [category, level, duration, q]
-  );
+const GT_TIERS: Record<TierName, { href: string; detail: React.ReactNode }> = {
+  Foundation: {
+    href: "/courses/ielts-gt-foundation",
+    detail: (
+      <>
+        Foundation — <b>Band 5.0–5.5</b> · 6 weeks · 1,200 SAR · 2 live classes
+      </>
+    ),
+  },
+  Plus: {
+    href: "/courses/ielts-gt-plus",
+    detail: (
+      <>
+        Plus — <b>Band 6.0–6.5</b> · 8 weeks · 1,800 SAR · 3 live classes
+      </>
+    ),
+  },
+  Elite: {
+    href: "/courses/ielts-gt-elite",
+    detail: (
+      <>
+        Elite — <b>Band 7.0+</b> · 10 weeks · 2,400 SAR · 4 live classes
+      </>
+    ),
+  },
+};
 
-  const ieltsAcademic = getIeltsAcademicCourses().filter((c) =>
-    filtered.some((f) => f.slug === c.slug)
-  );
-  const ieltsGeneral = getIeltsGeneralCourses().filter((c) =>
-    filtered.some((f) => f.slug === c.slug)
-  );
-  const otherTestPrep = getOtherTestPrepCourses().filter((c) =>
-    filtered.some((f) => f.slug === c.slug)
-  );
+const PATHWAY_LEVELS = [
+  { c: "AB", n: "Absolute Beginner", d: "Zero English, Arabic-only background", w: "6wk" },
+  { c: "A1.1", n: "Beginner 1", d: "Knows alphabet, basic greetings", w: "6wk" },
+  { c: "A1.2", n: "Beginner 2", d: "Simple words, basic sentences", w: "6wk" },
+  { c: "A2.1", n: "Elementary 1", d: "Everyday survival English", w: "7wk" },
+  { c: "A2.2", n: "Elementary 2", d: "Simple conversations, present/past", w: "7wk" },
+  { c: "B1.1", n: "Pre-Intermediate 1", d: "Clear communication on familiar topics", w: "8wk" },
+  { c: "B1.2", n: "Pre-Intermediate 2", d: "Extended communication, opinions", w: "8wk" },
+  { c: "B2.1", n: "Intermediate 1", d: "Fluent on a wide range of topics", w: "8wk" },
+  { c: "B2.2", n: "Intermediate 2", d: "Academic and professional English", w: "9wk" },
+  { c: "C1.1", n: "Upper-Int. 1", d: "Complex ideas, flexible language", w: "9wk" },
+  { c: "C1.2", n: "Upper-Int. 2", d: "Near-professional mastery", w: "9wk" },
+  { c: "C2.1", n: "Advanced 1", d: "Near-native, nuanced expression", w: "10wk" },
+  { c: "C2.2", n: "Advanced 2", d: "Full mastery, academic/literary", w: "10wk" },
+] as const;
 
-  const selectClass =
-    "rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-[#c9972c] focus:ring-1 focus:ring-[#c9972c]";
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+}
+
+export default function CoursesHub(_props: Props) {
+  const [acTier, setAcTier] = useState<TierName>("Foundation");
+  const [gtTier, setGtTier] = useState<TierName>("Foundation");
+  const [openLevel, setOpenLevel] = useState<number | null>(null);
+
+  const openLv = openLevel === null ? null : PATHWAY_LEVELS[openLevel];
 
   return (
-    <div dir={dir}>
-      <section className="relative overflow-hidden bg-[#0d1b35] px-4 py-12 sm:px-6 sm:py-16">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-40"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 20% 20%, rgba(201,151,44,0.25), transparent), radial-gradient(ellipse 60% 50% at 90% 80%, rgba(13,148,136,0.2), transparent)",
-          }}
-        />
-        <div className="relative mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-widest text-[#c9972c]">
-              {t("hub.eyebrow")}
-            </p>
-            <h1 className="mt-3 text-3xl font-extrabold text-white sm:text-4xl">
-              {t("hub.title")}
-            </h1>
-            <p className="mt-3 text-base text-slate-300 sm:text-lg">
-              {t("hub.subtitle")}
-            </p>
-            <p className="mt-4 inline-flex max-w-xl rounded-xl border border-[#c9972c]/40 bg-[#c9972c]/10 px-4 py-3 text-sm font-medium text-[#f5e6c8]">
-              {HUB_HERO_TRUST}
-            </p>
+    <div className={`${speakifyInter.variable} ${speakifyFraunces.variable} ${speakifyInter.className} speakify-hub`}>
+      <header>
+        <div className="wrap nav">
+          <Link href="/courses" className="logo">
+            <span className="logo-dot" />
+            Speakify
+          </Link>
+          <div className="nav-links">
+            <button type="button" onClick={() => scrollToId("exams")}>
+              Test Prep
+            </button>
+            <button type="button" onClick={() => scrollToId("cefr")}>
+              General English
+            </button>
+            <button type="button" onClick={() => scrollToId("specialty")}>
+              Specialty English
+            </button>
+            <Link href="/courses/mock-exams">Mock Exams</Link>
           </div>
-
-          <div className="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm sm:grid-cols-2 lg:grid-cols-4">
-            <label className="block sm:col-span-2 lg:col-span-4">
-              <span className="sr-only">{t("hub.search")}</span>
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("hub.searchPlaceholder")}
-                className="w-full rounded-xl border border-white/20 bg-white px-4 py-3 text-sm text-[#0d1b35] outline-none placeholder:text-slate-400 focus:border-[#c9972c] focus:ring-2 focus:ring-[#c9972c]/40"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                {t("hub.filterCategory")}
-              </span>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as CategoryFilter)}
-                className={`w-full ${selectClass}`}
-              >
-                <option value="all" className="text-[#0d1b35]">
-                  {t("hub.allCategories")}
-                </option>
-                {COURSE_CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id} className="text-[#0d1b35]">
-                    {t(`category.${c.id}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                {t("hub.filterLevel")}
-              </span>
-              <select
-                value={level}
-                onChange={(e) => setLevel(e.target.value as LevelFilter)}
-                className={`w-full ${selectClass}`}
-              >
-                <option value="all" className="text-[#0d1b35]">
-                  {t("hub.allLevels")}
-                </option>
-                {(["Beginner", "Intermediate", "Advanced"] as CourseLevel[]).map((l) => (
-                  <option key={l} value={l} className="text-[#0d1b35]">
-                    {t(`level.${l}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block sm:col-span-2 lg:col-span-2">
-              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                {t("hub.filterDuration")}
-              </span>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(e.target.value as DurationBucket)}
-                className={`w-full ${selectClass}`}
-              >
-                {DURATION_FILTER_OPTIONS.map((opt) => (
-                  <option key={opt.id} value={opt.id} className="text-[#0d1b35]">
-                    {t(`duration.${opt.id}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Link
-              href="/placement-test"
-              className="rounded-xl bg-[#c9972c] px-5 py-2.5 text-sm font-semibold text-[#0d1b35] hover:opacity-95"
-            >
-              {t("hub.placementCta")}
+          <div className="nav-cta">
+            <ProgramSignInLink className="btn-ghost">Sign in</ProgramSignInLink>
+            <Link href="/register" className="btn-gold">
+              Register
             </Link>
-            {filtering ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("");
-                  setCategory("all");
-                  setLevel("all");
-                  setDuration("all");
-                }}
-                className="text-sm font-medium text-slate-300 underline-offset-2 hover:text-white hover:underline"
-              >
-                {t("hub.clearFilters")} ({filtered.length})
-              </button>
-            ) : null}
+          </div>
+        </div>
+      </header>
+
+      <section className="hero">
+        <div className="wrap">
+          <h1>What are you working toward?</h1>
+          <p>Pick the path that matches your goal — we&apos;ll show you the right programme, not everything at once.</p>
+
+          <div className="goal-picker">
+            <button type="button" className="goal-card" onClick={() => scrollToId("exams")}>
+              <span className="k">Path 1</span>
+              <h3>I&apos;m sitting a specific exam</h3>
+              <p>IELTS Academic, IELTS General, TOEFL, or STEP</p>
+            </button>
+            <button type="button" className="goal-card" onClick={() => scrollToId("cefr")}>
+              <span className="k">Path 2</span>
+              <h3>I want to build my English</h3>
+              <p>Structured CEFR levels, Absolute Beginner to Advanced</p>
+            </button>
+            <button type="button" className="goal-card" onClick={() => scrollToId("specialty")}>
+              <span className="k">Path 3</span>
+              <h3>English for work, life, or my kids</h3>
+              <p>Business, Legal, or Kids English</p>
+            </button>
+          </div>
+
+          <div className="placement-line">
+            Not sure which path fits?{" "}
+            <Link href="/placement-test">Take the 10-minute placement test →</Link>
           </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-        <CoursesHubFork />
-
-        {recommended ? (
-          <section className="mb-12 rounded-2xl border border-[#c9972c]/40 bg-[#fffbeb] p-6 sm:p-8">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#c9972c]">
-              {t("hub.recommendedEyebrow")}
-            </p>
-            <h2 className="mt-2 text-2xl font-bold text-[#0d1b35]">
-              {t("hub.recommendedTitle")}
-            </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              {t("hub.recommendedBody").replace(
-                "{band}",
-                recommended.placementBand.toFixed(1)
-              )}
-            </p>
-            <div className="mt-6 max-w-md">
-              <CourseCard
-                course={recommended.course}
-                featured
-                labels={{
-                  viewCourse: t("hub.viewCourse"),
-                  recommended: t("hub.recommendedBadge"),
-                }}
-              />
-            </div>
-          </section>
-        ) : null}
-
-        {filtering ? (
-          <section>
-            <h2 className="mb-6 text-2xl font-bold text-[#0d1b35]">
-              {t("hub.results")} ({filtered.length})
-            </h2>
-            {filtered.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-                {t("hub.noResults")}
+      <section className="group" id="exams">
+        <div className="wrap">
+          <div className="group-head">
+            <div>
+              <h2>Exam preparation</h2>
+              <p>
+                Each programme includes Foundation, Plus, and Elite tiers — pick the exam, then the
+                tier that matches your starting level.
               </p>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((course) => (
-                  <CourseCard
-                    key={course.slug}
-                    course={course}
-                    featured={recommended?.course.slug === course.slug}
-                    labels={{
-                      viewCourse: t("hub.viewCourse"),
-                      recommended: t("hub.recommendedBadge"),
-                    }}
-                  />
+            </div>
+            <Link href="/courses/mock-exams" className="mock-pill">
+              🎯 Just want to practice? See all mock exams →
+            </Link>
+          </div>
+
+          <div className="exam-grid">
+            <div className="exam-card">
+              <div className="exam-top">
+                <div>
+                  <h3>IELTS Academic</h3>
+                  <div className="exam-meta">3 tiers · Self-paced · 6–10 weeks · 5 full mock exams</div>
+                </div>
+                <span className="band">94% reach Band 6.0+</span>
+              </div>
+              <p className="exam-desc">
+                For university admissions and professional registration. Graph/report writing included.
+              </p>
+              <div className="tier-toggle">
+                {(["Foundation", "Plus", "Elite"] as const).map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={`tier-btn${acTier === name ? " active" : ""}`}
+                    onClick={() => setAcTier(name)}
+                  >
+                    {name}
+                  </button>
                 ))}
               </div>
-            )}
-          </section>
-        ) : (
-          COURSE_CATEGORIES.map((cat) => {
-            if (cat.id === "test-prep") {
-              if (
-                ieltsAcademic.length + ieltsGeneral.length + otherTestPrep.length ===
-                0
-              ) {
-                return null;
-              }
-              return (
-                <section key={cat.id} id={cat.id} className="mb-14">
-                  <div className="mb-6 border-b border-slate-200 pb-4">
-                    <h2 className="text-2xl font-bold text-[#0d1b35]">
-                      {t(`category.${cat.id}`)}
-                    </h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {t(`categoryDesc.${cat.id}`)}
-                    </p>
-                  </div>
+              <div className="tier-detail">{AC_TIERS[acTier].detail}</div>
+              <div className="exam-actions">
+                <Link href={AC_TIERS[acTier].href} className="btn-primary">
+                  View course
+                </Link>
+                <Link href="/courses/mock-exams" className="btn-secondary">
+                  Mock exams
+                </Link>
+              </div>
+            </div>
 
-                  {ieltsAcademic.length > 0 ? (
-                    <>
-                      <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-bold text-[#0d1b35]">
-                            {t("hub.ieltsAcademic")}
-                          </h3>
-                          <p className="text-sm text-slate-500">
-                            {t("hub.ieltsAcademicDesc")}
-                          </p>
-                        </div>
-                        <Link
-                          href="/courses/ielts"
-                          className="text-sm font-semibold text-[#c9972c] hover:underline"
-                        >
-                          {t("hub.viewAllAcademic")}
-                        </Link>
-                      </div>
-                      <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {ieltsAcademic.map((course) => (
-                          <CourseCard
-                            key={course.slug}
-                            course={course}
-                            featured={recommended?.course.slug === course.slug}
-                            labels={{
-                              viewCourse: t("hub.viewCourse"),
-                              recommended: t("hub.recommendedBadge"),
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  ) : null}
-
-                  {ieltsGeneral.length > 0 ? (
-                    <>
-                      <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-bold text-[#0d1b35]">
-                            {t("hub.ieltsGt")}
-                          </h3>
-                          <p className="text-sm text-slate-500">
-                            {t("hub.ieltsGtDesc")}
-                          </p>
-                        </div>
-                        <Link
-                          href="/courses/ielts-gt"
-                          className="text-sm font-semibold text-[#c9972c] hover:underline"
-                        >
-                          {t("hub.viewAllGt")}
-                        </Link>
-                      </div>
-                      <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {ieltsGeneral.map((course) => (
-                          <CourseCard
-                            key={course.slug}
-                            course={course}
-                            featured={recommended?.course.slug === course.slug}
-                            labels={{
-                              viewCourse: t("hub.viewCourse"),
-                              recommended: t("hub.recommendedBadge"),
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  ) : null}
-
-                  {otherTestPrep.length > 0 ? (
-                    <>
-                      <h3 className="mb-4 text-lg font-bold text-[#0d1b35]">
-                        {t("hub.otherTestPrep")}
-                      </h3>
-                      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {otherTestPrep.map((course) => (
-                          <CourseCard
-                            key={course.slug}
-                            course={course}
-                            labels={{
-                              viewCourse: t("hub.viewCourse"),
-                              recommended: t("hub.recommendedBadge"),
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  ) : null}
-                </section>
-              );
-            }
-
-            const courses = getCoursesByCategory(cat.id).filter((c) =>
-              filtered.some((f) => f.slug === c.slug)
-            );
-            if (courses.length === 0 && cat.id !== "general-english") return null;
-
-            return (
-              <section key={cat.id} id={cat.id} className="mb-14 last:mb-0">
-                <div className="mb-6 border-b border-slate-200 pb-4">
-                  <h2 className="text-2xl font-bold text-[#0d1b35]">
-                    {t(`category.${cat.id}`)}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {t(`categoryDesc.${cat.id}`)}
-                  </p>
+            <div className="exam-card">
+              <div className="exam-top">
+                <div>
+                  <h3>IELTS General Training</h3>
+                  <div className="exam-meta">3 tiers · Self-paced · 6–10 weeks · 3 full mock exams</div>
                 </div>
-                {courses.length > 0 ? (
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {courses.map((course) => (
-                      <CourseCard
-                        key={course.slug}
-                        course={course}
-                        labels={{
-                          viewCourse: t("hub.viewCourse"),
-                          recommended: t("hub.recommendedBadge"),
-                        }}
-                      />
-                    ))}
+                <span className="band">94% reach Band 6.0+</span>
+              </div>
+              <p className="exam-desc">
+                For visas, immigration, and work abroad. Letters and everyday reading skills.
+              </p>
+              <div className="tier-toggle">
+                {(["Foundation", "Plus", "Elite"] as const).map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={`tier-btn${gtTier === name ? " active" : ""}`}
+                    onClick={() => setGtTier(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <div className="tier-detail">{GT_TIERS[gtTier].detail}</div>
+              <div className="exam-actions">
+                <Link href={GT_TIERS[gtTier].href} className="btn-primary">
+                  View course
+                </Link>
+                <Link href="/courses/mock-exams/general" className="btn-secondary">
+                  Mock exams
+                </Link>
+              </div>
+            </div>
+
+            <div className="exam-card">
+              <div className="exam-top">
+                <div>
+                  <h3>TOEFL</h3>
+                  <div className="exam-meta">1 tier · Self-paced · 8 weeks · Timed practice tests</div>
+                </div>
+                <span className="band">Intermediate</span>
+              </div>
+              <p className="exam-desc">
+                Full TOEFL iBT preparation, built for US and Canadian university admissions.
+              </p>
+              <div className="exam-actions" style={{ marginTop: 56 }}>
+                <Link href="/courses/toefl-accelerator" className="btn-primary">
+                  View course
+                </Link>
+                <Link href="/courses/mock-exams" className="btn-secondary">
+                  Mock exams
+                </Link>
+              </div>
+            </div>
+
+            <div className="exam-card">
+              <div className="exam-top">
+                <div>
+                  <h3>STEP</h3>
+                  <div className="exam-meta">1 tier · Self-paced · Practice + full mocks</div>
+                </div>
+                <span className="band">Saudi-specific</span>
+              </div>
+              <p className="exam-desc">
+                The Standard Test of English Proficiency, used across Saudi universities and ministries.
+              </p>
+              <div className="exam-actions" style={{ marginTop: 56 }}>
+                <Link href="/courses/step-preparation" className="btn-primary">
+                  View course
+                </Link>
+                <Link href="/courses/step-preparation" className="btn-secondary">
+                  Mock exams
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="group" id="cefr">
+        <div className="wrap">
+          <div className="group-head">
+            <div>
+              <h2>General English pathway</h2>
+              <p>One continuous journey from zero English to near-native fluency, in 13 four-to-ten-week levels.</p>
+            </div>
+          </div>
+
+          <div className="cefr-card">
+            <div className="cefr-top">
+              <div>
+                <h3>English Pathway</h3>
+                <p>Self-paced · Starts at 900 SAR per level · live classes via marketplace</p>
+              </div>
+              <Link href="/courses/english-pathway" className="btn-primary">
+                Start my level
+              </Link>
+            </div>
+
+            <div className="ladder">
+              {PATHWAY_LEVELS.map((lv, i) => (
+                <button
+                  key={lv.c}
+                  type="button"
+                  className={`rung${openLevel === i ? " open" : ""}`}
+                  onClick={() => setOpenLevel((cur) => (cur === i ? null : i))}
+                >
+                  {lv.c}
+                </button>
+              ))}
+            </div>
+            <div className="ladder-caption">
+              Click any level to see what it covers, or use the placement test to find your starting point.
+            </div>
+            <div className={`level-table${openLv ? " open" : ""}`}>
+              {openLv ? (
+                <div className="level-row">
+                  <div className="code">{openLv.c}</div>
+                  <div className="name">{openLv.n}</div>
+                  <div className="desc">
+                    {openLv.d} · {openLv.w}
                   </div>
-                ) : null}
-                {cat.id === "general-english" ? (
-                  <PathwayLevelGrid
-                    title={t("hub.pathwayGridTitle")}
-                    subtitle={t("hub.pathwayGridSubtitle")}
-                    weeksLabel={t("hub.pathwayWeeks")}
-                    ctaLabel={t("hub.pathwayCta")}
-                  />
-                ) : null}
-              </section>
-            );
-          })
-        )}
-      </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="find-level">
+              Not sure where you fit? <Link href="/placement-test">Take the placement test →</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="group" id="specialty" style={{ borderBottom: "none" }}>
+        <div className="wrap">
+          <div className="group-head">
+            <div>
+              <h2>English for work, life, and family</h2>
+              <p>Focused, self-paced courses that don&apos;t require picking a CEFR level first.</p>
+            </div>
+          </div>
+          <div className="spec-grid">
+            <div className="spec-card">
+              <span className="spec-tag">Intermediate · Self-paced · 8 weeks</span>
+              <h3>Business English</h3>
+              <p>Workplace English for meetings, emails, and presentations.</p>
+              <Link href="/courses/business-english" className="btn-primary">
+                View course
+              </Link>
+            </div>
+            <div className="spec-card">
+              <span className="spec-tag">Advanced · Self-paced · 10 weeks</span>
+              <h3>Legal English</h3>
+              <p>Specialised English for contracts and legal writing.</p>
+              <Link href="/courses/legal-english" className="btn-primary">
+                View course
+              </Link>
+            </div>
+            <div className="spec-card">
+              <span className="spec-tag">Beginner · Self-paced</span>
+              <h3>Kids English</h3>
+              <p>Fun, age-appropriate English for children aged 6–12.</p>
+              <Link href="/courses/kids-english" className="btn-primary">
+                View course
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>© 2026 Speakify · Global Language Center</footer>
     </div>
   );
 }

@@ -1,20 +1,17 @@
 import MarketingShell from "@/components/marketing/MarketingShell";
 import CoursesHub from "@/components/courses/CoursesHub";
-import { getRecommendedCourse } from "@/lib/courses/getRecommendedCourse";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Courses | Speakify LMS",
+  title: "Speakify — Find your programme",
   description:
-    "Browse all Speakify programmes — IELTS, TOEFL, STEP, English Pathway, Business English, and more.",
+    "Pick the path that matches your goal — exam preparation, General English pathway, or English for work, life, and family.",
 };
 
-export default async function CoursesHubPage() {
-  const recommended = await getRecommendedCourse();
-
+export default function CoursesHubPage() {
   return (
-    <MarketingShell>
-      <CoursesHub recommended={recommended} />
+    <MarketingShell chrome="none">
+      <CoursesHub />
     </MarketingShell>
   );
 }

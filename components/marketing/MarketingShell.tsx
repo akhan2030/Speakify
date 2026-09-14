@@ -3,7 +3,17 @@ import SiteHeader from "@/components/marketing/SiteHeader";
 import ProgramSignInLink from "@/components/marketing/ProgramSignInLink";
 import { MarketingLocaleProvider } from "@/components/marketing/MarketingLocale";
 
-export default function MarketingShell({ children }: { children: React.ReactNode }) {
+export default function MarketingShell({
+  children,
+  chrome = "default",
+}: {
+  children: React.ReactNode;
+  chrome?: "default" | "none";
+}) {
+  if (chrome === "none") {
+    return <MarketingLocaleProvider>{children}</MarketingLocaleProvider>;
+  }
+
   return (
     <MarketingLocaleProvider>
       <div className="flex min-h-screen flex-col bg-[#f8fafc]">
