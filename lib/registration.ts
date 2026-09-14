@@ -105,7 +105,7 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
   toefl: {
     slug: "toefl",
     programType: "ielts",
-    label: "TOEFL Preparation",
+    label: "TOEFL Preparation (coming soon)",
     tagline: "TOEFL iBT · Test prep",
     description:
       "TOEFL preparation with practice tests, skill tracking, and personalised study plans.",

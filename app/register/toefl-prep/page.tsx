@@ -1,5 +1,5 @@
-import RegisterForm from "@/components/register/RegisterForm";
+import ToeflComingSoon from "@/components/courses/ToeflComingSoon";
 
 export default function RegisterToeflPrepPage() {
-  return <RegisterForm slug="toefl" />;
+  return <ToeflComingSoon />;
 }

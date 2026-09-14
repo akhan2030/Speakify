@@ -1,0 +1,45 @@
+{
+  "programme": "ielts_academic",
+  "section": 2,
+  "version": "v3",
+  "question_count": 10,
+  "context": "A community centre coordinator gives a talk introducing the centre's facilities and layout to new visitors.",
+  "diagram_asset": "section2-floor-plan.svg",
+  "sub_blocks": [
+    {
+      "questions": [11, 15],
+      "type": "note_completion",
+      "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER"
+    },
+    {
+      "questions": [16, 20],
+      "type": "plan_labelling",
+      "word_limit": "A-H"
+    }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "narrator", "accent": "new_zealand", "gender": "female", "display_name": "Olivia (Coordinator)", "voice_id": "pFZP5JQG7iQjIQuC4Bku" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Two. You will hear a talk given by a coordinator at a community centre.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions eleven to fifteen. Complete the notes below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions eleven to fifteen.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions eleven to fifteen.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Good evening, everyone, and welcome to Elmwood Community Centre. I'm Olivia, one of the coordinators here, and I'll give you a quick overview of what we offer.", "pause_after_ms": 800 },
+    { "speaker_id": "narrator", "text": "We're open Monday to Friday from eight in the morning until nine in the evening.", "pause_after_ms": 700, "key_detail": true, "question_number": 11, "answer": "8am-9pm", "acceptable_answers": ["8am-9pm", "8 am-9 pm", "8am to 9pm", "8.00-9.00", "8-9pm"] },
+    { "speaker_id": "narrator", "text": "At weekends, we close a little earlier, at six pm, on both Saturday and Sunday.", "pause_after_ms": 700, "key_detail": true, "question_number": 12, "answer": "6pm", "acceptable_answers": ["6pm", "6 pm", "6 p.m.", "18:00", "6.00"] },
+    { "speaker_id": "narrator", "text": "Membership itself is free for local residents, though a few of our specialist classes do carry a small charge — pottery, for instance, is twelve dollars a session.", "pause_after_ms": 700, "key_detail": true, "question_number": 13, "answer": "$12", "acceptable_answers": ["$12", "12 dollars", "12", "twelve dollars"] },
+    { "speaker_id": "narrator", "text": "If you're interested in volunteering, that's coordinated separately, through Marcus, who you can reach directly on extension two-oh-four.", "pause_after_ms": 800, "key_detail": true, "question_number": 14, "answer": "204" },
+    { "speaker_id": "narrator", "text": "We also hold a Summer Fete out in the garden every June, which tends to be very popular with local families.", "pause_after_ms": 700, "key_detail": true, "question_number": 15, "answer": "Summer Fete", "acceptable_answers": ["Summer Fete", "summer fete", "Summer Fête"] },
+    { "speaker_id": "examiner", "text": "Questions sixteen to twenty. Label the plan below. Write the correct letter, A to H, next to questions sixteen to twenty. First, you have some time to look at questions sixteen to twenty.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions sixteen to twenty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Now, let me quickly talk you through the building itself, since it's easy to get a little lost on your first visit.", "pause_after_ms": 700 },
+    { "speaker_id": "narrator", "text": "As you come in through the main entrance, the reception desk is straight ahead of you — that's always the first stop, so we can sign you in.", "pause_after_ms": 800, "key_detail": true, "question_number": 16, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "narrator", "text": "To the left of reception, along the corridor, you'll find the Oak Room, which is our largest space — mainly used for fitness classes and bigger gatherings.", "pause_after_ms": 800, "key_detail": true, "question_number": 17, "answer": "C", "acceptable_answers": ["C"] },
+    { "speaker_id": "narrator", "text": "If you carry on to the far end of that same corridor, on the right-hand side, that's the Willow Room, which is smaller, and where we run most of our art and craft sessions.", "pause_after_ms": 800, "key_detail": true, "question_number": 18, "answer": "D", "acceptable_answers": ["D"] },
+    { "speaker_id": "narrator", "text": "Just below the Willow Room, at the back of the building, is the Reading Room — that one's kept quiet, and it's reserved for study groups and our book club.", "pause_after_ms": 800, "key_detail": true, "question_number": 19, "answer": "E", "acceptable_answers": ["E"] },
+    { "speaker_id": "narrator", "text": "And finally, directly opposite the Reading Room, on the other side of the building, you'll find our little café, where you're welcome to grab a tea or coffee before or after a session.", "pause_after_ms": 800, "key_detail": true, "question_number": 20, "answer": "F", "acceptable_answers": ["F"] },
+    { "speaker_id": "narrator", "text": "That's everything I wanted to cover tonight. Feel free to take a leaflet on your way out, and thank you all for coming.", "pause_after_ms": 600 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Two. Now turn to Section Three.", "pause_after_ms": 800 }
+  ]
+}

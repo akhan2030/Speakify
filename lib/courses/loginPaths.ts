@@ -28,7 +28,7 @@ export const COURSE_POST_LOGIN_PATH: Record<string, string> = {
   "ielts-gt-foundation": PROGRAM_LOGIN_PATHS.ieltsGeneral,
   "ielts-gt-plus": PROGRAM_LOGIN_PATHS.ieltsGeneral,
   "ielts-gt-elite": PROGRAM_LOGIN_PATHS.ieltsGeneral,
-  "toefl-accelerator": PROGRAM_LOGIN_PATHS.ielts,
+  "toefl-accelerator": "/courses/toefl-accelerator",
   "step-preparation": PROGRAM_LOGIN_PATHS.step,
   "english-pathway": PROGRAM_LOGIN_PATHS.pathway,
   "business-english": "/dashboard/business-english/student",
@@ -84,10 +84,12 @@ export function loginPathFromPathname(pathname: string): string {
   if (pathname.startsWith("/register/ielts-general")) {
     return buildLoginPath(PROGRAM_LOGIN_PATHS.ieltsGeneral, "ielts-general");
   }
+  if (pathname.startsWith("/register/toefl") || pathname.includes("toefl-accelerator")) {
+    return buildLoginPath("/courses/toefl-accelerator", "toefl-accelerator");
+  }
   if (
     pathname.startsWith("/register/ielts-accelerator") ||
-    pathname === "/register/ielts" ||
-    pathname.startsWith("/register/toefl")
+    pathname === "/register/ielts"
   ) {
     return loginPathForProgramType("ielts");
   }
@@ -124,7 +126,7 @@ const PROGRAM_SLUG_TO_CONTEXT: Record<string, LoginProgramContext> = {
   "ielts-gt-foundation": "ielts_general",
   "ielts-gt-plus": "ielts_general",
   "ielts-gt-elite": "ielts_general",
-  "toefl-accelerator": "ielts",
+  "toefl-accelerator": "general",
   "step-preparation": "step",
   "business-english": "business_english",
   "legal-english": "legal_english",
@@ -132,7 +134,7 @@ const PROGRAM_SLUG_TO_CONTEXT: Record<string, LoginProgramContext> = {
   pathway: "pathway",
   ielts: "ielts",
   "ielts-general": "ielts_general",
-  toefl: "ielts",
+  toefl: "general",
 };
 
 function isStepCallbackPath(path: string): boolean {
@@ -159,9 +161,7 @@ function isIeltsAcademicCallbackPath(path: string): boolean {
     path === "/courses/ielts" ||
     (path.startsWith("/courses/ielts-") && !path.startsWith("/courses/ielts-gt")) ||
     path.includes("/register/ielts-accelerator") ||
-    path === "/register/ielts" ||
-    path.includes("/register/toefl") ||
-    (path.includes("toefl-accelerator") && !path.includes("step"))
+    path === "/register/ielts"
   );
 }
 

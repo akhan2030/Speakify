@@ -1,0 +1,38 @@
+{
+  "programme": "ielts_academic",
+  "test": 3,
+  "section": 2,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% prosody rate, natural pauses. Multiple-choice options stay on the paper only.",
+  "context": "A librarian gives an orientation talk to new members at a public library.",
+  "sub_blocks": [
+    { "questions": [11, 15], "type": "note_completion", "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER" },
+    { "questions": [16, 20], "type": "multiple_choice", "word_limit": "Choose the correct letter, A, B or C. Options are on the question paper only." }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "narrator", "accent": "british", "gender": "female", "display_name": "Megan Doyle (Librarian)", "voice_id": "LcfcDJNUP1GQjkzn1xUU" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Two. You will hear a librarian giving an orientation talk to new members.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions eleven to fifteen. Complete the notes below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions eleven to fifteen.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions eleven to fifteen.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Good afternoon, everyone, and welcome to Fairview Public Library. I'm Megan, and I look after new memberships here.", "pause_after_ms": 950 },
+    { "speaker_id": "narrator", "text": "We're open Monday to Saturday, from nine until eight in the evening, but closed on Sundays.", "pause_after_ms": 900, "key_detail": true, "question_number": 11, "answer": "9-8pm", "acceptable_answers": ["9am-8pm", "9-8pm", "9 to 8"] },
+    { "speaker_id": "narrator", "text": "Membership itself is completely free for local residents, so there's no charge to sign up today.", "pause_after_ms": 900, "key_detail": true, "question_number": 12, "answer": "free", "acceptable_answers": ["free"] },
+    { "speaker_id": "narrator", "text": "You're allowed to borrow up to eight items at a time, which includes books, DVDs, and magazines.", "pause_after_ms": 900, "key_detail": true, "question_number": 13, "answer": "8", "acceptable_answers": ["8", "eight"] },
+    { "speaker_id": "narrator", "text": "The standard loan period is three weeks, though you can renew online if you need longer.", "pause_after_ms": 900, "key_detail": true, "question_number": 14, "answer": "3 weeks", "acceptable_answers": ["3 weeks", "three weeks"] },
+    { "speaker_id": "narrator", "text": "If something's returned late, there's a small fine of twenty cents per day.", "pause_after_ms": 900, "key_detail": true, "question_number": 15, "answer": "20 cents", "acceptable_answers": ["20 cents", "$0.20"] },
+    { "speaker_id": "examiner", "text": "Questions sixteen to twenty. Choose the correct letter, A, B or C. The options are on your question paper only. First, you have some time to look at questions sixteen to twenty.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions sixteen to twenty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Now, let me tell you a bit more about what we offer beyond just borrowing books.", "pause_after_ms": 900 },
+    { "speaker_id": "narrator", "text": "Our children's section has its own dedicated reading corner, and we run a story time every Saturday morning that's always fully booked within a day of opening — so it's worth signing up the moment slots appear online, rather than waiting.", "pause_after_ms": 1000, "key_detail": true, "question_number": 16, "answer": "B", "acceptable_answers": ["B"], "note": "Paper: A Story time has no time limit; B Story time slots fill up quickly; C Story time is for adults only." },
+    { "speaker_id": "narrator", "text": "If you need a quiet space to work, our study room upstairs is fairly small, so during exam season especially, we'd really recommend reserving a desk in advance rather than just turning up and hoping.", "pause_after_ms": 1000, "key_detail": true, "question_number": 17, "answer": "C", "acceptable_answers": ["C"], "note": "Paper: A The study room is always empty; B The study room cannot be booked; C Booking ahead is strongly advised." },
+    { "speaker_id": "narrator", "text": "We also have a small computer lab, and while walk-ins are welcome, we do prioritise anyone doing job applications or official paperwork if things get busy.", "pause_after_ms": 1000, "key_detail": true, "question_number": 18, "answer": "A", "acceptable_answers": ["A"], "note": "Paper: A Job-seekers get priority when busy; B Only members can use the computers; C The lab is for children only." },
+    { "speaker_id": "narrator", "text": "As for our meeting room, it's free to book for community groups, though we do ask that any commercial use be arranged separately with the main office.", "pause_after_ms": 1000, "key_detail": true, "question_number": 19, "answer": "B", "acceptable_answers": ["B"], "note": "Paper: A The meeting room is never free; B Commercial bookings need separate arrangement; C Only staff can use the meeting room." },
+    { "speaker_id": "narrator", "text": "And finally, if you ever have trouble finding something, don't hesitate to ask — most of us have been here for years and genuinely enjoy tracking down obscure requests.", "pause_after_ms": 1000, "key_detail": true, "question_number": 20, "answer": "C", "acceptable_answers": ["C"], "note": "Paper: A Staff prefer not to be disturbed; B Only the front desk can help; C Staff are happy to help with any request." },
+    { "speaker_id": "narrator", "text": "That's everything for today — welcome again, and enjoy the library.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Two. Now turn to Section Three.", "pause_after_ms": 800 }
+  ]
+}

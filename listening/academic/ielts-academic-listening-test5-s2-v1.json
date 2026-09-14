@@ -1,0 +1,38 @@
+{
+  "programme": "ielts_academic",
+  "test": 5,
+  "section": 2,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% rate. Matching options stay on the paper; do not speak A, B or C.",
+  "context": "A host at an indoor climbing centre gives a new-member safety briefing.",
+  "sub_blocks": [
+    { "questions": [11, 15], "type": "note_completion", "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER" },
+    { "questions": [16, 20], "type": "matching", "word_limit": "Choose the correct letter, A, B or C. Options are on the question paper only." }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "narrator", "accent": "british", "gender": "male", "display_name": "Climbing Host (Ashfield Walls)", "voice_id": "cjVigY5qzO86Huf0OWal" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Two. You will hear a talk for new members at an indoor climbing centre.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions eleven to fifteen. Complete the notes below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions eleven to fifteen.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions eleven to fifteen.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Welcome to Ashfield Walls. I'm your host for this morning's new-member briefing.", "pause_after_ms": 950 },
+    { "speaker_id": "narrator", "text": "The centre is open from seven a.m. to ten p.m. every day except Tuesday, when we close for bolt checks.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 11, "answer": "7am-10pm", "acceptable_answers": ["7am-10pm", "7 am-10 pm", "7 to 10"] },
+    { "speaker_id": "narrator", "text": "Your first supervised session lasts ninety minutes, including kit check — ninety minutes, not a two-hour block.", "pause_after_ms": 1100, "key_detail": true, "question_number": 12, "answer": "90 minutes", "acceptable_answers": ["90 minutes", "ninety minutes"] },
+    { "speaker_id": "narrator", "text": "You must be at least fourteen to climb without an adult on site.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 13, "answer": "14", "acceptable_answers": ["14", "fourteen"] },
+    { "speaker_id": "narrator", "text": "Please bring a chalk bag — we lend harnesses, but we do not lend chalk.", "pause_after_ms": 1100, "key_detail": true, "question_number": 14, "answer": "chalk bag", "acceptable_answers": ["chalk bag", "chalk"] },
+    { "speaker_id": "narrator", "text": "Tap water is free at the lobby fountain; please don't take bottles onto the walls.", "pause_after_ms": 1100, "key_detail": true, "question_number": 15, "answer": "fountain", "acceptable_answers": ["fountain", "lobby fountain"] },
+    { "speaker_id": "examiner", "text": "Questions sixteen to twenty. Which part of the site is each facility in? Choose the correct letter, A, B or C. The options are on your question paper only. First, you have some time to look at questions sixteen to twenty.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions sixteen to twenty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Look at the site layout in your booklet. I'll walk you through it without reading the letters.", "pause_after_ms": 900 },
+    { "speaker_id": "narrator", "text": "If you start in the east hall, that's where the beginner walls are — shorter routes with extra mats.", "pause_after_ms": 1100, "key_detail": true, "question_number": 16, "answer": "A", "acceptable_answers": ["A"], "note": "Paper: A East hall; B West hall; C Roof terrace. Beginner walls = east hall." },
+    { "speaker_id": "narrator", "text": "Shoe hire is in the west hall, beside the desk — not in the east, which is members only after six.", "pause_after_ms": 1100, "key_detail": true, "question_number": 17, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "narrator", "text": "Follow the stairs to the roof terrace and you'll reach the outdoor boulders, used only in dry weather.", "pause_after_ms": 1100, "key_detail": true, "question_number": 18, "answer": "C", "acceptable_answers": ["C"] },
+    { "speaker_id": "narrator", "text": "The first-aid room is also in the west hall, behind shoe hire — not upstairs.", "pause_after_ms": 1100, "key_detail": true, "question_number": 19, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "narrator", "text": "And the day lockers sit in the east hall by the fire door, so bags are not left at the west desk.", "pause_after_ms": 1100, "key_detail": true, "question_number": 20, "answer": "A", "acceptable_answers": ["A"] },
+    { "speaker_id": "narrator", "text": "I'll take questions at the end of the tour. Thank you.", "pause_after_ms": 850 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Two. Now turn to Section Three.", "pause_after_ms": 800 }
+  ]
+}

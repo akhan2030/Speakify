@@ -1,0 +1,64 @@
+{
+  "programme": "ielts_academic",
+  "test": 2,
+  "section": 4,
+  "version": "v1",
+  "question_count": 10,
+  "context": "A lecturer discusses the growing problem of microplastic pollution in the ocean.",
+  "sub_blocks": [
+    {
+      "questions": [31, 34],
+      "type": "summary_completion",
+      "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER"
+    },
+    {
+      "questions": [35, 36],
+      "type": "multiple_choice",
+      "word_limit": "Choose the correct letter, A, B or C. Options are on the question paper only."
+    },
+    {
+      "questions": [37, 40],
+      "type": "note_completion",
+      "word_limit": "NO MORE THAN THREE WORDS AND/OR A NUMBER"
+    }
+  ],
+  "speakers": [
+    {
+      "speaker_id": "examiner",
+      "accent": "british",
+      "gender": "female",
+      "display_name": "Test Instructions (Narrator)",
+      "role": "instructions",
+      "voice_id": "Xb7hH8MSUJpSbSDYk0k2"
+    },
+    {
+      "speaker_id": "narrator",
+      "accent": "australian",
+      "gender": "female",
+      "display_name": "Dr Ellis",
+      "voice_id": "XrExE9yKIg1WjnnlVkGX"
+    }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Four. You will hear part of a lecture on microplastic pollution in the ocean.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions thirty-one to thirty-four. Complete the summary. Write no more than two words and/or a number for each answer. First, you have some time to look at questions thirty-one to thirty-four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-one to thirty-four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Today I want to look at a growing environmental concern: microplastic pollution in our oceans.", "pause_after_ms": 950 },
+    { "speaker_id": "narrator", "text": "Microplastics are defined as plastic fragments smaller than five millimetres, roughly the size of a grain of rice.", "pause_after_ms": 1100, "key_detail": true, "question_number": 31, "answer": "5 millimetres", "acceptable_answers": ["5mm", "5 millimetres", "five millimetres"] },
+    { "speaker_id": "narrator", "text": "Most of these fragments come from the gradual breakdown of larger plastic waste, though a significant portion also comes directly from synthetic clothing fibres released during washing.", "pause_after_ms": 1100, "key_detail": true, "question_number": 32, "answer": "synthetic clothing", "acceptable_answers": ["synthetic clothing", "clothing fibres"] },
+    { "speaker_id": "narrator", "text": "Researchers estimate that around eight million tonnes of plastic enter the ocean every single year.", "pause_after_ms": 1100, "key_detail": true, "question_number": 33, "answer": "8 million tonnes", "acceptable_answers": ["8 million tonnes", "eight million tonnes"] },
+    { "speaker_id": "narrator", "text": "This matters enormously for marine food chains, since microplastics are now found in roughly ninety percent of seabird species studied.", "pause_after_ms": 1100, "key_detail": true, "question_number": 34, "answer": "90 percent", "acceptable_answers": ["90%", "90 percent", "ninety percent"] },
+    { "speaker_id": "examiner", "text": "Questions thirty-five and thirty-six. Choose the correct letter, A, B or C. The options are on your question paper only. First, you have some time to look at questions thirty-five and thirty-six.", "instruction_kind": "section_prep", "pause_after_ms": 15000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-five and thirty-six.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "In response, several countries have introduced legislation targeting the source directly — banning microbeads in cosmetics being one of the most common early measures, since they were one of the simplest sources to eliminate.", "pause_after_ms": 1100, "key_detail": true, "question_number": 35, "answer": "B", "acceptable_answers": ["B"], "note": "Paper: A banning all plastic packaging; B banning microbeads in cosmetics; C taxing plastic manufacturers." },
+    { "speaker_id": "narrator", "text": "Beyond legislation, researchers are also experimenting with filtration technology — including a promising trial in the Netherlands using floating barriers to collect debris before it reaches the open sea, which so far has shown the most measurable reduction in a real-world setting.", "pause_after_ms": 1100, "key_detail": true, "question_number": 36, "answer": "C", "acceptable_answers": ["C"], "note": "Paper: A ship-based nets; B beach clean-up volunteers; C floating river barriers." },
+    { "speaker_id": "examiner", "text": "Questions thirty-seven to forty. Complete the notes. Write no more than three words and/or a number for each answer. First, you have some time to look at questions thirty-seven to forty.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-seven to forty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "One particularly striking case study comes from the Pacific, where researchers have been tracking what's now called the Pacific Trash Vortex.", "pause_after_ms": 1100, "key_detail": true, "question_number": 37, "answer": "Pacific Trash Vortex", "acceptable_answers": ["Pacific Trash Vortex", "the Pacific Trash Vortex"] },
+    { "speaker_id": "narrator", "text": "It's estimated to cover an area roughly three times the size of France.", "pause_after_ms": 1100, "key_detail": true, "question_number": 38, "answer": "three times", "acceptable_answers": ["3 times", "three times"] },
+    { "speaker_id": "narrator", "text": "A non-profit organisation called Ocean Cleanup has been running removal operations there since 2018.", "pause_after_ms": 1100, "key_detail": true, "question_number": 39, "answer": "Ocean Cleanup", "acceptable_answers": ["Ocean Cleanup", "the Ocean Cleanup"] },
+    { "speaker_id": "narrator", "text": "Even so, most researchers agree that prevention at the source will always be more effective than any cleanup effort after the fact.", "pause_after_ms": 1100, "key_detail": true, "question_number": 40, "answer": "prevention", "acceptable_answers": ["prevention", "prevention at the source"] },
+    { "speaker_id": "narrator", "text": "Next week, we'll look specifically at how individual consumer choices factor into this larger picture. Thank you.", "pause_after_ms": 850 },
+    { "speaker_id": "examiner", "text": "That is the end of the Listening test.", "pause_after_ms": 800 }
+  ]
+}

@@ -182,8 +182,8 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     levelBadge: "Intermediate",
     category: "test-prep",
     accent: "#2563eb",
-    ctaLabel: "Start Learning",
-    ctaHref: "/register/toefl-prep",
+    ctaLabel: "Coming soon",
+    ctaHref: "/courses/toefl-accelerator",
     duration: "8 weeks",
     highlights: [
       "Reading, listening, speaking & writing practice",

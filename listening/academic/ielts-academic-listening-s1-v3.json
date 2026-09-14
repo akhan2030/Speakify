@@ -1,0 +1,61 @@
+{
+  "programme": "ielts_academic",
+  "section": 1,
+  "version": "v4",
+  "question_count": 10,
+  "context": "A man phones a fitness centre to enquire about membership and sign up.",
+  "sub_blocks": [
+    {
+      "questions": [1, 4],
+      "type": "form_completion",
+      "word_limit": "NO MORE THAN THREE WORDS AND/OR A NUMBER"
+    },
+    {
+      "questions": [5, 10],
+      "type": "note_completion",
+      "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER"
+    }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "staff", "accent": "british", "gender": "female", "display_name": "Grace (Receptionist)", "voice_id": "XB0fDUnXU5powFXDhCwa" },
+    { "speaker_id": "customer", "accent": "australian", "gender": "male", "display_name": "Daniel (Caller)", "voice_id": "IKne3meq5aSn9XLyUdCD" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "This is the IELTS Listening Test, Practice Test One. There are four sections. Write all your answers on the answer sheet as you listen. You will hear each recording once only.", "pause_after_ms": 1500 },
+    { "speaker_id": "examiner", "text": "Now turn to Section One. You will hear a phone conversation between a receptionist and a man enquiring about joining a fitness centre.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions one to four. Complete the form below. Write no more than three words and/or a number for each answer. First, you have some time to look at questions one to four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Look at the example.", "instruction_kind": "example", "pause_after_ms": 3000 },
+    { "speaker_id": "staff", "text": "Good morning, Riverside Fitness Centre, this is Grace speaking. How can I help you today?", "pause_after_ms": 700 },
+    { "speaker_id": "customer", "text": "Hi there, I'm calling to enquire about becoming a member.", "pause_after_ms": 600 },
+    { "speaker_id": "staff", "text": "Of course. Let me just bring up the enquiry form. So, what's the reason for your call today?", "pause_after_ms": 600 },
+    { "speaker_id": "customer", "text": "I'd like to sign up for a new membership.", "pause_after_ms": 600, "note": "Worked EXAMPLE: Reason for enquiry — New membership sign-up. Not scored." },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions one to four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "staff", "text": "Great, I'll get that started for you. Could I take your first name, please?", "pause_after_ms": 500 },
+    { "speaker_id": "customer", "text": "It's Daniel.", "pause_after_ms": 400, "note": "First name given on the paper. Spoken, not scored." },
+    { "speaker_id": "staff", "text": "Thanks. And your surname?", "pause_after_ms": 500 },
+    { "speaker_id": "customer", "text": "Whitfield. That's W-H-I-T-F-I-E-L-D.", "pause_after_ms": 700, "key_detail": true, "question_number": 1, "answer": "Whitfield" },
+    { "speaker_id": "staff", "text": "Perfect. And could I get a contact number for you?", "pause_after_ms": 500 },
+    { "speaker_id": "customer", "text": "Sure, it's oh-seven-nine-four-six, five-five-two, one-oh-three.", "pause_after_ms": 700, "key_detail": true, "question_number": 2, "answer": "07946 552103", "acceptable_answers": ["07946 552103", "07946552103", "07946-552103"] },
+    { "speaker_id": "staff", "text": "Lovely. Now, when were you hoping to start?", "pause_after_ms": 500 },
+    { "speaker_id": "customer", "text": "The fifteenth of March, if a space is free.", "pause_after_ms": 600, "key_detail": true, "question_number": 3, "answer": "15 March", "acceptable_answers": ["15 March", "15th March", "March 15", "March 15th"] },
+    { "speaker_id": "staff", "text": "And is this membership just for you, or a joint one?", "pause_after_ms": 500 },
+    { "speaker_id": "customer", "text": "Just for me, please.", "pause_after_ms": 500, "key_detail": true, "question_number": 4, "answer": "just me", "acceptable_answers": ["just me", "just myself", "myself", "one", "me"] },
+    { "speaker_id": "examiner", "text": "Questions five to ten. Complete the notes below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions five to ten.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions five to ten.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "staff", "text": "That should be fine. We currently run two membership types — Standard, and Premium, which includes the pool and classes. Which would you prefer?", "pause_after_ms": 700 },
+    { "speaker_id": "customer", "text": "Premium, definitely — I'd like access to the classes.", "pause_after_ms": 600, "key_detail": true, "question_number": 5, "answer": "Premium" },
+    { "speaker_id": "staff", "text": "Great choice. We also ask for an emergency contact — is there someone we can list?", "pause_after_ms": 600 },
+    { "speaker_id": "customer", "text": "Yes, my sister — Sarah Whitfield.", "pause_after_ms": 600, "key_detail": true, "question_number": 6, "answer": "Sarah Whitfield", "acceptable_answers": ["Sarah Whitfield", "Sarah"] },
+    { "speaker_id": "staff", "text": "And her relationship to you is sister, is that right?", "pause_after_ms": 500 },
+    { "speaker_id": "customer", "text": "That's right, yes.", "pause_after_ms": 400, "key_detail": true, "question_number": 7, "answer": "sister" },
+    { "speaker_id": "staff", "text": "Is there a class you're particularly interested in? We run quite a few.", "pause_after_ms": 600 },
+    { "speaker_id": "customer", "text": "I saw you do yoga on Wednesday evenings — I'd like to try that.", "pause_after_ms": 700, "key_detail": true, "question_number": 8, "answer": "yoga" },
+    { "speaker_id": "staff", "text": "Noted. Lastly, could I take an email address, in case we need to send confirmation?", "pause_after_ms": 600 },
+    { "speaker_id": "customer", "text": "It's d dot whitfield, at fastmail dot com.", "pause_after_ms": 700, "key_detail": true, "question_number": 9, "answer": "d.whitfield@fastmail.com" },
+    { "speaker_id": "staff", "text": "Perfect, that's everything I need. Your membership reference number is R-F, dash, two-two-four-nine. A confirmation will follow by email.", "pause_after_ms": 800, "key_detail": true, "question_number": 10, "answer": "RF-2249", "acceptable_answers": ["RF-2249", "RF2249"] },
+    { "speaker_id": "customer", "text": "Brilliant, thank you so much for your help.", "pause_after_ms": 500 },
+    { "speaker_id": "staff", "text": "You're very welcome. We look forward to seeing you at the centre.", "pause_after_ms": 600 },
+    { "speaker_id": "examiner", "text": "That is the end of Section One. Now turn to Section Two.", "pause_after_ms": 800 }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "programme": "ielts_academic",
+  "test": 3,
+  "section": 3,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% prosody rate, natural seminar gaps. Matching letters A/B are on the paper only.",
+  "context": "A tutor and two students discuss their progress on a public transport usage survey project.",
+  "sub_blocks": [
+    { "questions": [21, 24], "type": "flowchart_completion", "word_limit": "NO MORE THAN TWO WORDS" },
+    { "questions": [25, 27], "type": "summary_completion", "word_limit": "ONE WORD ONLY" },
+    { "questions": [28, 30], "type": "matching", "word_limit": "Choose the correct letter, A or B. A Emma. B Noah. Options are on the question paper only." }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "tutor", "accent": "british", "gender": "male", "display_name": "Dr Patel (Tutor)", "voice_id": "TX3LPaxmHKxFdv7VOQHJ" },
+    { "speaker_id": "student1", "accent": "australian", "gender": "female", "display_name": "Emma", "voice_id": "MF3mGyEYCl7XYWbV9V6O" },
+    { "speaker_id": "student2", "accent": "north_american", "gender": "male", "display_name": "Noah", "voice_id": "2EiwWnXFnvU5JabPnv8n" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Three. You will hear a tutor and two students discussing a survey project.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions twenty-one to twenty-four. Complete the flowchart. Write no more than two words for each answer. First, you have some time to look at questions twenty-one to twenty-four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-one to twenty-four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "So, Emma, Noah — where are you up to with the public transport survey?", "pause_after_ms": 900 },
+    { "speaker_id": "student1", "text": "We've just finished the literature review stage, actually.", "pause_after_ms": 950, "key_detail": true, "question_number": 21, "answer": "literature review", "acceptable_answers": ["literature review"] },
+    { "speaker_id": "tutor", "text": "Good. What comes next in your process?", "pause_after_ms": 850 },
+    { "speaker_id": "student2", "text": "Next we need to design the questionnaire itself, which we're working on this week.", "pause_after_ms": 950, "key_detail": true, "question_number": 22, "answer": "design questionnaire", "acceptable_answers": ["design questionnaire", "questionnaire design"] },
+    { "speaker_id": "tutor", "text": "And after that?", "pause_after_ms": 800 },
+    { "speaker_id": "student1", "text": "We'll run a small pilot test with about ten people before the real survey goes out.", "pause_after_ms": 950, "key_detail": true, "question_number": 23, "answer": "pilot test", "acceptable_answers": ["pilot test"] },
+    { "speaker_id": "tutor", "text": "Sensible. And the final step?", "pause_after_ms": 800 },
+    { "speaker_id": "student2", "text": "Then we launch the main survey to the wider public.", "pause_after_ms": 950, "key_detail": true, "question_number": 24, "answer": "main survey", "acceptable_answers": ["main survey"] },
+    { "speaker_id": "examiner", "text": "Questions twenty-five to twenty-seven. Complete the summary. Write one word only for each answer. First, you have some time to look at questions twenty-five to twenty-seven.", "instruction_kind": "section_prep", "pause_after_ms": 16000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-five to twenty-seven.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "What's been the hardest part of the process so far?", "pause_after_ms": 850 },
+    { "speaker_id": "student1", "text": "Honestly, recruitment — getting enough people to actually agree to take part.", "pause_after_ms": 1000, "key_detail": true, "question_number": 25, "answer": "recruitment", "acceptable_answers": ["recruitment"] },
+    { "speaker_id": "tutor", "text": "That's very common. How are you addressing that?", "pause_after_ms": 850 },
+    { "speaker_id": "student2", "text": "We're offering a small incentive — a five-dollar voucher for anyone who completes it.", "pause_after_ms": 1000, "key_detail": true, "question_number": 26, "answer": "voucher", "acceptable_answers": ["voucher"] },
+    { "speaker_id": "tutor", "text": "Good idea. And where are you distributing the survey itself?", "pause_after_ms": 850 },
+    { "speaker_id": "student1", "text": "Mainly online, through social media groups for now.", "pause_after_ms": 900, "key_detail": true, "question_number": 27, "answer": "online", "acceptable_answers": ["online"] },
+    { "speaker_id": "examiner", "text": "Questions twenty-eight to thirty. Choose the correct letter, A or B. The options are on your question paper only. First, you have some time to look at questions twenty-eight to thirty.", "instruction_kind": "section_prep", "pause_after_ms": 16000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-eight to thirty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "Now, who's leading on the data analysis once responses come in?", "pause_after_ms": 850 },
+    { "speaker_id": "student1", "text": "That's me — I'll handle the analysis.", "pause_after_ms": 900, "key_detail": true, "question_number": 28, "answer": "A", "acceptable_answers": ["A"], "note": "Paper: A Emma; B Noah." },
+    { "speaker_id": "tutor", "text": "And who's writing up the methodology section?", "pause_after_ms": 800 },
+    { "speaker_id": "student2", "text": "I've got that one, along with the conclusion.", "pause_after_ms": 950, "key_detail": true, "question_number": 29, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "tutor", "text": "And who's finalising the conclusion, just to double check?", "pause_after_ms": 800 },
+    { "speaker_id": "student2", "text": "That's me as well.", "pause_after_ms": 900, "key_detail": true, "question_number": 30, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "tutor", "text": "Great, sounds well organised. Let's touch base again once the pilot's done.", "pause_after_ms": 900 },
+    { "speaker_id": "student1", "text": "Sounds good, thanks.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Three. Now turn to Section Four.", "pause_after_ms": 800 }
+  ]
+}

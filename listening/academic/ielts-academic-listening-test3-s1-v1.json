@@ -1,0 +1,53 @@
+{
+  "programme": "ielts_academic",
+  "test": 3,
+  "section": 1,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% prosody rate, natural pauses. First name Fraser is printed; Q1 is surname only.",
+  "context": "A man phones a car rental company to book a vehicle for an upcoming trip.",
+  "sub_blocks": [
+    { "questions": [1, 5], "type": "form_completion", "word_limit": "NO MORE THAN THREE WORDS AND/OR A NUMBER" },
+    { "questions": [6, 10], "type": "form_completion", "word_limit": "NO MORE THAN THREE WORDS AND/OR A NUMBER" }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "agent", "accent": "british", "gender": "female", "display_name": "Rebecca Hughes (Rental Agent)", "voice_id": "ThT5KcBeYPX3keUQqHPh" },
+    { "speaker_id": "customer", "accent": "british", "gender": "male", "display_name": "Fraser Campbell (Customer)", "voice_id": "N2lVS1w4EtoT3dr4eOWO" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "This is the IELTS Listening Test, Practice Test Three. There are four sections. Write all your answers on the answer sheet as you listen. You will hear each recording once only.", "pause_after_ms": 1500 },
+    { "speaker_id": "examiner", "text": "Now turn to Section One. You will hear a man phoning a car rental company to book a vehicle.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions one to five. Complete the form below. Write no more than three words and/or a number for each answer. First, you have some time to look at questions one to five.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Look at the example.", "instruction_kind": "example", "pause_after_ms": 3000 },
+    { "speaker_id": "agent", "text": "Good morning, DriveEasy Car Rentals, how can I help?", "pause_after_ms": 900 },
+    { "speaker_id": "customer", "text": "Hi, I'd like to book a car for a trip next month.", "pause_after_ms": 900, "note": "Worked EXAMPLE: Reason for call — Car rental enquiry. Not scored." },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions one to five.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "agent", "text": "Of course. Could I start with your first name?", "pause_after_ms": 800 },
+    { "speaker_id": "customer", "text": "It's Fraser.", "pause_after_ms": 800, "pace": "medium", "note": "First name printed on the paper as Fraser — not scored." },
+    { "speaker_id": "agent", "text": "Thanks, Fraser. And your surname?", "pause_after_ms": 800 },
+    { "speaker_id": "customer", "text": "Campbell. That's C, A, M, P, B, E, L, L.", "pause_after_ms": 1000, "pace": "medium", "key_detail": true, "question_number": 1, "answer": "Campbell", "acceptable_answers": ["Campbell"] },
+    { "speaker_id": "agent", "text": "Great. Could I get a contact number for you?", "pause_after_ms": 800 },
+    { "speaker_id": "customer", "text": "Sure it's oh-one-three-one, five-five-eight, two-two-zero-nine.", "pause_after_ms": 1200, "pace": "dictation", "key_detail": true, "question_number": 2, "answer": "0131 558 2209", "acceptable_answers": ["0131 558 2209", "01315582209"] },
+    { "speaker_id": "agent", "text": "Perfect. And what date would you like to pick the car up?", "pause_after_ms": 800 },
+    { "speaker_id": "customer", "text": "The 10th of June, please.", "pause_after_ms": 1000, "pace": "slow", "key_detail": true, "question_number": 3, "answer": "10 June", "acceptable_answers": ["10 June", "10th June", "June 10"] },
+    { "speaker_id": "agent", "text": "Noted. What type of car are you after?", "pause_after_ms": 800 },
+    { "speaker_id": "customer", "text": "A compact car would be fine — just for city driving really.", "pause_after_ms": 1000, "key_detail": true, "question_number": 4, "answer": "compact", "acceptable_answers": ["compact", "compact car"] },
+    { "speaker_id": "agent", "text": "Good choice. And will you be returning it to the same branch, or somewhere else?", "pause_after_ms": 900 },
+    { "speaker_id": "customer", "text": "Actually, I'll be dropping it off at the airport branch instead.", "pause_after_ms": 1000, "key_detail": true, "question_number": 5, "answer": "airport branch", "acceptable_answers": ["airport", "airport branch"] },
+    { "speaker_id": "examiner", "text": "Questions six to ten. Complete the form below. Write no more than three words and/or a number for each answer. First, you have some time to look at questions six to ten.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions six to ten.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "agent", "text": "And how many days will you need the car for?", "pause_after_ms": 800 },
+    { "speaker_id": "customer", "text": "Five days in total.", "pause_after_ms": 800, "key_detail": true, "question_number": 6, "answer": "5 days", "acceptable_answers": ["5", "5 days", "five days"] },
+    { "speaker_id": "agent", "text": "Would you like basic or premium insurance cover?", "pause_after_ms": 900 },
+    { "speaker_id": "customer", "text": "I'll take the premium cover, just to be safe.", "pause_after_ms": 900, "key_detail": true, "question_number": 7, "answer": "premium", "acceptable_answers": ["premium", "premium cover"] },
+    { "speaker_id": "agent", "text": "Will there be an additional driver on this booking?", "pause_after_ms": 800 },
+    { "speaker_id": "customer", "text": "Yes, my wife — Anna Campbell.", "pause_after_ms": 1000, "pace": "slow", "key_detail": true, "question_number": 8, "answer": "Anna Campbell", "acceptable_answers": ["Anna Campbell"] },
+    { "speaker_id": "agent", "text": "Got it. And how would you like to pay for the booking?", "pause_after_ms": 800 },
+    { "speaker_id": "customer", "text": "By debit card, please.", "pause_after_ms": 800, "key_detail": true, "question_number": 9, "answer": "debit card", "acceptable_answers": ["debit card"] },
+    { "speaker_id": "agent", "text": "That's everything set up. Your booking reference is D-E, dash, three-three-one-eight.", "pause_after_ms": 1300, "pace": "dictation", "key_detail": true, "question_number": 10, "answer": "DE-3318", "acceptable_answers": ["DE-3318", "DE3318"] },
+    { "speaker_id": "customer", "text": "Brilliant, thanks very much.", "pause_after_ms": 800 },
+    { "speaker_id": "agent", "text": "You're welcome, see you on the 10th.", "pause_after_ms": 900 },
+    { "speaker_id": "examiner", "text": "That is the end of Section One. Now turn to Section Two.", "pause_after_ms": 800 }
+  ]
+}

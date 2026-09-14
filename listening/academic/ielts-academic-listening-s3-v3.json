@@ -1,0 +1,64 @@
+{
+  "programme": "ielts_academic",
+  "section": 3,
+  "version": "v3",
+  "question_count": 10,
+  "context": "A tutor discusses a research project on urban green spaces with two students.",
+  "sub_blocks": [
+    {
+      "questions": [21, 24],
+      "type": "flowchart_completion",
+      "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER"
+    },
+    {
+      "questions": [25, 27],
+      "type": "summary_completion",
+      "word_limit": "ONE WORD ONLY"
+    },
+    {
+      "questions": [28, 30],
+      "type": "note_completion",
+      "word_limit": "NO MORE THAN TWO WORDS"
+    }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "tutor", "accent": "british", "gender": "male", "display_name": "Dr. Bennett (Tutor)", "voice_id": "onwK4e9ZLuTAKqWW03F9" },
+    { "speaker_id": "student1", "accent": "north_american", "gender": "female", "display_name": "Priya", "voice_id": "EXAVITQu4vr4xnSDxMaL" },
+    { "speaker_id": "student2", "accent": "australian", "gender": "male", "display_name": "Tom", "voice_id": "ouFAjcjtdrVBT9bRFhFQ" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Three. You will hear a tutor and two students discussing a research project.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions twenty-one to twenty-four. Complete the flowchart below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions twenty-one to twenty-four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-one to twenty-four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "So, Priya, Tom — how's the research project on urban green spaces coming along?", "pause_after_ms": 700 },
+    { "speaker_id": "student1", "text": "Good, I think. We've finished the literature review, and we're planning the survey now.", "pause_after_ms": 600 },
+    { "speaker_id": "tutor", "text": "Good. And what's the main focus going to be?", "pause_after_ms": 600 },
+    { "speaker_id": "student2", "text": "We want to look at how access to parks affects residents' reported stress levels.", "pause_after_ms": 700, "key_detail": true, "question_number": 21, "answer": "stress levels", "acceptable_answers": ["stress levels", "stress"] },
+    { "speaker_id": "tutor", "text": "Interesting. How many participants are you aiming for?", "pause_after_ms": 600 },
+    { "speaker_id": "student1", "text": "We're hoping for around one hundred and fifty, across three different neighbourhoods.", "pause_after_ms": 700, "key_detail": true, "question_number": 22, "answer": "150", "acceptable_answers": ["150", "one hundred and fifty"] },
+    { "speaker_id": "tutor", "text": "And how many neighbourhoods did you say, again?", "pause_after_ms": 500 },
+    { "speaker_id": "student1", "text": "Three — we wanted a mix of areas with very different levels of green space.", "pause_after_ms": 700, "key_detail": true, "question_number": 23, "answer": "three", "acceptable_answers": ["three", "3"] },
+    { "speaker_id": "tutor", "text": "That's a sensible design. And when is this all due?", "pause_after_ms": 600 },
+    { "speaker_id": "student2", "text": "We've only got six weeks left before the deadline, so it's fairly tight.", "pause_after_ms": 700, "key_detail": true, "question_number": 24, "answer": "six weeks", "acceptable_answers": ["six weeks", "6 weeks"] },
+    { "speaker_id": "examiner", "text": "Questions twenty-five to twenty-seven. Complete the summary below. Write one word only for each answer. First, you have some time to look at questions twenty-five to twenty-seven.", "instruction_kind": "section_prep", "pause_after_ms": 16000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-five to twenty-seven.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "Now, Tom, is there anything you're particularly worried about with the project so far?", "pause_after_ms": 600 },
+    { "speaker_id": "student2", "text": "Honestly, it's the timeline that worries me most — six weeks doesn't feel like much.", "pause_after_ms": 700, "key_detail": true, "question_number": 25, "answer": "timeline" },
+    { "speaker_id": "tutor", "text": "And Priya, is it the same for you, or something else?", "pause_after_ms": 600 },
+    { "speaker_id": "student1", "text": "For me it's more about the sample — making sure we're not just surveying people who already use the parks a lot.", "pause_after_ms": 800, "key_detail": true, "question_number": 26, "answer": "sample" },
+    { "speaker_id": "tutor", "text": "Understood. Let's arrange a check-in before then — shall we say a fortnight from now?", "pause_after_ms": 700 },
+    { "speaker_id": "student1", "text": "A fortnight works well for us, yes.", "pause_after_ms": 600, "key_detail": true, "question_number": 27, "answer": "fortnight" },
+    { "speaker_id": "examiner", "text": "Questions twenty-eight to thirty. Complete the notes below. Write no more than two words for each answer. First, you have some time to look at questions twenty-eight to thirty.", "instruction_kind": "section_prep", "pause_after_ms": 16000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-eight to thirty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "Fair point. Now, who's taking the methodology section for the write-up?", "pause_after_ms": 600 },
+    { "speaker_id": "student1", "text": "That's mine — I'll write up the methodology.", "pause_after_ms": 600, "key_detail": true, "question_number": 28, "answer": "Priya" },
+    { "speaker_id": "tutor", "text": "And the literature review?", "pause_after_ms": 500 },
+    { "speaker_id": "student2", "text": "I've got that one, along with the discussion section at the end.", "pause_after_ms": 700, "key_detail": true, "question_number": 29, "answer": "Tom" },
+    { "speaker_id": "tutor", "text": "So who's handling the discussion section, just to confirm?", "pause_after_ms": 500 },
+    { "speaker_id": "student2", "text": "That's me as well.", "pause_after_ms": 500, "key_detail": true, "question_number": 30, "answer": "Tom" },
+    { "speaker_id": "tutor", "text": "Great, that all sounds well divided. Let's speak again in a fortnight.", "pause_after_ms": 700 },
+    { "speaker_id": "student1", "text": "Sounds good, thank you.", "pause_after_ms": 500 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Three. Now turn to Section Four.", "pause_after_ms": 800 }
+  ]
+}

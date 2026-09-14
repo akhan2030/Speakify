@@ -1,0 +1,80 @@
+{
+  "programme": "ielts_academic",
+  "test": 2,
+  "section": 1,
+  "version": "v1",
+  "question_count": 10,
+  "context": "A man phones a hotel to book a room for an upcoming trip.",
+  "sub_blocks": [
+    {
+      "questions": [1, 5],
+      "type": "form_completion",
+      "word_limit": "NO MORE THAN THREE WORDS AND/OR A NUMBER"
+    },
+    {
+      "questions": [6, 10],
+      "type": "form_completion",
+      "word_limit": "NO MORE THAN THREE WORDS AND/OR A NUMBER"
+    }
+  ],
+  "speakers": [
+    {
+      "speaker_id": "examiner",
+      "accent": "british",
+      "gender": "female",
+      "display_name": "Test Instructions (Narrator)",
+      "role": "instructions",
+      "voice_id": "Xb7hH8MSUJpSbSDYk0k2"
+    },
+    {
+      "speaker_id": "receptionist",
+      "accent": "british",
+      "gender": "female",
+      "display_name": "Sophie Carter (Hotel Receptionist)",
+      "voice_id": "jsCqWAovK2LkecY7zXl4"
+    },
+    {
+      "speaker_id": "guest",
+      "accent": "north_american",
+      "gender": "male",
+      "display_name": "Marco Alvarez (Guest)",
+      "voice_id": "iP95p4xoKVk53GoZ742B"
+    }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "This is the IELTS Listening Test, Practice Test Two. There are four sections. Write all your answers on the answer sheet as you listen. You will hear each recording once only.", "pause_after_ms": 1500 },
+    { "speaker_id": "examiner", "text": "Now turn to Section One. You will hear a man phoning a hotel to book a room.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions one to five. Complete the form below. Write no more than three words and/or a number for each answer. First, you have some time to look at questions one to five.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Look at the example.", "instruction_kind": "example", "pause_after_ms": 3000 },
+    { "speaker_id": "receptionist", "text": "Good afternoon, Lakeview Hotel, how can I help you?", "pause_after_ms": 900 },
+    { "speaker_id": "guest", "text": "Hi, I'd like to book a room, please.", "pause_after_ms": 900, "note": "Worked EXAMPLE: Reason for call — Room booking. Not scored." },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions one to five.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "receptionist", "text": "Of course. Could I take your first name, please?", "pause_after_ms": 800 },
+    { "speaker_id": "guest", "text": "It's Marco.", "pause_after_ms": 800, "pace": "medium" },
+    { "speaker_id": "receptionist", "text": "Thank you. And your surname?", "pause_after_ms": 800 },
+    { "speaker_id": "guest", "text": "Alvarez — that's A, L, V, A, R, E, Z.", "pause_after_ms": 900, "pace": "medium", "key_detail": true, "question_number": 1, "answer": "Alvarez", "acceptable_answers": ["Alvarez"] },
+    { "speaker_id": "receptionist", "text": "Thank you. And what dates were you hoping to stay with us?", "pause_after_ms": 900 },
+    { "speaker_id": "guest", "text": "From the 3rd to the 6th of April.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 2, "answer": "3-6 April", "acceptable_answers": ["3rd to 6th April", "3-6 April", "April 3-6"] },
+    { "speaker_id": "receptionist", "text": "Lovely, that's three nights. What type of room would you like?", "pause_after_ms": 900 },
+    { "speaker_id": "guest", "text": "A double room, please, with a view of the lake if possible.", "pause_after_ms": 1000, "key_detail": true, "question_number": 3, "answer": "double room", "acceptable_answers": ["double", "double room"] },
+    { "speaker_id": "receptionist", "text": "I'll note that down. And how many guests will be staying?", "pause_after_ms": 800 },
+    { "speaker_id": "guest", "text": "Just two of us.", "pause_after_ms": 800, "key_detail": true, "question_number": 4, "answer": "two", "acceptable_answers": ["2", "two"] },
+    { "speaker_id": "receptionist", "text": "Great. And roughly what time do you expect to arrive on the 3rd?", "pause_after_ms": 900 },
+    { "speaker_id": "guest", "text": "Probably around 4pm, after our flight lands.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 5, "answer": "4pm", "acceptable_answers": ["4pm", "4:00pm", "16:00"] },
+    { "speaker_id": "examiner", "text": "Questions six to ten. Complete the form below. Write no more than three words and/or a number for each answer. First, you have some time to look at questions six to ten.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions six to ten.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "receptionist", "text": "Now, how would you like to pay for the booking?", "pause_after_ms": 800 },
+    { "speaker_id": "guest", "text": "By credit card, please.", "pause_after_ms": 800, "key_detail": true, "question_number": 6, "answer": "credit card", "acceptable_answers": ["credit card", "card"] },
+    { "speaker_id": "receptionist", "text": "No problem. Would you also like breakfast included in the rate?", "pause_after_ms": 900 },
+    { "speaker_id": "guest", "text": "Yes, please, that would be great.", "pause_after_ms": 800, "key_detail": true, "question_number": 7, "answer": "yes", "acceptable_answers": ["yes", "breakfast included"] },
+    { "speaker_id": "receptionist", "text": "I'll add that on. Do you need parking as well?", "pause_after_ms": 800 },
+    { "speaker_id": "guest", "text": "No, we won't have a car this time.", "pause_after_ms": 900, "key_detail": true, "question_number": 8, "answer": "no", "acceptable_answers": ["no"] },
+    { "speaker_id": "receptionist", "text": "That's fine. Lastly, could I take a mobile number, in case we need to reach you?", "pause_after_ms": 900 },
+    { "speaker_id": "guest", "text": "Sure it's oh-seven-two-two-one, four-four-five, six-six-zero.", "pause_after_ms": 1200, "pace": "dictation", "key_detail": true, "question_number": 9, "answer": "07221 445660", "acceptable_answers": ["07221 445660", "07221445660"] },
+    { "speaker_id": "receptionist", "text": "Perfect, that's everything booked.", "pause_after_ms": 700 },
+    { "speaker_id": "receptionist", "text": "Your confirmation code is L-H, dash, seven-seven-two-one.", "pause_after_ms": 1300, "pace": "dictation", "key_detail": true, "question_number": 10, "answer": "LH-7721", "acceptable_answers": ["LH-7721", "LH7721"] },
+    { "speaker_id": "guest", "text": "Brilliant, thank you very much.", "pause_after_ms": 800 },
+    { "speaker_id": "receptionist", "text": "You're welcome, we look forward to your stay.", "pause_after_ms": 900 },
+    { "speaker_id": "examiner", "text": "That is the end of Section One. Now turn to Section Two.", "pause_after_ms": 800 }
+  ]
+}

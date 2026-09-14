@@ -1,0 +1,40 @@
+{
+  "programme": "ielts_academic",
+  "test": 3,
+  "section": 4,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% prosody rate, natural pauses. Multiple-choice options stay on the paper only.",
+  "context": "A lecturer discusses the rise of urban vertical farming. Continuous monologue, no spoken questions.",
+  "sub_blocks": [
+    { "questions": [31, 34], "type": "summary_completion", "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER" },
+    { "questions": [35, 36], "type": "multiple_choice", "word_limit": "Choose the correct letter, A, B or C. Options are on the question paper only." },
+    { "questions": [37, 40], "type": "note_completion", "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER" }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "narrator", "accent": "british", "gender": "female", "display_name": "Dr Sarah Lindqvist", "voice_id": "pMsXgVXv3BLzUgSXRplE" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Four. You will hear part of a lecture on urban vertical farming.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions thirty-one to thirty-four. Complete the summary. Write no more than two words and/or a number for each answer. First, you have some time to look at questions thirty-one to thirty-four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-one to thirty-four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Today I want to look at an increasingly common feature of modern cities: vertical farming.", "pause_after_ms": 950 },
+    { "speaker_id": "narrator", "text": "Vertical farms grow crops in stacked layers, often indoors, using far less land than traditional agriculture.", "pause_after_ms": 1100, "key_detail": true, "question_number": 31, "answer": "stacked layers", "acceptable_answers": ["stacked layers"] },
+    { "speaker_id": "narrator", "text": "Most systems rely on hydroponics, a method of growing plants in nutrient-rich water rather than soil.", "pause_after_ms": 1100, "key_detail": true, "question_number": 32, "answer": "hydroponics", "acceptable_answers": ["hydroponics"] },
+    { "speaker_id": "narrator", "text": "Compared to traditional farming, vertical farms can use up to ninety-five percent less water.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 33, "answer": "95 percent", "acceptable_answers": ["95%", "95 percent", "ninety-five percent"] },
+    { "speaker_id": "narrator", "text": "This matters increasingly as cities grow, since it's estimated that around seventy percent of the world's population will live in urban areas by 2050.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 34, "answer": "70 percent", "acceptable_answers": ["70%", "70 percent", "seventy percent"] },
+    { "speaker_id": "examiner", "text": "Questions thirty-five and thirty-six. Choose the correct letter, A, B or C. The options are on your question paper only. First, you have some time to look at questions thirty-five and thirty-six.", "instruction_kind": "section_prep", "pause_after_ms": 15000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-five and thirty-six.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "One of the biggest obstacles to wider adoption has consistently been the high upfront cost of the lighting and climate-control systems required, which remains far more limiting than any issue with the crops themselves.", "pause_after_ms": 1100, "key_detail": true, "question_number": 35, "answer": "B", "acceptable_answers": ["B"], "note": "Paper: A consumer demand; B high upfront equipment cost; C lack of suitable crops." },
+    { "speaker_id": "narrator", "text": "Despite that, Singapore has emerged as something of a global leader in this space, largely because the government has directly subsidised vertical farm construction as part of a broader food security strategy.", "pause_after_ms": 1100, "key_detail": true, "question_number": 36, "answer": "A", "acceptable_answers": ["A"], "note": "Paper: A government subsidies; B cheap land; C ideal climate." },
+    { "speaker_id": "examiner", "text": "Questions thirty-seven to forty. Complete the notes. Write no more than two words and/or a number for each answer. First, you have some time to look at questions thirty-seven to forty.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-seven to forty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "One well-known example is a facility called Sky Greens, which was among the first commercial vertical farms in Asia.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 37, "answer": "Sky Greens", "acceptable_answers": ["Sky Greens"] },
+    { "speaker_id": "narrator", "text": "It primarily grows leafy vegetables, which tend to suit vertical systems better than root crops.", "pause_after_ms": 1100, "key_detail": true, "question_number": 38, "answer": "leafy vegetables", "acceptable_answers": ["leafy vegetables", "leafy greens"] },
+    { "speaker_id": "narrator", "text": "The facility uses rotating towers, which slowly turn the crops toward light throughout the day to maximise growth.", "pause_after_ms": 1100, "key_detail": true, "question_number": 39, "answer": "rotating towers", "acceptable_answers": ["rotating towers"] },
+    { "speaker_id": "narrator", "text": "Researchers there are now exploring whether similar systems could eventually be adapted for use in disaster relief settings, where fresh food access is often extremely limited.", "pause_after_ms": 1100, "key_detail": true, "question_number": 40, "answer": "disaster relief", "acceptable_answers": ["disaster relief"] },
+    { "speaker_id": "narrator", "text": "Next week, we'll examine the economics of vertical farming in more detail. Thank you.", "pause_after_ms": 850 },
+    { "speaker_id": "examiner", "text": "That is the end of the Listening test.", "pause_after_ms": 800 }
+  ]
+}

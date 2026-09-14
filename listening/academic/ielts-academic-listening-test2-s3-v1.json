@@ -1,0 +1,88 @@
+{
+  "programme": "ielts_academic",
+  "test": 2,
+  "section": 3,
+  "version": "v1",
+  "question_count": 10,
+  "context": "A tutor and two students discuss a group project on renewable energy adoption in rural communities.",
+  "sub_blocks": [
+    {
+      "questions": [21, 24],
+      "type": "sentence_completion",
+      "word_limit": "NO MORE THAN THREE WORDS"
+    },
+    {
+      "questions": [25, 27],
+      "type": "summary_completion",
+      "word_limit": "ONE WORD ONLY"
+    },
+    {
+      "questions": [28, 30],
+      "type": "note_completion",
+      "word_limit": "NO MORE THAN THREE WORDS"
+    }
+  ],
+  "speakers": [
+    {
+      "speaker_id": "examiner",
+      "accent": "british",
+      "gender": "female",
+      "display_name": "Test Instructions (Narrator)",
+      "role": "instructions",
+      "voice_id": "Xb7hH8MSUJpSbSDYk0k2"
+    },
+    {
+      "speaker_id": "tutor",
+      "accent": "british",
+      "gender": "male",
+      "display_name": "Dr Whitmore (Tutor)",
+      "voice_id": "JBFqnCBsd6RMkjVDRZzb"
+    },
+    {
+      "speaker_id": "student1",
+      "accent": "north_american",
+      "gender": "female",
+      "display_name": "Sofia",
+      "voice_id": "21m00Tcm4TlvDq8ikWAM"
+    },
+    {
+      "speaker_id": "student2",
+      "accent": "british",
+      "gender": "male",
+      "display_name": "Ben",
+      "voice_id": "nPczCjzI2devNBz1zQrb"
+    }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Three. You will hear a tutor and two students discussing a group project.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions twenty-one to twenty-four. Complete the sentences. Write no more than three words for each answer. First, you have some time to look at questions twenty-one to twenty-four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-one to twenty-four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "So, Sofia, Ben — how's the renewable energy project coming along?", "pause_after_ms": 900 },
+    { "speaker_id": "student1", "text": "Good, I think. We've decided to focus on solar adoption in rural communities specifically.", "pause_after_ms": 950, "key_detail": true, "question_number": 21, "answer": "rural communities", "acceptable_answers": ["rural communities"] },
+    { "speaker_id": "tutor", "text": "Interesting choice. What made you narrow it down that way?", "pause_after_ms": 850 },
+    { "speaker_id": "student2", "text": "Honestly, it's because the cost barrier is much higher there, so we thought it'd be a more useful case study.", "pause_after_ms": 1000, "key_detail": true, "question_number": 22, "answer": "cost barrier", "acceptable_answers": ["cost barrier", "the cost barrier"] },
+    { "speaker_id": "tutor", "text": "That's a solid rationale. How are you planning to gather your data?", "pause_after_ms": 850 },
+    { "speaker_id": "student1", "text": "We're planning to run interviews with about twenty households across two villages.", "pause_after_ms": 950, "key_detail": true, "question_number": 23, "answer": "twenty households", "acceptable_answers": ["twenty households", "20 households"] },
+    { "speaker_id": "tutor", "text": "Good sample size. And when's the fieldwork happening?", "pause_after_ms": 850 },
+    { "speaker_id": "student2", "text": "We're heading out next month, so we've got about three weeks to prepare our questions.", "pause_after_ms": 950, "key_detail": true, "question_number": 24, "answer": "three weeks", "acceptable_answers": ["three weeks", "3 weeks"] },
+    { "speaker_id": "examiner", "text": "Questions twenty-five to twenty-seven. Complete the summary. Write one word only for each answer. First, you have some time to look at questions twenty-five to twenty-seven.", "instruction_kind": "section_prep", "pause_after_ms": 16000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-five to twenty-seven.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "Now, what's your biggest concern going into the fieldwork itself?", "pause_after_ms": 850 },
+    { "speaker_id": "student1", "text": "For me, it's language — a few of the households only speak the local dialect, so we may need a translator.", "pause_after_ms": 1000, "key_detail": true, "question_number": 25, "answer": "language", "acceptable_answers": ["language"] },
+    { "speaker_id": "tutor", "text": "That's a fair concern. Ben, what about you?", "pause_after_ms": 800 },
+    { "speaker_id": "student2", "text": "Mine's more about timing — harvest season overlaps with our visit, so people might be too busy to talk to us.", "pause_after_ms": 1000, "key_detail": true, "question_number": 26, "answer": "timing", "acceptable_answers": ["timing"] },
+    { "speaker_id": "tutor", "text": "Good thinking ahead. And what's your backup plan if that happens?", "pause_after_ms": 850 },
+    { "speaker_id": "student2", "text": "We'd shift to evenings, since that's when people are usually home.", "pause_after_ms": 950, "key_detail": true, "question_number": 27, "answer": "evenings", "acceptable_answers": ["evenings", "evening"] },
+    { "speaker_id": "examiner", "text": "Questions twenty-eight to thirty. Complete the notes. Write no more than three words for each answer. First, you have some time to look at questions twenty-eight to thirty.", "instruction_kind": "section_prep", "pause_after_ms": 16000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-eight to thirty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "Now, in terms of the report itself — Sofia, which part are you writing?", "pause_after_ms": 850 },
+    { "speaker_id": "student1", "text": "I've got the data analysis section.", "pause_after_ms": 850, "key_detail": true, "question_number": 28, "answer": "data analysis", "acceptable_answers": ["data analysis"] },
+    { "speaker_id": "tutor", "text": "And Ben, yours?", "pause_after_ms": 800 },
+    { "speaker_id": "student2", "text": "I'm doing the introduction and the recommendations at the end.", "pause_after_ms": 950, "key_detail": true, "question_number": 29, "answer": "introduction and recommendations", "acceptable_answers": ["introduction and recommendations", "introduction, recommendations"] },
+    { "speaker_id": "tutor", "text": "Sounds well divided. When's the full draft due?", "pause_after_ms": 850 },
+    { "speaker_id": "student1", "text": "We're aiming for the end of next month.", "pause_after_ms": 850, "key_detail": true, "question_number": 30, "answer": "end of next month", "acceptable_answers": ["end of next month", "next month"] },
+    { "speaker_id": "tutor", "text": "Great, that all sounds on track. Let's check in again once you're back from the field.", "pause_after_ms": 900 },
+    { "speaker_id": "student1", "text": "Sounds good, thank you.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Three. Now turn to Section Four.", "pause_after_ms": 800 }
+  ]
+}

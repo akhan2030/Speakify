@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import ListeningAudioPlayer from "@/components/listening/ListeningAudioPlayer";
 import DailyLimitReached from "@/components/DailyLimitReached";
@@ -36,6 +36,7 @@ import {
 import { buildQuestionGroups } from "@/lib/listeningQuestionGroups";
 import { getSectionPlan } from "@/lib/listeningSectionTypes";
 import { buildMockListeningQuestionMeta } from "@/lib/buildListeningQuestionMeta.js";
+import { isAcademicListeningTestNumber } from "@/lib/listening/academicListeningTestList";
 import {
   BANK_SETUP_HINT,
   POOL_EXHAUSTED_MESSAGE,
@@ -60,6 +61,11 @@ function formatElapsed(seconds: number) {
 
 export default function ListeningMockExam() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedTest = Number(searchParams.get("test") || 1);
+  const listeningTestNumber = isAcademicListeningTestNumber(requestedTest)
+    ? requestedTest
+    : 1;
   const { data: session, status } = useSession();
   const studentId = (session?.user as { id?: string })?.id ?? "";
 
@@ -317,7 +323,7 @@ export default function ListeningMockExam() {
 
     try {
       const res = await fetch(
-        `/api/listening/mock-test?studentId=${encodeURIComponent(studentId)}`,
+        `/api/listening/mock-test?studentId=${encodeURIComponent(studentId)}&test=${listeningTestNumber}`,
         { signal: controller.signal }
       );
       const data = await res.json().catch(() => null);
@@ -365,7 +371,7 @@ export default function ListeningMockExam() {
     } finally {
       window.clearTimeout(timeoutId);
     }
-  }, [studentId]);
+  }, [studentId, listeningTestNumber]);
 
   useEffect(() => {
     if (status === "loading") return;

@@ -100,6 +100,19 @@ export async function POST(request) {
     const cefrLevel = englishLevel ? englishLevelToCefr(englishLevel) : null;
     const normalizedPhone = normalizeSaudiPhone(phone) ?? phone.trim();
 
+    const isToeflRegistration =
+      registrationSlug === "toefl" ||
+      registrationSlug === "toefl-prep" ||
+      courseSlug === "toefl" ||
+      courseSlug === "toefl-accelerator" ||
+      courseSlug.startsWith("toefl");
+    if (isToeflRegistration) {
+      return NextResponse.json(
+        { error: "TOEFL registration is coming soon." },
+        { status: 403 }
+      );
+    }
+
     const isStepRegistration = registrationSlug === "step-test";
     if (isStepRegistration && !isStepRegistrationOpen()) {
       return NextResponse.json(

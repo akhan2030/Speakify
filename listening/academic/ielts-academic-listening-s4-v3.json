@@ -1,0 +1,50 @@
+{
+  "programme": "ielts_academic",
+  "section": 4,
+  "version": "v3",
+  "question_count": 10,
+  "context": "A lecturer gives a talk on the decline of urban bee populations. Task types change mid-lecture; multiple-choice options are on the paper only.",
+  "sub_blocks": [
+    {
+      "questions": [31, 34],
+      "type": "summary_completion",
+      "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER"
+    },
+    {
+      "questions": [35, 36],
+      "type": "multiple_choice",
+      "word_limit": "A-C"
+    },
+    {
+      "questions": [37, 40],
+      "type": "note_completion",
+      "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER"
+    }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "narrator", "accent": "british", "gender": "male", "display_name": "Professor Hale", "voice_id": "j9jfwdrw7BRfcR43Qohk" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Four. You will hear part of a lecture on the decline of urban bee populations.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions thirty-one to thirty-four. Complete the summary below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions thirty-one to thirty-four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-one to thirty-four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Today I want to talk about a subject that's become increasingly urgent in ecology: the decline of bee populations in urban areas.", "pause_after_ms": 800 },
+    { "speaker_id": "narrator", "text": "Globally, bee populations are thought to have declined by around thirty percent over the last two decades.", "pause_after_ms": 800, "key_detail": true, "question_number": 31, "answer": "30 percent", "acceptable_answers": ["30 percent", "30%", "thirty percent", "30 per cent"] },
+    { "speaker_id": "narrator", "text": "There are several contributing factors, but the research points to three in particular: habitat loss, pesticide exposure, and a parasite known as the varroa mite.", "pause_after_ms": 900, "key_detail": true, "question_number": 32, "answer": "varroa mite", "acceptable_answers": ["varroa mite", "varroa"] },
+    { "speaker_id": "narrator", "text": "Of these, the mite is especially damaging, because it weakens the bees' immune system, leaving colonies far more vulnerable to disease.", "pause_after_ms": 800, "key_detail": true, "question_number": 33, "answer": "immune system" },
+    { "speaker_id": "narrator", "text": "Now, why does this matter beyond the insects themselves? Bees are responsible for pollinating roughly one third of the food crops we consume.", "pause_after_ms": 900, "key_detail": true, "question_number": 34, "answer": "one third", "acceptable_answers": ["one third", "1/3", "a third"] },
+    { "speaker_id": "examiner", "text": "Questions thirty-five and thirty-six. Choose the correct letter, A, B or C. First, you have some time to look at questions thirty-five and thirty-six.", "instruction_kind": "section_prep", "pause_after_ms": 15000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-five and thirty-six.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "In response, a number of cities have launched schemes that encourage ordinary residents to keep bees on rooftops and in private gardens.", "pause_after_ms": 900, "key_detail": true, "question_number": 35, "answer": "B" },
+    { "speaker_id": "narrator", "text": "One of the clearest examples of this has been in the city of Manchester, which researchers now treat as a case study rather than a one-off local project.", "pause_after_ms": 800, "key_detail": true, "question_number": 36, "answer": "B" },
+    { "speaker_id": "examiner", "text": "Questions thirty-seven to forty. Complete the notes below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions thirty-seven to forty.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-seven to forty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "There, the number of rooftop hives has tripled since 2015, largely thanks to a council-backed initiative offering free training to new beekeepers.", "pause_after_ms": 900, "key_detail": true, "question_number": 37, "answer": "hives", "acceptable_answers": ["hives", "hive"] },
+    { "speaker_id": "narrator", "text": "Researchers in the same city also introduced pollinator corridors — narrow strips of wildflowers planted along roads and railway lines.", "pause_after_ms": 900, "key_detail": true, "question_number": 38, "answer": "pollinator corridors", "acceptable_answers": ["pollinator corridors", "pollinator corridor"] },
+    { "speaker_id": "narrator", "text": "The idea is simple: to give bees safe routes to travel between larger green spaces, rather than having to cross exposed, built-up areas.", "pause_after_ms": 900, "key_detail": true, "question_number": 39, "answer": "routes", "acceptable_answers": ["routes", "safe routes"] },
+    { "speaker_id": "narrator", "text": "Much of this work has been funded by the Greenfield Environmental Trust, a charity dedicated to urban conservation projects.", "pause_after_ms": 900, "key_detail": true, "question_number": 40, "answer": "Greenfield Environmental", "acceptable_answers": ["Greenfield Environmental", "Greenfield"] },
+    { "speaker_id": "narrator", "text": "Next week, we'll build on this by looking at policy responses to bee decline across several different countries. Thank you.", "pause_after_ms": 700 },
+    { "speaker_id": "examiner", "text": "That is the end of the Listening test.", "pause_after_ms": 800 }
+  ]
+}

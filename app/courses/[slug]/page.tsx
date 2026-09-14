@@ -1,5 +1,6 @@
 import MarketingShell from "@/components/marketing/MarketingShell";
 import CourseDetailView from "@/components/courses/CourseDetailView";
+import ToeflComingSoon from "@/components/courses/ToeflComingSoon";
 import { COURSE_SLUGS, getCourseBySlug } from "@/lib/courses/catalog";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -24,6 +25,10 @@ export function generateMetadata({ params }: Props): Metadata {
 export default function CourseDetailPage({ params }: Props) {
   const course = getCourseBySlug(params.slug);
   if (!course) notFound();
+
+  if (course.slug === "toefl-accelerator") {
+    return <ToeflComingSoon />;
+  }
 
   return (
     <MarketingShell>

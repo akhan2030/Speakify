@@ -8,6 +8,8 @@ import {
   pickFullMockTest,
 } from "../../../../lib/listeningContentPool.js";
 import { generateValidatedFullMock } from "../../../../lib/listeningTestProvision.js";
+import { getCannedAcademicListeningSkillMock } from "../../../../lib/listening/academicCannedListening";
+import { isAcademicListeningTestNumber } from "../../../../lib/listening/academicListeningTestList";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +48,14 @@ export async function GET(request) {
 
     if (!studentId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const requestedTest = Number(searchParams.get("test") || 1);
+    if (isAcademicListeningTestNumber(requestedTest)) {
+      console.info(
+        `[listening/mock-test] serving Academic Listening Test ${requestedTest}`
+      );
+      return NextResponse.json(getCannedAcademicListeningSkillMock(requestedTest));
     }
 
     const supabase = getSupabase();

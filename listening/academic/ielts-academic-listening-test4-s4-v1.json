@@ -1,0 +1,40 @@
+{
+  "programme": "ielts_academic",
+  "test": 4,
+  "section": 4,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% rate. MC options on paper only. Numbers must not contradict later lines.",
+  "context": "A lecture on night-shift work and the human body clock. Continuous monologue.",
+  "sub_blocks": [
+    { "questions": [31, 34], "type": "summary_completion", "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER" },
+    { "questions": [35, 36], "type": "multiple_choice", "word_limit": "Choose the correct letter, A, B or C. Options are on the question paper only." },
+    { "questions": [37, 40], "type": "note_completion", "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER" }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "narrator", "accent": "british", "gender": "male", "display_name": "Dr Hart", "voice_id": "D38z5RcWu1voky8WS1ja" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Four. You will hear part of a lecture on night-shift work and the body clock.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions thirty-one to thirty-four. Complete the summary. Write no more than two words and/or a number for each answer. First, you have some time to look at questions thirty-one to thirty-four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-one to thirty-four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "This lecture examines how night-shift work clashes with the human circadian system.", "pause_after_ms": 950 },
+    { "speaker_id": "narrator", "text": "That system is often called the body clock — a roughly twenty-four-hour cycle that times sleep, alertness and digestion.", "pause_after_ms": 1100, "key_detail": true, "question_number": 31, "answer": "body clock", "acceptable_answers": ["body clock", "the body clock"] },
+    { "speaker_id": "narrator", "text": "A key chemical in that cycle is melatonin, which rises in darkness and falls when the eyes meet bright light.", "pause_after_ms": 1100, "key_detail": true, "question_number": 32, "answer": "melatonin", "acceptable_answers": ["melatonin"] },
+    { "speaker_id": "narrator", "text": "In Britain, about fifteen percent of employees regularly work some form of night shift — fifteen, not a majority of the workforce.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 33, "answer": "15 percent", "acceptable_answers": ["15%", "15 percent", "fifteen percent"] },
+    { "speaker_id": "narrator", "text": "After a night shift, occupational guidelines still recommend seven hours of daytime sleep, even though many workers only manage five.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 34, "answer": "7 hours", "acceptable_answers": ["7 hours", "seven hours"] },
+    { "speaker_id": "examiner", "text": "Questions thirty-five and thirty-six. Choose the correct letter, A, B or C. The options are on your question paper only. First, you have some time to look at questions thirty-five and thirty-six.", "instruction_kind": "section_prep", "pause_after_ms": 15000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-five and thirty-six.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "When we interview night workers, the complaint they raise most often is not pay and not cafeteria food — it is missing family meals and weekend events, which slowly isolates them from people who keep ordinary hours.", "pause_after_ms": 1100, "key_detail": true, "question_number": 35, "answer": "A", "acceptable_answers": ["A"], "note": "Paper: A disrupted family / social time; B cafeteria food; C low pay." },
+    { "speaker_id": "narrator", "text": "As for countermeasures, caffeine helps for an hour or two, and bright-light rooms are still experimental. The approach with the strongest field evidence so far is a planned twenty-minute nap during the night break — short, timed, and not a replacement for the seven hours of sleep later in the day.", "pause_after_ms": 1100, "key_detail": true, "question_number": 36, "answer": "C", "acceptable_answers": ["C"], "note": "Paper: A extra caffeine; B bright-light rooms; C a timed night-break nap. Nap is 20 minutes; daytime sleep remains 7 hours." },
+    { "speaker_id": "examiner", "text": "Questions thirty-seven to forty. Complete the notes. Write no more than two words and/or a number for each answer. First, you have some time to look at questions thirty-seven to forty.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions thirty-seven to forty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Our case study is Meadowbrook Hospital, which surveyed night nurses over three years.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 37, "answer": "Meadowbrook Hospital", "acceptable_answers": ["Meadowbrook Hospital", "Meadowbrook"] },
+    { "speaker_id": "narrator", "text": "Among staff who had worked nights for more than five years, type two diabetes was about forty percent more common than among day-shift colleagues of similar age — forty percent higher risk, not forty percent of all nurses.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 38, "answer": "40 percent", "acceptable_answers": ["40%", "40 percent", "forty percent"] },
+    { "speaker_id": "narrator", "text": "The hospital now issues blackout blinds for daytime sleep, because street light through thin curtains was waking people after only three or four hours.", "pause_after_ms": 1100, "key_detail": true, "question_number": 39, "answer": "blackout blinds", "acceptable_answers": ["blackout blinds", "blinds"] },
+    { "speaker_id": "narrator", "text": "Managers are also dropping weekly rotating rosters in favour of permanent nights for those who choose them, because rotating shifts reset the body clock every few days and that is worse than a stable night pattern.", "pause_after_ms": 1100, "key_detail": true, "question_number": 40, "answer": "rotating shifts", "acceptable_answers": ["rotating shifts", "rotating rosters"] },
+    { "speaker_id": "narrator", "text": "Next week we will look at school start times. Thank you.", "pause_after_ms": 850 },
+    { "speaker_id": "examiner", "text": "That is the end of the Listening test.", "pause_after_ms": 800 }
+  ]
+}

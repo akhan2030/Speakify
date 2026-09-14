@@ -1,0 +1,53 @@
+{
+  "programme": "ielts_academic",
+  "test": 4,
+  "section": 1,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% prosody rate. First name Helen is printed; Q1 is surname only.",
+  "context": "A woman phones a veterinary clinic to book kitten vaccinations.",
+  "sub_blocks": [
+    { "questions": [1, 5], "type": "form_completion", "word_limit": "NO MORE THAN THREE WORDS AND/OR A NUMBER" },
+    { "questions": [6, 10], "type": "form_completion", "word_limit": "NO MORE THAN THREE WORDS AND/OR A NUMBER" }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "receptionist", "accent": "british", "gender": "male", "display_name": "Owen Blake (Clinic Reception)", "voice_id": "ODq5zmih8GrVes37Dizd" },
+    { "speaker_id": "caller", "accent": "north_american", "gender": "female", "display_name": "Helen Okonkwo (Caller)", "voice_id": "piTKgcLEGmPE4e6mEKli" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "This is the IELTS Listening Test, Practice Test Four. There are four sections. Write all your answers on the answer sheet as you listen. You will hear each recording once only.", "pause_after_ms": 1500 },
+    { "speaker_id": "examiner", "text": "Now turn to Section One. You will hear a woman phoning a veterinary clinic to book vaccinations for a kitten.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions one to five. Complete the form below. Write no more than three words and/or a number for each answer. First, you have some time to look at questions one to five.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Look at the example.", "instruction_kind": "example", "pause_after_ms": 3000 },
+    { "speaker_id": "receptionist", "text": "Good afternoon, Northgate Animal Clinic, Owen speaking.", "pause_after_ms": 900 },
+    { "speaker_id": "caller", "text": "Hi, I'd like to book vaccinations for my kitten.", "pause_after_ms": 900, "note": "Worked EXAMPLE: Reason for call — Vaccination booking. Not scored." },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions one to five.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "receptionist", "text": "Of course. Can I take your first name?", "pause_after_ms": 800 },
+    { "speaker_id": "caller", "text": "It's Helen.", "pause_after_ms": 800, "pace": "medium", "note": "First name printed on the paper as Helen — not scored." },
+    { "speaker_id": "receptionist", "text": "Thanks, Helen. And your surname?", "pause_after_ms": 800 },
+    { "speaker_id": "caller", "text": "Okonkwo — that's O, K, O, N, K, W, O.", "pause_after_ms": 1000, "pace": "medium", "key_detail": true, "question_number": 1, "answer": "Okonkwo", "acceptable_answers": ["Okonkwo"] },
+    { "speaker_id": "receptionist", "text": "Got that. A contact number, please?", "pause_after_ms": 800 },
+    { "speaker_id": "caller", "text": "Oh-seven-eight-one-one, three-three-four, four-nine-zero.", "pause_after_ms": 1200, "pace": "dictation", "key_detail": true, "question_number": 2, "answer": "07811 334490", "acceptable_answers": ["07811 334490", "07811334490"] },
+    { "speaker_id": "receptionist", "text": "And the animal — is this a cat or a dog?", "pause_after_ms": 800 },
+    { "speaker_id": "caller", "text": "A kitten — she's a tabby.", "pause_after_ms": 900, "key_detail": true, "question_number": 3, "answer": "kitten", "acceptable_answers": ["kitten", "tabby kitten"] },
+    { "speaker_id": "receptionist", "text": "I can offer you the twenty-second of April at eleven o'clock.", "pause_after_ms": 900 },
+    { "speaker_id": "caller", "text": "Eleven might be tight — I finish work at ten.", "pause_after_ms": 800 },
+    { "speaker_id": "receptionist", "text": "Sorry — actually I can move you to ten thirty on the same day. I had the late slot open by mistake.", "pause_after_ms": 1000, "key_detail": true, "question_number": 4, "answer": "22 April", "acceptable_answers": ["22 April", "22nd April", "April 22"] },
+    { "speaker_id": "caller", "text": "Ten thirty is perfect.", "pause_after_ms": 800, "pace": "slow", "key_detail": true, "question_number": 5, "answer": "10.30", "acceptable_answers": ["10.30", "10:30", "half past ten"] },
+    { "speaker_id": "examiner", "text": "Questions six to ten. Complete the form below. Write no more than three words and/or a number for each answer. First, you have some time to look at questions six to ten.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions six to ten.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "receptionist", "text": "A few details about the kitten. What's her name?", "pause_after_ms": 800 },
+    { "speaker_id": "caller", "text": "Mango.", "pause_after_ms": 800, "key_detail": true, "question_number": 6, "answer": "Mango", "acceptable_answers": ["Mango"] },
+    { "speaker_id": "receptionist", "text": "And roughly how old is she?", "pause_after_ms": 800 },
+    { "speaker_id": "caller", "text": "Twelve weeks — twelve.", "pause_after_ms": 900, "pace": "slow", "key_detail": true, "question_number": 7, "answer": "12 weeks", "acceptable_answers": ["12 weeks", "twelve weeks"] },
+    { "speaker_id": "receptionist", "text": "Has she been microchipped yet?", "pause_after_ms": 800 },
+    { "speaker_id": "caller", "text": "Not yet — could we do that at the same visit?", "pause_after_ms": 900 },
+    { "speaker_id": "receptionist", "text": "Yes — I'll add microchip to the notes.", "pause_after_ms": 900, "key_detail": true, "question_number": 8, "answer": "microchip", "acceptable_answers": ["microchip", "microchipping"] },
+    { "speaker_id": "receptionist", "text": "Parking is behind the clinic, off Baker Lane — Baker Lane.", "pause_after_ms": 1100, "key_detail": true, "question_number": 9, "answer": "Baker Lane", "acceptable_answers": ["Baker Lane"] },
+    { "speaker_id": "receptionist", "text": "Your booking code is N-A, dash, six-zero-two-five.", "pause_after_ms": 1300, "pace": "dictation", "key_detail": true, "question_number": 10, "answer": "NA-6025", "acceptable_answers": ["NA-6025", "NA6025"] },
+    { "speaker_id": "caller", "text": "That's great, thank you.", "pause_after_ms": 800 },
+    { "speaker_id": "receptionist", "text": "See you on the twenty-second. Bye for now.", "pause_after_ms": 900 },
+    { "speaker_id": "examiner", "text": "That is the end of Section One. Now turn to Section Two.", "pause_after_ms": 800 }
+  ]
+}

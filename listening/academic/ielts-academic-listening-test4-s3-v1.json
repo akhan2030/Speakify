@@ -1,0 +1,49 @@
+{
+  "programme": "ielts_academic",
+  "test": 4,
+  "section": 3,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% rate. Matching letters A/B stay on the paper.",
+  "context": "A tutor and two students plan a campus food-waste audit.",
+  "sub_blocks": [
+    { "questions": [21, 24], "type": "flowchart_completion", "word_limit": "NO MORE THAN TWO WORDS" },
+    { "questions": [25, 27], "type": "summary_completion", "word_limit": "ONE WORD ONLY" },
+    { "questions": [28, 30], "type": "matching", "word_limit": "Choose A or B. Options are on the question paper only." }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "tutor", "accent": "north_american", "gender": "male", "display_name": "Dr Khan (Tutor)", "voice_id": "VR6AewLTigWG4xSOukaG" },
+    { "speaker_id": "maya", "accent": "british", "gender": "female", "display_name": "Maya", "voice_id": "z9fAnlkpzviPz146aGWa" },
+    { "speaker_id": "leo", "accent": "north_american", "gender": "male", "display_name": "Leo", "voice_id": "TxGEqnHWrfWFTfGW9XjX" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Three. You will hear a tutor and two students discussing a campus food-waste project.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions twenty-one to twenty-four. Complete the flowchart. Write no more than two words for each answer. First, you have some time to look at questions twenty-one to twenty-four.", "instruction_kind": "section_prep", "pause_after_ms": 20000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-one to twenty-four.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "Let's lock the audit sequence before you start collecting.", "pause_after_ms": 900 },
+    { "speaker_id": "maya", "text": "First we design the checklist — what counts as leftover rice, peelings, that sort of thing.", "pause_after_ms": 950, "key_detail": true, "question_number": 21, "answer": "checklist", "acceptable_answers": ["checklist", "the checklist"] },
+    { "speaker_id": "leo", "text": "Then we run a pilot in one kitchen so we don't change the categories halfway.", "pause_after_ms": 950, "key_detail": true, "question_number": 22, "answer": "pilot", "acceptable_answers": ["pilot", "a pilot"] },
+    { "speaker_id": "maya", "text": "After that we collect the bags from the halls at the same time each evening.", "pause_after_ms": 950, "key_detail": true, "question_number": 23, "answer": "bags", "acceptable_answers": ["bags", "the bags"] },
+    { "speaker_id": "leo", "text": "And finally we weigh the contents and log the figures on the shared sheet.", "pause_after_ms": 950, "key_detail": true, "question_number": 24, "answer": "weigh", "acceptable_answers": ["weigh", "weighing"] },
+    { "speaker_id": "examiner", "text": "Questions twenty-five to twenty-seven. Complete the summary. Write one word only for each answer. First, you have some time to look at questions twenty-five to twenty-seven.", "instruction_kind": "section_prep", "pause_after_ms": 16000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-five to twenty-seven.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "What's slowing you down at the moment?", "pause_after_ms": 800 },
+    { "speaker_id": "maya", "text": "Recruitment, honestly. Kitchen staff are busy and keep postponing.", "pause_after_ms": 950, "key_detail": true, "question_number": 25, "answer": "recruitment", "acceptable_answers": ["recruitment"] },
+    { "speaker_id": "leo", "text": "We thought about paying people, but the ethics form only allows a small voucher.", "pause_after_ms": 900 },
+    { "speaker_id": "maya", "text": "Yes — a five-pound voucher, not cash.", "pause_after_ms": 950, "key_detail": true, "question_number": 26, "answer": "voucher", "acceptable_answers": ["voucher"] },
+    { "speaker_id": "tutor", "text": "How are you sending the invitation?", "pause_after_ms": 800 },
+    { "speaker_id": "leo", "text": "We tried posters first — wait.", "pause_after_ms": 700 },
+    { "speaker_id": "maya", "text": "Oh — sorry, actually email. The posters got no replies.", "pause_after_ms": 950, "key_detail": true, "question_number": 27, "answer": "email", "acceptable_answers": ["email"] },
+    { "speaker_id": "examiner", "text": "Questions twenty-eight to thirty. Who will do each task? Choose A or B. The names are on your question paper only. First, you have some time to look at questions twenty-eight to thirty.", "instruction_kind": "section_prep", "pause_after_ms": 16000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions twenty-eight to thirty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "tutor", "text": "Split the remaining jobs so you don't both write the same section.", "pause_after_ms": 900 },
+    { "speaker_id": "leo", "text": "I'll handle the data tables — I'm faster with the spreadsheet.", "pause_after_ms": 950, "key_detail": true, "question_number": 28, "answer": "B", "acceptable_answers": ["B"], "note": "Paper: A Maya; B Leo. Data tables = Leo." },
+    { "speaker_id": "maya", "text": "Then I'll write the literature review, since I've already read the council report.", "pause_after_ms": 950, "key_detail": true, "question_number": 29, "answer": "A", "acceptable_answers": ["A"] },
+    { "speaker_id": "tutor", "text": "And the oral presentation to the catering manager?", "pause_after_ms": 800 },
+    { "speaker_id": "leo", "text": "Maya should lead that — she's clearer in meetings.", "pause_after_ms": 900 },
+    { "speaker_id": "maya", "text": "That's fine — I'll present.", "pause_after_ms": 900, "key_detail": true, "question_number": 30, "answer": "A", "acceptable_answers": ["A"] },
+    { "speaker_id": "tutor", "text": "Good. Send me the checklist by Friday.", "pause_after_ms": 850 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Three. Now turn to Section Four.", "pause_after_ms": 800 }
+  ]
+}

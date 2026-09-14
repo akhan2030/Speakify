@@ -7,6 +7,7 @@ import { PageSpinner } from "@/components/StudentSidebar";
 import GeneralSkillBandHeader from "@/components/ielts-general/GeneralSkillBandHeader";
 import SkillTabs from "@/components/ielts/SkillTabs";
 import { GENERAL_STUDENT_BASE } from "@/lib/ielts-general/paths";
+import { ACADEMIC_LISTENING_FULL_TESTS } from "@/lib/listening/academicListeningTestList";
 
 const BASE = `${GENERAL_STUDENT_BASE}/listening`;
 
@@ -97,22 +98,33 @@ function ListeningContent() {
         }
         if (tab === "full") {
           return (
-            <div className="rounded-xl border border-[#0d1b35] bg-[#0d1b35] p-6 text-white shadow-sm">
-              <h3 className="text-xl font-bold">Full 40-question listening</h3>
-              <p className="mt-2 text-sm text-slate-300">
-                30 minutes · 4 sections · Same format for Academic and General Training
-              </p>
-              {overallBand != null ? (
-                <p className="mt-3 text-sm text-[#c9972c]">
-                  Your estimate: Band {overallBand.toFixed(1)}
+            <div>
+              <div className="mb-4">
+                <h3 className="text-xl font-bold text-[#0d1b35]">Full 40-question papers</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Five original 40-question papers. Academic and General Training share this Listening format.
                 </p>
-              ) : null}
-              <Link
-                href={`${BASE}/test`}
-                className="mt-5 inline-block rounded-xl bg-[#c9972c] px-6 py-3 text-sm font-bold text-[#0d1b35] hover:opacity-95"
-              >
-                Start full listening test →
-              </Link>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {ACADEMIC_LISTENING_FULL_TESTS.map((test) => (
+                  <div
+                    key={test.n}
+                    className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#c9972c]">
+                      Test {test.n}
+                    </p>
+                    <h4 className="mt-1 font-bold text-[#0d1b35]">{test.title}</h4>
+                    <p className="mt-2 text-sm text-slate-600">{test.summary}</p>
+                    <Link
+                      href={`${BASE}/test?test=${test.n}`}
+                      className="mt-4 inline-block rounded-xl bg-[#0d1b35] px-5 py-2.5 text-sm font-bold text-white hover:opacity-95"
+                    >
+                      Start Test {test.n} →
+                    </Link>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         }

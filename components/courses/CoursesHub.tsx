@@ -253,11 +253,11 @@ export default function CoursesHub(_props: Props) {
               </p>
               <div className="exam-actions" style={{ marginTop: 56 }}>
                 <Link href="/courses/toefl-accelerator" className="btn-primary">
-                  View course
+                  Coming soon
                 </Link>
-                <Link href="/courses/mock-exams" className="btn-secondary">
-                  Mock exams
-                </Link>
+                <span className="btn-secondary" aria-disabled="true">
+                  Enrolment closed
+                </span>
               </div>
             </div>
 

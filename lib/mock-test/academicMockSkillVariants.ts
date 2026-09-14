@@ -7,6 +7,7 @@ import {
 import type { ListeningExamPart } from "./listeningExam";
 import { LISTENING_VARIANTS_3_TO_5 } from "./academicListeningVariants3to5";
 import { writingTask1FromQuestion } from "./academicWritingTask1";
+import { getCannedAcademicListeningExamParts } from "@/lib/listening/academicCannedListening";
 
 function mockTask1(promptId: string, taskId: string): WritingTaskDef {
   const question = getTask1PromptById(promptId);
@@ -445,9 +446,26 @@ const SPEAKING_VARIANTS: SpeakingPart[][] = [
 ];
 
 export function getListeningPartsForMock(mockNumber: number): ListeningExamPart[] {
+  if (mockNumber >= 1 && mockNumber <= 5) {
+    return getCannedAcademicListeningExamParts(mockNumber);
+  }
+  if (mockNumber === 6) {
+    return getCannedAcademicListeningExamParts(4);
+  }
+  if (mockNumber === 7) {
+    return getCannedAcademicListeningExamParts(5);
+  }
   const variant =
     LISTENING_VARIANTS.find((v) => v.mockNumber === mockNumber) ??
     LISTENING_VARIANTS[(Math.max(1, mockNumber) - 1) % LISTENING_VARIANTS.length];
+  return buildListeningPartsFromVariant(variant);
+}
+
+/** Compact curated papers (not the numbered canned Tests 1–5). Used by regression only. */
+export function getCuratedCompactListeningParts(mockNumber: 3 | 4 | 5): ListeningExamPart[] {
+  const variant =
+    LISTENING_VARIANTS_3_TO_5.find((v) => v.mockNumber === mockNumber) ??
+    LISTENING_VARIANTS_3_TO_5[0];
   return buildListeningPartsFromVariant(variant);
 }
 

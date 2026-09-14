@@ -1,0 +1,38 @@
+{
+  "programme": "ielts_academic",
+  "test": 4,
+  "section": 2,
+  "version": "v1",
+  "question_count": 10,
+  "pacing_note": "85-90% rate. Matching options stay on the paper; do not speak A, B or C.",
+  "context": "A host at a coastal wildlife rescue centre gives a volunteer induction talk.",
+  "sub_blocks": [
+    { "questions": [11, 15], "type": "note_completion", "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER" },
+    { "questions": [16, 20], "type": "matching", "word_limit": "Choose the correct letter, A, B or C. Options are on the question paper only." }
+  ],
+  "speakers": [
+    { "speaker_id": "examiner", "accent": "british", "gender": "female", "display_name": "Test Instructions (Narrator)", "role": "instructions", "voice_id": "Xb7hH8MSUJpSbSDYk0k2" },
+    { "speaker_id": "narrator", "accent": "british", "gender": "male", "display_name": "Volunteer Host (Saltmarsh Rescue)", "voice_id": "SOYHLrjzK2X1ezoPC6cr" }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Two. You will hear a talk for new volunteers at a wildlife rescue centre.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions eleven to fifteen. Complete the notes below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions eleven to fifteen.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions eleven to fifteen.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Welcome to Saltmarsh Wildlife Rescue. I'm your induction host for this morning's volunteer briefing.", "pause_after_ms": 950 },
+    { "speaker_id": "narrator", "text": "The centre is open to the public from nine a.m. to five p.m. every day except Monday, when we close for deep cleaning.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 11, "answer": "9am-5pm", "acceptable_answers": ["9am-5pm", "9 am-5 pm", "9 to 5"] },
+    { "speaker_id": "narrator", "text": "Volunteer shifts last four hours, including a short break — four hours, not a full day.", "pause_after_ms": 1100, "key_detail": true, "question_number": 12, "answer": "4 hours", "acceptable_answers": ["4 hours", "four hours"] },
+    { "speaker_id": "narrator", "text": "You must be at least sixteen to volunteer without a parent on site.", "pause_after_ms": 1100, "pace": "slow", "key_detail": true, "question_number": 13, "answer": "16", "acceptable_answers": ["16", "sixteen"] },
+    { "speaker_id": "narrator", "text": "Please bring waterproof boots — the paths stay muddy after high tide.", "pause_after_ms": 1100, "key_detail": true, "question_number": 14, "answer": "waterproof boots", "acceptable_answers": ["waterproof boots", "boots"] },
+    { "speaker_id": "narrator", "text": "Hot drinks are free in the staff canteen; please don't eat in the animal areas.", "pause_after_ms": 1100, "key_detail": true, "question_number": 15, "answer": "canteen", "acceptable_answers": ["canteen", "staff canteen"] },
+    { "speaker_id": "examiner", "text": "Questions sixteen to twenty. Which part of the site is each facility in? Choose the correct letter, A, B or C. The options are on your question paper only. First, you have some time to look at questions sixteen to twenty.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions sixteen to twenty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Look at the site layout in your booklet. I'll walk you through it without reading the letters.", "pause_after_ms": 900 },
+    { "speaker_id": "narrator", "text": "If you start in the north yard, that's where we keep the isolation kennels — new arrivals stay there until a vet has checked them.", "pause_after_ms": 1100, "key_detail": true, "question_number": 16, "answer": "A", "acceptable_answers": ["A"], "note": "Paper: A North yard; B Main building; C Shore path. Isolation kennels = north yard." },
+    { "speaker_id": "narrator", "text": "The shop is inside the main building, just beyond the reception desk — postcards and feed, not outdoor stalls.", "pause_after_ms": 1100, "key_detail": true, "question_number": 17, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "narrator", "text": "Follow the shore path and you'll reach the bird pools, where recovering seabirds practise swimming before release.", "pause_after_ms": 1100, "key_detail": true, "question_number": 18, "answer": "C", "acceptable_answers": ["C"] },
+    { "speaker_id": "narrator", "text": "Training sessions are also in the main building, in the upstairs classroom — not in the yard.", "pause_after_ms": 1100, "key_detail": true, "question_number": 19, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "narrator", "text": "And the bike racks for volunteers sit in the north yard beside the staff gate, so you don't block the public car park.", "pause_after_ms": 1100, "key_detail": true, "question_number": 20, "answer": "A", "acceptable_answers": ["A"] },
+    { "speaker_id": "narrator", "text": "I'll take questions at the end of the tour. Thank you.", "pause_after_ms": 850 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Two. Now turn to Section Three.", "pause_after_ms": 800 }
+  ]
+}

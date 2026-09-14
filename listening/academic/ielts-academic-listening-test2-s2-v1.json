@@ -1,0 +1,58 @@
+{
+  "programme": "ielts_academic",
+  "test": 2,
+  "section": 2,
+  "version": "v1",
+  "question_count": 10,
+  "context": "A museum guide gives an introductory talk to new visitors about the museum's facilities and exhibits.",
+  "sub_blocks": [
+    {
+      "questions": [11, 15],
+      "type": "note_completion",
+      "word_limit": "NO MORE THAN TWO WORDS AND/OR A NUMBER"
+    },
+    {
+      "questions": [16, 20],
+      "type": "matching",
+      "word_limit": "Choose the correct letter, A, B or C. Options are on the question paper only."
+    }
+  ],
+  "speakers": [
+    {
+      "speaker_id": "examiner",
+      "accent": "british",
+      "gender": "female",
+      "display_name": "Test Instructions (Narrator)",
+      "role": "instructions",
+      "voice_id": "Xb7hH8MSUJpSbSDYk0k2"
+    },
+    {
+      "speaker_id": "narrator",
+      "accent": "north_american",
+      "gender": "female",
+      "display_name": "Claire Nguyen (Museum Guide)",
+      "voice_id": "cgSgspJ2msm6clMCkdW9"
+    }
+  ],
+  "lines": [
+    { "speaker_id": "examiner", "text": "Now turn to Section Two. You will hear a museum guide talking to new visitors.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "Questions eleven to fifteen. Complete the notes below. Write no more than two words and/or a number for each answer. First, you have some time to look at questions eleven to fifteen.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions eleven to fifteen.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Good morning, everyone, and welcome to the Riverside Natural History Museum. My name's Claire, and I'll be showing you around this morning.", "pause_after_ms": 950 },
+    { "speaker_id": "narrator", "text": "We're open every day except Monday, from nine in the morning until five in the evening.", "pause_after_ms": 900, "key_detail": true, "question_number": 11, "answer": "9am-5pm", "acceptable_answers": ["9am-5pm", "9-5", "9am to 5pm"] },
+    { "speaker_id": "narrator", "text": "General admission is fifteen dollars, though it's free for children under five.", "pause_after_ms": 900, "key_detail": true, "question_number": 12, "answer": "$15", "acceptable_answers": ["$15", "15 dollars"] },
+    { "speaker_id": "narrator", "text": "We run guided tours like this one three times a day, and the next one after ours starts at half past one.", "pause_after_ms": 900, "key_detail": true, "question_number": 13, "answer": "1:30pm", "acceptable_answers": ["1:30pm", "half past one", "13:30"] },
+    { "speaker_id": "narrator", "text": "If you get hungry, our café is on the ground floor, and it does a very good lunch menu until three.", "pause_after_ms": 900, "key_detail": true, "question_number": 14, "answer": "ground floor", "acceptable_answers": ["ground floor"] },
+    { "speaker_id": "narrator", "text": "And members get a fifteen percent discount in the gift shop, so it's worth signing up if you visit often.", "pause_after_ms": 900, "key_detail": true, "question_number": 15, "answer": "15%", "acceptable_answers": ["15%", "15 percent"] },
+    { "speaker_id": "examiner", "text": "Questions sixteen to twenty. Which floor is each exhibit on? Choose the correct letter, A, B or C. The options are on your question paper only. First, you have some time to look at questions sixteen to twenty.", "instruction_kind": "section_prep", "pause_after_ms": 25000 },
+    { "speaker_id": "examiner", "text": "Now listen and answer questions sixteen to twenty.", "instruction_kind": "sub_block", "pause_after_ms": 1200 },
+    { "speaker_id": "narrator", "text": "Now let me tell you a little about what's on each floor, since it's easy to miss things on a first visit.", "pause_after_ms": 900 },
+    { "speaker_id": "narrator", "text": "As I mentioned, the café is on the ground floor, and right next to it, also on the ground floor, is our dinosaur hall, which is always the most popular spot with families.", "pause_after_ms": 1000, "key_detail": true, "question_number": 16, "answer": "A", "acceptable_answers": ["A"] },
+    { "speaker_id": "narrator", "text": "Take the stairs up to the first floor, and you'll find our art gallery, featuring local painters and photographers.", "pause_after_ms": 1000, "key_detail": true, "question_number": 17, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "narrator", "text": "Also on the first floor, just past the art gallery, is our small planetarium, which runs shows every hour.", "pause_after_ms": 1000, "key_detail": true, "question_number": 18, "answer": "B", "acceptable_answers": ["B"] },
+    { "speaker_id": "narrator", "text": "If you head all the way up to the second floor, that's where you'll find our marine life exhibit, including a rather large shark model that the kids love.", "pause_after_ms": 1000, "key_detail": true, "question_number": 19, "answer": "C", "acceptable_answers": ["C"] },
+    { "speaker_id": "narrator", "text": "And finally, also on the second floor, right at the far end, is our temporary exhibits hall, which currently has a collection on ancient Egypt.", "pause_after_ms": 1000, "key_detail": true, "question_number": 20, "answer": "C", "acceptable_answers": ["C"] },
+    { "speaker_id": "narrator", "text": "Alright, let's begin the tour properly — if you'd like to follow me toward the dinosaur hall first.", "pause_after_ms": 800 },
+    { "speaker_id": "examiner", "text": "That is the end of Section Two. Now turn to Section Three.", "pause_after_ms": 800 }
+  ]
+}
