@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { normalizeRole } from "@/lib/roles";
 import { liveClassCatalogForUser } from "@/lib/live-classes/packages";
+import { getAppBaseUrl } from "@/lib/appUrl";
 import {
   DEFAULT_SESSION_MINUTES,
   checkoutHalalasForPayg,
