@@ -10,7 +10,7 @@ import {
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
 import { grantPaidAccess } from "@/lib/payments/grantAccess";
-import { allowSimulatedCheckout, moyasarCheckoutFlags } from "@/lib/payments/moyasar";
+import { allowSimulatedCheckout, moyasarCheckoutFlags, trackPriceHalalas } from "@/lib/payments/moyasar";
 import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
 import {
   checkoutTrackLabel,
