@@ -68,27 +68,6 @@ const PLANS = [
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    quote:
-      "I scored 7.0 in my real IELTS — exactly what Speakify predicted. I couldn't believe how accurate it was.",
-    name: "Khalid M.",
-    city: "Riyadh",
-  },
-  {
-    quote:
-      "The examiner report showed me exactly what to fix. My Writing went from 5.5 to 7.0 in 3 weeks.",
-    name: "Sara A.",
-    city: "Jeddah",
-  },
-  {
-    quote:
-      "The listening audio felt exactly like the real test. Different accents, realistic topics. Best mock I've done.",
-    name: "Mohammed F.",
-    city: "Dammam",
-  },
-];
-
 const SAMPLE_SKILLS = [
   { skill: "Listening", band: 6.5 },
   { skill: "Reading", band: 6.0 },
@@ -292,27 +271,6 @@ export default function MockTestLandingPage() {
                 Report delivered within 24 hours of exam completion
               </p>
             </div>
-          </div>
-        </section>
-
-        <section className="mt-20">
-          <h2 className="text-center text-2xl font-bold text-[#0d1b35]">
-            What students say
-          </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
-              <blockquote
-                key={t.name}
-                className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-              >
-                <p className="flex-1 text-sm leading-relaxed text-slate-700">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <footer className="mt-4 text-sm font-bold text-[#0d1b35]">
-                  — {t.name}, {t.city}
-                </footer>
-              </blockquote>
-            ))}
           </div>
         </section>
 

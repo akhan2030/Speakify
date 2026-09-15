@@ -332,20 +332,11 @@ export default function PlacementResultsPage() {
             <li>✅ AI-powered writing feedback on every essay</li>
             <li>✅ Speaking mock tests 3× per week</li>
             <li>✅ Full mock IELTS exam in Week 4</li>
-            <li>✅ Full mock IELTS exam in Week 4</li>
             <li>
               ✅ Saudi students — taught in a way that understands YOUR
               challenges
             </li>
           </ul>
-
-          <blockquote className="mt-6 border-l-4 border-[#c9972c] bg-[#c9972c]/10 px-4 py-3 text-sm italic text-[#0d1b35]">
-            &ldquo;I went from 5.5 to 7.0 in 28 days. I couldn&apos;t believe
-            it.&rdquo;
-            <footer className="mt-2 text-xs font-semibold not-italic text-slate-600">
-              — Fatima Al-Zahrani, Riyadh (University Admission)
-            </footer>
-          </blockquote>
 
           <p className="mt-5 text-base font-medium text-[#0d1b35]">
             Don&apos;t wait months. One focused month is all it takes.

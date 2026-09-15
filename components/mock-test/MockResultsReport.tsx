@@ -620,7 +620,6 @@ export default function MockResultsReport({ report, attemptId }: Props) {
                   "AI + human feedback",
                   "Speaking mock 3× per week",
                   "Full mock test Week 4",
-                  "Full mock test Week 4",
                   "Designed for Saudi students",
                 ].map((item) => (
                   <li key={item} className="flex gap-2">
@@ -629,9 +628,6 @@ export default function MockResultsReport({ report, attemptId }: Props) {
                   </li>
                 ))}
               </ul>
-              <blockquote className="mt-5 border-l-2 border-[#c9972c] pl-4 text-sm italic text-slate-300">
-                &ldquo;I went from 5.5 to 7.0 in 28 days&rdquo; — Fatima Al-Zahrani, Riyadh
-              </blockquote>
               <a
                 href={reserveHref}
                 target="_blank"

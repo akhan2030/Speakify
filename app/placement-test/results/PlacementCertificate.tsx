@@ -705,22 +705,6 @@ const PlacementCertificate = forwardRef<HTMLDivElement, Props>(
 
 
 
-            <blockquote className="mt-5 border-l-4 border-[#c9972c] bg-[#c9972c]/10 px-4 py-3 text-xs italic text-[#0d1b35]">
-
-              &ldquo;I went from 5.5 to 7.0 in 28 days. I couldn&apos;t believe
-
-              it.&rdquo;
-
-              <footer className="mt-2 text-[0.65rem] font-semibold not-italic text-slate-600">
-
-                — Fatima Al-Zahrani, Riyadh
-
-              </footer>
-
-            </blockquote>
-
-
-
             <div className="mt-5 rounded-xl bg-[#25D366] px-4 py-3 text-center print:bg-[#25D366]">
 
               <p className="text-sm font-bold text-white">
