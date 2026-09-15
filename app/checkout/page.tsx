@@ -246,7 +246,7 @@ export default function CheckoutPage() {
               ) : showLiveForm ? (
                 <div className="mt-6">
                   <p className="text-sm text-slate-600">
-                    Pay securely below. Test mada card: 4201320111111010 (sandbox).
+                    Pay securely with mada, Apple Pay, STC Pay, or card.
                   </p>
                   {formError ? (
                     <p className="mt-2 text-sm text-red-600">{formError}</p>
