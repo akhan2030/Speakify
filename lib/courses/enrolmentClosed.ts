@@ -35,7 +35,7 @@ const LEGAL: ComingSoonCopy = {
 const STEP: ComingSoonCopy = {
   title: "Speakify STEP Accelerator",
   body:
-    "Speakify STEP preparation is not open for new registration. We are confirming the current official Qiyas/ETEC test structure before stating section weights or counts as fact. Existing STEP students can still sign in.",
+    "Speakify STEP preparation is not open for new registration. Existing students can still sign in. The LMS now follows sourced public structure (100 scored MCQs, 40/30/20/10 weights, ~3-hour seat) while test-day section order and per-section clocks remain unconfirmed.",
   registerError: "STEP registration is coming soon.",
 };
 

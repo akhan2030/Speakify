@@ -1,3 +1,4 @@
+import { SPEAKIFY_COLOR } from "@/lib/brand/tokens";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEP_PHASES, getPhaseDefinition, STEP_DEFAULT_TARGET } from "./phases";
 import type { StepPhaseDefinition } from "./phases";
@@ -18,20 +19,20 @@ const SECTION_META = [
 
 function performanceLabel(score: number): string {
   if (score >= 80) return "🏆 Excellence — Top Performance";
-  if (score >= 65) return "✅ Competitive — University Ready";
+  if (score >= 65) return "✅ Competitive — Speakify Phase 2 band";
   if (score >= 50) return "📈 Developing — Good Progress";
   return "📚 Foundation — Keep Studying";
 }
 
 function pctColor(pct: number): string {
   if (pct >= 75) return "#059669";
-  if (pct >= 60) return "#c9972c";
+  if (pct >= 60) return SPEAKIFY_COLOR.gold;
   return "#dc2626";
 }
 
 function totalScoreColor(score: number): string {
   if (score >= 80) return "#059669";
-  if (score >= 65) return "#c9972c";
+  if (score >= 65) return SPEAKIFY_COLOR.gold;
   if (score >= 50) return "#d97706";
   return "#dc2626";
 }

@@ -54,7 +54,7 @@ export const STEP_PHASES: StepPhaseDefinition[] = [
     focusSections: ["structure", "reading"],
     exitScoreRequired: 50,
     description:
-      "Learn the Qiyas STEP format, timing rules, and build grammar accuracy for Structure (30%).",
+      "Learn the four STEP components (Reading 40% · Structure 30% · Listening 20% · Analysis 10%) and build B1 grammar accuracy. Speakify clocks are study pacing, not official section timers.",
     weeklyThemes: {
       1: "STEP format overview & Structure drills",
       2: "Reading strategies & timed MCQ pacing",
@@ -101,7 +101,7 @@ export const STEP_PHASES: StepPhaseDefinition[] = [
     focusSections: ["reading", "structure", "listening", "compositional_analysis"],
     exitScoreRequired: 80,
     description:
-      "Full-length timed mocks, score review, and polish toward your 80+ university target.",
+      "Full-length timed mocks on Speakify’s study sequence. Target 80+ on practice percent-correct — institutions set their own STEP cutoffs.",
     weeklyThemes: {
       9: "Full mock #1 & weak-area review",
       10: "Full mock #2 & exam-day strategy",

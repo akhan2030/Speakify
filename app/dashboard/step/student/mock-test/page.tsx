@@ -1,4 +1,5 @@
 "use client";
+import { SPEAKIFY_COLOR } from "@/lib/brand/tokens";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,14 +15,14 @@ import type { MockHistoryRow } from "@/lib/step/mockExam/types";
 
 const CHECKLIST = [
   "I am in a quiet place with no distractions",
-  "I have 2 hours and 30 minutes available right now",
-  "My headphones or speakers are working (for Listening)",
+  "I have about 2 hours 30 minutes for this scored practice (live STEP is ~3 hours including instructions and trial items)",
+  "My headphones are working (Listening plays once; stems stay hidden during audio)",
   "My internet connection is stable",
-  "I understand the exam cannot be paused",
+  "I understand this uses Speakify’s study sequence, not a confirmed test-day order",
 ];
 
-const NAVY = "#0d1b35";
-const GOLD = "#c9972c";
+const NAVY = SPEAKIFY_COLOR.navy900;
+const GOLD = SPEAKIFY_COLOR.gold;
 
 function formatDate(iso: string) {
   try {
@@ -90,10 +91,10 @@ export default function StepMockTestLandingPage() {
           STEP Full Mock Exam
         </h1>
         <p className="mt-2 text-slate-600">
-          Complete simulation of the real Qiyas STEP test
+          Full 100-item practice on Speakify’s study sequence — not a confirmed live seat order
         </p>
         <p className="mt-1 text-sm font-medium text-[#0d9488]">
-          100 questions · 150 minutes · Auto-scored instantly
+          100 scored questions · 150 min Speakify clock · live STEP ~3 hours with instructions
         </p>
       </header>
 
@@ -136,7 +137,7 @@ export default function StepMockTestLandingPage() {
               <th className="px-4 py-3">Section</th>
               <th className="px-4 py-3">Questions</th>
               <th className="px-4 py-3">Score Weight</th>
-              <th className="px-4 py-3">Time (approx)</th>
+              <th className="px-4 py-3">Time (Speakify)</th>
             </tr>
           </thead>
           <tbody>

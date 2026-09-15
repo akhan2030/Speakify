@@ -26,7 +26,8 @@ export const MOCK_SECTION_MAX = {
   compositional_analysis: 10,
 } as const;
 
-export const MOCK_SECTION_MINUTES = [54, 40, 27, 14] as const;
+/** Speakify study clocks — not official per-section timing. Sum = 150 scored minutes. */
+export const MOCK_SECTION_MINUTES = [60, 45, 30, 15] as const;
 
 export const MOCK_SECTION_WEIGHTS = ["40%", "30%", "20%", "10%"] as const;
 

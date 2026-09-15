@@ -1,15 +1,20 @@
 /**
- * Sourced STEP blueprint for Speakify.
+ * Sourced STEP blueprint for Speakify (independent research pass + NCA/ETEC public text).
  *
- * Registration stays closed until a *current* (2025/2026) ETEC/Qiyas candidate
- * notice confirms or revises these figures. This file is the honest map of
- * what public official documents actually say versus what Speakify infers.
+ * High confidence is not a live 2026 candidate bulletin. Registration stays closed.
+ * Do not treat https://qiyas.sa commercial prep as the government portal.
+ * Candidate login: Nafath / قياس on e-services.etec.gov.sa.
  *
- * Do not treat https://qiyas.sa (commercial prep) as the government portal.
- * Current candidate login is Nafath / قياس on e-services.etec.gov.sa.
+ * STEP is not EPT: EPT is a separate Qiyas placement product (80 items, 90 minutes,
+ * Structure + Reading + Compositional Analysis, no listening).
  */
 
-export type StepFactConfidence = "official_published" | "inferred" | "unknown" | "speakify_study";
+export type StepFactConfidence =
+  | "high_public"
+  | "medium_single_source"
+  | "inferred"
+  | "speakify_study"
+  | "unknown";
 
 export type StepFact = {
   id: string;
@@ -17,156 +22,173 @@ export type StepFact = {
   value: string;
   confidence: StepFactConfidence;
   source: string;
-  askFor: string;
+  studentFacing: boolean;
 };
 
-/**
- * Primary public official document we can actually retrieve without a
- * candidate login: NCA “STEP: A Guide for Students”, intro dated 19 March 2012
- * (Dr. Abdulrahman H. al-Shamrani, Department of Language Testing).
- * A shorter “Third Edition” pamphlet from NCA (qiyas.org contact block) repeats
- * the same four components, 100 scored items, and ~3 hour seat time.
- */
 export const STEP_OFFICIAL_SOURCES = {
+  etecLingual: {
+    title: "ETEC / Qiyas language tests (STEP)",
+    url: "https://etec.gov.sa/en/productsandservices/Qiyas/lingual",
+    note: "Government page. Indexed public copy describes STEP as CEFR-based, 100 scored MCQs plus trial items, four-option answers, three-hour allowance including instructions, offered three times per year on paper with more continuous CBT.",
+  },
+  etecMustaqbalhum: {
+    title: "ETEC Mustaqbalhum — Training for STEP",
+    url: "https://etec.gov.sa/en/programs/mustaqbalhum",
+    note: "Confirms STEP exists as an English proficiency measure.",
+  },
   ncaStudentGuide2012: {
     title: "STEP: A Guide for Students — National Center for Assessment in Higher Education",
     dated: "19 March 2012",
-    note: "Official NCA publication. Not a 2025/2026 candidate bulletin. The guide itself says component weights may later change after statistical analysis.",
+    note: "Official NCA publication. Four components and weights. Guide says weights may later change after statistical analysis.",
   },
   ncaThirdEditionPamphlet: {
-    title: "STEP Standardized Test of English Proficiency — Third Edition (NCA pamphlet)",
-    dated: "undated pamphlet; NCA contact block uses qiyas.org / faq@qiyas.org",
-    note: "Same four components, 100 questions, 3 hours including trial items. Listening: test-taker sees options A–D only, not the dialogue or the questions.",
+    title: "STEP — Third Edition (NCA pamphlet)",
+    note: "Same four components, 100 questions, ~3 hours including trial items. Listening: candidates see A–D only, not the dialogue or the printed questions.",
   },
-  etecPublic: {
-    title: "ETEC / Mustaqbalhum — Training for STEP",
-    url: "https://etec.gov.sa/en/programs/mustaqbalhum",
-    note: "Confirms STEP exists and measures English proficiency. Does not publish section weights, counts, or seat order on the public page.",
+  ajelNews: {
+    title: "Mainstream Saudi news (Ajel) reporting STEP structure",
+    note: "Corroborates 40/30/20/10, 150 SAR fee, and up to 10 attempts in three years. Not a government bulletin.",
   },
   etecCandidateLogin: {
     title: "Qiyas candidate e-services (ETEC)",
     url: "https://e-services.etec.gov.sa/Qiyas.TRAS.Web.Internet/",
-    note: "Nafath / قياس login. Structure details, if any, sit behind authentication. This agent cannot log in.",
+    note: "Nafath login. Live 2026 seat order and clocks, if published, sit behind authentication.",
   },
 } as const;
 
-/** Exact fields to capture from a 2025/2026 official notice or sitting. */
+export const STEP_STUDY_SEQUENCE_NOTE =
+  "Speakify study sequence (not confirmed test-day order): Reading → Structure → Listening → Compositional Analysis. Per-section minutes are Speakify pacing. Live STEP is three hours including instructions and unscored trial items.";
+
+export const STEP_EPT_NOTE =
+  "Do not confuse STEP with Qiyas EPT. EPT is a shorter placement test (typically 80 questions / 90 minutes) covering Structure, Reading, and Compositional Analysis with no listening. Speakify STEP always includes listening.";
+
 export const STEP_SOURCE_CHECKLIST: StepFact[] = [
   {
     id: "name",
-    label: "Official English and Arabic names",
+    label: "Official names",
     value: "Standardized Test of English Proficiency (STEP) / كفايات اللغة الإنجليزية",
-    confidence: "official_published",
-    source: "NCA student guide 2012; ETEC Mustaqbalhum page",
-    askFor: "Confirm the live product name on the 2025/2026 registration screen.",
+    confidence: "high_public",
+    source: "ETEC; NCA student guide",
+    studentFacing: true,
   },
   {
     id: "administrator",
     label: "Administrator",
     value: "National Center for Assessment (Qiyas) under ETEC",
-    confidence: "official_published",
-    source: "NCA guide; ETEC site; e-services.etec.gov.sa login chrome",
-    askFor: "Confirm branding on the current candidate portal.",
+    confidence: "high_public",
+    source: "ETEC; NCA",
+    studentFacing: true,
+  },
+  {
+    id: "cefr",
+    label: "Framework",
+    value: "ETEC describes STEP as based on the Common European Framework of Reference (CEFR). Speakify study scores are not official CEFR certificates.",
+    confidence: "high_public",
+    source: "ETEC language-tests page",
+    studentFacing: true,
   },
   {
     id: "format",
     label: "Item format",
-    value: "Four-option multiple choice (A–D); no speaking; no free essay",
-    confidence: "official_published",
-    source: "NCA student guide 2012 (CA is analysis of writing, not an essay); Third Edition pamphlet listening instructions",
-    askFor: "Confirm CBT still has no speaking / no constructed writing.",
+    value: "100 scored four-option MCQs (A–D), plus unscored trial items. No speaking. No free essay.",
+    confidence: "high_public",
+    source: "ETEC; NCA",
+    studentFacing: true,
   },
   {
     id: "components",
-    label: "Four components and published weights",
-    value: "RC 40% · ST 30% · LC 20% · CA 10%",
-    confidence: "official_published",
-    source:
-      "NCA student guide 2012 and Third Edition pamphlet. Both say weights may be revised after statistical analysis.",
-    askFor: "Current weights on a 2025/2026 ticket, portal, or official PDF — not a prep-site blog.",
+    label: "Four components and weights",
+    value: "Reading Comprehension 40% · Structure/Grammar 30% · Listening Comprehension 20% · Compositional / Written Analysis 10%",
+    confidence: "high_public",
+    source: "NCA guide + pamphlet; corroborated by Ajel",
+    studentFacing: true,
   },
   {
     id: "question_counts",
-    label: "Scored question counts",
-    value: "100 scored items total; 40 / 30 / 20 / 10 inferred from the published percentages",
+    label: "Scored items per section",
+    value: "100 scored items total. 40 / 30 / 20 / 10 if one point per item — inferred from the published percentages.",
     confidence: "inferred",
-    source: "NCA: “The actual STEP test has 100 questions distributed among the four components.” Percentages → counts if 1 point per item.",
-    askFor: "Exact scored items per section on a current form (and whether trial items make the on-screen total > 100).",
+    source: "NCA: 100 questions distributed among the four components",
+    studentFacing: true,
   },
   {
     id: "seat_time",
     label: "Total seat time",
-    value: "~3 hours including non-scored trial items and instructions",
-    confidence: "official_published",
-    source: "NCA student guide 2012; Third Edition pamphlet",
-    askFor: "Current timed length and whether sections are separately timed.",
+    value: "Three hours including pre-test instructions and trial items",
+    confidence: "high_public",
+    source: "ETEC; NCA",
+    studentFacing: true,
+  },
+  {
+    id: "frequency",
+    label: "How often it is offered",
+    value: "Paper sittings three times per year; computer-based testing available more continuously",
+    confidence: "high_public",
+    source: "ETEC public page (indexed)",
+    studentFacing: true,
   },
   {
     id: "section_minutes",
     label: "Minutes per section",
-    value: "Speakify study budgets 60 / 45 / 30 / 15 (150 min scored) — not stated in the NCA guide",
+    value: "Speakify scored-practice clocks 60 / 45 / 30 / 15 (150 minutes). Not published as official section clocks.",
     confidence: "speakify_study",
     source: "Speakify LMS only",
-    askFor: "Official per-section clock if the live CBT uses one.",
+    studentFacing: true,
   },
   {
     id: "section_order",
     label: "Test-day section order",
-    value: "Unknown. Speakify study rail uses RC → ST → LC → CA",
+    value: "Unknown. Sources list categories, not administration sequence.",
     confidence: "unknown",
-    source: "NCA lists components as RC, ST, LC, CA in that prose order; that is not a confirmed CBT navigation order",
-    askFor: "Screenshot of section sequence on test day or in the candidate instructions.",
-  },
-  {
-    id: "navigation",
-    label: "Can you return to a previous section?",
-    value: "Unknown for current CBT (Speakify mocks lock sections after submit)",
-    confidence: "unknown",
-    source: "Speakify product rule, not NCA text",
-    askFor: "Whether the live CBT allows review across sections.",
+    source: "No source states seat order",
+    studentFacing: true,
   },
   {
     id: "listening_ui",
     label: "Listening presentation",
-    value: "Hear recording once; see A–D only — not the dialogue and not the question stem",
-    confidence: "official_published",
-    source: "NCA Third Edition pamphlet listening instructions",
-    askFor: "Confirm current CBT still hides stems during audio.",
+    value: "Hear the recording once. See A–D only during listening — not the dialogue and not the printed question stem.",
+    confidence: "high_public",
+    source: "NCA Third Edition pamphlet",
+    studentFacing: true,
   },
   {
     id: "scoring_scale",
-    label: "Score scale / pass-fail / validity",
-    value: "Not specified as 0–100 / 3 years in the 2012 guide body we retrieved",
+    label: "Score report legend",
+    value: "No universal pass/fail. Institutions set their own cutoffs. A 0–100 report scale is widely cited but not independently confirmed in this pass.",
     confidence: "unknown",
-    source: "Common on commercial prep pages; not copied here as official",
-    askFor: "Score report legend (min/max, validity years, IRT vs percent-correct).",
+    source: "ETEC purpose language; commercial 0–100 claims not copied as fact",
+    studentFacing: true,
   },
   {
     id: "fee",
     label: "Registration fee",
-    value: "Not taken from an official live fee table in this pass",
-    confidence: "unknown",
-    source: "Prep sites often say 150 SAR — not used as official here",
-    askFor: "Fee on the current ETEC payment screen.",
+    value: "150 SAR (single news source — confirm on the ETEC payment screen)",
+    confidence: "medium_single_source",
+    source: "Ajel",
+    studentFacing: true,
+  },
+  {
+    id: "attempts",
+    label: "Attempt limit",
+    value: "Up to 10 attempts within a three-year window (same news source)",
+    confidence: "medium_single_source",
+    source: "Ajel",
+    studentFacing: true,
   },
 ];
 
-/**
- * Files to edit when a current official source arrives.
- * Keep public marketing closed until these match the new source.
- */
 export const STEP_STRUCTURE_CODE_TOUCHPOINTS = [
-  "lib/step/officialBlueprint.ts (this file — update facts + confidence)",
-  "lib/step/examModel.ts (canonical LMS numbers, labels, order, URLs)",
-  "lib/step/mockExam/constants.ts (100-item mock split and minutes)",
+  "lib/step/officialBlueprint.ts",
+  "lib/step/examModel.ts",
+  "lib/step/mockExam/constants.ts",
   "lib/step/exitTest/constants.ts",
-  "lib/step/miniMock/constants.ts (if section mix should follow live weights)",
-  "lib/step/phases.ts (copy that mentions 40% / 30%)",
-  "lib/step/prompts.ts and agent/stepQuestionAgent.js (generation mix)",
-  "lib/dashboards/programJourneys.ts (STEP rail + sourceNote)",
-  "components/StepSidebar.tsx (section nav labels)",
-  "Public copy only after reopen: lib/courses/catalog.ts, lib/courses/pageContent.ts, lib/registration.ts, Coming soon pages",
+  "lib/step/miniMock/constants.ts",
+  "lib/step/phases.ts",
+  "lib/step/prompts.ts",
+  "agent/stepQuestionAgent.js",
+  "lib/dashboards/programJourneys.ts",
+  "components/StepSidebar.tsx",
 ] as const;
 
 export const STEP_REGISTRATION_POLICY =
-  "Keep /register/step-test and /courses/step-preparation closed until STEP_SOURCE_CHECKLIST items components, question_counts, section_order, and scoring_scale are confidence official_published from a 2025/2026 ETEC/Qiyas notice — not only the 2012 NCA guide.";
+  "Keep /register/step-test closed until a 2025/2026 ETEC/Qiyas candidate notice confirms components, scored counts, section order, and scoring scale. Public ETEC + news corroboration of 40/30/20/10 is not that notice.";

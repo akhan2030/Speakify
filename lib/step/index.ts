@@ -9,10 +9,9 @@ export {
 } from "./examModel";
 
 export {
-  STEP_OFFICIAL_SOURCES,
-  STEP_REGISTRATION_POLICY,
   STEP_SOURCE_CHECKLIST,
-  STEP_STRUCTURE_CODE_TOUCHPOINTS,
+  STEP_STUDY_SEQUENCE_NOTE,
+  STEP_REGISTRATION_POLICY,
 } from "./officialBlueprint";
 
 export {

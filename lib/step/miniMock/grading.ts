@@ -1,3 +1,4 @@
+import { MINI_MOCK_SECTION_COUNTS } from "./constants";
 import { gradeMockExam } from "../mockExam/generateMockQuestions";
 import type { MockExamQuestion } from "../mockExam/types";
 import type { StepSectionId } from "../examModel";
@@ -15,10 +16,12 @@ export function gradeMiniMock(
   const totalRaw =
     readingRaw + structureRaw + listeningRaw + compositionalRaw;
 
-  const readingScaled = Math.round((readingRaw / 5) * 40);
-  const structureScaled = Math.round((structureRaw / 5) * 30);
-  const listeningScaled = Math.round((listeningRaw / 5) * 20);
-  const compositionalScaled = Math.round((compositionalRaw / 5) * 10);
+  const readingScaled = Math.round((readingRaw / MINI_MOCK_SECTION_COUNTS[0]) * 40);
+  const structureScaled = Math.round((structureRaw / MINI_MOCK_SECTION_COUNTS[1]) * 30);
+  const listeningScaled = Math.round((listeningRaw / MINI_MOCK_SECTION_COUNTS[2]) * 20);
+  const compositionalScaled = Math.round(
+    (compositionalRaw / MINI_MOCK_SECTION_COUNTS[3]) * 10
+  );
   const estimatedStepScore =
     readingScaled + structureScaled + listeningScaled + compositionalScaled;
 
@@ -77,7 +80,13 @@ export function weakestMiniSection(graded: {
     },
   ];
   const worst = sections.reduce((a, b) => (a.raw <= b.raw ? a : b));
-  return { ...worst, pct: Math.round((worst.raw / 5) * 100) };
+  const denom: Record<StepSectionId, number> = {
+    reading: MINI_MOCK_SECTION_COUNTS[0],
+    structure: MINI_MOCK_SECTION_COUNTS[1],
+    listening: MINI_MOCK_SECTION_COUNTS[2],
+    compositional_analysis: MINI_MOCK_SECTION_COUNTS[3],
+  };
+  return { ...worst, pct: Math.round((worst.raw / denom[worst.id]) * 100) };
 }
 
 export function practicePathForSection(section: StepSectionId): string {

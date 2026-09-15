@@ -108,9 +108,9 @@ export const PROGRAM_JOURNEYS: Record<ProgramJourneyId, ProgramJourney> = {
   step: {
     id: "step",
     title: "Your STEP test journey",
-    caption: `Four computer-based MCQ sections — ${STEP_EXAM_MODEL.sectionOrder
+    caption: `Speakify study sequence — ${STEP_EXAM_MODEL.sectionOrder
       .map((id) => STEP_SECTIONS[id].label)
-      .join(" → ")}. Not an IELTS-style speaking/essay paper.`,
+      .join(" → ")}. Four CEFR-based MCQ components; not an IELTS speaking/essay paper. Test-day order is unconfirmed.`,
     sidebarGroup: "Test sections",
     scoreNoun: "Score",
     targetPrefix: "Target",
@@ -126,8 +126,7 @@ export const PROGRAM_JOURNEYS: Record<ProgramJourneyId, ProgramJourney> = {
         color: visual.color,
       };
     }),
-    sourceNote:
-      "NCA student guide (19 March 2012) and NCA Third Edition pamphlet: RC 40% / ST 30% / LC 20% / CA 10%, 100 scored MCQs, ~3 hours with trial items. Weights may have been revised. This rail is Speakify study order, not confirmed 2025/2026 test-day order. Candidate login is e-services.etec.gov.sa — not commercial qiyas.sa. Public registration stays closed until a current official notice is on file.",
+    sourceNote: `${STEP_EXAM_MODEL.studySequenceNote} Weights 40/30/20/10 are high-confidence public structure (ETEC/NCA + news corroboration), not a 2026 candidate bulletin. Speakify scores are practice percent-correct, not official CEFR. ${STEP_EXAM_MODEL.eptNote}`,
   },
   pathway: {
     id: "pathway",

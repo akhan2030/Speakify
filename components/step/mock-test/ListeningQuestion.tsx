@@ -1,4 +1,5 @@
 "use client";
+import { SPEAKIFY_COLOR } from "@/lib/brand/tokens";
 
 import { useState } from "react";
 import { ExamHighlightQuestionText } from "@/components/exam/ExamHighlightSection";
@@ -40,19 +41,22 @@ export default function ListeningQuestion({
     }
   };
 
-  const canAnswer = hasPlayed;
+  const canAnswer = isPlaying || hasPlayed;
+  const showStem = hasPlayed;
 
   return (
     <div>
-      <div className="mb-6 rounded-lg border border-[#c9972c] bg-orange-50 px-4 py-3">
+      <div className="mb-6 rounded-lg border border-speakify-gold bg-orange-50 px-4 py-3">
         <p className="m-0 text-sm text-amber-900">
-          🎧 <strong>Listening plays once only</strong> — just like the real STEP exam.
-          {!hasPlayed && " Press play when you are ready to listen."}
-          {hasPlayed && " You have already played this recording."}
+          🎧 <strong>Listening plays once</strong> — same as live STEP. While the audio
+          plays you see choices A–D only, not the written question. The recording includes
+          the spoken question.
+          {!hasPlayed && " Press play when you are ready."}
+          {hasPlayed && " This recording has already played."}
         </p>
       </div>
 
-      <div className="mb-6 rounded-xl bg-[#0d1b35] p-6 text-center">
+      <div className="mb-6 rounded-xl bg-speakify-navy p-6 text-center">
         {!hasPlayed ? (
           <>
             <p className="mb-3 text-sm text-white/70">
@@ -63,7 +67,7 @@ export default function ListeningQuestion({
               onClick={playAudio}
               disabled={isPlaying}
               className="flex h-[60px] w-[60px] items-center justify-center rounded-full text-2xl text-white disabled:opacity-60"
-              style={{ background: "#c9972c", margin: "0 auto" }}
+              style={{ background: SPEAKIFY_COLOR.gold, margin: "0 auto" }}
             >
               {isPlaying ? "⏸" : "▶"}
             </button>
@@ -72,7 +76,7 @@ export default function ListeningQuestion({
             </p>
           </>
         ) : (
-          <p className="m-0 text-sm font-semibold text-[#c9972c]">
+          <p className="m-0 text-sm font-semibold text-speakify-gold">
             ✓ Recording played — answer the questions below
           </p>
         )}
@@ -80,13 +84,19 @@ export default function ListeningQuestion({
 
       {canAnswer ? (
         <div>
-          <p className="mb-4 text-[15px] font-semibold text-[#0d1b35]">
-            <ExamHighlightQuestionText
-              blockId={`${question.id}-stem`}
-              number={questionNumber}
-              text={question.stem}
-            />
-          </p>
+          {showStem ? (
+            <p className="mb-4 text-[15px] font-semibold text-speakify-navy">
+              <ExamHighlightQuestionText
+                blockId={`${question.id}-stem`}
+                number={questionNumber}
+                text={question.stem}
+              />
+            </p>
+          ) : (
+            <p className="mb-4 text-sm text-slate-500">
+              Question {questionNumber} — listen for the spoken question. Choices only:
+            </p>
+          )}
           <MockOptionButtons
             questionId={question.id}
             options={question.options}

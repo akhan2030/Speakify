@@ -265,12 +265,13 @@ export default function CoursesHub(_props: Props) {
               <div className="exam-top">
                 <div>
                   <h3>STEP</h3>
-                  <div className="exam-meta">1 tier · Self-paced · 10 weeks · Practice + full mocks</div>
+                  <div className="exam-meta">1 tier · 10 weeks · Enrolment closed</div>
                 </div>
-                <span className="band">Saudi-specific</span>
+                <span className="band">Coming soon</span>
               </div>
               <p className="exam-desc">
-                The Standard Test of English Proficiency, used across Saudi universities and ministries.
+                Qiyas STEP (كفايات اللغة الإنجليزية) — 100 scored MCQs, CEFR-based. Speakify is
+                confirming live 2026 seat order before opening registration.
               </p>
               <div className="exam-actions" style={{ marginTop: 56 }}>
                 <Link href="/courses/step-preparation" className="btn-primary">

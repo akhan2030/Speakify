@@ -197,9 +197,9 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     slug: "step-preparation",
     name: "Speakify STEP Accelerator",
     tagline: "Qiyas STEP preparation",
-    shortDescription: `${STEP_TOTAL_WEEKS}-week STEP course toward 80+.`,
+    shortDescription: `${STEP_TOTAL_WEEKS}-week STEP course. Enrolment closed.`,
     description:
-      `Ten-week STEP preparation with a diagnostic, four study stages, section practice, and timed mocks. Registration is closed while we confirm the current official Qiyas/ETEC structure. The LMS covers Reading, Structure, Listening, and Compositional Analysis as four MCQ skills — without speaking or essay tasks.`,
+      `Ten-week STEP preparation (diagnostic, four phases, section practice, timed mocks). Public structure: 100 scored MCQs, CEFR-based, Reading 40% · Structure 30% · Listening 20% · Analysis 10%, about three hours including instructions. Study sequence and per-section clocks are Speakify pacing — not confirmed test-day order. Registration stays closed.`,
     levelBadge: "Advanced",
     category: "test-prep",
     accent: "#059669",
@@ -207,10 +207,10 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     ctaHref: "/courses/step-preparation",
     duration: `${STEP_TOTAL_WEEKS} weeks`,
     highlights: [
-      "Ten-week accelerator with diagnostic and phase checkpoints",
-      "Four MCQ skills: Reading, Structure, Listening, Compositional Analysis",
-      "No speaking or essay tasks in this programme",
-      "Timed drills and full mock practice",
+      "Reading 40% · Structure 30% · Listening 20% · Analysis 10%",
+      "MCQ only — no speaking or free essay (not Qiyas EPT)",
+      "One-play listening; stems hidden during audio",
+      "Speakify study target 80+ — institutions set their own cutoffs",
     ],
   },
   {

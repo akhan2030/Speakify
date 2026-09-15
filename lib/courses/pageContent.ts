@@ -179,10 +179,10 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
       "Students targeting English course exemption or postgraduate admission",
     ],
     outcomes: [
-      "Reading strategies for long and short passages",
-      "Grammar accuracy for Structure items under time pressure",
-      "Listening practice for one-play dialogues",
-      "Punctuation and sentence logic for Compositional Analysis",
+      "Skimming and scanning for the 40% reading component",
+      "Grammar accuracy for Structure (30%) under Speakify study clocks",
+      "One-play listening (20%) with A–D only during audio",
+      "Punctuation and sentence logic for Compositional Analysis (10%)",
     ],
     skills: [
       "Reading Comprehension",

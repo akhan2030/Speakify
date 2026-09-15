@@ -1,4 +1,5 @@
 "use client";
+import { SPEAKIFY_COLOR } from "@/lib/brand/tokens";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -8,8 +9,8 @@ import { PageSpinner } from "@/components/StudentSidebar";
 import { STEP_ROUTES } from "@/lib/step/paths";
 import type { StepMcqOption } from "@/lib/step/types";
 
-const NAVY = "#0d1b35";
-const GOLD = "#c9972c";
+const NAVY = SPEAKIFY_COLOR.navy900;
+const GOLD = SPEAKIFY_COLOR.gold;
 
 type DiagnosticResult = {
   score: number;
@@ -22,6 +23,7 @@ type DiagnosticResult = {
 export default function StepDiagnosticPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [alreadyDone, setAlreadyDone] = useState(false);
   const [instructionsAccepted, setInstructionsAccepted] = useState(false);
   const [result, setResult] = useState<DiagnosticResult | null>(null);
@@ -45,19 +47,43 @@ export default function StepDiagnosticPage() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/step/diagnostic");
-      const json = await res.json();
-      if (json.completed) {
-        setAlreadyDone(true);
-      } else {
-        setQuestions(json.questions ?? []);
-        setTimeLimit(json.timeLimitMinutes ?? 45);
+      try {
+        const res = await fetch("/api/step/diagnostic");
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(json.error || "Could not load diagnostic");
+        }
+        if (json.completed) {
+          setAlreadyDone(true);
+        } else {
+          setQuestions(json.questions ?? []);
+          setTimeLimit(json.timeLimitMinutes ?? 45);
+        }
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Could not load diagnostic");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, []);
 
   if (loading) return <PageSpinner />;
+
+  if (loadError) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-lg font-bold text-red-700">{loadError}</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 rounded-xl px-6 py-2 text-sm font-semibold text-speakify-navy"
+          style={{ backgroundColor: GOLD }}
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   if (alreadyDone && !result) {
     return (
@@ -68,7 +94,7 @@ export default function StepDiagnosticPage() {
         <button
           type="button"
           onClick={() => router.push(STEP_ROUTES.home)}
-          className="mt-4 rounded-xl px-6 py-2 text-sm font-semibold text-[#0d1b35]"
+          className="mt-4 rounded-xl px-6 py-2 text-sm font-semibold text-speakify-navy"
           style={{ backgroundColor: GOLD }}
         >
           Go to dashboard
@@ -90,7 +116,7 @@ export default function StepDiagnosticPage() {
           <p className="mt-4 text-4xl font-extrabold tabular-nums">
             Your diagnostic score: {result.score}/100
           </p>
-          <p className="mt-6 text-lg font-bold text-[#c9972c]">
+          <p className="mt-6 text-lg font-bold text-speakify-gold">
             You are placed in Phase {result.startingPhase} — {result.phaseTitle}
           </p>
           <p className="mt-3 text-sm text-white/80">
@@ -98,7 +124,7 @@ export default function StepDiagnosticPage() {
           </p>
           <Link
             href={STEP_ROUTES.home}
-            className="mt-8 inline-block rounded-xl px-6 py-3 text-sm font-bold text-[#0d1b35]"
+            className="mt-8 inline-block rounded-xl px-6 py-3 text-sm font-bold text-speakify-navy"
             style={{ backgroundColor: GOLD }}
           >
             Start Phase {result.startingPhase} →
@@ -122,7 +148,7 @@ export default function StepDiagnosticPage() {
             Before you begin — read carefully
           </p>
           <ul className="mt-6 space-y-3 text-sm text-slate-700">
-            <li>✦ 40 questions: 10 Reading · 10 Structure · 10 Listening · 10 Compositional</li>
+            <li>✦ 40 questions: 10 Reading · 10 Structure · 10 Listening · 10 Compositional (equal sample to place you — not the live 40/30/20/10 mix)</li>
             <li>✦ Time allowed: {timeLimit} minutes</li>
             <li>✦ Choose one answer only: A, B, C, or D</li>
             <li>✦ You can navigate between questions using the arrows</li>
@@ -135,7 +161,7 @@ export default function StepDiagnosticPage() {
           <button
             type="button"
             onClick={() => setInstructionsAccepted(true)}
-            className="mt-8 w-full rounded-xl px-6 py-3 text-sm font-bold text-[#0d1b35] sm:w-auto"
+            className="mt-8 w-full rounded-xl px-6 py-3 text-sm font-bold text-speakify-navy sm:w-auto"
             style={{ backgroundColor: GOLD }}
           >
             I understand — Start the Diagnostic →
@@ -155,7 +181,7 @@ export default function StepDiagnosticPage() {
           40 questions · 10 Reading + 10 Structure + 10 Listening + 10 Compositional
         </p>
         <p className="mt-1 text-sm text-slate-500">
-          Timed: {timeLimit} minutes · 4 options (A–D) · Sets your starting phase
+          Timed: {timeLimit} minutes · MCQ A–D · Sets your starting phase · Practice scores are not official CEFR
         </p>
       </div>
       <StepMcqRunner

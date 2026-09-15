@@ -11,92 +11,59 @@ description: >-
 
 ## Quick reference
 
-| Field | Value |
-|-------|-------|
-| Full name | Standardized Test of English Proficiency |
-| Administrator | Qiyas (ETEC) — [qiyas.sa](https://qiyas.sa) |
-| Format | 100 MCQs (A–D), computer-based, ~150 min |
-| Score | 0–100 (no pass/fail), valid 3 years |
-| Speaking / Writing | **Not included** |
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Full name | Standardized Test of English Proficiency | High |
+| Administrator | Qiyas / ETEC | High |
+| Framework | CEFR-based (ETEC). Speakify scores are **not** official CEFR certificates. | High |
+| Format | 100 scored MCQs (A–D) + unscored trial items | High |
+| Seat time | Three hours including instructions | High |
+| Components | Reading 40% · Structure 30% · Listening 20% · Compositional Analysis 10% | High |
+| Scored counts | 40 / 30 / 20 / 10 if 1 point per item | Inferred |
+| Section order / clocks | Speakify study sequence 60/45/30/15 — **not** confirmed test-day | Study |
+| Speaking / essay | **Not included** | High |
+| Not EPT | EPT is a different Qiyas test (no listening, typically 80/90 min) | High |
 
-### Section weights
+Official pages (government, not commercial prep):
+- ETEC language tests: https://etec.gov.sa/en/productsandservices/Qiyas/lingual
+- Candidate e-services: https://e-services.etec.gov.sa/Qiyas.TRAS.Web.Internet/
+- Do not treat https://qiyas.sa (prep-site branding) as the official portal.
 
-| Section | % | Questions | ~Time |
-|---------|---|-----------|-------|
-| Reading Comprehension | 40% | 40 | 60 min |
-| Structure (Grammar) | 30% | 30 | 45 min |
-| Listening | 20% | 20 | 30 min |
-| Compositional Analysis | 10% | 10 | 15 min |
+Canonical facts live in `lib/step/officialBlueprint.ts` and `lib/step/examModel.ts`.
+Public JSON: `GET /api/step/exam-model`.
 
-Official pages:
-- Overview: https://qiyas.sa/%d8%b3%d8%aa%d9%8a%d8%a8
-- Trial test info: https://qiyas.sa/%D8%AA%D8%AC%D8%B1%D9%8A%D8%A8%D9%8A
+Public registration stays **closed** until a 2025/2026 candidate notice confirms order and scoring scale.
 
 ## When to use this skill
 
 1. User asks about STEP format, scoring, or preparation
 2. Building STEP LMS pages, mocks, or question banks
-3. Comparing STEP vs IELTS/TOEFL for Saudi learners
+3. Comparing STEP vs IELTS/TOEFL/EPT for Saudi learners
 4. Running or extending STEP research/content agents
 
 ## Codebase locations
 
 | Asset | Path |
 |-------|------|
-| Exam model (canonical) | `lib/step/examModel.ts` |
+| Sourced blueprint | `lib/step/officialBlueprint.ts` |
+| Exam model | `lib/step/examModel.ts` |
+| Student exam brief | `app/dashboard/step/student/exam-brief/page.tsx` |
 | Question types | `lib/step/types.ts` |
 | AI prompts | `lib/step/prompts.ts` |
-| Research agent (scrape + embed) | `agent/stepResearchAgent.js` |
+| Research agent | `agent/stepResearchAgent.js` |
 | Question generator | `agent/stepQuestionAgent.js` |
-| Database setup | `supabase/step_content_setup.sql` |
-| Registration slug | `step-test` in `lib/registration.ts` |
-| Course catalog | `step-preparation` in `lib/courses/catalog.ts` |
-
-## Research workflow
-
-1. **Read the model first** — `lib/step/examModel.ts` has section specs, strategies, and URLs
-2. **Scrape official sources** — run research agent:
-   ```bash
-   npm run agent:step-research
-   ```
-   Requires `step_knowledge` table (run `supabase/step_content_setup.sql` first)
-3. **Generate practice content** — run question agent:
-   ```bash
-   npm run agent:step-questions
-   npm run agent:step-questions -- --section=reading
-   ```
-4. **Verify** — check `step_knowledge` and `step_practice_bank` in Supabase
+| Registration slug | `step-test` (closed) |
+| Course catalog | `step-preparation` |
 
 ## Content generation rules
 
-Always follow official STEP constraints from `lib/step/examModel.ts`:
-
-- **Reading**: Numbered paragraphs (not line numbers); questions follow paragraph order; bold words → vocabulary questions; title/main-idea questions last per passage
-- **Structure**: Single grammar focus per item; ~40s per question; tenses and prepositions are highest frequency
-- **Listening**: Dialogue heard once; transcript for practice only; test numbers, dates, idioms
+- **Reading**: Numbered paragraphs; questions follow paragraph order; bold words → vocabulary; title/main-idea last per passage
+- **Structure**: One grammar focus; tenses and prepositions highest frequency
+- **Listening**: Dialogue + **spoken question** in the transcript; one play; UI hides written stem during audio
 - **Compositional Analysis**: Punctuation, word order, sentence combining, find-incorrect-underlined
 
-Do NOT generate IELTS band descriptors, speaking prompts, or essay tasks for STEP.
-
-## STEP vs IELTS (for Saudi learners)
-
-| | STEP | IELTS |
-|---|------|-------|
-| Items | 100 MCQ | Mixed formats |
-| Productive skills | None | Speaking + Writing |
-| Score | 0–100 | Bands 0–9 |
-| Local recognition | Primary for Saudi universities | International |
-| Admin | Qiyas / ETEC | British Council / IDP |
+Do NOT generate IELTS speaking/essays, EPT papers, or fake university cutoff scores as universal STEP fact.
 
 ## Extending the model
 
-When new Qiyas information is found:
-
-1. Update `STEP_EXAM_MODEL` / `STEP_SECTIONS` in `lib/step/examModel.ts`
-2. Add URL to `STEP_URLS` in `agent/stepResearchAgent.js`
-3. Re-run `npm run agent:step-research`
-4. Adjust `agent/stepQuestionAgent.js` prompts if question types changed
-
-## Additional reference
-
-For detailed official question-type examples (reading skills, structure grammar points, listening dialogues, compositional analysis), see the NCA student guide sections in the research agent output or ask the agent to read `lib/step/examModel.ts` section `questionTypes` arrays.
+When a current official notice arrives: update `officialBlueprint.ts` confidence, then `examModel.ts`, mock/mini/exit constants, prompts, `programJourneys.ts`. Reopen registration only if policy in `officialBlueprint.ts` is satisfied.

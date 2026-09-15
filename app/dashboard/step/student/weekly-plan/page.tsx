@@ -1,12 +1,13 @@
 "use client";
+import { SPEAKIFY_COLOR } from "@/lib/brand/tokens";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
 import { STEP_ROUTES } from "@/lib/step/paths";
 
-const GOLD = "#c9972c";
-const NAVY = "#0d1b35";
+const GOLD = SPEAKIFY_COLOR.gold;
+const NAVY = SPEAKIFY_COLOR.navy900;
 
 type Mission = {
   day: string;
@@ -33,7 +34,7 @@ export default function StepWeeklyPlanPage() {
         Weekly Plan
       </h1>
       <p className="text-sm text-slate-600">
-        One adaptive STEP course — your daily focus rotates through all four Qiyas sections.
+        One adaptive STEP course — daily focus follows the 40 / 30 / 20 / 10 weights. Sunday is the sourced exam brief.
       </p>
       <ul className="space-y-4">
         {missions.map((m) => (

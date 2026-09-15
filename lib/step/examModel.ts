@@ -1,20 +1,21 @@
 /**
  * Canonical STEP exam model for Speakify study tools.
  *
- * Official public source: NCA “STEP: A Guide for Students”, 19 March 2012
- * (Dr. Abdulrahman H. al-Shamrani). A Third Edition NCA pamphlet repeats
- * RC 40 / ST 30 / LC 20 / CA 10, 100 scored items, and ~3 hour seat time
- * including trial items. Those weights may have been revised; ETEC public
- * pages do not republish them. Do not cite commercial https://qiyas.sa as
- * the government portal. Candidate login: e-services.etec.gov.sa.
+ * High-confidence public facts (ETEC + NCA + corroborating news): CEFR-based,
+ * 100 scored four-option MCQs plus trial items, ~3 hour seat time, four
+ * components at 40 / 30 / 20 / 10, no speaking or free essay.
  *
- * Per-section minutes, CBT return policy, score validity years, and fee
- * are Speakify study conventions unless a 2025/2026 official notice confirms them.
+ * Speakify study conventions (not live test-day fact): section order and
+ * 60/45/30/15 minute clocks. Scores here are percent-correct practice, not
+ * an official CEFR certificate or a confirmed 0–100 Qiyas legend.
  */
 
+import { SPEAKIFY_COLOR } from "@/lib/brand/tokens";
 import {
+  STEP_EPT_NOTE,
   STEP_OFFICIAL_SOURCES,
   STEP_REGISTRATION_POLICY,
+  STEP_STUDY_SEQUENCE_NOTE,
 } from "./officialBlueprint";
 
 export const STEP_EXAM_ID = "step" as const;
@@ -27,9 +28,9 @@ export type StepSectionId =
 
 export type StepSection = {
   id: StepSectionId;
-  /** Official English label used by NCA */
+  /** Official English label used by Qiyas */
   label: string;
-  /** Arabic label from NCA student materials */
+  /** Arabic label on qiyas.sa */
   labelAr: string;
   weightPercent: number;
   questionCount: number;
@@ -52,7 +53,13 @@ export type StepExamModel = {
   website: string;
   sourceDocument: string;
   registrationPolicy: string;
+  studySequenceNote: string;
+  eptNote: string;
+  cefrBased: true;
   totalQuestions: number;
+  /** Official published seat time including instructions and trial items */
+  totalSeatMinutes: number;
+  /** Speakify scored-practice clock (not an official per-section sum) */
   totalMinutes: number;
   secondsPerQuestionAvg: number;
   format: "computer_based";
@@ -71,6 +78,7 @@ export type StepExamModel = {
     channels: string[];
   };
   sections: StepSection[];
+  /** Speakify study rail — not confirmed CBT navigation order */
   sectionOrder: StepSectionId[];
   excludedSkills: string[];
   preparationTips: string[];
@@ -85,7 +93,7 @@ export const STEP_SECTIONS: Record<StepSectionId, StepSection> = {
     labelAr: "فهم المقروء",
     weightPercent: 40,
     questionCount: 40,
-    minutesBudget: 60,
+    minutesBudget: 60, // Speakify study clock — not official
     secondsPerQuestion: 90,
     description:
       "Long and short passages on educational and social topics. Tests direct comprehension, inference, vocabulary-in-context, task-based reading, and critical evaluation.",
@@ -119,7 +127,7 @@ export const STEP_SECTIONS: Record<StepSectionId, StepSection> = {
     labelAr: "التراكيب النحوية",
     weightPercent: 30,
     questionCount: 30,
-    minutesBudget: 45,
+    minutesBudget: 45, // Speakify study clock — not official
     secondsPerQuestion: 40,
     description:
       "Multiple-choice grammar items. Choose the grammatically correct completion or response. Distractors may look plausible but break grammar or meaning.",
@@ -162,7 +170,7 @@ export const STEP_SECTIONS: Record<StepSectionId, StepSection> = {
     labelAr: "الاستماع",
     weightPercent: 20,
     questionCount: 20,
-    minutesBudget: 30,
+    minutesBudget: 30, // Speakify study clock — not official
     secondsPerQuestion: 90,
     description:
       "Short and longer dialogues played once only. Questions appear after each recording. Test-takers see answer choices only — not the transcript or printed questions during the live exam.",
@@ -195,7 +203,7 @@ export const STEP_SECTIONS: Record<StepSectionId, StepSection> = {
     labelAr: "التحليل الكتابي والمفردات",
     weightPercent: 10,
     questionCount: 10,
-    minutesBudget: 15,
+    minutesBudget: 15, // Speakify study clock — not official
     secondsPerQuestion: 90,
     description:
       "Written-form analysis: punctuation, capitalization, word order, sentence combining, paragraph logic, and identifying incorrect underlined words. No free writing or speaking.",
@@ -232,17 +240,24 @@ export const STEP_EXAM_MODEL: StepExamModel = {
   administrator: "National Center for Assessment (Qiyas) — ETEC",
   administratorAr: "المركز الوطني للقياس — هيئة تقويم التعليم والتدريب",
   website: STEP_OFFICIAL_SOURCES.etecCandidateLogin.url,
-  sourceDocument: `${STEP_OFFICIAL_SOURCES.ncaStudentGuide2012.title} (${STEP_OFFICIAL_SOURCES.ncaStudentGuide2012.dated})`,
+  sourceDocument:
+    "ETEC public STEP description + NCA student guide (2012) / Third Edition pamphlet; 40/30/20/10 corroborated by Ajel. Not a 2026 candidate bulletin.",
   registrationPolicy: STEP_REGISTRATION_POLICY,
+  studySequenceNote: STEP_STUDY_SEQUENCE_NOTE,
+  eptNote: STEP_EPT_NOTE,
+  cefrBased: true,
   totalQuestions: 100,
+  totalSeatMinutes: 180,
   totalMinutes: 150,
   secondsPerQuestionAvg: 90,
   format: "computer_based",
   deliveryRules: [
-    "NCA 2012: 100 scored four-option MCQs across RC, ST, LC, and CA",
-    "NCA 2012: non-scored trial items and instructions bring total seat time to about 3 hours",
-    "NCA 2012: no speaking section; Compositional Analysis is not a free essay",
-    "NCA pamphlet: listening plays once; candidates see A–D only, not the dialogue or the questions",
+    "ETEC: CEFR-based English proficiency test; 100 scored four-option MCQs plus unscored trial items",
+    "ETEC: three-hour allowance including pre-test instructions; paper sittings three times per year, CBT more continuous",
+    "No speaking section and no free-essay writing — Compositional Analysis is MCQ analysis of written form",
+    "Listening: recording once; live candidates see A–D only, not the dialogue or printed stems (NCA pamphlet)",
+    STEP_STUDY_SEQUENCE_NOTE,
+    STEP_EPT_NOTE,
     "Speakify mocks lock a section after submit — live CBT return-to-previous-section is unconfirmed",
     "Dictionary and external aids are not permitted in Speakify timed practice",
   ],
@@ -252,13 +267,16 @@ export const STEP_EXAM_MODEL: StepExamModel = {
     passFail: false,
     validityYears: 0,
     scoringMethod:
-      "NCA 2012 publishes 100 scored items and component percentages. It does not document IRT, a 0–100 report legend, or score validity years. Speakify study scores are percent-correct on practice items.",
+      "Institutions set their own cutoffs; there is no universal pass mark. Speakify numbers are percent-correct on practice items, not a confirmed Qiyas 0–100 legend, IRT model, or official CEFR rating.",
     typicalUniversityMinimum: 0,
-    excellenceTarget: 0,
+    excellenceTarget: 80,
   },
   registration: {
-    feeSar: 0,
-    channels: ["ETEC / Qiyas candidate e-services (Nafath) — live fee not confirmed in this document"],
+    feeSar: 150,
+    channels: [
+      "ETEC / Qiyas candidate e-services (Nafath)",
+      "Fee 150 SAR and 10-attempt / 3-year limit: medium confidence (Ajel) — confirm on the live payment screen",
+    ],
   },
   sections: Object.values(STEP_SECTIONS),
   sectionOrder: ["reading", "structure", "listening", "compositional_analysis"],
@@ -281,7 +299,8 @@ export const STEP_EXAM_MODEL: StepExamModel = {
     "Using speakers instead of headphones during practice",
   ],
   researchUrls: [
-    STEP_OFFICIAL_SOURCES.etecPublic.url,
+    STEP_OFFICIAL_SOURCES.etecLingual.url,
+    STEP_OFFICIAL_SOURCES.etecMustaqbalhum.url,
     STEP_OFFICIAL_SOURCES.etecCandidateLogin.url,
   ],
 };
@@ -300,7 +319,7 @@ export function getStepSectionTimeBudgets(): Record<StepSectionId, number> {
   ) as Record<StepSectionId, number>;
 }
 
-/** Map a raw score (0–100) to a readiness band for LMS dashboards */
+/** Map Speakify practice percent to an internal readiness band — not a university cutoff. */
 export function stepScoreBand(score: number): {
   label: string;
   color: string;
@@ -310,33 +329,33 @@ export function stepScoreBand(score: number): {
     return {
       label: "Excellence",
       color: "#059669",
-      description: "Competitive for most programmes; may qualify for English course exemption",
+      description: "Speakify Phase 4 target — keep full mocks under timed conditions",
     };
   }
   if (score >= 70) {
     return {
       label: "Strong",
       color: "#2563eb",
-      description: "Meets many university minimums; room to push toward 80+",
+      description: "Solid practice level — push weak sections toward the 80 study target",
     };
   }
   if (score >= 65) {
     return {
-      label: "Threshold",
-      color: "#c9972c",
-      description: "Near typical admission cutoffs — targeted section practice recommended",
+      label: "Competitive",
+      color: SPEAKIFY_COLOR.gold,
+      description: "Speakify Phase 2 exit band — not a universal university cutoff",
     };
   }
   if (score >= 50) {
     return {
       label: "Developing",
       color: "#ea580c",
-      description: "Foundation grammar and reading strategies needed",
+      description: "Foundation grammar and reading strategies still need timed reps",
     };
   }
   return {
     label: "Foundation",
     color: "#dc2626",
-    description: "Build core grammar, vocabulary, and timed practice habits",
+    description: "Build core grammar, vocabulary, and one-play listening habits",
   };
 }

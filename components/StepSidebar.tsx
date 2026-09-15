@@ -9,6 +9,7 @@ import { STEP_ROUTES } from "@/lib/step/paths";
 
 export type StepActivePage =
   | "dashboard"
+  | "exam-brief"
   | "weekly-plan"
   | "accelerator"
   | "reading"
@@ -57,6 +58,12 @@ const NAV_GROUPS: NavGroup[] = [
         label: "My Phase Journey",
         href: STEP_ROUTES.myJourney,
         icon: "🗺",
+      },
+      {
+        id: "exam-brief",
+        label: "Exam brief",
+        href: STEP_ROUTES.examBrief,
+        icon: "📘",
       },
       {
         id: "weekly-plan",

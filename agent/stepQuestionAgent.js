@@ -35,17 +35,19 @@ const SECTION_COUNTS = {
 };
 
 const SYSTEM_MESSAGE = `You are an expert STEP (Saudi Standardized Test of English Proficiency) item writer.
-STEP is administered by Qiyas (ETEC). Format: 100 four-option MCQs, score 0–100.
-Sections: Reading 40%, Structure 30%, Listening 20%, Compositional Analysis 10%.
-No speaking. No essay writing.
+STEP is administered by Qiyas (ETEC). ETEC describes it as CEFR-based.
+Format: 100 scored four-option MCQs plus unscored trial items. Seat time ~3 hours including instructions.
+Component weights: Reading 40%, Structure 30%, Listening 20%, Compositional Analysis 10%.
+No speaking. No free essay. Do not write Qiyas EPT papers (EPT has no listening).
+Item counts 40/30/20/10 are inferred from weights. Do not claim test-day section order.
 
 Every question MUST have: stem, options {A,B,C,D}, correct (A|B|C|D), explanation.
 Reading: numbered paragraphs, questions follow paragraph order, include word_meaning items.
-Listening: include full transcript and recordingNumber; questions test details/numbers/idioms.
+Listening: include full transcript AND a spoken question after the dialogue (live candidates do not see the printed stem during audio); recordingNumber; details/numbers/idioms; audio once.
 Structure: one grammar point per item; plausible distractors.
 Compositional Analysis: punctuation, word order, sentence combining, underline-error types.
 
-Use Saudi/Gulf contexts where natural. Return ONLY valid JSON. No markdown.`;
+Use Saudi/Gulf contexts where natural. Difficulty around CEFR B1–B2 for typical university applicants. Return ONLY valid JSON. No markdown.`;
 
 function log(...args) {
   console.log(`[${AGENT_NAME}]`, ...args);

@@ -1,4 +1,4 @@
-import { parseBankContent, passagePlainText } from "../bankContent";
+import { extractNormalizedBankQuestions, passagePlainText } from "../bankContent";
 import {
   FALLBACK_COMPOSITIONAL_ITEMS,
   FALLBACK_LISTENING_RECORDINGS,
@@ -8,6 +8,7 @@ import {
 import { getStepSupabase } from "../enrollmentService";
 import type { StepMcqQuestion } from "../types";
 import type { StepSectionId } from "../examModel";
+import { MINI_MOCK_SECTION_COUNTS } from "./constants";
 import type { MockExamPayload, MockExamQuestion } from "../mockExam/types";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -42,23 +43,7 @@ async function loadBankPool(section: StepSectionId): Promise<StepMcqQuestion[]> 
 
   const all: StepMcqQuestion[] = [];
   for (const row of data ?? []) {
-    const parsed = parseBankContent(section, row.content);
-    if (!parsed) continue;
-    if (parsed.kind === "reading") {
-      for (const p of parsed.passages) {
-        for (const q of p.questions ?? []) {
-          all.push({ ...q, passageRef: passagePlainText(p) });
-        }
-      }
-    } else if (parsed.kind === "listening") {
-      for (const r of parsed.recordings) {
-        for (const q of r.questions ?? []) {
-          all.push({ ...q, recordingNumber: r.recordingNumber });
-        }
-      }
-    } else {
-      all.push(...parsed.items);
-    }
+    all.push(...extractNormalizedBankQuestions(section, row.content));
   }
   return all;
 }
@@ -138,10 +123,10 @@ export async function buildMiniMockExam(
   const used = new Set(excludeQuestionIds);
   const allQuestions: MockExamQuestion[] = [];
   const counts = {
-    reading: 5,
-    structure: 5,
-    listening: 5,
-    compositional_analysis: 5,
+    reading: MINI_MOCK_SECTION_COUNTS[0],
+    structure: MINI_MOCK_SECTION_COUNTS[1],
+    listening: MINI_MOCK_SECTION_COUNTS[2],
+    compositional_analysis: MINI_MOCK_SECTION_COUNTS[3],
   };
 
   const bankReading = await loadBankPool("reading");

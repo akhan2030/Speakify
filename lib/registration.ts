@@ -126,10 +126,10 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     description:
       "Preparation for the Saudi Standardized Test of English Proficiency (Qiyas) — computer-based MCQ practice across reading, grammar, listening, and compositional analysis.",
     bullets: [
-      "Ten-week accelerator aligned to the STEP LMS (not an 8-week course)",
-      "Four MCQ skills — no speaking or essay tasks",
-      "Diagnostic, section practice, and timed mocks",
-      "Registration is closed while we confirm the current official test structure",
+      "Reading 40% · Structure 30% · Listening 20% · Analysis 10% (sourced public weights)",
+      "Four MCQ skills — no speaking or essay; not Qiyas EPT",
+      "Diagnostic, weighted mini mocks, and full timed mocks",
+      "Registration stays closed until 2026 test-day order and clocks are confirmed",
     ],
     accent: "#059669",
     registerPath: "/register/step-test",

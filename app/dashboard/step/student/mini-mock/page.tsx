@@ -1,12 +1,13 @@
 "use client";
+import { SPEAKIFY_COLOR } from "@/lib/brand/tokens";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PageSpinner } from "@/components/StudentSidebar";
 
-const NAVY = "#0d1b35";
-const GOLD = "#c9972c";
+const NAVY = SPEAKIFY_COLOR.navy900;
+const GOLD = SPEAKIFY_COLOR.gold;
 
 type MiniRow = {
   mock_number: number;
@@ -85,12 +86,12 @@ export default function MiniMockLandingPage() {
           STEP Mini Mock
         </h1>
         <p className="mt-2 text-slate-600">
-          20 questions · 25 minutes · All 4 sections · Instant results
+          20 questions · 25 minutes · Weighted like STEP 40/30/20/10
         </p>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        {["5 Reading questions", "5 Structure questions", "5 Listening questions", "5 Compositional questions"].map(
+        {["8 Reading (40%)", "6 Structure (30%)", "4 Listening (20%)", "2 Analysis (10%)"].map(
           (label) => (
             <div key={label} className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm">
               {label}
@@ -166,7 +167,7 @@ export default function MiniMockLandingPage() {
         type="button"
         onClick={handleStart}
         disabled={starting}
-        className="rounded-xl px-8 py-3 text-sm font-bold text-[#0d1b35] disabled:opacity-60"
+        className="rounded-xl px-8 py-3 text-sm font-bold text-speakify-navy disabled:opacity-60"
         style={{ background: GOLD }}
       >
         {starting ? "Starting…" : `Start Mini Mock #${String(nextNumber).padStart(2, "0")} →`}

@@ -19,10 +19,11 @@ export const WEEKLY_STEP_MISSIONS: StepDayMission[] = [
   {
     day: "Sunday",
     dayIndex: 0,
-    title: "STEP format review",
-    description: "Review Qiyas format, section weights, timing rules, and exam-day strategy.",
-    minutes: 30,
-    href: `${BASE}/weekly-plan`,
+    title: "STEP exam brief",
+    description:
+      "Sourced structure: 40/30/20/10 weights, 100 scored MCQs, 3-hour seat. Study sequence is Speakify’s — not test-day order.",
+    minutes: 25,
+    href: `${BASE}/exam-brief`,
   },
   {
     day: "Monday",

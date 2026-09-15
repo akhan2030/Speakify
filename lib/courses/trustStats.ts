@@ -38,8 +38,8 @@ export const COURSE_TRUST_STATS: Partial<
     full: "91% of GT students who complete Elite reach Band 7.0 or above.",
   },
   "step-preparation": {
-    card: "89% hit university targets",
-    full: "89% of STEP Accelerator students hit their university English target score.",
+    card: "Enrolment closed",
+    full: "Public STEP registration is closed while we finish a sourced Qiyas/ETEC course. Existing students can still sign in.",
   },
   "english-pathway": {
     card: "87% advance a Pathway level",
