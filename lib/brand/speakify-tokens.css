@@ -76,6 +76,21 @@
 .border-speakify-line {
   border-color: var(--speakify-line);
 }
+.btn-speakify-gold {
+  background-color: var(--speakify-gold);
+  color: var(--speakify-navy-900);
+  border-radius: var(--speakify-radius-button);
+  box-shadow: var(--speakify-shadow-button);
+  font-weight: 600;
+}
+.btn-speakify-navy-outline {
+  background-color: var(--speakify-card);
+  color: var(--speakify-navy-900);
+  border: 1px solid var(--speakify-navy-900);
+  border-radius: var(--speakify-radius-button);
+  box-shadow: var(--speakify-shadow-button);
+  font-weight: 600;
+}
 .bg-speakify-navy:disabled,
 button.bg-speakify-navy:disabled {
   background-color: var(--speakify-line);
