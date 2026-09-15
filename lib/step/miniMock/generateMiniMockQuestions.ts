@@ -1,4 +1,4 @@
-import { extractNormalizedBankQuestions, passagePlainText } from "../bankContent";
+import { parseBankContent, passagePlainText } from "../bankContent";
 import {
   FALLBACK_COMPOSITIONAL_ITEMS,
   FALLBACK_LISTENING_RECORDINGS,
@@ -8,8 +8,8 @@ import {
 import { getStepSupabase } from "../enrollmentService";
 import type { StepMcqQuestion } from "../types";
 import type { StepSectionId } from "../examModel";
-import { MINI_MOCK_SECTION_COUNTS } from "./constants";
 import type { MockExamPayload, MockExamQuestion } from "../mockExam/types";
+import { MINI_MOCK_SECTION_COUNTS } from "./constants";
 
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
@@ -43,7 +43,23 @@ async function loadBankPool(section: StepSectionId): Promise<StepMcqQuestion[]> 
 
   const all: StepMcqQuestion[] = [];
   for (const row of data ?? []) {
-    all.push(...extractNormalizedBankQuestions(section, row.content));
+    const parsed = parseBankContent(section, row.content);
+    if (!parsed) continue;
+    if (parsed.kind === "reading") {
+      for (const p of parsed.passages) {
+        for (const q of p.questions ?? []) {
+          all.push({ ...q, passageRef: passagePlainText(p) });
+        }
+      }
+    } else if (parsed.kind === "listening") {
+      for (const r of parsed.recordings) {
+        for (const q of r.questions ?? []) {
+          all.push({ ...q, recordingNumber: r.recordingNumber });
+        }
+      }
+    } else {
+      all.push(...parsed.items);
+    }
   }
   return all;
 }
