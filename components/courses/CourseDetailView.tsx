@@ -10,6 +10,7 @@ import { levelBadgeColor, type CourseCatalogItem } from "@/lib/courses/catalog";
 import { loginPathForCourseSlug } from "@/lib/courses/loginPaths";
 import { foundingOfferForCourseSlug } from "@/lib/discounts";
 import FoundingOfferPopup from "@/components/offers/FoundingOfferPopup";
+import StepIndependentPrepNotice from "@/components/step/StepIndependentPrepNotice";
 
 type Props = {
   course: CourseCatalogItem;
@@ -30,13 +31,15 @@ export default function CourseDetailView({ course }: Props) {
     : isIeltsGeneralCourse(course.slug)
       ? getRelatedIeltsGeneralCourses(course.slug)
       : [];
+  const isStepCourse = course.slug === "step-preparation";
   const primaryHref = foundingOffer
     ? foundingOffer.ctaHref
-    : course.ctaLabel === "Start Learning"
+    : isStepCourse || course.ctaLabel === "Start Learning"
       ? course.ctaHref
       : "/placement-test";
-  const primaryLabel =
-    course.ctaLabel === "Start Learning"
+  const primaryLabel = isStepCourse
+    ? "Register for STEP"
+    : course.ctaLabel === "Start Learning"
       ? foundingOffer
         ? "Claim founding price"
         : "Start Learning"
@@ -92,6 +95,7 @@ export default function CourseDetailView({ course }: Props) {
           <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">
             {course.description}
           </p>
+          {isStepCourse ? <StepIndependentPrepNotice tone="hero" /> : null}
 
           <div className="mt-6 flex flex-wrap gap-2">
             <span

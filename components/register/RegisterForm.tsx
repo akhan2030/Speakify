@@ -10,6 +10,7 @@ import {
 } from "@/lib/registration";
 import { buildLoginPath } from "@/lib/courses/loginPaths";
 import { isValidTrack, type AcceleratorTrackId } from "@/lib/accelerator/tracks";
+import StepIndependentPrepNotice from "@/components/step/StepIndependentPrepNotice";
 
 function Spinner() {
   return (
@@ -246,6 +247,7 @@ function RegisterFormInner({
           <p className="mt-1 text-sm text-slate-500">
             Create your account to start learning
           </p>
+          {slug === "step-test" ? <StepIndependentPrepNotice tone="form" /> : null}
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>

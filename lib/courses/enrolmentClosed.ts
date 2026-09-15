@@ -32,13 +32,6 @@ const LEGAL: ComingSoonCopy = {
   registerError: "Legal English registration is coming soon.",
 };
 
-const STEP: ComingSoonCopy = {
-  title: "Speakify STEP Accelerator",
-  body:
-    "Speakify STEP preparation is not open for new registration. Existing students can still sign in. The LMS now follows sourced public structure (100 scored MCQs, 40/30/20/10 weights, ~3-hour seat) while test-day section order and per-section clocks remain unconfirmed.",
-  registerError: "STEP registration is coming soon.",
-};
-
 const KIDS: ComingSoonCopy = {
   title: "Kids English",
   body:
@@ -60,7 +53,6 @@ export const COMING_SOON_COURSE_SLUGS = [
   "business-english",
   "legal-english",
   "kids-english",
-  "step-preparation",
 ] as const;
 
 export function comingSoonForCourseSlug(slug: string): ComingSoonCopy | null {
@@ -77,10 +69,6 @@ export function comingSoonForCourseSlug(slug: string): ComingSoonCopy | null {
       return LEGAL;
     case "kids-english":
       return KIDS;
-    case "step-preparation":
-    case "step-test":
-    case "step":
-      return STEP;
     default:
       return null;
   }
@@ -116,14 +104,6 @@ export function comingSoonRegisterError(
     }
     if (key === "kids-english" || key === "kidsenglish") {
       return KIDS.registerError;
-    }
-    if (
-      key === "step" ||
-      key === "step-test" ||
-      key === "step-preparation" ||
-      key === "step-accelerator"
-    ) {
-      return STEP.registerError;
     }
   }
   return null;

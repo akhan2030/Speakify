@@ -20,6 +20,55 @@ export type LiveClassUserSnapshot = {
   currentPathwayLevel?: string | null;
 };
 
+export type LiveClassCatalog = "standard" | "one_to_one_only";
+
+function enrollmentSet(user: LiveClassUserSnapshot): Set<string> {
+  const slugs = parseEnrollmentSlugs(user.enrolledPrograms);
+  const selected = normalizeSlug(user.programSelected ?? user.programType);
+  return new Set([...slugs, selected].filter(Boolean));
+}
+
+function hasStepEnrollment(enrolled: Set<string>): boolean {
+  for (const slug of enrolled) {
+    if (slug === "step" || slug.startsWith("step_")) return true;
+  }
+  return false;
+}
+
+function hasGroupLiveClassPrograms(enrolled: Set<string>): boolean {
+  for (const slug of enrolled) {
+    if (
+      slug === "ielts" ||
+      slug.startsWith("ielts_") ||
+      slug === "toefl" ||
+      slug.startsWith("toefl_") ||
+      slug.includes("pathway") ||
+      slug.includes("business") ||
+      slug.includes("legal") ||
+      slug.includes("kids")
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** STEP dashboards never offer group live classes. Dual-enrolled students still see groups on IELTS/TOEFL pages. */
+export function liveClassCatalogForUser(
+  user: LiveClassUserSnapshot,
+  requested?: string | null
+): LiveClassCatalog {
+  const raw = String(requested ?? "").trim().toLowerCase();
+  if (raw.includes("one_to_one") || raw.includes("/dashboard/step/")) {
+    return "one_to_one_only";
+  }
+  const enrolled = enrollmentSet(user);
+  if (hasStepEnrollment(enrolled) && !hasGroupLiveClassPrograms(enrolled)) {
+    return "one_to_one_only";
+  }
+  return "standard";
+}
+
 function parseEnrollmentSlugs(value: unknown): string[] {
   const out: string[] = [];
   const add = (raw: string) => {
@@ -67,9 +116,7 @@ export function orientationPackage(): LiveCoursePackage {
 
 export function packagesForStudent(user: LiveClassUserSnapshot): LiveCoursePackage[] {
   const packages: LiveCoursePackage[] = [orientationPackage()];
-  const slugs = parseEnrollmentSlugs(user.enrolledPrograms);
-  const selected = normalizeSlug(user.programSelected ?? user.programType);
-  const enrolled = new Set([...slugs, selected].filter(Boolean));
+  const enrolled = enrollmentSet(user);
   const tier = resolveTier(user);
 
   const add = (pkg: LiveCoursePackage) => {
@@ -110,7 +157,7 @@ export function packagesForStudent(user: LiveClassUserSnapshot): LiveCoursePacka
     });
   }
 
-  if (enrolled.has("step")) {
+  if (hasStepEnrollment(enrolled)) {
     add({
       courseKey: examCourseKey("step", "foundation"),
       kind: "exam_single_tier",

@@ -1,9 +1,12 @@
 /**
  * Canonical STEP exam model for Speakify study tools.
  *
- * High-confidence public facts (ETEC + NCA + corroborating news): CEFR-based,
- * 100 scored four-option MCQs plus trial items, ~3 hour seat time, four
- * components at 40 / 30 / 20 / 10, no speaking or free essay.
+ * Consistent public backbone: CEFR-based, four components at 40 / 30 / 20 / 10,
+ * four-option MCQ, no speaking or free essay.
+ *
+ * Live totals are ranges, not fixed facts: public sources disagree (ETEC/NCA
+ * 100 scored + trial / ~3 hours vs a second Ajel article 117–133 / 2.5–3 hours).
+ * Speakify mocks still use a 100-item weighted pack (40/30/20/10).
  *
  * Speakify study conventions (not live test-day fact): section order and
  * 60/45/30/15 minute clocks. Scores here are percent-correct practice, not
@@ -13,7 +16,10 @@
 import { SPEAKIFY_COLOR } from "@/lib/brand/tokens";
 import {
   STEP_EPT_NOTE,
+  STEP_INDEPENDENT_PREP_DISCLOSURE,
   STEP_OFFICIAL_SOURCES,
+  STEP_PUBLISHED_ITEM_RANGE,
+  STEP_PUBLISHED_SEAT_RANGE,
   STEP_REGISTRATION_POLICY,
   STEP_STUDY_SEQUENCE_NOTE,
 } from "./officialBlueprint";
@@ -34,7 +40,7 @@ export type StepSection = {
   labelAr: string;
   weightPercent: number;
   questionCount: number;
-  /** Approximate minutes; total exam ~150 min for 100 scored questions */
+  /** Speakify study clock for the weighted practice pack — not official */
   minutesBudget: number;
   /** Seconds per question guideline */
   secondsPerQuestion: number;
@@ -56,8 +62,12 @@ export type StepExamModel = {
   studySequenceNote: string;
   eptNote: string;
   cefrBased: true;
+  /** Speakify weighted practice pack size (40/30/20/10) — not a claimed live total */
   totalQuestions: number;
-  /** Official published seat time including instructions and trial items */
+  publishedItemRange: string;
+  publishedSeatRange: string;
+  independentPrepDisclosure: string;
+  /** Upper bound of the published seat range, in minutes (3 hours) */
   totalSeatMinutes: number;
   /** Speakify scored-practice clock (not an official per-section sum) */
   totalMinutes: number;
@@ -241,19 +251,23 @@ export const STEP_EXAM_MODEL: StepExamModel = {
   administratorAr: "المركز الوطني للقياس — هيئة تقويم التعليم والتدريب",
   website: STEP_OFFICIAL_SOURCES.etecCandidateLogin.url,
   sourceDocument:
-    "ETEC public STEP description + NCA student guide (2012) / Third Edition pamphlet; 40/30/20/10 corroborated by Ajel. Not a 2026 candidate bulletin.",
+    "ETEC public STEP description + NCA student guide (2012) / Third Edition pamphlet; 40/30/20/10 consistent across sources. A second Ajel article reports 117–133 questions and 2.5–3 hours vs ETEC/NCA 100 + trial / 3 hours. Independent prep — not a 2026 candidate bulletin.",
   registrationPolicy: STEP_REGISTRATION_POLICY,
   studySequenceNote: STEP_STUDY_SEQUENCE_NOTE,
   eptNote: STEP_EPT_NOTE,
   cefrBased: true,
   totalQuestions: 100,
+  publishedItemRange: STEP_PUBLISHED_ITEM_RANGE,
+  publishedSeatRange: STEP_PUBLISHED_SEAT_RANGE,
+  independentPrepDisclosure: STEP_INDEPENDENT_PREP_DISCLOSURE,
   totalSeatMinutes: 180,
   totalMinutes: 150,
   secondsPerQuestionAvg: 90,
   format: "computer_based",
   deliveryRules: [
-    "ETEC: CEFR-based English proficiency test; 100 scored four-option MCQs plus unscored trial items",
-    "ETEC: three-hour allowance including pre-test instructions; paper sittings three times per year, CBT more continuous",
+    "ETEC: CEFR-based English proficiency test; four-option MCQs; no speaking or free essay",
+    `Live totals are ranges because sources disagree: ${STEP_PUBLISHED_ITEM_RANGE}; ${STEP_PUBLISHED_SEAT_RANGE} (ETEC/NCA 100 + trial / 3 hours vs Ajel 117–133 / 2.5–3 hours)`,
+    "Paper sittings three times per year; CBT more continuous (ETEC public page)",
     "No speaking section and no free-essay writing — Compositional Analysis is MCQ analysis of written form",
     "Listening: recording once; live candidates see A–D only, not the dialogue or printed stems (NCA pamphlet)",
     STEP_STUDY_SEQUENCE_NOTE,

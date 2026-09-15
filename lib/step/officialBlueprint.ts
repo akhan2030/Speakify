@@ -1,7 +1,8 @@
 /**
  * Sourced STEP blueprint for Speakify (independent research pass + NCA/ETEC public text).
  *
- * High confidence is not a live 2026 candidate bulletin. Registration stays closed.
+ * High confidence is not a live 2026 candidate bulletin. Speakify is an independent
+ * prep product: reopen with a visible disclosure, never as implied-official.
  * Do not treat https://qiyas.sa commercial prep as the government portal.
  * Candidate login: Nafath / قياس on e-services.etec.gov.sa.
  *
@@ -47,7 +48,7 @@ export const STEP_OFFICIAL_SOURCES = {
   },
   ajelNews: {
     title: "Mainstream Saudi news (Ajel) reporting STEP structure",
-    note: "Corroborates 40/30/20/10, 150 SAR fee, and up to 10 attempts in three years. Not a government bulletin.",
+    note: "One article corroborates 40/30/20/10, 150 SAR, and up to 10 attempts in three years. A second Ajel article reports 117–133 questions and 2.5–3 hours instead of a flat 100 questions / 3 hours. Same outlet, contradictory totals. Not a government bulletin.",
   },
   etecCandidateLogin: {
     title: "Qiyas candidate e-services (ETEC)",
@@ -57,7 +58,14 @@ export const STEP_OFFICIAL_SOURCES = {
 } as const;
 
 export const STEP_STUDY_SEQUENCE_NOTE =
-  "Speakify study sequence (not confirmed test-day order): Reading → Structure → Listening → Compositional Analysis. Per-section minutes are Speakify pacing. Live STEP is three hours including instructions and unscored trial items.";
+  "Speakify study sequence (not confirmed test-day order): Reading → Structure → Listening → Compositional Analysis. Per-section minutes are Speakify pacing. Live STEP seat time is reported as roughly 2.5–3 hours; public sources disagree on the exact figure.";
+
+/** Student-facing totals — ranges, because the best public sources contradict each other. */
+export const STEP_PUBLISHED_ITEM_RANGE = "approximately 100–130 scored items";
+export const STEP_PUBLISHED_SEAT_RANGE = "roughly 2.5–3 hours";
+
+export const STEP_INDEPENDENT_PREP_DISCLOSURE =
+  "Structure based on the most current publicly available Qiyas/ETEC information; not verified against a live official test-day account. Speakify is not affiliated with or certified by Qiyas/ETEC.";
 
 export const STEP_EPT_NOTE =
   "Do not confuse STEP with Qiyas EPT. EPT is a shorter placement test (typically 80 questions / 90 minutes) covering Structure, Reading, and Compositional Analysis with no listening. Speakify STEP always includes listening.";
@@ -90,9 +98,10 @@ export const STEP_SOURCE_CHECKLIST: StepFact[] = [
   {
     id: "format",
     label: "Item format",
-    value: "100 scored four-option MCQs (A–D), plus unscored trial items. No speaking. No free essay.",
+    value:
+      "Four-option MCQs (A–D). No speaking. No free essay. ETEC/NCA describe 100 scored items plus unscored trial items; a second Ajel article reports 117–133 questions. Student copy uses approximately 100–130 scored items.",
     confidence: "high_public",
-    source: "ETEC; NCA",
+    source: "ETEC; NCA (100 + trial); Ajel (117–133 in a second article)",
     studentFacing: true,
   },
   {
@@ -105,18 +114,20 @@ export const STEP_SOURCE_CHECKLIST: StepFact[] = [
   },
   {
     id: "question_counts",
-    label: "Scored items per section",
-    value: "100 scored items total. 40 / 30 / 20 / 10 if one point per item — inferred from the published percentages.",
-    confidence: "inferred",
-    source: "NCA: 100 questions distributed among the four components",
+    label: "Scored items (live exam)",
+    value:
+      "Public sources disagree: ETEC/NCA 100 scored plus trial items vs Ajel 117–133. Speakify weighted practice papers use 100 items at 40/30/20/10. Student-facing copy: approximately 100–130 scored items.",
+    confidence: "unknown",
+    source: "ETEC/NCA vs second Ajel article",
     studentFacing: true,
   },
   {
     id: "seat_time",
     label: "Total seat time",
-    value: "Three hours including pre-test instructions and trial items",
-    confidence: "high_public",
-    source: "ETEC; NCA",
+    value:
+      "Sources disagree: ETEC/NCA three hours including instructions vs Ajel 2.5–3 hours. Student-facing copy: roughly 2.5–3 hours.",
+    confidence: "unknown",
+    source: "ETEC/NCA vs second Ajel article",
     studentFacing: true,
   },
   {
@@ -191,4 +202,4 @@ export const STEP_STRUCTURE_CODE_TOUCHPOINTS = [
 ] as const;
 
 export const STEP_REGISTRATION_POLICY =
-  "Keep /register/step-test closed until a 2025/2026 ETEC/Qiyas candidate notice confirms components, scored counts, section order, and scoring scale. Public ETEC + news corroboration of 40/30/20/10 is not that notice.";
+  "Open /register/step-test as an independent Speakify prep product with a visible disclosure. Not affiliated with or certified by Qiyas/ETEC. 40/30/20/10 weights remain the structural backbone. Item count and seat time are published as ranges (approximately 100–130 scored items; roughly 2.5–3 hours) because public sources contradict exact totals. Section order and per-section clocks stay Speakify study sequence. This is not a live 2026 candidate notice.";

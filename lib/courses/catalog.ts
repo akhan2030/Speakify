@@ -196,15 +196,15 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "step-preparation",
     name: "Speakify STEP Accelerator",
-    tagline: "Qiyas STEP preparation",
-    shortDescription: `${STEP_TOTAL_WEEKS}-week STEP course. Enrolment closed.`,
+    tagline: "Independent Qiyas STEP prep",
+    shortDescription: `${STEP_TOTAL_WEEKS}-week adaptive STEP course. Independent prep — not Qiyas-certified.`,
     description:
-      `Ten-week STEP preparation (diagnostic, four phases, section practice, timed mocks). Public structure: 100 scored MCQs, CEFR-based, Reading 40% · Structure 30% · Listening 20% · Analysis 10%, about three hours including instructions. Study sequence and per-section clocks are Speakify pacing — not confirmed test-day order. Registration stays closed.`,
+      "Ten-week Speakify STEP Accelerator (four phases). Backbone weights: Reading 40% · Structure 30% · Listening 20% · Analysis 10%. Live exam size and time are published as ranges (approximately 100–130 scored items, roughly 2.5–3 hours) because public sources disagree on exact totals. Study sequence and per-section clocks are Speakify pacing — not confirmed test-day order.",
     levelBadge: "Advanced",
     category: "test-prep",
     accent: "#059669",
-    ctaLabel: "View Course",
-    ctaHref: "/courses/step-preparation",
+    ctaLabel: "Start Learning",
+    ctaHref: "/register/step-test",
     duration: `${STEP_TOTAL_WEEKS} weeks`,
     highlights: [
       "Reading 40% · Structure 30% · Listening 20% · Analysis 10%",

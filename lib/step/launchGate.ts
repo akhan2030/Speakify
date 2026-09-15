@@ -1,7 +1,6 @@
-import { comingSoonRegisterError } from "@/lib/courses/enrolmentClosed";
+/** STEP launch — public independent prep; Coming soon is off unless env hides it. */
 import { isActiveStepStudent } from "@/lib/routing/stepStudentGate";
 
-/** STEP launch visibility — default hidden until explicitly opened. */
 export type StepLaunchMode = "hidden" | "beta" | "public";
 
 export const STEP_COURSE_SLUG = "step-preparation";
@@ -11,30 +10,25 @@ function readLaunchMode(): StepLaunchMode {
   const raw = (
     process.env.STEP_LAUNCH_MODE ??
     process.env.NEXT_PUBLIC_STEP_LAUNCH_MODE ??
-    "hidden"
+    "public"
   )
     .trim()
     .toLowerCase();
-  if (raw === "public" || raw === "beta") return raw;
-  return "hidden";
+  if (raw === "hidden" || raw === "beta") return raw;
+  return "public";
 }
 
-/** Current launch mode (hidden = not listed, no new enrollments). */
 export function getStepLaunchMode(): StepLaunchMode {
   return readLaunchMode();
 }
 
-/** Listed in courses hub, nav, and onboarding programme picker. */
 export function isStepPubliclyDiscoverable(): boolean {
-  if (comingSoonRegisterError("step-test", "step-preparation")) return false;
-  return getStepLaunchMode() === "public";
+  return readLaunchMode() !== "hidden";
 }
 
-/** `/register/step-test` accepts new sign-ups (beta = direct URL only). */
+/** `/register/step-test` — open as independent prep. Set STEP_LAUNCH_MODE=hidden to close. */
 export function isStepRegistrationOpen(): boolean {
-  if (comingSoonRegisterError("step-test", "step-preparation")) return false;
-  const mode = getStepLaunchMode();
-  return mode === "public" || mode === "beta";
+  return readLaunchMode() !== "hidden";
 }
 
 export function isStepCourseSlug(slug: string): boolean {

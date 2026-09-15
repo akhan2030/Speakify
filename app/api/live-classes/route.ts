@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { normalizeRole } from "@/lib/roles";
+import { liveClassCatalogForUser } from "@/lib/live-classes/packages";
 import { loadLiveClassSummary } from "@/lib/live-classes/store";
 import { creditBalanceHalalas, listMarketplace } from "@/lib/live-classes/marketplace";
 import {
@@ -27,7 +28,7 @@ function getSupabase() {
   });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     const studentId = session?.user?.id;
@@ -74,11 +75,15 @@ export async function GET() {
       programType: user.program_type,
       programSelected: user.program_selected,
     });
+    const requestedCatalog =
+      new URL(request.url).searchParams.get("catalog") ?? "";
+    const catalog = liveClassCatalogForUser(snapshot, requestedCatalog);
     const marketplace = await listMarketplace(supabase, {
       registeredAt: user.created_at ?? new Date(),
       remainingIncluded: remaining,
       usesIncluded,
       courseWeeks,
+      catalog,
     });
     const creditsHalalas = await creditBalanceHalalas(supabase, studentId);
 
@@ -90,20 +95,33 @@ export async function GET() {
       creditsHalalas,
       remainingIncluded: remaining,
       usesIncluded,
+      catalog,
       registeredAt: user.created_at,
       courseWeeks,
       rules: {
         timezone: LIVE_CLASS_TIMEZONE,
         minNoticeDays: 0,
-        classDays: LIVE_CLASS_WEEKDAY_LABEL,
-        window: `${LIVE_CLASS_WEEKDAY_LABEL} · 6:00 PM and 7:05 PM · 55 minutes`,
+        classDays:
+          catalog === "one_to_one_only"
+            ? "Monday One-on-One"
+            : LIVE_CLASS_WEEKDAY_LABEL,
+        window:
+          catalog === "one_to_one_only"
+            ? "Monday · 6:00 PM and 7:05 PM · 55 minutes · One-on-One only"
+            : `${LIVE_CLASS_WEEKDAY_LABEL} · 6:00 PM and 7:05 PM · 55 minutes`,
         fillCutoffHours: GROUP_FILL_CUTOFF_HOURS,
-        groupSize: `${GROUP_CLASS_MIN_STUDENTS}–${GROUP_CLASS_MAX_STUDENTS} students`,
-        groupPrice: LIVE_CLASS_FIXED_PRICES.groupLabel,
+        groupSize:
+          catalog === "one_to_one_only"
+            ? null
+            : `${GROUP_CLASS_MIN_STUDENTS}–${GROUP_CLASS_MAX_STUDENTS} students`,
+        groupPrice: catalog === "one_to_one_only" ? null : LIVE_CLASS_FIXED_PRICES.groupLabel,
         oneToOnePrice: LIVE_CLASS_FIXED_PRICES.oneToOneLabel,
         recordings: "Sessions are recorded for replay.",
         notifications: {
-          confirmedToRun: "Email when a group class reaches 4 students and will run.",
+          confirmedToRun:
+            catalog === "one_to_one_only"
+              ? null
+              : "Email when a group class reaches 4 students and will run.",
           classTookPlace: "Separate email after the session has taken place.",
         },
       },

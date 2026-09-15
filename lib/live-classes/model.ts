@@ -1,9 +1,10 @@
 /**
  * Speakify live classes — two products, not one.
  *
- * 1. Test-prep (IELTS Academic/General, TOEFL, STEP):
+ * 1. Test-prep (IELTS Academic/General, TOEFL):
  *    1 orientation + included One-on-One classes by tier (Foundation 2, Plus 3, Elite 4).
  *    Group classes are always paid and stay locked until those One-on-Ones are used.
+ *    STEP is One-on-One only — no group marketplace on the STEP dashboard.
  * 2. Language development (Pathway CEFR levels, Business, Legal, Kids):
  *    orientation only. Every other session is bought on the marketplace.
  *
@@ -347,21 +348,46 @@ export function liveClassOfferForCourseSlug(slug: string): {
   policy: LivePolicy;
   topicIncluded: number;
   scope: string;
+  groupClasses: boolean;
 } {
   const s = String(slug ?? "").trim().toLowerCase();
+  if (s.includes("step")) {
+    return {
+      policy: "test_prep",
+      topicIncluded: TIER_TOPIC_CLASS_COUNTS.foundation,
+      scope: "this course package",
+      groupClasses: false,
+    };
+  }
   if (s.includes("pathway") || s.includes("business") || s.includes("legal") || s.includes("kids")) {
-    return { policy: "language_development", topicIncluded: 0, scope: "marketplace (pay per session)" };
+    return {
+      policy: "language_development",
+      topicIncluded: 0,
+      scope: "marketplace (pay per session)",
+      groupClasses: true,
+    };
   }
   if (s.includes("elite")) {
-    return { policy: "test_prep", topicIncluded: TIER_TOPIC_CLASS_COUNTS.elite, scope: "this course package" };
+    return {
+      policy: "test_prep",
+      topicIncluded: TIER_TOPIC_CLASS_COUNTS.elite,
+      scope: "this course package",
+      groupClasses: true,
+    };
   }
   if (s.includes("plus")) {
-    return { policy: "test_prep", topicIncluded: TIER_TOPIC_CLASS_COUNTS.plus, scope: "this course package" };
+    return {
+      policy: "test_prep",
+      topicIncluded: TIER_TOPIC_CLASS_COUNTS.plus,
+      scope: "this course package",
+      groupClasses: true,
+    };
   }
   return {
     policy: "test_prep",
     topicIncluded: TIER_TOPIC_CLASS_COUNTS.foundation,
     scope: "this course package",
+    groupClasses: true,
   };
 }
 

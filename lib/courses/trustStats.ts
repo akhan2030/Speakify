@@ -40,8 +40,8 @@ export const COURSE_TRUST_STATS: Partial<
     full: "IELTS General Training Elite — intensive GT practice for Band 7.0+ study goals.",
   },
   "step-preparation": {
-    card: "Enrolment closed",
-    full: "Public STEP registration is closed while we finish a sourced Qiyas/ETEC course. Existing students can still sign in.",
+    card: "Independent STEP prep",
+    full: "Speakify STEP Accelerator — independent Qiyas prep on 40/30/20/10 weights. Not affiliated with or certified by Qiyas/ETEC.",
   },
   "english-pathway": {
     card: "13 micro-levels",

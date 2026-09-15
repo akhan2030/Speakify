@@ -265,21 +265,22 @@ export default function CoursesHub(_props: Props) {
               <div className="exam-top">
                 <div>
                   <h3>STEP</h3>
-                  <div className="exam-meta">1 tier · 10 weeks · Enrolment closed</div>
+                  <div className="exam-meta">1 tier · 10 weeks · Independent Qiyas prep</div>
                 </div>
-                <span className="band">Coming soon</span>
+                <span className="band">Open</span>
               </div>
               <p className="exam-desc">
-                Qiyas STEP (كفايات اللغة الإنجليزية) — 100 scored MCQs, CEFR-based. Speakify is
-                confirming live 2026 seat order before opening registration.
+                Qiyas STEP (كفايات اللغة الإنجليزية) — CEFR-based MCQ prep. Weights 40/30/20/10.
+                Live totals are approximately 100–130 scored items over roughly 2.5–3 hours.
+                Not affiliated with Qiyas/ETEC.
               </p>
               <div className="exam-actions" style={{ marginTop: 56 }}>
                 <Link href="/courses/step-preparation" className="btn-primary">
-                  Coming soon
+                  View course
                 </Link>
-                <span className="btn-secondary" aria-disabled="true">
-                  Enrolment closed
-                </span>
+                <Link href="/register/step-test" className="btn-secondary">
+                  Register
+                </Link>
               </div>
             </div>
           </div>

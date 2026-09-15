@@ -70,7 +70,6 @@ type PaygPayment = {
   productType: string;
   publishableKey: string | null;
   mockMode: boolean;
-  allowSimulate: boolean;
   callbackUrl: string;
   description: string;
   studentId: string;
@@ -79,6 +78,8 @@ type PaygPayment = {
 
 type Props = {
   callbackPath: string;
+  /** STEP: orientation + One-on-One only. Group marketplace is hidden. */
+  oneToOneOnly?: boolean;
 };
 
 function formatWhen(iso: string): string {
@@ -116,7 +117,7 @@ async function readLiveClassesJson(res: Response): Promise<{
   }
 }
 
-export default function LiveClassesStudio({ callbackPath }: Props) {
+export default function LiveClassesStudio({ callbackPath, oneToOneOnly = false }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
@@ -140,7 +141,9 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
       setError(null);
     }
     try {
-      const res = await fetch("/api/live-classes");
+      const res = await fetch(
+        oneToOneOnly ? "/api/live-classes?catalog=one_to_one_only" : "/api/live-classes"
+      );
       const data = await readLiveClassesJson(res);
       if (!res.ok) throw new Error(data.error ?? "Could not load live classes");
       setEntitlements(data.entitlements ?? []);
@@ -157,7 +160,7 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
       loadInFlight.current = false;
       if (!opts?.silent) setLoading(false);
     }
-  }, []);
+  }, [oneToOneOnly]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 30_000);
@@ -196,6 +199,13 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
     return () => window.clearInterval(id);
   }, [load]);
 
+  const visibleMarketplace = useMemo(
+    () =>
+      oneToOneOnly
+        ? marketplace.filter((slot) => slot.sessionType !== "topic_group")
+        : marketplace,
+    [marketplace, oneToOneOnly]
+  );
   const topicPackages = useMemo(
     () => entitlements.filter((e) => e.kindLabel === "topic"),
     [entitlements]
@@ -211,11 +221,12 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
     () =>
       bookings.filter((booking) => {
         const status = String(booking.status ?? "").toLowerCase();
+        if (oneToOneOnly && booking.session_type === "topic_group") return false;
         if (status === "cancelled" || status === "pending_schedule") return false;
         if (booking.session_type === "orientation" && status === "completed") return false;
         return true;
       }),
-    [bookings]
+    [bookings, oneToOneOnly]
   );
 
   async function bookSlot(slot: {
@@ -223,6 +234,10 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
     sessionId: string | null;
     sessionType?: "topic_group" | "one_to_one";
   }) {
+    if (oneToOneOnly && slot.sessionType === "topic_group") {
+      setFormError("STEP live classes are One-on-One only.");
+      return;
+    }
     if (slot.sessionType === "topic_group" && usesIncluded) {
       setFormError("Group classes unlock after you use your free One-on-One sessions.");
       return;
@@ -345,7 +360,11 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
       <h1 className="font-speakify-serif text-2xl font-bold text-speakify-navy">Live classes</h1>
-      <p className="mt-1 text-sm text-speakify-muted">Book your One-on-One or Group class.</p>
+      <p className="mt-1 text-sm text-speakify-muted">
+        {oneToOneOnly
+          ? "Private STEP tutoring — book your orientation, then One-on-One sessions with your teacher."
+          : "Book your One-on-One or Group class."}
+      </p>
 
       {prioritySkill ? (
         <div className="mt-4 rounded-xl border border-speakify-gold/35 bg-white px-4 py-3">
@@ -376,16 +395,25 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
           </span>
           Free One-on-One classes
         </div>
+      {oneToOneOnly ? (
+        <>
+          <div className="rounded-xl border border-speakify-line bg-white px-4 py-3 text-[13.5px] text-speakify-muted">
+            <span className="block text-base font-bold text-speakify-navy">Monday</span>
+            Class evenings · 6:00 & 7:05 PM
+          </div>
+        </>
+      ) : (
         <div className="rounded-xl border border-speakify-line bg-white px-4 py-3 text-[13.5px] text-speakify-muted">
           <span className="block text-base font-bold text-speakify-navy">
             {(creditsHalalas / 100).toLocaleString("en-US")} SAR
           </span>
           Refund credit
         </div>
+      )}
       </div>
 
       <div className="mt-4">
-        <LiveClassStatusLegend />
+        <LiveClassStatusLegend oneToOneOnly={oneToOneOnly} />
       </div>
 
       {topicPackages.length > 1 ? (
@@ -409,7 +437,7 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
         <h2 className="font-speakify-serif text-lg font-bold text-speakify-navy">Book a slot</h2>
         <div className="mt-3">
           <LiveClassBookingBoard
-            slots={marketplace}
+            slots={visibleMarketplace}
             remainingIncluded={remaining}
             usesIncluded={usesIncluded}
             packageIncluded={selected?.included ?? 0}
@@ -493,7 +521,7 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
                   {payingHere ? (
                     <div className="mt-4 rounded-xl border border-speakify-gold/40 bg-speakify-paper p-4">
                       <p className="text-sm font-semibold text-speakify-navy">Pay {payg.priceLabel}</p>
-                      {payg.mockMode && payg.allowSimulate ? (
+                      {payg.mockMode ? (
                         <button
                           type="button"
                           disabled={submitting}
@@ -502,11 +530,6 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
                         >
                           Pay {payg.priceLabel}
                         </button>
-                      ) : payg.mockMode ? (
-                        <p className="mt-2 text-sm text-amber-800">
-                          Card payments are not connected on this site. Live-class pay-as-you-go
-                          cannot be charged until Moyasar live keys are added.
-                        </p>
                       ) : payg.publishableKey ? (
                         <div className="mt-3">
                           <MoyasarCheckoutForm

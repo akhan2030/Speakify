@@ -124,12 +124,12 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     label: "STEP Test",
     tagline: "STEP · Saudi university admissions",
     description:
-      "Preparation for the Saudi Standardized Test of English Proficiency (Qiyas) — computer-based MCQ practice across reading, grammar, listening, and compositional analysis.",
+      "Independent Speakify prep for Qiyas STEP (كفايات اللغة الإنجليزية) — four MCQ components at 40/30/20/10. Live totals are approximately 100–130 scored items over roughly 2.5–3 hours. Not affiliated with Qiyas/ETEC.",
     bullets: [
-      "Reading 40% · Structure 30% · Listening 20% · Analysis 10% (sourced public weights)",
-      "Four MCQ skills — no speaking or essay; not Qiyas EPT",
-      "Diagnostic, weighted mini mocks, and full timed mocks",
-      "Registration stays closed until 2026 test-day order and clocks are confirmed",
+      "Reading (40%), Structure (30%), Listening (20%), Analysis (10%)",
+      "Approximately 100–130 scored items · roughly 2.5–3 hours on the live exam",
+      "Speakify study sequence — not confirmed test-day order",
+      "Speakify practice target 80+ — institutions set their own STEP cutoffs",
     ],
     accent: "#059669",
     registerPath: "/register/step-test",

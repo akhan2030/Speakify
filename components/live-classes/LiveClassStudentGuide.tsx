@@ -25,8 +25,11 @@ const LEGEND = [
   },
 ] as const;
 
-export function LiveClassStatusLegend() {
+const STEP_LEGEND = LEGEND.filter((item) => !item.label.startsWith("Group"));
+
+export function LiveClassStatusLegend({ oneToOneOnly = false }: { oneToOneOnly?: boolean }) {
   const [open, setOpen] = useState(false);
+  const items = oneToOneOnly ? STEP_LEGEND : LEGEND;
 
   return (
     <div>
@@ -44,7 +47,7 @@ export function LiveClassStatusLegend() {
       </button>
       {open ? (
         <div className="rounded-b-xl border border-t-0 border-speakify-line bg-white px-4 py-3 text-[13px] text-speakify-muted">
-          {LEGEND.map((item) => (
+          {items.map((item) => (
             <p key={item.label} className="mb-1.5 last:mb-0">
               <span className="font-semibold text-speakify-ink">{item.label}</span>
               {" — "}

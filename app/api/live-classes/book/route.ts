@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { normalizeRole } from "@/lib/roles";
-import { getAppBaseUrl } from "@/lib/appUrl";
+import { liveClassCatalogForUser } from "@/lib/live-classes/packages";
 import {
   DEFAULT_SESSION_MINUTES,
   checkoutHalalasForPayg,
@@ -32,7 +32,7 @@ import {
   insertLiveClassBooking,
   loadLiveClassSummary,
 } from "@/lib/live-classes/store";
-import { allowSimulatedCheckout, createLiveClassPayment, moyasarCheckoutFlags } from "@/lib/payments/moyasar";
+import { createLiveClassPayment, isMoyasarMockMode } from "@/lib/payments/moyasar";
 
 export const runtime = "nodejs";
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     const supabase = getSupabase();
 
     if (confirmPaymentId) {
-      if (!allowSimulatedCheckout()) {
+      if (!isMoyasarMockMode()) {
         return NextResponse.json({ error: "Not available" }, { status: 403 });
       }
       const confirmed = await confirmPaygBooking(supabase, confirmPaymentId);
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
           priceLabel: paygPriceLabel({ sessionType, durationMinutes }),
           productType,
           publishableKey: payment.mode === "live" ? payment.publishableKey : null,
-          ...moyasarCheckoutFlags(),
+          mockMode: isMoyasarMockMode(),
           callbackUrl,
           description: liveClassCheckoutDescription({ sessionType, durationMinutes }),
           studentId,
@@ -282,6 +282,23 @@ export async function POST(request: Request) {
         { error: "Enroll in a course before booking live classes." },
         { status: 400 }
       );
+    }
+
+    if (sessionType === "topic_group") {
+      const catalog = liveClassCatalogForUser(
+        {
+          enrolledPrograms: user.enrolled_programs,
+          programSelected: user.program_selected,
+          programType: user.program_type,
+        },
+        String(body.callbackPath ?? "")
+      );
+      if (catalog === "one_to_one_only") {
+        return NextResponse.json(
+          { error: "STEP live classes are One-on-One only. Group classes are not offered on this programme." },
+          { status: 400 }
+        );
+      }
     }
 
     const used = await countUsedIncluded(supabase, studentId, selected.courseKey, ["one_to_one"]);
@@ -427,7 +444,7 @@ export async function POST(request: Request) {
         priceLabel: paygPriceLabel({ sessionType: payType, durationMinutes }),
         productType,
         publishableKey: payment.mode === "live" ? payment.publishableKey : null,
-        ...moyasarCheckoutFlags(),
+        mockMode: isMoyasarMockMode(),
         callbackUrl,
         description: liveClassCheckoutDescription({ sessionType: payType, durationMinutes }),
         studentId,

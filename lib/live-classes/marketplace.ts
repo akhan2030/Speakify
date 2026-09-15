@@ -163,17 +163,20 @@ export async function listMarketplace(
     remainingIncluded?: number;
     usesIncluded?: boolean;
     courseWeeks?: number;
+    catalog?: "standard" | "one_to_one_only";
   }
 ): Promise<MarketplaceListing[]> {
   let generated = generateMarketplaceSlots({
     registeredAt: input?.registeredAt,
     now: input?.now,
     courseWeeks: input?.courseWeeks,
+    sessionType: input?.catalog === "one_to_one_only" ? "one_to_one" : undefined,
   });
   if (generated.length === 0 && !input?.registeredAt) {
     generated = generateMarketplaceSlots({
       now: input?.now ?? new Date(),
       courseWeeks: input?.courseWeeks,
+      sessionType: input?.catalog === "one_to_one_only" ? "one_to_one" : undefined,
     });
   }
   if (generated.length === 0) return [];
