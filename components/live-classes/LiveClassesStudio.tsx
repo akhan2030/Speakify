@@ -70,6 +70,7 @@ type PaygPayment = {
   productType: string;
   publishableKey: string | null;
   mockMode: boolean;
+  allowSimulate: boolean;
   callbackUrl: string;
   description: string;
   studentId: string;
@@ -492,7 +493,7 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
                   {payingHere ? (
                     <div className="mt-4 rounded-xl border border-speakify-gold/40 bg-speakify-paper p-4">
                       <p className="text-sm font-semibold text-speakify-navy">Pay {payg.priceLabel}</p>
-                      {payg.mockMode ? (
+                      {payg.mockMode && payg.allowSimulate ? (
                         <button
                           type="button"
                           disabled={submitting}
@@ -501,6 +502,11 @@ export default function LiveClassesStudio({ callbackPath }: Props) {
                         >
                           Pay {payg.priceLabel}
                         </button>
+                      ) : payg.mockMode ? (
+                        <p className="mt-2 text-sm text-amber-800">
+                          Card payments are not connected on this site. Live-class pay-as-you-go
+                          cannot be charged until Moyasar live keys are added.
+                        </p>
                       ) : payg.publishableKey ? (
                         <div className="mt-3">
                           <MoyasarCheckoutForm

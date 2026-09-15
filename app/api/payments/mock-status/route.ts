@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { authOptions } from "@/lib/auth";
 import { normalizeRole } from "@/lib/roles";
 import { grantMockAccess } from "@/lib/payments/grantMockAccess";
-import { isMoyasarMockMode } from "@/lib/payments/moyasar";
+import { allowSimulatedCheckout, moyasarCheckoutFlags } from "@/lib/payments/moyasar";
 import {
   mockProductFromPaymentProductType,
   type MockPaymentProductType,
@@ -41,7 +41,7 @@ function lobbyFor(programme: MockPurchaseProgramme): string {
 
 /** Dev/mock only — simulates successful mock exam payment. */
 export async function POST(request: Request) {
-  if (!isMoyasarMockMode()) {
+  if (!allowSimulatedCheckout()) {
     return NextResponse.json({ error: "Not available" }, { status: 403 });
   }
 
@@ -150,7 +150,7 @@ export async function GET(request: Request) {
       paymentConfirmed,
       hasPurchases: purchasedMockNumbers.length > 0,
       redirect: lobbyFor(programme),
-      mockMode: isMoyasarMockMode(),
+      ...moyasarCheckoutFlags(),
     });
   } catch (err) {
     console.error("[payments/mock-status GET]", err);

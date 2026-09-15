@@ -9,6 +9,13 @@ export {
 } from "./examModel";
 
 export {
+  STEP_OFFICIAL_SOURCES,
+  STEP_REGISTRATION_POLICY,
+  STEP_SOURCE_CHECKLIST,
+  STEP_STRUCTURE_CODE_TOUCHPOINTS,
+} from "./officialBlueprint";
+
+export {
   STEP_ACCELERATOR_NAME,
   STEP_PHASES,
   STEP_TOTAL_WEEKS,

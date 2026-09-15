@@ -9,7 +9,7 @@ import {
   resolveAcceleratorTrack,
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
-import { createMoyasarPayment, isMoyasarMockMode } from "@/lib/payments/moyasar";
+import { createMoyasarPayment, moyasarCheckoutFlags } from "@/lib/payments/moyasar";
 import { getAppBaseUrl } from "@/lib/appUrl";
 import { requiresProgrammePayment, hasDashboardAccess } from "@/lib/payments/access";
 import {
@@ -202,7 +202,7 @@ export async function POST(request: Request) {
       target: meta.target,
       description,
       publishableKey: payment.mode === "live" ? payment.publishableKey : null,
-      mockMode: isMoyasarMockMode(),
+      ...moyasarCheckoutFlags(),
       callbackUrl,
     });
   } catch (err) {

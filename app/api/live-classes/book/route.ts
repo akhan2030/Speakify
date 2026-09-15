@@ -32,7 +32,7 @@ import {
   insertLiveClassBooking,
   loadLiveClassSummary,
 } from "@/lib/live-classes/store";
-import { createLiveClassPayment, isMoyasarMockMode } from "@/lib/payments/moyasar";
+import { allowSimulatedCheckout, createLiveClassPayment, moyasarCheckoutFlags } from "@/lib/payments/moyasar";
 
 export const runtime = "nodejs";
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     const supabase = getSupabase();
 
     if (confirmPaymentId) {
-      if (!isMoyasarMockMode()) {
+      if (!allowSimulatedCheckout()) {
         return NextResponse.json({ error: "Not available" }, { status: 403 });
       }
       const confirmed = await confirmPaygBooking(supabase, confirmPaymentId);
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
           priceLabel: paygPriceLabel({ sessionType, durationMinutes }),
           productType,
           publishableKey: payment.mode === "live" ? payment.publishableKey : null,
-          mockMode: isMoyasarMockMode(),
+          ...moyasarCheckoutFlags(),
           callbackUrl,
           description: liveClassCheckoutDescription({ sessionType, durationMinutes }),
           studentId,
@@ -427,7 +427,7 @@ export async function POST(request: Request) {
         priceLabel: paygPriceLabel({ sessionType: payType, durationMinutes }),
         productType,
         publishableKey: payment.mode === "live" ? payment.publishableKey : null,
-        mockMode: isMoyasarMockMode(),
+        ...moyasarCheckoutFlags(),
         callbackUrl,
         description: liveClassCheckoutDescription({ sessionType: payType, durationMinutes }),
         studentId,

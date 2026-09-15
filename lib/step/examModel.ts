@@ -1,9 +1,21 @@
 /**
- * Canonical STEP (Standardized Test of English Proficiency) exam model.
- * Sourced from Qiyas / ETEC official materials and the NCA student guide.
- * @see https://qiyas.sa/%d8%b3%d8%aa%d9%8a%d8%a8
- * @see https://qiyas.sa/%D8%AA%D8%AC%D8%B1%D9%8A%D8%A8%D9%8A
+ * Canonical STEP exam model for Speakify study tools.
+ *
+ * Official public source: NCA “STEP: A Guide for Students”, 19 March 2012
+ * (Dr. Abdulrahman H. al-Shamrani). A Third Edition NCA pamphlet repeats
+ * RC 40 / ST 30 / LC 20 / CA 10, 100 scored items, and ~3 hour seat time
+ * including trial items. Those weights may have been revised; ETEC public
+ * pages do not republish them. Do not cite commercial https://qiyas.sa as
+ * the government portal. Candidate login: e-services.etec.gov.sa.
+ *
+ * Per-section minutes, CBT return policy, score validity years, and fee
+ * are Speakify study conventions unless a 2025/2026 official notice confirms them.
  */
+
+import {
+  STEP_OFFICIAL_SOURCES,
+  STEP_REGISTRATION_POLICY,
+} from "./officialBlueprint";
 
 export const STEP_EXAM_ID = "step" as const;
 
@@ -15,9 +27,9 @@ export type StepSectionId =
 
 export type StepSection = {
   id: StepSectionId;
-  /** Official English label used by Qiyas */
+  /** Official English label used by NCA */
   label: string;
-  /** Arabic label on qiyas.sa */
+  /** Arabic label from NCA student materials */
   labelAr: string;
   weightPercent: number;
   questionCount: number;
@@ -38,6 +50,8 @@ export type StepExamModel = {
   administrator: string;
   administratorAr: string;
   website: string;
+  sourceDocument: string;
+  registrationPolicy: string;
   totalQuestions: number;
   totalMinutes: number;
   secondsPerQuestionAvg: number;
@@ -217,32 +231,34 @@ export const STEP_EXAM_MODEL: StepExamModel = {
   acronym: "STEP",
   administrator: "National Center for Assessment (Qiyas) — ETEC",
   administratorAr: "المركز الوطني للقياس — هيئة تقويم التعليم والتدريب",
-  website: "https://qiyas.sa",
+  website: STEP_OFFICIAL_SOURCES.etecCandidateLogin.url,
+  sourceDocument: `${STEP_OFFICIAL_SOURCES.ncaStudentGuide2012.title} (${STEP_OFFICIAL_SOURCES.ncaStudentGuide2012.dated})`,
+  registrationPolicy: STEP_REGISTRATION_POLICY,
   totalQuestions: 100,
   totalMinutes: 150,
   secondsPerQuestionAvg: 90,
   format: "computer_based",
   deliveryRules: [
-    "Computer-based test (CBT) available year-round at Qiyas centers",
-    "Cannot return to a previous section after it is submitted",
-    "No speaking section and no essay writing section",
-    "All items are four-option multiple choice (A–D)",
-    "Non-scored trial items and instructions extend total seat time to ~3 hours",
-    "Dictionary and external aids are not permitted",
+    "NCA 2012: 100 scored four-option MCQs across RC, ST, LC, and CA",
+    "NCA 2012: non-scored trial items and instructions bring total seat time to about 3 hours",
+    "NCA 2012: no speaking section; Compositional Analysis is not a free essay",
+    "NCA pamphlet: listening plays once; candidates see A–D only, not the dialogue or the questions",
+    "Speakify mocks lock a section after submit — live CBT return-to-previous-section is unconfirmed",
+    "Dictionary and external aids are not permitted in Speakify timed practice",
   ],
   scoring: {
     scaleMin: 0,
     scaleMax: 100,
     passFail: false,
-    validityYears: 3,
+    validityYears: 0,
     scoringMethod:
-      "Automated computer scoring; Item Response Theory (IRT) used for equating. Score reflects proficiency level, not pass/fail.",
-    typicalUniversityMinimum: 65,
-    excellenceTarget: 80,
+      "NCA 2012 publishes 100 scored items and component percentages. It does not document IRT, a 0–100 report legend, or score validity years. Speakify study scores are percent-correct on practice items.",
+    typicalUniversityMinimum: 0,
+    excellenceTarget: 0,
   },
   registration: {
-    feeSar: 150,
-    channels: ["SADAD", "Mada", "Credit cards via ETEC portal"],
+    feeSar: 0,
+    channels: ["ETEC / Qiyas candidate e-services (Nafath) — live fee not confirmed in this document"],
   },
   sections: Object.values(STEP_SECTIONS),
   sectionOrder: ["reading", "structure", "listening", "compositional_analysis"],
@@ -265,9 +281,8 @@ export const STEP_EXAM_MODEL: StepExamModel = {
     "Using speakers instead of headphones during practice",
   ],
   researchUrls: [
-    "https://qiyas.sa/%d8%b3%d8%aa%d9%8a%d8%a8",
-    "https://qiyas.sa/%D8%AA%D8%AC%D8%B1%D9%8A%D8%A8%D9%8A",
-    "https://qiyas.sa/en/",
+    STEP_OFFICIAL_SOURCES.etecPublic.url,
+    STEP_OFFICIAL_SOURCES.etecCandidateLogin.url,
   ],
 };
 

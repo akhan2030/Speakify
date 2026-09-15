@@ -29,6 +29,7 @@ type MockCheckoutState = {
   mode: "mock" | "live";
   paymentId: string;
   mockMode: boolean;
+  allowSimulate: boolean;
   publishableKey: string | null;
   amountHalalas: number;
   callbackUrl: string;
@@ -132,7 +133,8 @@ export default function MockCheckoutPage() {
         description: data.description,
         mode: data.mode,
         paymentId: data.paymentId,
-        mockMode: data.mockMode,
+        mockMode: Boolean(data.mockMode),
+        allowSimulate: Boolean(data.allowSimulate),
         publishableKey: data.publishableKey,
         amountHalalas: data.amountHalalas,
         callbackUrl: data.callbackUrl,
@@ -302,7 +304,7 @@ export default function MockCheckoutPage() {
                 <li>✓ mada, Apple Pay, STC Pay & cards (via Moyasar)</li>
               </ul>
 
-              {checkout.mockMode ? (
+              {checkout.mockMode && checkout.allowSimulate ? (
                 <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase text-slate-500">Test mode</p>
                   <p className="mt-1 text-sm text-slate-600">
@@ -317,6 +319,14 @@ export default function MockCheckoutPage() {
                   >
                     {paying ? "Processing…" : `Pay ${checkout.price} (test)`}
                   </button>
+                </div>
+              ) : checkout.mockMode ? (
+                <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-xs font-semibold uppercase text-amber-800">Payments not connected</p>
+                  <p className="mt-1 text-sm text-amber-900">
+                    Card checkout is not configured. Access will not be granted from a test payment.
+                    Add Moyasar live keys on Vercel, or pay by bank transfer via WhatsApp.
+                  </p>
                 </div>
               ) : showLiveForm ? (
                 <div className="mt-6">

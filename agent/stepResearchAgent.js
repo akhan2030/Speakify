@@ -14,24 +14,18 @@ const { createClient } = require("@supabase/supabase-js");
 
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 
-/** Official and reference URLs for STEP research */
+/** Public ETEC / Qiyas pages — not commercial qiyas.sa */
 const STEP_URLS = [
   {
-    url: "https://qiyas.sa/%d8%b3%d8%aa%d9%8a%d8%a8",
-    title: "STEP Overview — Qiyas",
-    language: "ar",
-    sectionHints: ["reading", "structure", "listening", "compositional_analysis"],
-  },
-  {
-    url: "https://qiyas.sa/%D8%AA%D8%AC%D8%B1%D9%8A%D8%A8%D9%8A",
-    title: "STEP Trial Test — Qiyas",
-    language: "ar",
-    sectionHints: ["reading", "structure", "listening", "compositional_analysis"],
-  },
-  {
-    url: "https://qiyas.sa/en/",
-    title: "Qiyas English Portal",
+    url: "https://etec.gov.sa/en/programs/mustaqbalhum",
+    title: "ETEC Mustaqbalhum — Training for STEP",
     language: "en",
+    sectionHints: ["reading", "structure", "listening", "compositional_analysis"],
+  },
+  {
+    url: "https://e-services.etec.gov.sa/Qiyas.TRAS.Web.Internet/",
+    title: "Qiyas candidate e-services (ETEC)",
+    language: "ar",
     sectionHints: [],
   },
 ];

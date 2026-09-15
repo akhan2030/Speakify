@@ -127,7 +127,7 @@ export const PROGRAM_JOURNEYS: Record<ProgramJourneyId, ProgramJourney> = {
       };
     }),
     sourceNote:
-      "Qiyas (National Center for Assessment, ETEC) administers STEP. Four MCQ sections are official shape (archived Qiyas.org student guide). This rail is Speakify's study sequence with internal weights (Reading 40 / Structure 30 / Listening 20 / Compositional Analysis 10) — not live test-day order. Confirm against e-services.qiyas.sa or a recent sitting before treating weights/order as official. Do not use commercial qiyas.sa prep sites as the government portal.",
+      "NCA student guide (19 March 2012) and NCA Third Edition pamphlet: RC 40% / ST 30% / LC 20% / CA 10%, 100 scored MCQs, ~3 hours with trial items. Weights may have been revised. This rail is Speakify study order, not confirmed 2025/2026 test-day order. Candidate login is e-services.etec.gov.sa — not commercial qiyas.sa. Public registration stays closed until a current official notice is on file.",
   },
   pathway: {
     id: "pathway",

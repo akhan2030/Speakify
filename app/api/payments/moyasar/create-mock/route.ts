@@ -16,7 +16,7 @@ import {
   mockNumbersForGtProduct,
   type GtMockProductType,
 } from "@/lib/ielts-general/gtMockCatalog";
-import { createMockExamPayment, isMoyasarMockMode } from "@/lib/payments/moyasar";
+import { createMockExamPayment, moyasarCheckoutFlags } from "@/lib/payments/moyasar";
 import {
   hasAllAcademicMockAccess,
   hasAllGeneralMockAccess,
@@ -291,7 +291,7 @@ export async function POST(request: Request) {
       amountHalalas: payment.amountHalalas,
       description,
       publishableKey: payment.mode === "live" ? payment.publishableKey : null,
-      mockMode: isMoyasarMockMode(),
+      ...moyasarCheckoutFlags(),
       callbackUrl,
       lobbyPath,
     });

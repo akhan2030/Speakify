@@ -84,6 +84,35 @@ export function isMoyasarMockMode(): boolean {
   return !process.env.MOYASAR_SECRET_KEY?.trim();
 }
 
+/** Shown when live keys are missing and simulated checkout is not allowed. */
+export const PAYMENTS_UNAVAILABLE_MESSAGE =
+  "Card payments are not connected on this site. Real charges cannot be taken until Moyasar live keys are set on Vercel. Use WhatsApp for bank transfer in the meantime.";
+
+/**
+ * Local / preview may simulate checkout when keys are missing.
+ * Production (VERCEL_ENV=production) must not — that was granting free access
+ * on live IELTS checkout. Override only with MOYASAR_ALLOW_PROD_MOCK=true.
+ */
+export function allowSimulatedCheckout(): boolean {
+  if (!isMoyasarMockMode()) return false;
+  if (process.env.MOYASAR_ALLOW_PROD_MOCK === "true") return true;
+  if (process.env.VERCEL_ENV === "production") return false;
+  return true;
+}
+
+export function moyasarCheckoutFlags() {
+  return {
+    mockMode: isMoyasarMockMode(),
+    allowSimulate: allowSimulatedCheckout(),
+  };
+}
+
+function simulatedCheckoutOrError(): { error: string } | null {
+  if (!isMoyasarMockMode()) return null;
+  if (allowSimulatedCheckout()) return null;
+  return { error: PAYMENTS_UNAVAILABLE_MESSAGE };
+}
+
 let productionMoyasarWarningIssued = false;
 
 export function warnIfProductionPaymentsAreMock(): void {
@@ -148,6 +177,9 @@ export async function createMoyasarPayment(options: {
       : trackPriceHalalas(options.track);
   const programme = options.programme ?? "ielts";
   const description = checkoutPaymentDescription(programme, options.track);
+
+  const blocked = simulatedCheckoutOrError();
+  if (blocked) return blocked;
 
   if (isMoyasarMockMode()) {
     const mockPaymentId = `mock_${options.studentId}_${Date.now()}`;
@@ -252,6 +284,9 @@ export async function createMockExamPayment(options: {
     options.descriptionOverride?.trim() ||
     mockCheckoutDescription(options.product, mockNumbers);
 
+  const blocked = simulatedCheckoutOrError();
+  if (blocked) return blocked;
+
   if (isMoyasarMockMode()) {
     const mockPaymentId = `mock_exam_${options.studentId}_${Date.now()}`;
     return {
@@ -336,6 +371,9 @@ export async function createLiveClassPayment(options: {
   bookingId: string;
   courseKey: string;
 }): Promise<MoyasarCreateLiveClassPaymentResult | { error: string }> {
+  const blocked = simulatedCheckoutOrError();
+  if (blocked) return blocked;
+
   if (isMoyasarMockMode()) {
     return {
       mode: "mock",

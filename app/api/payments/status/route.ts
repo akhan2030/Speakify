@@ -10,7 +10,7 @@ import {
   type AcceleratorTrackId,
 } from "@/lib/accelerator/tracks";
 import { grantPaidAccess } from "@/lib/payments/grantAccess";
-import { isMoyasarMockMode, trackPriceHalalas } from "@/lib/payments/moyasar";
+import { allowSimulatedCheckout, moyasarCheckoutFlags } from "@/lib/payments/moyasar";
 import { hasDashboardAccess, requiresProgrammePayment } from "@/lib/payments/access";
 import {
   checkoutTrackLabel,
@@ -31,7 +31,7 @@ function getSupabase() {
 
 /** Dev/mock only — simulates a successful Moyasar payment. */
 export async function POST(request: Request) {
-  if (!isMoyasarMockMode()) {
+  if (!allowSimulatedCheckout()) {
     return NextResponse.json({ error: "Not available" }, { status: 403 });
   }
 
@@ -147,7 +147,7 @@ export async function GET() {
       track,
       trackLabel: track ? checkoutTrackLabel(programme, track) : null,
       price: meta?.price ?? null,
-      mockMode: isMoyasarMockMode(),
+      ...moyasarCheckoutFlags(),
       dashboardPath: dashboardPathForStudentUser({
         role,
         programType: session?.user?.programType,
