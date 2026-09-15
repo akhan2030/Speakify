@@ -1,3 +1,6 @@
+import { comingSoonRegisterError } from "@/lib/courses/enrolmentClosed";
+import { isActiveStepStudent } from "@/lib/routing/stepStudentGate";
+
 /** STEP launch visibility — default hidden until explicitly opened. */
 export type StepLaunchMode = "hidden" | "beta" | "public";
 
@@ -23,11 +26,13 @@ export function getStepLaunchMode(): StepLaunchMode {
 
 /** Listed in courses hub, nav, and onboarding programme picker. */
 export function isStepPubliclyDiscoverable(): boolean {
+  if (comingSoonRegisterError("step-test", "step-preparation")) return false;
   return getStepLaunchMode() === "public";
 }
 
 /** `/register/step-test` accepts new sign-ups (beta = direct URL only). */
 export function isStepRegistrationOpen(): boolean {
+  if (comingSoonRegisterError("step-test", "step-preparation")) return false;
   const mode = getStepLaunchMode();
   return mode === "public" || mode === "beta";
 }
@@ -40,8 +45,6 @@ export function filterStepFromCatalog<T extends { slug: string }>(items: T[]): T
   if (isStepPubliclyDiscoverable()) return items;
   return items.filter((item) => !isStepCourseSlug(item.slug));
 }
-
-import { isActiveStepStudent } from "@/lib/routing/stepStudentGate";
 
 export function isStepStudentUser(
   user:

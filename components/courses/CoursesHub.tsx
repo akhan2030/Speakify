@@ -265,7 +265,7 @@ export default function CoursesHub(_props: Props) {
               <div className="exam-top">
                 <div>
                   <h3>STEP</h3>
-                  <div className="exam-meta">1 tier · Self-paced · Practice + full mocks</div>
+                  <div className="exam-meta">1 tier · Self-paced · 10 weeks · Practice + full mocks</div>
                 </div>
                 <span className="band">Saudi-specific</span>
               </div>
@@ -274,11 +274,11 @@ export default function CoursesHub(_props: Props) {
               </p>
               <div className="exam-actions" style={{ marginTop: 56 }}>
                 <Link href="/courses/step-preparation" className="btn-primary">
-                  View course
+                  Coming soon
                 </Link>
-                <Link href="/courses/step-preparation" className="btn-secondary">
-                  Mock exams
-                </Link>
+                <span className="btn-secondary" aria-disabled="true">
+                  Enrolment closed
+                </span>
               </div>
             </div>
           </div>

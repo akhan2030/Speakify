@@ -1,5 +1,6 @@
 import { ACCELERATOR_TRACKS } from "@/lib/accelerator/tracks";
 import { filterStepFromCatalog } from "@/lib/step/launchGate";
+import { STEP_TOTAL_WEEKS } from "@/lib/step/phases";
 
 export type CourseCategoryId = "test-prep" | "general-english" | "specialty";
 
@@ -195,21 +196,21 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
   {
     slug: "step-preparation",
     name: "Speakify STEP Accelerator",
-    tagline: "One adaptive Qiyas course",
-    shortDescription: "Eight-week adaptive STEP course to 80+.",
+    tagline: "Qiyas STEP preparation",
+    shortDescription: `${STEP_TOTAL_WEEKS}-week STEP course toward 80+.`,
     description:
-      "One comprehensive Qiyas-aligned STEP programme over 8 weeks (four 2-week stages). Diagnostic sets your entry point; exit checks advance you through Reading, Structure, Listening, and Analysis.",
+      `Ten-week STEP preparation with a diagnostic, four study stages, section practice, and timed mocks. Registration is closed while we confirm the current official Qiyas/ETEC structure. The LMS covers Reading, Structure, Listening, and Compositional Analysis as four MCQ skills — without speaking or essay tasks.`,
     levelBadge: "Advanced",
     category: "test-prep",
     accent: "#059669",
     ctaLabel: "View Course",
-    ctaHref: "/register/step-test",
-    duration: "8 weeks",
+    ctaHref: "/courses/step-preparation",
+    duration: `${STEP_TOTAL_WEEKS} weeks`,
     highlights: [
-      "Reading 40% · Structure 30% · Listening 20% · Analysis 10%",
-      "Qiyas-aligned MCQ format — no speaking or essay",
-      "Timed section drills and full mock practice",
-      "Score tracking toward 65–80+ university targets",
+      "Ten-week accelerator with diagnostic and phase checkpoints",
+      "Four MCQ skills: Reading, Structure, Listening, Compositional Analysis",
+      "No speaking or essay tasks in this programme",
+      "Timed drills and full mock practice",
     ],
   },
   {

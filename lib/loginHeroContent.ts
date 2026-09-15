@@ -51,7 +51,7 @@ export const LOGIN_HERO_CONTENT: Record<LoginHeroProgramme, LoginHeroContent> = 
     headlineHighlight: "Four phases to 80+.",
     bullets: [
       "Diagnostic sets your starting phase — no separate tracks.",
-      "Reading, Structure, Listening & Analysis — all Qiyas-aligned.",
+      "Reading, Structure, Listening & Analysis — MCQ skills, no speaking or essay.",
       "Phase exit checks advance you automatically toward your target.",
     ],
     footer: "When your STEP score is ready —",

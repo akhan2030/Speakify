@@ -179,10 +179,10 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
       "Students targeting English course exemption or postgraduate admission",
     ],
     outcomes: [
-      "Skimming and scanning strategies for 40% reading section",
-      "Grammar accuracy for Structure (30%) under time pressure",
-      "Listening stamina for one-play dialogues (20%)",
-      "Punctuation and sentence logic for Compositional Analysis (10%)",
+      "Reading strategies for long and short passages",
+      "Grammar accuracy for Structure items under time pressure",
+      "Listening practice for one-play dialogues",
+      "Punctuation and sentence logic for Compositional Analysis",
     ],
     skills: [
       "Reading Comprehension",
@@ -193,9 +193,9 @@ const PAGE_CONTENT: Record<string, CoursePageContent> = {
     ],
     curriculum: [
       { week: "Phase 1", title: "Foundations (Weeks 1–2)", detail: "STEP format, Structure & Reading basics" },
-      { week: "Phase 2", title: "Core Build (Weeks 3–4)", detail: "Reading mastery & grammar depth — exit 65+" },
-      { week: "Phase 3", title: "Advanced Skills (Weeks 5–6)", detail: "Listening & Compositional Analysis — exit 75+" },
-      { week: "Phase 4", title: "Exam Ready (Weeks 7–8)", detail: "Full mocks & certificate at 80+" },
+      { week: "Phase 2", title: "Development (Weeks 3–5)", detail: "Reading mastery & grammar depth" },
+      { week: "Phase 3", title: "Advancement (Weeks 6–8)", detail: "Listening & Compositional Analysis" },
+      { week: "Phase 4", title: "Excellence (Weeks 9–10)", detail: "Full mocks and exam-day polish" },
     ],
   },
   "english-pathway": {

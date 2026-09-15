@@ -124,12 +124,12 @@ export const REGISTRATION_PROGRAMS: Record<RegistrationSlug, RegistrationProgram
     label: "STEP Test",
     tagline: "STEP · Saudi university admissions",
     description:
-      "Preparation for the Saudi Standardized Test of English Proficiency (Qiyas) — 100 MCQs across reading, grammar, listening, and compositional analysis.",
+      "Preparation for the Saudi Standardized Test of English Proficiency (Qiyas) — computer-based MCQ practice across reading, grammar, listening, and compositional analysis.",
     bullets: [
-      "Reading (40%), Structure (30%), Listening (20%), Analysis (10%)",
-      "Timed MCQ practice aligned to Qiyas format",
-      "No speaking or essay — full focus on tested sections",
-      "Score tracking toward 65–80+ university targets",
+      "Ten-week accelerator aligned to the STEP LMS (not an 8-week course)",
+      "Four MCQ skills — no speaking or essay tasks",
+      "Diagnostic, section practice, and timed mocks",
+      "Registration is closed while we confirm the current official test structure",
     ],
     accent: "#059669",
     registerPath: "/register/step-test",
