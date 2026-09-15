@@ -40,7 +40,7 @@ const WHY_SPEAKIFY = [
 
   "Daily live sessions and 3× weekly speaking mock tests",
 
-  "94% of students hit their target band within 30 days",
+  "Placement estimate plus a study plan — not an official IELTS result",
 
   "Flexible online + in-centre options across Saudi Arabia",
 

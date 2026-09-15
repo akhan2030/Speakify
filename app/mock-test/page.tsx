@@ -11,7 +11,7 @@ const DIFFERENTIATORS = [
   "Real IELTS timing, structure and question types",
   "Multi-accent audio — British, Australian, American",
   "AI scores instantly — human examiner validates the result",
-  "Confidence score: Band 6.5 · Range 6.0–7.0 · Confidence 91%",
+  "Band range shown as a confidence interval — not an official IELTS result",
   "Full examiner report — not just a number, a complete diagnosis",
 ];
 
@@ -248,7 +248,7 @@ export default function MockTestLandingPage() {
               </p>
               <p className="mt-1 text-3xl font-extrabold text-white">6.0</p>
               <p className="text-xs text-slate-300">
-                Predicted overall band · Confidence 87% (5.5–6.5)
+                Example preview · predicted overall 6.0 (interval 5.5–6.5)
               </p>
             </div>
             <div className="px-6 py-5">

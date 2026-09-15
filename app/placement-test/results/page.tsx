@@ -332,7 +332,7 @@ export default function PlacementResultsPage() {
             <li>✅ AI-powered writing feedback on every essay</li>
             <li>✅ Speaking mock tests 3× per week</li>
             <li>✅ Full mock IELTS exam in Week 4</li>
-            <li>✅ Proven results: 94% of students hit their target band</li>
+            <li>✅ Full mock IELTS exam in Week 4</li>
             <li>
               ✅ Saudi students — taught in a way that understands YOUR
               challenges

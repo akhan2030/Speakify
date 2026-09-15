@@ -70,7 +70,7 @@ export const ACCELERATOR_TRACKS: Record<AcceleratorTrackId, AcceleratorTrack> = 
     duration: "6 weeks",
     price: "1,800 SAR",
     priceHalalas: 180_000,
-    badge: "Most Popular — 50% of Saudi students",
+    badge: "Most popular Academic track",
     weekCount: 6,
     bullets: [
       "Academic vocabulary expansion (800+ words)",

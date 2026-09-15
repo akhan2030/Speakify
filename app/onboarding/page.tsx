@@ -583,7 +583,7 @@ export default function OnboardingPage() {
 
         {!purchasedMeta && recommendation.kind === "ielts" && (
           <p className="mt-4 text-xs text-slate-500">
-            94% of students at your level who complete IELTS Plus reach Band 6.0 or above.
+            Placement recommends a track from your estimate. Study goals are not official IELTS results.
           </p>
         )}
 

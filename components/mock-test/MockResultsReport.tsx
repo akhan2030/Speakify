@@ -620,7 +620,7 @@ export default function MockResultsReport({ report, attemptId }: Props) {
                   "AI + human feedback",
                   "Speaking mock 3× per week",
                   "Full mock test Week 4",
-                  "94% hit target band",
+                  "Full mock test Week 4",
                   "Designed for Saudi students",
                 ].map((item) => (
                   <li key={item} className="flex gap-2">

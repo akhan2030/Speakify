@@ -178,7 +178,7 @@ export default function CoursesHub(_props: Props) {
                   <h3>IELTS Academic</h3>
                   <div className="exam-meta">3 tiers · Self-paced · 6–10 weeks · 5 full mock exams</div>
                 </div>
-                <span className="band">94% reach Band 6.0+</span>
+                <span className="band">Academic · 3 tiers</span>
               </div>
               <p className="exam-desc">
                 For university admissions and professional registration. Graph/report writing included.
@@ -212,7 +212,7 @@ export default function CoursesHub(_props: Props) {
                   <h3>IELTS General Training</h3>
                   <div className="exam-meta">3 tiers · Self-paced · 6–10 weeks · 3 full mock exams</div>
                 </div>
-                <span className="band">94% reach Band 6.0+</span>
+                <span className="band">General Training · 3 tiers</span>
               </div>
               <p className="exam-desc">
                 For visas, immigration, and work abroad. Letters and everyday reading skills.

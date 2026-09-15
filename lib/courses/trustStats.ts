@@ -1,6 +1,8 @@
 /**
- * Shared social-proof copy for course hub + onboarding.
- * Keep short card lines here; onboarding may use longer variants.
+ * Shared catalog/onboarding lines. Do not put unmeasured success rates here.
+ * Percentages in this file were invented as hub “trust signals” (commit f17dab8,
+ * 16 Jul 2026) with no query behind them. Keep copy descriptive until a real
+ * measured cohort exists.
  */
 export const COURSE_TRUST_STATS: Partial<
   Record<
@@ -14,39 +16,39 @@ export const COURSE_TRUST_STATS: Partial<
   >
 > = {
   "ielts-foundation": {
-    card: "92% reach Band 5.5+",
-    full: "92% of students at your level who complete IELTS Foundation reach Band 5.5 or above.",
+    card: "6-week Academic Foundation",
+    full: "IELTS Academic Foundation — format, core grammar, and skill practice toward Band 5.0–5.5 study goals.",
   },
   "ielts-plus": {
-    card: "94% reach Band 6.0+",
-    full: "94% of students at your level who complete IELTS Plus reach Band 6.0 or above.",
+    card: "6-week Academic Plus",
+    full: "IELTS Academic Plus — the mid-tier accelerator for Band 6.0–6.5 study goals.",
   },
   "ielts-elite": {
-    card: "91% reach Band 7.0+",
-    full: "91% of students at your level who complete IELTS Elite reach Band 7.0 or above.",
+    card: "4-week Academic Elite",
+    full: "IELTS Academic Elite — intensive practice for Band 7.0+ study goals.",
   },
   "ielts-gt-foundation": {
-    card: "92% reach Band 5.5+",
-    full: "92% of GT students who complete Foundation reach Band 5.5 or above.",
+    card: "GT Foundation track",
+    full: "IELTS General Training Foundation — letters, everyday reading, and core skills.",
   },
   "ielts-gt-plus": {
-    card: "94% reach Band 6.0+",
-    full: "94% of GT students who complete Plus reach Band 6.0 or above.",
+    card: "GT Plus track",
+    full: "IELTS General Training Plus — mid-tier GT practice for Band 6.0–6.5 study goals.",
   },
   "ielts-gt-elite": {
-    card: "91% reach Band 7.0+",
-    full: "91% of GT students who complete Elite reach Band 7.0 or above.",
+    card: "GT Elite track",
+    full: "IELTS General Training Elite — intensive GT practice for Band 7.0+ study goals.",
   },
   "step-preparation": {
     card: "Enrolment closed",
     full: "Public STEP registration is closed while we finish a sourced Qiyas/ETEC course. Existing students can still sign in.",
   },
   "english-pathway": {
-    card: "87% advance a Pathway level",
-    full: "87% of Pathway learners advance at least one Speakify Pathway level within a term.",
+    card: "13 micro-levels",
+    full: "English Pathway — weekly lessons from Absolute Beginner through Advanced. Level-up rates are not published until they are measured.",
   },
 };
 
-/** Hub hero trust line (matches onboarding Plus social proof). */
+/** Onboarding/hub line — no unmeasured conversion rate. */
 export const HUB_HERO_TRUST =
-  "94% of students at your level who complete IELTS Plus reach Band 6.0 or above.";
+  "Placement recommends a track from your estimate. Study goals are not official IELTS results.";
